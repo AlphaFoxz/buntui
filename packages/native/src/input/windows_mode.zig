@@ -1,6 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const logger = @import("../core/logger.zig");
+const err = @import("../core/error.zig");
 const windows = std.os.windows;
 
 var current_windows_input_mode: windows.DWORD = 0;
@@ -70,7 +71,7 @@ pub fn switchMouseInputMode() void {
     new_mode |= WindowsInputModeValues.ENABLE_VIRTUAL_TERMINAL_INPUT;
     // 设置控制台模式
     if (windows.kernel32.SetConsoleMode(stdin_handle, new_mode) == windows.FALSE) {
-        setConsoleModeFailure();
+        err.osApiError("Failed to set console mode");
     }
     current_windows_input_mode = new_mode;
     logger.logInfo("Console switched to mouse mode");
@@ -89,13 +90,8 @@ pub fn switchDefaultInputMode() void {
     // new_mode |= WindowsInputModeValues.ENABLE_WINDOW_INPUT;
     // new_mode |= WindowsInputModeValues.ENABLE_VIRTUAL_TERMINAL_INPUT;
     if (windows.kernel32.SetConsoleMode(stdin_handle, new_mode) == windows.FALSE) {
-        setConsoleModeFailure();
+        err.osApiError("Failed to set console mode");
     }
     current_windows_input_mode = new_mode;
     logger.logInfo("Console switched to default mode");
-}
-
-fn setConsoleModeFailure() noreturn {
-    logger.logError("Failed to set console mode");
-    std.process.exit(1);
 }

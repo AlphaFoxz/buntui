@@ -1,4 +1,4 @@
-import { EventType, type EventSchema } from './define';
+import { EventType, type EventSchema } from './types';
 import { ptr, toArrayBuffer } from 'bun:ffi';
 import lib from '../extern/events';
 

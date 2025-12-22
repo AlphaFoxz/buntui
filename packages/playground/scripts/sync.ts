@@ -4,15 +4,15 @@ import { suffix } from 'bun:ffi';
 
 const appName = 'term_bed';
 
-const rootDir = path.resolve(import.meta.dir, '..');
+const rootDir = path.resolve(import.meta.dir, '..', '..');
 const tasks = [
     {
-        from: `/node_modules/native/zig-out/bin/${appName}.${suffix}`,
-        to: `/${appName}.${suffix}`,
+        from: `/native/zig-out/bin/${appName}.${suffix}`,
+        to: `/playground/${appName}.${suffix}`,
     },
     {
-        from: `/node_modules/native/zig-out/bin/${appName}.pdb`,
-        to: `/${appName}.pdb`,
+        from: `/native/zig-out/bin/${appName}.pdb`,
+        to: `/playground/${appName}.pdb`,
     },
 ];
 

@@ -1,21 +1,14 @@
-import { type Pointer } from 'bun:ffi';
-import type { RectWidget } from '../extern/define';
-import widgets, { RectWidgetInfo, type RectWidgetInfoOptions } from '../extern/widgets/index';
+import { createWidgetInfo } from './common';
+import type { RectWidgetInfoOptions } from './types';
+import type { RectWidget, RectWidgetInfo } from '../extern/types';
 
 export default class Text implements RectWidget {
-    #ptr: Pointer;
     #refrenceCount: number = 0;
-    readonly baseInfo: RectWidgetInfo;
+    #baseInfo: RectWidgetInfo;
+    #text: string;
+
     constructor(text: string, options?: Partial<RectWidgetInfoOptions>) {
-        // const info = widgets.createRectWidgetInfo({
-        //     x: options?.x || 0,
-        //     y: options?.y || 0,
-        //     width: options?.width || 20,
-        //     height: options?.height || 1,
-        //     zIndex: options?.zIndex || 0,
-        //     visible: options?.visible || true,
-        // });
-        const info = new RectWidgetInfo({
+        this.#baseInfo = createWidgetInfo({
             x: options?.x || 0,
             y: options?.y || 0,
             width: options?.width || 20,
@@ -23,15 +16,20 @@ export default class Text implements RectWidget {
             zIndex: options?.zIndex || 0,
             visible: options?.visible || true,
         });
-        this.baseInfo = info;
-        this.#ptr = widgets.createTextWidget(text, info.ptr);
+        this.#text = text;
     }
 
     get id() {
-        return this.baseInfo.id;
+        return 1n;
     }
-    get ptr() {
-        return this.#ptr;
+    get baseInfo() {
+        return this.#baseInfo;
+    }
+    get text() {
+        return this.#text;
+    }
+    set text(text: string) {
+        this.#text = text;
     }
     mounted() {
         this.#refrenceCount += 1;

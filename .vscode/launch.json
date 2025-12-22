@@ -2,13 +2,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "bun", // 或者 "node"
+            "type": "lldb",
             "request": "launch",
-            "name": "Debug Playground",
-            "program": "${workspaceFolder}/packages/playground/main.ts", // 假设路径是这样
-            "cwd": "${workspaceFolder}/packages/playground", // 确保工作目录正确
-            // 关键配置：强制使用集成终端，而不是调试控制台
-            "internalConsoleOptions": "openOnFirstSessionStart",
+            "name": "Debug Zig in Bun",
+            "program": "C:/Users/Wong/.bun/bin/bun.exe",
+            "args": [
+                "run",
+                "dev"
+            ],
+            "cwd": "${workspaceFolder}",
+            "sourceLanguages": [
+                "zig"
+            ],
         }
     ]
 }

@@ -13,16 +13,16 @@ interface PackageJson {
 
 function main() {
     const rootPackage = fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8');
-    const rootPackageJson = JSON.parse(rootPackage) as PackageJson;
+    const rootPackageJson: PackageJson = JSON.parse(rootPackage);
     const rootVersion = rootPackageJson.version || '0.0.0';
 
     const dirs = fs.readdirSync(packagesDir);
     for (const dir of dirs) {
-        const pkgPath = path.join(packagesDir, dir, 'package.json');
-        const content = fs.readFileSync(pkgPath, 'utf-8');
+        const pkgJsonPath = path.join(packagesDir, dir, 'package.json');
+        const content = fs.readFileSync(pkgJsonPath, 'utf-8');
         const json = JSON.parse(content) as PackageJson;
         json.version = rootVersion;
-        fs.writeFileSync(pkgPath, JSON.stringify(json, null, 4) + '\n', 'utf-8');
+        fs.writeFileSync(pkgJsonPath, JSON.stringify(json, null, 4) + '\n', 'utf-8');
     }
 }
 

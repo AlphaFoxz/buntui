@@ -130,7 +130,7 @@ pub const GrayColor = packed struct {
 
     pub fn toU32(self: GrayColor) u32 {
         const val = @as(u32, self.value);
-        return val << 24 | val << 16 | val << 8 | 100;
+        return val << 24 | val << 16 | val << 8 | 0xFF;
     }
     pub fn eql(self: GrayColor, other: GrayColor) bool {
         return self.value == other.value;
@@ -174,7 +174,7 @@ pub const FixedColor = packed struct {
         if (fixed >= 232) {
             const v: u32 = @intCast((fixed - 232) * 10 + 8);
             const result: u32 = 0;
-            return result | v << 24 | v << 16 | v << 8 | 100;
+            return result | v << 24 | v << 16 | v << 8 | 0xFF;
         }
 
         // 3. 6x6x6 颜色立方体 (16-231)
@@ -202,20 +202,20 @@ pub const FixedColor = packed struct {
     }
     inline fn mapCubeValues(r: u8, g: u8, b: u8) u32 {
         const result: u32 = 0;
-        return result | @as(u32, r) * 40 + 55 << 24 | @as(u32, g) * 40 + 55 << 16 | @as(u32, b) * 40 + 55 << 8 | 100;
+        return result | @as(u32, r) * 40 + 55 << 24 | @as(u32, g) * 40 + 55 << 16 | @as(u32, b) * 40 + 55 << 8 | 0xFF;
     }
 };
 
 pub const BuiltinRgbaColor = struct {
-    pub const Black = Rgba{ .r = 0x00, .g = 0x00, .b = 0x00, .a = 100 };
-    pub const Red = Rgba{ .r = 0xFF, .g = 0x00, .b = 0x00, .a = 100 };
-    pub const Green = Rgba{ .r = 0x00, .g = 0xFF, .b = 0x00, .a = 100 };
-    pub const Yellow = Rgba{ .r = 0xFF, .g = 0xFF, .b = 0x00, .a = 100 };
-    pub const Blue = Rgba{ .r = 0x00, .g = 0x00, .b = 0xFF, .a = 100 };
-    pub const Magenta = Rgba{ .r = 0xFF, .g = 0x00, .b = 0xFF, .a = 100 };
-    pub const Cyan = Rgba{ .r = 0x00, .g = 0xFF, .b = 0xFF, .a = 100 };
-    pub const White = Rgba{ .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 100 };
-    pub const Grey = Rgba{ .r = 0x7F, .g = 0x7F, .b = 0x7F, .a = 100 };
+    pub const Black = Rgba{ .r = 0x00, .g = 0x00, .b = 0x00, .a = 0xFF };
+    pub const Red = Rgba{ .r = 0xFF, .g = 0x00, .b = 0x00, .a = 0xFF };
+    pub const Green = Rgba{ .r = 0x00, .g = 0xFF, .b = 0x00, .a = 0xFF };
+    pub const Yellow = Rgba{ .r = 0xFF, .g = 0xFF, .b = 0x00, .a = 0xFF };
+    pub const Blue = Rgba{ .r = 0x00, .g = 0x00, .b = 0xFF, .a = 0xFF };
+    pub const Magenta = Rgba{ .r = 0xFF, .g = 0x00, .b = 0xFF, .a = 0xFF };
+    pub const Cyan = Rgba{ .r = 0x00, .g = 0xFF, .b = 0xFF, .a = 0xFF };
+    pub const White = Rgba{ .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF };
+    pub const Grey = Rgba{ .r = 0x7F, .g = 0x7F, .b = 0x7F, .a = 0xFF };
 };
 
 pub const Color = union(enum) {
@@ -254,7 +254,7 @@ pub const Color = union(enum) {
     inline fn isValueColor(tag: std.meta.Tag(Color)) bool {
         return switch (tag) {
             .Fixed, .Grey, .Rgba => true,
-            else => false,
+            .Default, .Black, .Red, .Green, .Yellow, .Blue, .Magenta, .Cyan, .White => false,
         };
     }
     inline fn toU32(self: Color) u32 {

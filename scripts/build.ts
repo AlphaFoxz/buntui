@@ -63,18 +63,18 @@ async function main() {
     const pkgs = await getPackages();
     const order = topoSort(pkgs);
 
-    console.log('📦 构建顺序:', order.join(' -> '));
+    console.log('📦 Build dependencies:', order.join(' -> '));
 
     for (const name of order) {
-        console.log(`🚀 构建 ${name}...`);
+        console.log(`🚀 Building package \`${name}\`...`);
         const pkgDir = path.join(packagesDir, name.replace(/^@.+\//, '')); // 去掉作用域前缀
         execSync('bun run build', { cwd: pkgDir, stdio: 'inherit' });
     }
 
-    console.log('✅ 全部构建完成！');
+    console.log('✅ Build success!');
 }
 
 main().catch((err) => {
-    console.error('构建失败:', err);
+    console.error('🚨 Build failed!', err);
     process.exit(1);
 });

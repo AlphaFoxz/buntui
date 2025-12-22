@@ -3,13 +3,14 @@ const std = @import("std");
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimizeOpt = b.standardOptimizeOption(.{
-        .preferred_optimize_mode = .ReleaseSafe,
+        .preferred_optimize_mode = .Debug,
+        // .preferred_optimize_mode = .ReleaseSmall,
     });
 
     const lib = b.addLibrary(.{
         .name = "term_bed",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/exports.zig"),
+            .root_source_file = b.path("src/lib.zig"),
             .target = target,
             .optimize = optimizeOpt,
         }),

@@ -1,14 +1,14 @@
 const std = @import("std");
-const Io = std.Io;
-const std_io = @import("./core/std_io.zig");
-const String = @import("./core/string.zig").String;
-const widgets = @import("./core/widgets.zig");
-const ansi = @import("./ansi_util.zig");
+const logger = @import("./core/logger.zig");
+const glo_alloc = @import("./core/glo_alloc.zig");
 const tui_app = @import("./core/tui_app.zig");
 const render = @import("./render.zig");
-const glo_alloc = @import("./core/glo_alloc.zig");
-const logger = @import("./core/logger.zig");
+const tui_context = @import("./core/tui_context.zig");
 const event_bus = @import("./core/event_bus.zig");
+const std_io = @import("./core/std_io.zig");
+const ansi = @import("./ansi_util.zig");
+const err = @import("./core/error.zig");
+const Io = std.Io;
 
 // ======================== app ========================
 pub export fn setupLogger(
@@ -18,45 +18,28 @@ pub export fn setupLogger(
 ) void {
     const alloc = glo_alloc.allocator();
     const dir_path = alloc.dupe(u8, std.mem.span(cdir_path)) catch {
-        std.log.err("Out of memory", .{});
-        std.process.exit(1);
+        err.outOfMemory();
     };
     const log_name = alloc.dupe(u8, std.mem.span(clog_name)) catch {
-        std.log.err("Out of memory", .{});
-        std.process.exit(1);
+        err.outOfMemory();
     };
     return logger.load(dir_path, log_name, log_level);
 }
 
-pub export fn createApp() *tui_app.TuiApp {
-    return tui_app.createApp();
+pub export fn startApp() void {
+    return tui_app.startApp();
 }
 
-pub export fn destroyApp(app: *tui_app.TuiApp) void {
-    tui_app.destroyApp(app);
+pub export fn stopApp() void {
+    tui_app.stopApp();
 }
 
-pub export fn createSceneInfo(bg_hex_rgb: u32, visible: u8) *tui_app.SceneInfo {
-    return tui_app.SceneInfo.init(
-        ansi.style.Rgba.fromU32((bg_hex_rgb << 8) + 100),
-        visible,
-    );
+pub export fn detectTermSize(ctx: *tui_context.TuiContext) void {
+    tui_context.detectTermSize(ctx);
 }
 
-pub export fn createScene(info: *tui_app.SceneInfo) *tui_app.Scene {
-    return tui_app.Scene.init(info);
-}
-
-pub export fn destroyScene(ptr: *tui_app.Scene) void {
-    ptr.deinit();
-}
-
-pub export fn renderApp(ptr: *tui_app.TuiApp) void {
-    render.renderApp(ptr);
-}
-
-pub export fn forceRenderApp(app_ptr: *tui_app.TuiApp) void {
-    render.forceRenderApp(app_ptr);
+pub export fn renderFrame(ctx: *tui_context.TuiContext) void {
+    render.renderFrame(ctx);
 }
 
 // ======================== event ========================
@@ -81,27 +64,6 @@ pub export fn event_bus_commit() void {
 // 获取队列统计
 pub export fn event_bus_stats(out_pending: *u64) void {
     event_bus.event_bus_stats(out_pending);
-}
-
-// ======================== widgets =======================
-pub export fn createRectWidgetInfo(
-    x: u16,
-    y: u16,
-    width: u16,
-    height: u16,
-    z_index: i32,
-    visible: u8,
-) *widgets.common.RectWidgetInfo {
-    return widgets.common.RectWidgetInfo.init(x, y, width, height, z_index, visible);
-}
-
-pub export fn createTextWidget(rect_info: *widgets.common.RectWidgetInfo, cstr: [*:0]const u8) *widgets.Widget {
-    const text = String.initFromCSclice(cstr);
-    return widgets.initTextWidget(rect_info, text);
-}
-
-pub export fn destroyWidget(widget_ptr: *widgets.Widget) void {
-    widgets.deinitWidget(widget_ptr);
 }
 
 // ======================== ansi ========================

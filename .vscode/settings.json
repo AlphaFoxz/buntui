@@ -11,6 +11,10 @@
         "prettier.singleQuote": true,
         "prettier.printWidth": 100,
     },
+    "[markdown]": {
+        "editor.tabSize": 2,
+        "prettier.tabWidth": 2
+    },
     "zig.debugTestArgs": [
         "test",
         "${path}",

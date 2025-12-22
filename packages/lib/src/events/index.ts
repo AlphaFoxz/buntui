@@ -1,7 +1,7 @@
 import path from 'path';
 import eventLib from '../extern/events';
 import { toArrayBuffer } from 'bun:ffi';
-import { EventType, MouseEvent, KeyboardEvent, WheelEvent } from './define';
+import { EventType, MouseEvent, KeyboardEvent, WheelEvent } from './types';
 
 const schemaRegistry = new Map<EventType, new (json: Record<string, any>) => any>([
     [EventType.KeyboardEvent, KeyboardEvent],
