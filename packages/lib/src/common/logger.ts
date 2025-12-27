@@ -1,14 +1,14 @@
-import fs from 'fs';
-import path from 'path';
-import { appendFile } from 'fs/promises';
-import { type LogLevel } from '../extern/app';
+import fs from 'node:fs';
+import path from 'node:path';
+import {appendFile} from 'node:fs/promises';
+import {type LogLevel} from '../extern/app/types';
 
 export type LoggerOptions = {
-    logFileDir: string;
-    logLevel: LogLevel;
-    clearLog: boolean;
-    frontendLogName: string;
-    backendLogName: string;
+  logFileDir: string;
+  logLevel: LogLevel;
+  clearLog: boolean;
+  frontendLogName: string;
+  backendLogName: string;
 };
 
 const LOG_LEVEL_DEBUG = 0;
@@ -16,125 +16,140 @@ const LOG_LEVEL_INFO = 1;
 const LOG_LEVEL_WARNING = 2;
 const LOG_LEVEL_ERROR = 3;
 
-let cachedTimestampStr: string = '';
+let cachedTimestampString = '';
 let cachedTimestamp = 0;
-function timestampStr() {
-    const date = new Date();
-    const time = date.getTime();
-    if (time === cachedTimestamp) {
-        return cachedTimestampStr;
-    }
+function timestampString() {
+  const date = new Date();
+  const time = date.getTime();
+  if (time === cachedTimestamp) {
+    return cachedTimestampString;
+  }
 
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const hour = date.getHours();
-    const minute = date.getMinutes();
-    const second = date.getSeconds();
-    cachedTimestamp = time;
-    cachedTimestampStr = `[${year}-${fillZero(month)}-${fillZero(day)} ${fillZero(hour)}:${fillZero(
-        minute
-    )}:${fillZero(second)}]`;
-    return cachedTimestampStr;
-}
-function fillZero(num: number, len = 2) {
-    let str = num.toString();
-    while (str.length < len) {
-        str = '0' + str;
-    }
-    return str;
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hour = date.getHours();
+  const minute = date.getMinutes();
+  const second = date.getSeconds();
+  cachedTimestamp = time;
+  cachedTimestampString = `[${year}-${fillZero(month)}-${fillZero(day)} ${fillZero(hour)}:${fillZero(minute)}:${fillZero(second)}]`;
+  return cachedTimestampString;
 }
 
-export class Logger {
-    static #logFileDir: string = '';
-    static #logFile: string = '';
-    static #logLevel: number = LOG_LEVEL_INFO;
-    static #taskQueue: (() => Promise<void> | void)[] = [];
-    static #running = false;
-    static init(opts: LoggerOptions) {
-        this.#logFileDir = opts.logFileDir;
-        const logLevel = opts.logLevel;
-        const clearLog = opts.clearLog;
-        this.#logFile = path.resolve(this.#logFileDir, opts.frontendLogName);
-        if (logLevel === 'debug') {
-            this.#logLevel = LOG_LEVEL_DEBUG;
-        } else if (logLevel === 'info') {
-            this.#logLevel = LOG_LEVEL_INFO;
-        } else if (logLevel === 'warning') {
-            this.#logLevel = LOG_LEVEL_WARNING;
-        } else if (logLevel === 'error') {
-            this.#logLevel = LOG_LEVEL_ERROR;
-        }
+function fillZero(number_: number, length = 2) {
+  let string_ = number_.toString();
+  while (string_.length < length) {
+    string_ = '0' + string_;
+  }
 
-        if (!fs.existsSync(this.#logFileDir)) {
-            fs.mkdirSync(this.#logFileDir);
-        }
-        const backendLogPath = path.resolve(
-            this.#logFileDir,
-            opts.backendLogName || 'term_bed.log'
-        );
-        if (!fs.existsSync(backendLogPath) || clearLog) {
-            fs.writeFileSync(backendLogPath, '');
-            fs.writeFileSync(this.#logFile, '');
-        }
-
-        this.#running = true;
-        const consume = async () => {
-            if (!this.#running) {
-                return;
-            }
-            try {
-                const tasks: (Promise<void> | void)[] = [];
-                while (this.#taskQueue.length > 0) {
-                    const task = this.#taskQueue.shift();
-                    if (task) {
-                        tasks.push(task());
-                    }
-                }
-                await Promise.all(tasks);
-            } catch (e) {
-                throw e;
-            } finally {
-                setImmediate(consume);
-            }
-        };
-        consume();
-    }
-
-    static deinit() {
-        this.#running = false;
-    }
-
-    static logDebug(content: string) {
-        if (this.#logLevel === LOG_LEVEL_DEBUG) {
-            this.#taskQueue.push(
-                async () => await appendFile(this.#logFile, `${timestampStr()} debug: ${content}\n`)
-            );
-        }
-    }
-
-    static logInfo(content: string) {
-        if (this.#logLevel <= LOG_LEVEL_INFO) {
-            this.#taskQueue.push(
-                async () => await appendFile(this.#logFile, `${timestampStr()} info: ${content}\n`)
-            );
-        }
-    }
-
-    static logWarning(content: string) {
-        if (this.#logLevel <= LOG_LEVEL_WARNING) {
-            this.#taskQueue.push(
-                async () =>
-                    await appendFile(this.#logFile, `${timestampStr()} warning: ${content}\n`)
-            );
-        }
-    }
-
-    static logError(content: string) {
-        if (this.#logLevel <= LOG_LEVEL_ERROR) {
-            this.#taskQueue.push(
-                async () => await appendFile(this.#logFile, `${timestampStr()} error: ${content}\n`)
-            );
-        }
-    }
+  return string_;
 }
+
+class LoggerImpl {
+  #logFileDir = '';
+  #logFile = '';
+  #logLevel: number = LOG_LEVEL_INFO;
+  readonly #taskQueue: Array<() => Promise<void>> = [];
+  #running = false;
+  async init(options: LoggerOptions) {
+    this.#logFileDir = options.logFileDir;
+    const {logLevel} = options;
+    const {clearLog} = options;
+    this.#logFile = path.resolve(this.#logFileDir, options.frontendLogName);
+    switch (logLevel) {
+      case 'debug': {
+        this.#logLevel = LOG_LEVEL_DEBUG;
+        break;
+      }
+
+      case 'info': {
+        this.#logLevel = LOG_LEVEL_INFO;
+        break;
+      }
+
+      case 'warning': {
+        this.#logLevel = LOG_LEVEL_WARNING;
+        break;
+      }
+
+      case 'error': {
+        this.#logLevel = LOG_LEVEL_ERROR;
+        break;
+      }
+    }
+
+    if (!fs.existsSync(this.#logFileDir)) {
+      fs.mkdirSync(this.#logFileDir);
+    }
+
+    const backendLogPath = path.resolve(
+      this.#logFileDir,
+      options.backendLogName || 'term_bed.log',
+    );
+    if (!fs.existsSync(backendLogPath) || clearLog) {
+      fs.writeFileSync(backendLogPath, '');
+      fs.writeFileSync(this.#logFile, '');
+    }
+
+    this.#running = true;
+    const consume = async () => {
+      if (!this.#running) {
+        return;
+      }
+
+      try {
+        const tasks: Array<Promise<void>> = [];
+        while (this.#taskQueue.length > 0) {
+          const task = this.#taskQueue.shift();
+          if (task) {
+            tasks.push(task());
+          }
+        }
+
+        await Promise.all(tasks);
+      } finally {
+        setImmediate(consume);
+      }
+    };
+
+    void consume();
+  }
+
+  deinit() {
+    this.#running = false;
+  }
+
+  logDebug(content: string) {
+    if (this.#logLevel === LOG_LEVEL_DEBUG) {
+      this.#taskQueue.push(async () => {
+        await appendFile(this.#logFile, `${timestampString()} debug: ${content}\n`);
+      });
+    }
+  }
+
+  logInfo(content: string) {
+    if (this.#logLevel <= LOG_LEVEL_INFO) {
+      this.#taskQueue.push(async () => {
+        await appendFile(this.#logFile, `${timestampString()} info: ${content}\n`);
+      });
+    }
+  }
+
+  logWarning(content: string) {
+    if (this.#logLevel <= LOG_LEVEL_WARNING) {
+      this.#taskQueue.push(async () => {
+        await appendFile(this.#logFile, `${timestampString()} warning: ${content}\n`);
+      });
+    }
+  }
+
+  logError(content: string) {
+    if (this.#logLevel <= LOG_LEVEL_ERROR) {
+      this.#taskQueue.push(async () => {
+        await appendFile(this.#logFile, `${timestampString()} error: ${content}\n`);
+      });
+    }
+  }
+}
+
+export const LOGGER = new LoggerImpl();

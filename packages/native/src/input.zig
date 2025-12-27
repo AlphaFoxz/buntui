@@ -16,11 +16,13 @@ const listener = switch (builtin.os.tag) {
 };
 
 pub fn startListening() void {
+    mode.updateOutputCP2UTF8();
     mode.switchMouseInputMode();
     listener.start();
 }
 
 pub fn stopListening() void {
     defer mode.switchDefaultInputMode();
+    defer mode.restoreOutputCP();
     listener.stop();
 }

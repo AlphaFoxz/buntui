@@ -50,6 +50,11 @@ flags: u8 = 1 字节
 - Naming function using camelCase
 - Naming struct using PascalCase
 
+### ts types
+
+- undefined: 技术空
+- null: 业务空
+
 ## zig atomic
 
 ### .unordered

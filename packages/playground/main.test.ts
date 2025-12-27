@@ -1,6 +1,7 @@
-import { expect, it } from 'bun:test';
+import {expect, it} from 'bun:test';
 
 it('main', async () => {
-    await import('./main');
-    expect(true).toBe(true);
+  await import('./main');
+  expect(true).toBe(true);
 });
+

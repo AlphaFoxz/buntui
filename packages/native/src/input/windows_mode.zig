@@ -4,6 +4,8 @@ const logger = @import("../core/logger.zig");
 const err = @import("../core/error.zig");
 const windows = std.os.windows;
 
+var original_outcp: windows.UINT = 0;
+
 var current_windows_input_mode: windows.DWORD = 0;
 comptime {
     if (builtin.os.tag != .windows) {
@@ -94,4 +96,17 @@ pub fn switchDefaultInputMode() void {
     }
     current_windows_input_mode = new_mode;
     logger.logInfo("Console switched to default mode");
+}
+
+pub fn updateOutputCP2UTF8() void {
+    original_outcp = std.os.windows.kernel32.GetConsoleOutputCP();
+    if (std.os.windows.kernel32.SetConsoleOutputCP(65001) == windows.FALSE) {
+        err.osApiError("Failed to set console output code page to UTF-8");
+    }
+}
+
+pub fn restoreOutputCP() void {
+    if (std.os.windows.kernel32.SetConsoleOutputCP(original_outcp) == windows.FALSE) {
+        err.osApiError("Failed to restore console output code page to original value");
+    }
 }

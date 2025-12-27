@@ -3,6 +3,7 @@
         "ziglang.vscode-zig",
         "esbenp.prettier-vscode",
         "oven.bun-vscode",
-        "usernamehw.errorlens"
+        "usernamehw.errorlens",
+        "samverschueren.linter-xo"
     ]
 }

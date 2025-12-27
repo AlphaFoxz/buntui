@@ -1,22 +1,20 @@
-import { type Ref, customRef } from '@vue/reactivity';
+import {type Ref, customRef} from '@vue/reactivity';
 
-interface TuiRef<T = any, S = T> extends Ref<T, S> {
-    // close(): void;
-}
+type TuiRef<T = any, S = T> = {
+  // Close(): void;
+} & Ref<T, S>;
 
 export function ref<T>(value: T): TuiRef<T, T> {
-    const innerRef = customRef((track, trigger) => {
-        return {
-            get() {
-                track();
-                return value;
-            },
-            set(newValue) {
-                value = newValue;
-                trigger();
-            },
-            clear() {},
-        };
-    });
-    return innerRef;
+  const innerRef = customRef((track, trigger) => ({
+    get() {
+      track();
+      return value;
+    },
+    set(newValue) {
+      value = newValue;
+      trigger();
+    },
+  }));
+  return innerRef;
 }
+

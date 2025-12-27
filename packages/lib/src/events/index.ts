@@ -1,85 +1,93 @@
-import path from 'path';
+import {toArrayBuffer} from 'bun:ffi';
 import eventLib from '../extern/events';
-import { toArrayBuffer } from 'bun:ffi';
-import { EventType, MouseEvent, KeyboardEvent, WheelEvent } from './types';
+import TuiDataView from '../extern/TuiDataViewWrapper';
+import {
+  EventType, MouseEvent, KeyboardEvent, WheelEvent,
+} from './types';
 
 const schemaRegistry = new Map<EventType, new (json: Record<string, any>) => any>([
-    [EventType.KeyboardEvent, KeyboardEvent],
-    [EventType.MouseEvent, MouseEvent],
-    [EventType.WheelEvent, WheelEvent],
+  [EventType.KeyboardEvent, KeyboardEvent],
+  [EventType.MouseEvent, MouseEvent],
+  [EventType.WheelEvent, WheelEvent],
 ]);
 
 const decoder = new TextDecoder('utf-8');
-export class EventBus {
-    static #running = false;
-    static #handlers: Record<number, ((data: any) => void)[]> = {};
 
-    static start() {
-        this.#running = true;
+class EventBusImpl {
+  #running = false;
+  readonly #handlers: Record<number, Array<(data: any) => void>> = {};
 
-        const consume = () => {
-            if (!this.#running) {
-                return;
+  start() {
+    this.#running = true;
+
+    const consume = () => {
+      if (!this.#running) {
+        return;
+      }
+
+      const slotPtr = eventLib.event_bus_poll();
+
+      if (slotPtr !== null) {
+        try {
+          // 读取事件头（前12字节）
+          const headerBuf = toArrayBuffer(slotPtr, 0, 12);
+          const headerView = new TuiDataView(headerBuf);
+          const eventType = headerView.getUint32(0, true);
+          const payloadLength = headerView.getUint32(4, true);
+          // Const sequence = headerView.getBigUint64(4, true);
+
+          const payloadBuf = toArrayBuffer(slotPtr, 16, payloadLength);
+
+          const jsonString = decoder.decode(payloadBuf);
+          const json = JSON.parse(jsonString) as Record<string, any>;
+          const SCHEMA_CLASS = schemaRegistry.get(eventType as EventType);
+          if (!SCHEMA_CLASS) {
+            console.warn(`Unknown event type: ${eventType}`);
+            throw new Error(`Unknown event type: ${eventType}`);
+          }
+
+          const event = new SCHEMA_CLASS(json) as ClassDecorator;
+
+          const handlers = this.#handlers[eventType];
+          if (handlers) {
+            for (const handler of handlers) {
+              handler(event);
             }
-            const slotPtr = eventLib.event_bus_poll();
-
-            if (slotPtr !== null) {
-                try {
-                    // 读取事件头（前12字节）
-                    const headerBuf = toArrayBuffer(slotPtr, 0, 12);
-                    const headerView = new DataView(headerBuf);
-                    const eventType = headerView.getUint32(0, true);
-                    const payloadLen = headerView.getUint32(4, true);
-                    // const sequence = headerView.getBigUint64(4, true);
-
-                    const payloadBuf = toArrayBuffer(slotPtr, 16, payloadLen);
-
-                    const jsonStr = decoder.decode(payloadBuf);
-                    const json = JSON.parse(jsonStr);
-                    const SchemaClass = schemaRegistry.get(eventType as EventType);
-                    if (!SchemaClass) {
-                        console.warn(`Unknown event type: ${eventType}`);
-                        throw new Error(`Unknown event type: ${eventType}`);
-                    }
-                    const event = new SchemaClass(json);
-
-                    const handlers = this.#handlers[eventType];
-                    if (handlers) {
-                        for (const handler of handlers) {
-                            handler(event);
-                        }
-                    }
-                } catch (err) {
-                    console.error('Event parse error:', err);
-                } finally {
-                    eventLib.event_bus_commit();
-                }
-            }
-            setImmediate(consume);
-        };
-        consume();
-    }
-
-    static stop() {
-        this.#running = false;
-    }
-
-    static on(eventType: EventType.MouseEvent, handler: (data: MouseEvent) => void): void;
-    static on(eventType: EventType.KeyboardEvent, handler: (data: KeyboardEvent) => void): void;
-    static on(eventType: EventType.WheelEvent, handler: (data: WheelEvent) => void): void;
-    static on(eventType: EventType, handler: (data: any) => void) {
-        if (!this.#handlers[eventType]) {
-            this.#handlers[eventType] = [];
+          }
+        } catch (error) {
+          console.error('Event parse error:', error);
+        } finally {
+          eventLib.event_bus_commit();
         }
-        this.#handlers[eventType].push(handler);
+      }
+
+      setImmediate(consume);
+    };
+
+    consume();
+  }
+
+  stop() {
+    this.#running = false;
+  }
+
+  on(eventType: EventType.MouseEvent, handler: (data: MouseEvent) => void): void;
+  on(eventType: EventType.KeyboardEvent, handler: (data: KeyboardEvent) => void): void;
+  on(eventType: EventType.WheelEvent, handler: (data: WheelEvent) => void): void;
+  on(eventType: EventType, handler: (data: any) => void) {
+    this.#handlers[eventType] ||= [];
+    this.#handlers[eventType].push(handler);
+  }
+
+  off(eventType: EventType, handler: (data: any) => void) {
+    const handlers = this.#handlers[eventType];
+    if (handlers) {
+      const index = handlers.indexOf(handler);
+      if (index !== -1) {
+        handlers.splice(index, 1);
+      }
     }
-    static off(eventType: EventType, handler: (data: any) => void) {
-        const handlers = this.#handlers[eventType];
-        if (handlers) {
-            const index = handlers.indexOf(handler);
-            if (index !== -1) {
-                handlers.splice(index, 1);
-            }
-        }
-    }
+  }
 }
+
+export const EVENT_BUS = new EventBusImpl();

@@ -2,6 +2,7 @@ const std = @import("std");
 const logger = @import("./core/logger.zig");
 const glo_alloc = @import("./core/glo_alloc.zig");
 const tui_app = @import("./core/tui_app.zig");
+const TuiWidgetEntity = @import("./core/widgets/entity.zig").TuiWidgetEntity;
 const render = @import("./render.zig");
 const tui_context = @import("./core/tui_context.zig");
 const event_bus = @import("./core/event_bus.zig");
@@ -34,12 +35,31 @@ pub export fn stopApp() void {
     tui_app.stopApp();
 }
 
+pub export fn createScene() *tui_app.TuiScene {
+    return tui_app.createScene();
+}
+
+pub export fn mountWidgetEntity(scene: *tui_app.TuiScene, widget: *TuiWidgetEntity) void {
+    scene.mountWidget(widget);
+}
+
+pub export fn unmountWidgetEntity(scene: *tui_app.TuiScene, widget: *TuiWidgetEntity) void {
+    scene.unmountWidget(widget);
+}
+
+pub export fn destroyScene(scene: *tui_app.TuiScene) void {
+    tui_app.destroyScene(scene);
+}
+
 pub export fn detectTermSize(ctx: *tui_context.TuiContext) void {
     tui_context.detectTermSize(ctx);
 }
 
-pub export fn renderFrame(ctx: *tui_context.TuiContext) void {
-    render.renderFrame(ctx);
+pub export fn renderFrame(
+    ctx: *tui_context.TuiContext,
+    scene: *tui_app.TuiScene,
+) void {
+    render.renderFrame(ctx, scene);
 }
 
 // ======================== event ========================

@@ -29,7 +29,7 @@ const EventBus = struct {
     slots: [QUEUE_SIZE]EventSlot align(64),
     head: std.atomic.Value(u64) align(64), // 写入位置（生产者独占）
     tail: std.atomic.Value(u64) align(64), // 读取位置（消费者独占）
-    sequence: u64, // 事件序列号
+    sequence: u64,
 
     fn init() EventBus {
         return .{
@@ -40,7 +40,6 @@ const EventBus = struct {
         };
     }
 
-    // 发布事件（阻塞直到有空位）
     fn emit(self: *EventBus, event_type: u16, data: []const u8) !void {
         if (data.len > SLOT_SIZE - @sizeOf(EventHeader)) {
             return error.EventTooLarge;
@@ -49,13 +48,12 @@ const EventBus = struct {
         const head = self.head.load(.monotonic);
         var tail = self.tail.load(.acquire);
 
-        // 阻塞等待空位（满时自旋）
+        // 等待空位
         while (head - tail >= QUEUE_SIZE) {
             std.atomic.spinLoopHint();
-            tail = self.tail.load(.acquire); // 重新加载tail
+            tail = self.tail.load(.acquire);
         }
 
-        // 写入槽位
         const idx = head & QUEUE_MASK;
         self.slots[idx].header = .{
             .event_type = event_type,
@@ -70,18 +68,16 @@ const EventBus = struct {
         self.head.store(head + 1, .release);
     }
 
-    // 轮询事件（非阻塞）
     fn poll(self: *EventBus) ?*const EventSlot {
         const tail = self.tail.load(.monotonic);
         const head = self.head.load(.acquire);
 
-        if (tail >= head) return null; // 队列空
+        if (tail >= head) return null;
 
         const idx = tail & QUEUE_MASK;
         return &self.slots[idx];
     }
 
-    // 确认读取完成
     fn commit_read(self: *EventBus) void {
         const tail = self.tail.load(.monotonic);
         self.tail.store(tail + 1, .release);
@@ -93,7 +89,6 @@ var global_bus: EventBus = undefined;
 var initialized: bool = false;
 
 // ============ FFI 导出函数 ============
-
 pub fn event_bus_setup() void {
     if (!initialized) {
         global_bus = EventBus.init();

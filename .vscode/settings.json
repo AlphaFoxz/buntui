@@ -3,13 +3,14 @@
     "editor.formatOnSave": true,
     "editor.tabSize": 4,
     "prettier.tabWidth": 4,
+    "xo.enable": true,
+    "xo.format.enable": true,
     "[zig]": {
         "editor.defaultFormatter": "ziglang.vscode-zig",
     },
     "[typescript]": {
-        "prettier.semi": true,
-        "prettier.singleQuote": true,
-        "prettier.printWidth": 100,
+        "editor.tabSize": 2,
+        "editor.defaultFormatter": "samverschueren.linter-xo"
     },
     "[markdown]": {
         "editor.tabSize": 2,

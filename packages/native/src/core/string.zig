@@ -47,16 +47,16 @@ pub const String = struct {
 
     pub fn init() *String {
         const alloc = glo_alloc.allocator();
-        const ptr = alloc.create(String) catch {
+        const self = alloc.create(String) catch {
             err.outOfMemory();
         };
-        ptr.* = String{
+        self.* = String{
             .alloc = alloc,
             .buffer = std.ArrayList(u8).initCapacity(alloc, 0) catch {
                 err.outOfMemory();
             },
         };
-        return ptr;
+        return self;
     }
 
     pub fn deinit(self: *String) void {
@@ -66,23 +66,23 @@ pub const String = struct {
 
     pub fn initFromSclice(slice: []const u8) *String {
         const alloc = glo_alloc.allocator();
-        const ptr = alloc.create(String) catch {
+        const self = alloc.create(String) catch {
             err.outOfMemory();
         };
         const buffer = std.ArrayList(u8).initCapacity(alloc, slice.len) catch {
             err.outOfMemory();
         };
-        ptr.* = String{
+        self.* = String{
             .alloc = alloc,
             .buffer = buffer,
         };
-        ptr.*.append(slice);
-        return ptr;
+        self.*.append(slice);
+        return self;
     }
 
     pub fn initFromCSclice(slice: [*:0]const u8) *String {
         const alloc = glo_alloc.allocator();
-        const ptr = alloc.create(String) catch {
+        const self = alloc.create(String) catch {
             err.outOfMemory();
         };
 
@@ -94,11 +94,11 @@ pub const String = struct {
         buffer.appendSlice(alloc, s) catch {
             err.outOfMemory();
         };
-        ptr.* = String{
+        self.* = String{
             .alloc = alloc,
             .buffer = buffer,
         };
-        return ptr;
+        return self;
     }
 
     pub fn append(self: *String, slice: []const u8) void {
