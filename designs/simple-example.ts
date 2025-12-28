@@ -1,7 +1,6 @@
 import {createDomainDesigner} from '@ddd-tool/domain-designer-core';
 
 const d = createDomainDesigner();
-const i = d.info;
 
 const 创建场景成功事件 = d.event('SceneCreated', ['sceneId', 'visible', 'bgColor']);
 const 切换场景成功事件 = d.event('SceneSwitched', ['sceneId']);
