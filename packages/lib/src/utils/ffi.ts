@@ -15,7 +15,7 @@ export function fetchDllPath() {
     if (fs.existsSync(dllPath)) {
       return dllPath;
     }
-    // FIXME-wong: find dll from OS's `PATH` variable or process env
+    // XXX: find dll from OS's `PATH` variable or process env
   }
 
   return dllPath;

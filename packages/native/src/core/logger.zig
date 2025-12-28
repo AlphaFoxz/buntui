@@ -1,4 +1,5 @@
 const std = @import("std");
+const Bool = @import("./typedef.zig").Bool;
 
 pub const LOG_LEVEL = u8;
 pub const LOG_LEVEL_DEBUG: u8 = 0;
@@ -19,7 +20,7 @@ var writer: std.fs.File.Writer = undefined;
 const flush_on_error = true;
 const flush_on_warning = true;
 
-pub fn load(dir_path: []const u8, log_name: []const u8, lvl: LOG_LEVEL) void {
+pub fn load(dir_path: []const u8, log_name: []const u8, lvl: LOG_LEVEL, clear_log: Bool) void {
     switch (current_log_level) {
         0...4 => {
             current_log_level = lvl;
@@ -43,9 +44,16 @@ pub fn load(dir_path: []const u8, log_name: []const u8, lvl: LOG_LEVEL) void {
     }) catch {
         ioError();
     };
+    if (clear_log != .False) {
+        log_file.writeAll("") catch {
+            ioError();
+        };
+    }
+
     log_file.seekFromEnd(0) catch {
         ioError();
     };
+    @memset(&log_buf, 0);
     writer = log_file.writerStreaming(&log_buf);
     log_path_initialized = true;
 }
@@ -54,7 +62,7 @@ pub fn unload() void {
     if (!log_path_initialized) {
         return;
     }
-    writer.flush() catch {
+    writer.interface.flush() catch {
         ioError();
     };
     log_file.close();

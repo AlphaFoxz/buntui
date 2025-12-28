@@ -2,29 +2,7 @@
 
 ## About rasterization
 
-场景假设：80x24 终端，10 个窗口组件
-
-### 方案 A：Bun 端栅格化
-
-// 每帧传输：所有 cell 数据
-传输量 = 80 \* 24 \* 24 字节 ≈ 46KB/帧
-60fps = 2.7MB/s
-
-### 方案 B：Zig 端栅格化
-
-// 每帧传输：组件状态
-Component = {
-x, y, width, height: u16 = 8 字节
-zIndex: u32 = 4 字节
-visible: u8 = 1 字节
-textOffset: u32 = 4 字节 (StringArena 中的位置)
-fgColor, bgColor: u32 = 8 字节
-flags: u8 = 1 字节
-} = 26 字节
-
-传输量 = 10 \* 26 字节 = 260 字节/帧
-60fps = 15KB/s
-结论：Zig 端栅格化传输量少约 180 倍
+TODO Waiting for designing
 
 ## zig naming rules
 
@@ -50,10 +28,25 @@ flags: u8 = 1 字节
 - Naming function using camelCase
 - Naming struct using PascalCase
 
+## undefined and null
+
+Diffrentiate strictly betten undefined and null
+`undefined` is a technology empty
+`null` is a business empty
+
 ### ts types
 
-- undefined: 技术空
-- null: 业务空
+- undefined: Means "This value not ready yet just because of technical reason", such as a pending request / lazy loading whatever.
+- null: Means "This value precisely can be null in the business logic", not user's optional argument, ONE OF BUSINESS VALUE IS `null`, orelse I need to define a type like
+
+```typescript
+type ParseResult<File> = Bolb | string | 'Some thing wrong with io, so it must be null! Not undefined, I have tried!'
+```
+
+### zig types
+
+- undefined: Means "This value not ready yet just because of memory layout reason".
+- null: Optional value.`var serch_result: ?usize = null;`.
 
 ## zig atomic
 
@@ -68,3 +61,11 @@ flags: u8 = 1 字节
 ### .acq_rel
 
 ### .seq_cst
+
+## todolist
+
+- [ ] Screen saver animations
+- [ ] Better event system
+- [ ] Draggable widgets
+- [ ] Custom input system
+- [ ] Frame checking at last

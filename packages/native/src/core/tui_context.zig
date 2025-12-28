@@ -5,6 +5,7 @@ const logger = @import("./logger.zig");
 const err = @import("./error.zig");
 const glo_alloc = @import("./glo_alloc.zig");
 const TuiScale = @import("./typedef.zig").TuiScale;
+const Bool = @import("./typedef.zig").Bool;
 const compile = @import("./compile.zig");
 
 pub const TuiResizeBehavior = enum(u8) {
@@ -13,11 +14,13 @@ pub const TuiResizeBehavior = enum(u8) {
 };
 
 pub const TuiContext = extern struct {
+    tick: u64,
     x: TuiScale,
     y: TuiScale,
     rows: TuiScale,
     cols: TuiScale,
     resize_behavior: TuiResizeBehavior,
+    debug_mode: Bool,
 };
 
 pub fn detectTermSize(context: *TuiContext) void {
@@ -64,8 +67,8 @@ inline fn detectWindowsTermRect(context: *TuiContext) void {
         info.dwSize.X,
         info.dwSize.Y,
     });
-    context.cols = @intCast(info.srWindow.Right + 1);
-    context.rows = @intCast(info.srWindow.Bottom + 1);
+    context.cols = @intCast(info.dwSize.X);
+    context.rows = @intCast(info.dwSize.Y);
 }
 inline fn detectPosixTermRect(context: *TuiContext) void {
     compile.assertCompileWithPosix();

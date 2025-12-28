@@ -13,25 +13,29 @@ export const TUI_WIDGET_COMPONENT_MEM_USAGE = Object.freeze({
  */
 export enum TuiWidgetComponentType {
   /**
-     * @see TuiWidgetRect
-     */
+   * @see TuiWidgetRect
+   */
   Rect = 0x00_01,
   /**
-     * @see TuiWidgetStyle
-     */
-  Style = 0x00_02,
+   * @see TuiWidgetColor
+   */
+  Color = 0x00_02,
   /**
-     * @see TuiWidgetBorder
-     */
-  Border = 0x00_04,
+   * @see TuiWidgetStyle
+   */
+  Style = 0x00_04,
   /**
-     * @see TuiWidgetShadow
-     */
-  Shadow = 0x00_08,
+   * @see TuiWidgetBorder
+   */
+  Border = 0x00_08,
   /**
-     * @see TuiWidgetText
-     */
-  Text = 0x00_10,
+   * @see TuiWidgetShadow
+   */
+  Shadow = 0x00_10,
+  /**
+   * @see TuiWidgetText
+   */
+  Text = 0x00_20,
 }
 
 /*

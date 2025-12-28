@@ -23,6 +23,15 @@ pub fn writeAllToPosAndFlush(writer: anytype, x: usize, y: usize, str: []const u
     try writer.flush();
 }
 
+pub fn writeCharToPos(writer: anytype, x: usize, y: usize, char: u16) !void {
+    try writer.print("\x1B[{d};{d}H{u}", .{ y + 1, x + 1, char });
+}
+
+pub fn writeCharToPosAndFlush(writer: anytype, x: usize, y: usize, char: u16) !void {
+    try writeCharToPos(writer, x, y, char);
+    try writer.flush();
+}
+
 pub fn print(writer: anytype, comptime fmt: []const u8, args: anytype) !void {
     try writer.print(fmt, args);
 }

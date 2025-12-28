@@ -10,12 +10,14 @@ const std_io = @import("./core/std_io.zig");
 const ansi = @import("./ansi_util.zig");
 const err = @import("./core/error.zig");
 const Io = std.Io;
+const Bool = @import("./core/typedef.zig").Bool;
 
 // ======================== app ========================
 pub export fn setupLogger(
     cdir_path: [*:0]const u8,
     clog_name: [*:0]const u8,
     log_level: logger.LOG_LEVEL,
+    clear_log: Bool,
 ) void {
     const alloc = glo_alloc.allocator();
     const dir_path = alloc.dupe(u8, std.mem.span(cdir_path)) catch {
@@ -24,7 +26,7 @@ pub export fn setupLogger(
     const log_name = alloc.dupe(u8, std.mem.span(clog_name)) catch {
         err.outOfMemory();
     };
-    return logger.load(dir_path, log_name, log_level);
+    return logger.load(dir_path, log_name, log_level, clear_log);
 }
 
 pub export fn startApp() void {
@@ -35,8 +37,8 @@ pub export fn stopApp() void {
     tui_app.stopApp();
 }
 
-pub export fn createScene() *tui_app.TuiScene {
-    return tui_app.createScene();
+pub export fn createScene(bg_rgba: ansi.style.Rgba) *tui_app.TuiScene {
+    return tui_app.createScene(bg_rgba);
 }
 
 pub export fn mountWidgetEntity(scene: *tui_app.TuiScene, widget: *TuiWidgetEntity) void {

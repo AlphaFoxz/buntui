@@ -86,8 +86,12 @@ class LoggerImpl {
       this.#logFileDir,
       options.backendLogName || 'term_bed.log',
     );
-    if (!fs.existsSync(backendLogPath) || clearLog) {
+    // TODO zig should do this
+    if (!fs.existsSync(backendLogPath)) {
       fs.writeFileSync(backendLogPath, '');
+    }
+
+    if (!fs.existsSync(this.#logFile) && clearLog) {
       fs.writeFileSync(this.#logFile, '');
     }
 

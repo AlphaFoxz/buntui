@@ -6,7 +6,7 @@ import {rgbToRgba} from '../../utils/styles';
 import type {CStruct} from '../types';
 import TuiDataViewWrapper from '../TuiDataViewWrapper';
 import {useOffsetCounter} from '../../utils/ffi';
-import {type TuiEntity} from '../widgets/TuiEntity';
+import {type TuiWidgetEntity} from '../widgets/TuiWidgetEntity';
 import {type TuiSceneOptions} from './types';
 import app from './lib';
 
@@ -21,6 +21,7 @@ export class TuiScene implements CStruct {
   readonly #ptr: Pointer;
   readonly #dataView: TuiDataViewWrapper;
   #visible: boolean;
+  readonly #widgets = new Set<TuiWidgetEntity>();
 
   constructor(options?: Partial<TuiSceneOptions>) {
     this.#id = genId();
@@ -39,14 +40,16 @@ export class TuiScene implements CStruct {
     this.#dataView = new TuiDataViewWrapper(buffer);
   }
 
-  mount(widget: TuiEntity) {
-    app.mountWidgetEntity(this.#ptr, widget.ptr);
+  mount(widget: TuiWidgetEntity) {
+    app.mountWidgetEntity(this, widget);
+    this.#widgets.add(widget);
     widget.mounted();
     return this;
   }
 
-  unmount(widget: TuiEntity) {
-    app.unmountWidgetEntity(this.#ptr, widget.ptr);
+  unmount(widget: TuiWidgetEntity) {
+    app.unmountWidgetEntity(this, widget);
+    this.#widgets.delete(widget);
     widget.unmounted();
     return this;
   }
@@ -89,6 +92,14 @@ export class TuiScene implements CStruct {
 
   setVisible(visible: boolean) {
     this.#visible = visible;
+  }
+
+  destroy() {
+    for (const widget of this.#widgets) {
+      this.unmount(widget);
+    }
+
+    app.destroyScene(this);
   }
 }
 

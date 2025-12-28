@@ -1,19 +1,5 @@
 const TuiScale = @import("../typedef.zig").TuiScale;
 
-pub const ComponentMasks = struct {
-    pub const Rect = 0x0001;
-    pub const Style = 0x0002;
-    pub const Border = 0x0004;
-    pub const Shadow = 0x0008;
-    pub const Text = 0x0010;
-};
-pub const ComponentType = extern struct {
-    value: u32,
-    pub fn has(self: ComponentType, mask: u32) bool {
-        return self.value & mask != 0;
-    }
-};
-
 pub const RectComponent = extern struct {
     x: TuiScale,
     y: TuiScale,

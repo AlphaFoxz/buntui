@@ -1,4 +1,4 @@
 export {default} from './lib';
 
-export {TuiContext} from './TuiContext';
+export {TuiContext, TUI_CONTEXT_INSTANCE} from './TuiContext';
 

@@ -4,7 +4,7 @@ import {useOffsetCounter} from '../../utils/ffi';
 import type {CStruct, Mountable} from '../types';
 import ECS_MANAGER from './EcsManager';
 import {
-  TUI_WIDGET_COMPONENT_MEM_USAGE, type TuiWidgetBorder, type TuiWidgetColor, type TuiWidgetRect, type TuiWidgetShadow,
+  TUI_WIDGET_COMPONENT_MEM_USAGE, TuiWidgetComponentType, type TuiWidgetBorder, type TuiWidgetColor, type TuiWidgetRect, type TuiWidgetShadow,
   type TuiWidgetStyle,
 } from './types';
 
@@ -39,7 +39,7 @@ const OFFSETS = Object.freeze({
 });
 export const ENTITY_MEM_USAGE = OFFSET_COUNTER.currentOffset;
 
-export abstract class TuiEntity implements CStruct, Mountable {
+export abstract class TuiWidgetEntity implements CStruct, Mountable {
   readonly #entityId: bigint;
   readonly #ptr: Pointer;
   readonly #dataView: TuiDataViewWrapper;
@@ -73,7 +73,7 @@ export abstract class TuiEntity implements CStruct, Mountable {
   protected registerRectComponent(rect: TuiWidgetRect) {
     this.#dataView.setBigUint64(OFFSETS.rect, BigInt(ECS_MANAGER.registerRectComponent(this.#entityId, rect)), true);
     const mask = this.#dataView.getUint32(OFFSETS.mask, true);
-    this.#dataView.setUint32(OFFSETS.mask, mask | TUI_WIDGET_COMPONENT_MEM_USAGE.Rect, true);
+    this.#dataView.setUint32(OFFSETS.mask, mask | TuiWidgetComponentType.Rect, true);
   }
 
   protected fetchRectComponent() {
@@ -87,7 +87,7 @@ export abstract class TuiEntity implements CStruct, Mountable {
   protected registerColorComponent(color: TuiWidgetColor) {
     this.#dataView.setBigUint64(OFFSETS.color, BigInt(ECS_MANAGER.registerColorComponent(this.#entityId, color)), true);
     const mask = this.#dataView.getUint32(OFFSETS.mask, true);
-    this.#dataView.setUint32(OFFSETS.mask, mask | TUI_WIDGET_COMPONENT_MEM_USAGE.Color, true);
+    this.#dataView.setUint32(OFFSETS.mask, mask | TuiWidgetComponentType.Color, true);
   }
 
   protected fetchColorComponent() {
@@ -101,7 +101,7 @@ export abstract class TuiEntity implements CStruct, Mountable {
   protected registerStyleComponent(style: TuiWidgetStyle) {
     this.#dataView.setBigUint64(OFFSETS.style, BigInt(ECS_MANAGER.registerStyleComponent(this.#entityId, style)), true);
     const mask = this.#dataView.getUint32(OFFSETS.mask, true);
-    this.#dataView.setUint32(OFFSETS.mask, mask | TUI_WIDGET_COMPONENT_MEM_USAGE.Style, true);
+    this.#dataView.setUint32(OFFSETS.mask, mask | TuiWidgetComponentType.Style, true);
   }
 
   protected fetchStyleComponent() {
@@ -115,7 +115,7 @@ export abstract class TuiEntity implements CStruct, Mountable {
   protected registerBorderComponent(border: TuiWidgetBorder) {
     this.#dataView.setBigUint64(OFFSETS.border, BigInt(ECS_MANAGER.registerBorderComponent(this.#entityId, border)), true);
     const mask = this.#dataView.getUint32(OFFSETS.mask, true);
-    this.#dataView.setUint32(OFFSETS.mask, mask | TUI_WIDGET_COMPONENT_MEM_USAGE.Border, true);
+    this.#dataView.setUint32(OFFSETS.mask, mask | TuiWidgetComponentType.Border, true);
   }
 
   protected fetchBorderComponent() {
@@ -129,7 +129,7 @@ export abstract class TuiEntity implements CStruct, Mountable {
   protected registerShadowComponent(shadow: TuiWidgetShadow) {
     this.#dataView.setBigUint64(OFFSETS.shadow, BigInt(ECS_MANAGER.registerShadowComponent(this.#entityId, shadow)), true);
     const mask = this.#dataView.getUint32(OFFSETS.mask, true);
-    this.#dataView.setUint32(OFFSETS.mask, mask | TUI_WIDGET_COMPONENT_MEM_USAGE.Shadow, true);
+    this.#dataView.setUint32(OFFSETS.mask, mask | TuiWidgetComponentType.Shadow, true);
   }
 
   protected fetchShadowComponent() {
@@ -142,7 +142,7 @@ export abstract class TuiEntity implements CStruct, Mountable {
 
   protected registerTextComponent() {
     const mask = this.#dataView.getUint32(OFFSETS.mask, true);
-    this.#dataView.setUint32(OFFSETS.mask, mask | TUI_WIDGET_COMPONENT_MEM_USAGE.Text, true);
+    this.#dataView.setUint32(OFFSETS.mask, mask | TuiWidgetComponentType.Text, true);
   }
 
   protected updateTextPtr(textPtr: Pointer) {

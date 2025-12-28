@@ -6,11 +6,11 @@ import type {LogLevel} from './types';
 const lib = dlopen(fetchDllPath(), {
   setupLogger: {
     returns: FFIType.void,
-    args: [FFIType.cstring, FFIType.cstring, FFIType.i32],
+    args: [FFIType.cstring, FFIType.cstring, FFIType.u8, FFIType.u8],
   },
   startApp: {returns: FFIType.void, args: []},
   stopApp: {returns: FFIType.void, args: []},
-  createScene: {returns: FFIType.pointer, args: [FFIType.u32, FFIType.u8]},
+  createScene: {returns: FFIType.pointer, args: [FFIType.u32]},
   mountWidgetEntity: {returns: FFIType.void, args: [FFIType.pointer, FFIType.pointer]},
   unmountWidgetEntity: {returns: FFIType.void, args: [FFIType.pointer, FFIType.pointer]},
   destroyScene: {returns: FFIType.void, args: [FFIType.pointer]},
@@ -19,7 +19,7 @@ const lib = dlopen(fetchDllPath(), {
 }).symbols;
 
 const expose = {
-  setupLogger(logFileDir: string, backendLogName: string, logLevel: LogLevel) {
+  setupLogger(logFileDir: string, backendLogName: string, logLevel: LogLevel, clearLog: boolean) {
     let logLvl: number;
     switch (logLevel) {
       case 'debug': {
@@ -43,28 +43,28 @@ const expose = {
       }
     }
 
-    lib.setupLogger(toCstring(logFileDir), toCstring(backendLogName), logLvl);
+    lib.setupLogger(toCstring(logFileDir), toCstring(backendLogName), logLvl, clearLog ? 1 : 0);
   },
   startApp: lib.startApp,
   stopApp: lib.stopApp,
   createScene(bgRgba: number): Pointer {
     return assertPtr(lib.createScene(bgRgba));
   },
-  mountWidgetEntity(scene: Pointer, widget: Pointer) {
-    lib.mountWidgetEntity(scene, widget);
+  mountWidgetEntity(scene: CStruct, widget: CStruct) {
+    lib.mountWidgetEntity(scene.ptr, widget.ptr);
   },
-  unmountWidgetEntity(scene: Pointer, widget: Pointer) {
-    lib.unmountWidgetEntity(scene, widget);
+  unmountWidgetEntity(scene: CStruct, widget: CStruct) {
+    lib.unmountWidgetEntity(scene.ptr, widget.ptr);
   },
-  destroyScene(scene: Pointer) {
-    lib.destroyScene(scene);
+  destroyScene(scene: CStruct) {
+    lib.destroyScene(scene.ptr);
   },
   detectTermSize(tuiContext: CStruct) {
     lib.detectTermSize(tuiContext.ptr);
   },
-  renderFrame(tuiContext: Pointer, scene: Pointer | null) {
+  renderFrame(tuiContext: CStruct, scene: CStruct | null) {
     if (scene) {
-      lib.renderFrame(tuiContext, scene);
+      lib.renderFrame(tuiContext.ptr, scene.ptr);
     }
   },
 };

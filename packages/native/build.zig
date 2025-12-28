@@ -22,14 +22,14 @@ pub fn build(b: *std.Build) void {
 
 fn createModule(
     b: *std.Build,
-    codePath: []const u8,
+    code_path: []const u8,
     target: std.Build.ResolvedTarget,
-    optimizeOpt: std.builtin.OptimizeMode,
+    optimize_opt: std.builtin.OptimizeMode,
 ) *std.Build.Module {
     return b.createModule(.{
-        .root_source_file = b.path(codePath),
+        .root_source_file = b.path(code_path),
         .target = target,
-        .optimize = optimizeOpt,
+        .optimize = optimize_opt,
     });
 }
 
@@ -37,11 +37,11 @@ fn createDependency(
     b: *std.Build,
     name: []const u8,
     target: std.Build.ResolvedTarget,
-    optimizeOpt: std.builtin.OptimizeMode,
+    optimize_opt: std.builtin.OptimizeMode,
 ) *std.Build.Module {
     const dep = b.dependency(name, .{
         .target = target,
-        .optimize = optimizeOpt,
+        .optimize = optimize_opt,
     });
     return dep.module(name);
 }

@@ -14,6 +14,7 @@ const TuiWidgetEntity = @import("./widgets/entity.zig").TuiWidgetEntity;
 
 // ======================== app ========================
 pub fn startApp() void {
+    frame.init();
     std_io.init();
     event_bus.event_bus_setup();
     const writer: *Io.Writer = &std_io.writer.interface;
@@ -32,10 +33,11 @@ pub fn stopApp() void {
     std_io.flushAll();
     frame.deinit();
     logger.logWarning("TuiApp destroyed");
+    logger.unload();
 }
 
 // ======================== scene ========================
-fn compareTuiEntity(a: *TuiWidgetEntity, b: *TuiWidgetEntity) bool {
+fn compareTuiWidgetEntity(a: *TuiWidgetEntity, b: *TuiWidgetEntity) bool {
     return a.z_index > b.z_index;
 }
 // XXX impl binary search
@@ -48,7 +50,7 @@ inline fn quickSearch(container: []*TuiWidgetEntity, target: *TuiWidgetEntity) ?
     return null;
 }
 pub const TuiScene = extern struct {
-    bg_color: Rgba,
+    bg_rgba: Rgba,
     widgets: *std.ArrayList(*TuiWidgetEntity),
     sorted: Bool = .True,
 
@@ -67,12 +69,12 @@ pub const TuiScene = extern struct {
     }
 
     pub fn sort(self: *TuiScene) void {
-        std.mem.sort(TuiWidgetEntity, self.widgets.items, .{}, compareTuiEntity);
+        std.mem.sort(TuiWidgetEntity, self.widgets.items, .{}, compareTuiWidgetEntity);
         self.sorted = .True;
     }
 };
 
-pub fn createScene() *TuiScene {
+pub fn createScene(bg_rgba: Rgba) *TuiScene {
     var alloc = glo_alloc.allocator();
     const scene = alloc.create(TuiScene) catch {
         err.outOfMemory();
@@ -84,7 +86,7 @@ pub fn createScene() *TuiScene {
         err.outOfMemory();
     };
     scene.* = TuiScene{
-        .bg_color = Rgba{ .r = 0, .g = 0, .b = 0, .a = 0xFF },
+        .bg_rgba = bg_rgba,
         .widgets = widgets,
     };
     return scene;

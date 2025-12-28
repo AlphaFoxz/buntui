@@ -1,7 +1,7 @@
 import path from 'node:path';
 import process from 'node:process';
 import {EventType} from '../events/types';
-import app, {TuiContext} from '../extern/app';
+import app, {TUI_CONTEXT_INSTANCE} from '../extern/app';
 import {type LogLevel, type TuiAppOptions, type TuiSceneOptions} from '../extern/app/types';
 import {LOGGER} from '../common/logger';
 import {EVENT_BUS} from '../events';
@@ -9,7 +9,6 @@ import TuiScene from '../extern/app/TuiScene';
 
 export class TuiApp {
   readonly #debugMode: boolean;
-  readonly #context = new TuiContext();
   #scenes: TuiScene[] = [];
   #currentScene: TuiScene | undefined = undefined;
   #running = false;
@@ -20,7 +19,7 @@ export class TuiApp {
     const backendLogName = options?.backendLogName ?? 'term_bed-backend.log';
     const frontendLogName = options?.frontendLogName ?? 'term_bed-frontend.log';
     const clearLog = options?.clearLog ?? false;
-    app.setupLogger(logFileDir, backendLogName, logLevel);
+    app.setupLogger(logFileDir, backendLogName, logLevel, clearLog);
     this.#debugMode = options?.debugMode ?? false;
     void LOGGER.init({
       logFileDir,
@@ -53,14 +52,15 @@ export class TuiApp {
     });
     app.startApp();
     EVENT_BUS.start();
-    app.detectTermSize(this.#context);
+    app.detectTermSize(TUI_CONTEXT_INSTANCE);
+    LOGGER.logInfo(`TUI_CONTEXT_INSTANCE.scale: ${TUI_CONTEXT_INSTANCE.rows} ${TUI_CONTEXT_INSTANCE.cols}`);
     this.#running = true;
     const render = () => {
       if (!this.#running) {
         return;
       }
 
-      app.renderFrame(this.#context.ptr, this.#currentScene?.ptr ?? null);
+      app.renderFrame(TUI_CONTEXT_INSTANCE, this.#currentScene ?? null);
       setImmediate(render);
     };
 
@@ -69,6 +69,7 @@ export class TuiApp {
 
   stop() {
     this.#running = false;
+    this.#currentScene?.destroy();
     app.stopApp();
     EVENT_BUS.stop();
     LOGGER.deinit();
@@ -92,6 +93,12 @@ export class TuiApp {
 
   destroyScene(scene: TuiScene | bigint) {
     const id = typeof scene === 'bigint' ? scene : scene.id;
+    const target = this.#scenes.find(s => s.id === id);
+    if (!target) {
+      return;
+    }
+
+    target.destroy();
     this.#scenes = this.#scenes.filter(s => s.id !== id);
     const leastScene = this.#scenes.at(-1);
     this.#currentScene = leastScene;

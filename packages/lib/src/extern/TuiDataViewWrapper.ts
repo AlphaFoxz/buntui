@@ -1,4 +1,5 @@
 import {type Pointer} from 'bun:ffi';
+import {Bool} from '../utils/ffi';
 
 export class TuiDataViewWrapper {
   readonly #inner: DataView;
@@ -121,7 +122,7 @@ export class TuiDataViewWrapper {
   }
 
   setBool(byteOffset: number, value: boolean) {
-    this.#inner.setUint8(byteOffset, value ? 1 : 0);
+    this.#inner.setUint8(byteOffset, value ? Bool.True : Bool.False);
   }
 
   get [Symbol.toStringTag]() {
