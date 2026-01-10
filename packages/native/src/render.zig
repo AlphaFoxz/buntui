@@ -4,6 +4,7 @@ const std_io = @import("./core/std_io.zig");
 const ansi = @import("./ansi_util.zig");
 const logger = @import("./core/logger.zig");
 const frame = @import("./render/frame.zig");
+const render_system = @import("./render/system.zig");
 const TuiScene = @import("./core/tui_app.zig").TuiScene;
 const TuiContext = @import("./core/tui_context.zig").TuiContext;
 
@@ -11,8 +12,9 @@ var buf: [64]u8 = undefined;
 pub fn renderFrame(ctx: *TuiContext, scene: *TuiScene) void {
     const next_frame = &frame.next_frame;
     const writer: *Io.Writer = &std_io.writer.interface;
-    frame.rasterization(ctx, scene);
+    frame.checkScreenSize(ctx);
     frame.dirtyTrack();
+    render_system.rasterizationSystem(scene);
 
     const dirty = frame.dirty;
     const width = next_frame.width;

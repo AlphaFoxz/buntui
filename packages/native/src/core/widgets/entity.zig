@@ -11,7 +11,7 @@ pub const WidgetEntityMasks = enum(u32) {
 
 pub const TuiWidgetEntity = extern struct {
     entity_id: u64,
-    mask: WidgetEntityMasks,
+    mask: u32,
     rect: *component.RectComponent,
     color: *component.ColorComponent,
     style: *component.StyleComponent,
@@ -20,26 +20,26 @@ pub const TuiWidgetEntity = extern struct {
     text: [*:0]const u8,
 
     pub fn isRect(self: *const TuiWidgetEntity) bool {
-        return (self.mask & WidgetEntityMasks.Rect) == WidgetEntityMasks.Rect;
+        return (self.mask & @intFromEnum(WidgetEntityMasks.Rect)) == @intFromEnum(WidgetEntityMasks.Rect);
     }
 
     pub fn isColor(self: *const TuiWidgetEntity) bool {
-        return (self.mask & WidgetEntityMasks.Color) == WidgetEntityMasks.Color;
+        return (self.mask & @intFromEnum(WidgetEntityMasks.Color)) == @intFromEnum(WidgetEntityMasks.Color);
     }
 
     pub fn isStyle(self: *const TuiWidgetEntity) bool {
-        return (self.mask & WidgetEntityMasks.Style) == WidgetEntityMasks.Style;
+        return (self.mask & @intFromEnum(WidgetEntityMasks.Style)) == @intFromEnum(WidgetEntityMasks.Style);
     }
 
     pub fn isBorder(self: *const TuiWidgetEntity) bool {
-        return (self.mask & WidgetEntityMasks.Border) == WidgetEntityMasks.Border;
+        return (self.mask & @intFromEnum(WidgetEntityMasks.Border)) == @intFromEnum(WidgetEntityMasks.Border);
     }
 
     pub fn isShadow(self: *const TuiWidgetEntity) bool {
-        return (self.mask & WidgetEntityMasks.Shadow) == WidgetEntityMasks.Shadow;
+        return (self.mask & @intFromEnum(WidgetEntityMasks.Shadow)) == @intFromEnum(WidgetEntityMasks.Shadow);
     }
 
     pub fn isText(self: *const TuiWidgetEntity) bool {
-        return (self.mask & WidgetEntityMasks.Text) == WidgetEntityMasks.Text;
+        return (self.mask & @intFromEnum(WidgetEntityMasks.Text)) == @intFromEnum(WidgetEntityMasks.Text);
     }
 };

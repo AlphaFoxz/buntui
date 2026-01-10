@@ -73,7 +73,7 @@ fn resizeFrame(frame: *TuiFrame, rows: TuiScale, cols: TuiScale) void {
     }
 }
 
-pub fn rasterization(ctx: *TuiContext, scene: *const TuiScene) void {
+pub fn checkScreenSize(ctx: *TuiContext) void {
     const size = ctx.rows * ctx.cols;
 
     if (ctx.cols != prev_frame.width or prev_frame.cells.len != size) {
@@ -81,12 +81,6 @@ pub fn rasterization(ctx: *TuiContext, scene: *const TuiScene) void {
     }
     if (ctx.cols != next_frame.width or next_frame.cells.len != size) {
         resizeFrame(&next_frame, ctx.rows, ctx.cols);
-    }
-
-    for (next_frame.cells) |*cell| {
-        if (cell.entity_id == 0) {
-            cell.bg_rgba = Rgba.fromU32(scene.bg_rgba.toU32());
-        }
     }
 }
 
