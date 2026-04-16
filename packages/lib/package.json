@@ -7,13 +7,13 @@
         "build": "bun run ./scripts/sync.ts && bun build --target=bun --production ./src/index.ts --outfile ./dist/index.bun.mjs"
     },
     "dependencies": {
-        "@vue/reactivity": "^3.5.25"
+        "@vue/reactivity": "^3.5.32"
     },
     "devDependencies": {
         "native": "workspace:*",
-        "string-width": "^8.1.0"
+        "string-width": "^8.2.0"
     },
     "peerDependencies": {
-        "typescript": "^5.9.3"
+        "typescript": "^6.0.2"
     }
 }

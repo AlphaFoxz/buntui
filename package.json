@@ -8,12 +8,12 @@
         "sync": "bun run ./scripts/sync-version.ts"
     },
     "devDependencies": {
-        "@types/bun": "^1.3.5",
-        "eslint-config-xo-typescript": "^9.0.0",
-        "xo": "^1.2.3"
+        "@types/bun": "^1.3.12",
+        "eslint-config-xo-typescript": "^11.0.0",
+        "xo": "^2.0.2"
     },
     "peerDependencies": {
-        "typescript": "^5.9.3"
+        "typescript": "^6.0.2"
     },
     "workspaces": [
         "packages/*"
