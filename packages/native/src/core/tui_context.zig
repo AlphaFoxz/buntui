@@ -8,6 +8,8 @@ const TuiScale = @import("./typedef.zig").TuiScale;
 const Bool = @import("./typedef.zig").Bool;
 const compile = @import("./compile.zig");
 
+var threaded: std.Io.Threaded = undefined;
+
 pub const TuiResizeBehavior = enum(u8) {
     Fixed = 0,
     Auto = 1,
@@ -29,6 +31,10 @@ pub fn detectTermSize(context: *TuiContext) void {
     context.rows = 35;
     context.cols = 90;
 
+    // Initialize Io instance
+    _ = std.Io.Threaded.init; // We'll use std.Io.File.stdout() directly
+    _ = threaded; // Mark as used for future use
+
     switch (builtin.os.tag) {
         .windows => {
             detectWindowsTermRect(context);
@@ -47,14 +53,34 @@ pub fn detectTermSize(context: *TuiContext) void {
     }
 }
 
+const SMALL_RECT = extern struct {
+    Left: i16,
+    Top: i16,
+    Right: i16,
+    Bottom: i16,
+};
+
+const CONSOLE_SCREEN_BUFFER_INFO = extern struct {
+    dwSize: std.os.windows.COORD,
+    dwCursorPosition: std.os.windows.COORD,
+    wAttributes: u16,
+    srWindow: SMALL_RECT,
+    dwMaximumWindowSize: std.os.windows.COORD,
+};
+
+extern "kernel32" fn GetConsoleScreenBufferInfo(
+    hConsoleOutput: ?std.os.windows.HANDLE,
+    lpConsoleScreenBufferInfo: *CONSOLE_SCREEN_BUFFER_INFO,
+) callconv(.winapi) std.os.windows.BOOL;
+
 inline fn detectWindowsTermRect(context: *TuiContext) void {
     compile.assertCompileWithWindows();
 
-    const fd = std.fs.File.stdout().handle;
-    const windows = std.os.windows;
-    var info: windows.CONSOLE_SCREEN_BUFFER_INFO = undefined;
-    if (windows.kernel32.GetConsoleScreenBufferInfo(fd, &info) != windows.TRUE) {
-        logger.logError("windows.kernel32 cannot GetConsoleScreenBufferInfo");
+    const stdout = std.Io.File.stdout();
+    const fd = stdout.handle;
+    var info: CONSOLE_SCREEN_BUFFER_INFO = undefined;
+    if (GetConsoleScreenBufferInfo(fd, &info) == .FALSE) {
+        logger.logError("GetConsoleScreenBufferInfo failed");
         return;
     }
     logger.logInfoFmt("detected console srWindow info [Top: {d} Right: {d} Bottom: {d} Left: {d}]", .{
@@ -73,7 +99,8 @@ inline fn detectWindowsTermRect(context: *TuiContext) void {
 inline fn detectPosixTermRect(context: *TuiContext) void {
     compile.assertCompileWithPosix();
 
-    const fd = std.fs.File.stdout().handle;
+    const stdout = std.Io.File.stdout();
+    const fd = stdout.handle;
     const posix = std.posix;
     var winsize: posix.winsize = .{
         .row = 0,

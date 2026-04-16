@@ -2,7 +2,7 @@ const std = @import("std");
 const meta = std.meta;
 const testing = std.testing;
 
-pub const Rgba = packed struct {
+pub const Rgba = packed struct(u32) {
     a: u8,
     b: u8,
     g: u8,

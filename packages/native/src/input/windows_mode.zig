@@ -13,6 +13,11 @@ comptime {
     }
 }
 
+extern "kernel32" fn GetStdHandle(nStdHandle: u32) callconv(.winapi) ?windows.HANDLE;
+extern "kernel32" fn SetConsoleMode(hConsoleHandle: ?windows.HANDLE, dwMode: windows.DWORD) callconv(.winapi) windows.BOOL;
+extern "kernel32" fn GetConsoleOutputCP() callconv(.winapi) windows.UINT;
+extern "kernel32" fn SetConsoleOutputCP(wCodePageID: windows.UINT) callconv(.winapi) windows.BOOL;
+
 pub const WindowsInputModeValues = struct {
     // 由 ReadFile 或 ReadConsole 函数读取的字符在键入到控制台时，将被写入到活动屏幕缓冲区。
     // 只有同时启用了 ENABLE_LINE_INPUT 模式时，才能使用此模式。
@@ -60,8 +65,8 @@ pub fn switchMouseInputMode() void {
     // const ENABLE_EXTENDED_FLAGS = 0x0080;
     // var new_mode: windows.DWORD = ENABLE_EXTENDED_FLAGS;
     var new_mode: windows.DWORD = 0;
-    const stdin_handle = windows.kernel32.GetStdHandle(@intFromEnum(STD_HANDLE.INPUT_HANDLE)).?;
-    // const stdout_handle = windows.kernel32.GetStdHandle(nSTD_OUTPUT_HANDLE).?;
+    const stdin_handle = GetStdHandle(@intFromEnum(STD_HANDLE.INPUT_HANDLE)).?;
+    // const stdout_handle = GetStdHandle(nSTD_OUTPUT_HANDLE).?;
 
     // new_mode |= WindowsInputModeValues.ENABLE_ECHO_INPUT;
     // new_mode |= WindowsInputModeValues.ENABLE_INSERT_MODE;
@@ -72,7 +77,7 @@ pub fn switchMouseInputMode() void {
     new_mode |= WindowsInputModeValues.ENABLE_WINDOW_INPUT;
     new_mode |= WindowsInputModeValues.ENABLE_VIRTUAL_TERMINAL_INPUT;
     // 设置控制台模式
-    if (windows.kernel32.SetConsoleMode(stdin_handle, new_mode) == windows.FALSE) {
+    if (SetConsoleMode(stdin_handle, new_mode) == .FALSE) {
         err.osApiError("Failed to set console mode");
     }
     current_windows_input_mode = new_mode;
@@ -80,8 +85,8 @@ pub fn switchMouseInputMode() void {
 }
 
 pub fn switchDefaultInputMode() void {
-    const stdin_handle = windows.kernel32.GetStdHandle(@intFromEnum(STD_HANDLE.INPUT_HANDLE)).?;
-    // const stdout_handle = windows.kernel32.GetStdHandle(nSTD_OUTPUT_HANDLE).?;
+    const stdin_handle = GetStdHandle(@intFromEnum(STD_HANDLE.INPUT_HANDLE)).?;
+    // const stdout_handle = GetStdHandle(nSTD_OUTPUT_HANDLE).?;
     var new_mode: windows.DWORD = 0;
     new_mode |= WindowsInputModeValues.ENABLE_ECHO_INPUT;
     new_mode |= WindowsInputModeValues.ENABLE_INSERT_MODE;
@@ -91,7 +96,7 @@ pub fn switchDefaultInputMode() void {
     new_mode |= WindowsInputModeValues.ENABLE_QUICK_EDIT_MODE;
     // new_mode |= WindowsInputModeValues.ENABLE_WINDOW_INPUT;
     // new_mode |= WindowsInputModeValues.ENABLE_VIRTUAL_TERMINAL_INPUT;
-    if (windows.kernel32.SetConsoleMode(stdin_handle, new_mode) == windows.FALSE) {
+    if (SetConsoleMode(stdin_handle, new_mode) == .FALSE) {
         err.osApiError("Failed to set console mode");
     }
     current_windows_input_mode = new_mode;
@@ -99,14 +104,14 @@ pub fn switchDefaultInputMode() void {
 }
 
 pub fn updateOutputCP2UTF8() void {
-    original_outcp = std.os.windows.kernel32.GetConsoleOutputCP();
-    if (std.os.windows.kernel32.SetConsoleOutputCP(65001) == windows.FALSE) {
+    original_outcp = GetConsoleOutputCP();
+    if (SetConsoleOutputCP(65001) == .FALSE) {
         err.osApiError("Failed to set console output code page to UTF-8");
     }
 }
 
 pub fn restoreOutputCP() void {
-    if (std.os.windows.kernel32.SetConsoleOutputCP(original_outcp) == windows.FALSE) {
+    if (SetConsoleOutputCP(original_outcp) == .FALSE) {
         err.osApiError("Failed to restore console output code page to original value");
     }
 }

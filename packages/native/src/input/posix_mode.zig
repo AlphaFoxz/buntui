@@ -8,6 +8,25 @@ comptime {
     }
 }
 
+// Stub functions for Windows-specific code page handling
+pub fn updateOutputCP2UTF8() void {
+    // POSIX systems don't need code page conversion
+}
+
+pub fn restoreOutputCP() void {
+    // POSIX systems don't need code page conversion
+}
+
+// Public functions for mode switching
+pub fn switchMouseInputMode() void {
+    // Mouse input mode is handled by the terminal
+    setAppModePosix(true) catch unreachable;
+}
+
+pub fn switchDefaultInputMode() void {
+    setAppModePosix(false) catch unreachable;
+}
+
 fn setAppModePosix(enable: bool) !void {
     const stdin_handle = std.posix.STDIN_FILENO;
 

@@ -7,16 +7,18 @@ pub fn build(b: *std.Build) void {
         // .preferred_optimize_mode = .ReleaseSmall,
     });
 
+    const root_module = b.createModule(.{
+        .root_source_file = b.path("src/lib.zig"),
+        .target = target,
+        .optimize = optimizeOpt,
+    });
+    root_module.linkSystemLibrary("c", .{});
+
     const lib = b.addLibrary(.{
         .name = "term_bed",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src/lib.zig"),
-            .target = target,
-            .optimize = optimizeOpt,
-        }),
+        .root_module = root_module,
         .linkage = .dynamic,
     });
-    lib.linkSystemLibrary("c");
     b.installArtifact(lib);
 }
 

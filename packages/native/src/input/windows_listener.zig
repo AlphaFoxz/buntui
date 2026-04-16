@@ -73,6 +73,8 @@ pub const INPUT_RECORD = extern struct {
     },
 };
 
+extern "kernel32" fn GetStdHandle(nStdHandle: u32) callconv(.winapi) ?windows.HANDLE;
+
 pub extern "kernel32" fn ReadConsoleInputW(
     hConsoleInput: ?windows.HANDLE,
     lpBuffer: [*]INPUT_RECORD,
@@ -196,7 +198,7 @@ const Parser = struct {
 
     pub fn processEvent(self: *Parser, record: KEY_EVENT_RECORD) void {
         // 1. 过滤掉按键释放事件 (通常 TUI 不需要处理 KeyUp)
-        if (record.bKeyDown == windows.FALSE) return;
+        if (record.bKeyDown == .FALSE) return;
 
         const char_code = record.uChar.UnicodeChar;
 
@@ -612,7 +614,7 @@ const Parser = struct {
 
 fn listen() void {
     logger.logInfo("input listener starting...");
-    const stdin_handle = windows.kernel32.GetStdHandle(@intFromEnum(mode.STD_HANDLE.INPUT_HANDLE)).?;
+    const stdin_handle = GetStdHandle(@intFromEnum(mode.STD_HANDLE.INPUT_HANDLE)).?;
 
     // const FOCUS_EVENT = 0x0010;
     const KEY_EVENT = 0x0001;
@@ -625,7 +627,7 @@ fn listen() void {
 
     while (!should_stop.load(.acquire)) {
         const waitResult = WaitForSingleObject(stdin_handle, 16);
-        if (waitResult != windows.WAIT_OBJECT_0) {
+        if (waitResult != 0) { // WAIT_OBJECT_0 = 0
             continue;
         }
         var input_buffer: [128]INPUT_RECORD = undefined;
@@ -635,7 +637,7 @@ fn listen() void {
             &input_buffer,
             128,
             &events_read,
-        ) == 0) {
+        ) == .FALSE) {
             logger.logError("ReadConsoleInputW failed");
             break;
         }

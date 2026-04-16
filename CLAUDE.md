@@ -4,171 +4,110 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**term-bed** is a cross-platform Terminal User Interface (TUI) framework that combines Zig (performance-critical native backend) with TypeScript (high-level API and application layer). The architecture uses FFI (Foreign Function Interface) to bridge Zig and TypeScript, leveraging Bun's native FFI capabilities.
+**term-bed** is a cross-platform Terminal User Interface (TUI) framework combining Zig (native backend) with TypeScript (high-level API). The architecture bridges the two via FFI using Bun's `dlopen()` — Zig exports C ABI functions, TypeScript consumes them through type-safe bindings.
 
-### Hybrid Architecture
+### Monorepo Structure
 
-- **packages/native/**: Zig-based rendering engine, event handling, and terminal control
-- **packages/lib/**: TypeScript framework with component-based widget system and Vue reactivity
-- **packages/playground/**: Demo application showcasing framework capabilities
-
-The Zig code exports C-compatible functions that are consumed by TypeScript via Bun's `dlopen()` FFI, creating a seamless boundary between performance-critical operations and developer-friendly API.
+- **packages/native/** — Zig rendering engine, event handling, terminal control (compiled to shared library)
+- **packages/lib/** — TypeScript framework with ECS-based widget system and Vue reactivity
+- **packages/playground/** — Demo application
 
 ## Development Commands
 
-### Building the Project
-
-The build system uses topological sorting to handle inter-package dependencies:
-
 ```bash
-# Build all packages in dependency order
-bun run build
-
-# Build individual packages
-bun run --cwd ./packages/native build    # Zig build via `zig build`
-bun run --cwd ./packages/lib build        # TypeScript build with version sync
-bun run --cwd ./packages/playground build # TypeScript build with version sync
+bun run build                                    # Build all packages in dependency order (sync → native → lib → playground)
+bun run --cwd ./packages/native build            # zig build only
+bun run --cwd ./packages/lib build               # Sync native binary + build TS
+bun run --cwd ./packages/playground build        # Sync native binary + build TS
+bun run dev                                      # Run playground demo (bun run ./main.ts)
+bun run --cwd ./packages/lib test                # Run tests (bun test)
+bun run sync                                     # Propagate root version to all packages
 ```
 
-The root `build` command runs version sync first, then executes `scripts/build.ts` which:
-1. Scans all packages in `packages/`
-2. Builds a dependency graph from package.json dependencies
-3. Topologically sorts packages
-4. Runs `bun run build` in each package in dependency order
+There is no dedicated lint command in package.json. XO is a devDependency for programmatic use.
 
-### Development
+### Build Pipeline
 
-```bash
-# Run the playground demo application
-bun run dev
+1. `scripts/sync-version.ts` propagates root `version` to all workspace `package.json` files
+2. `scripts/build.ts` topologically sorts packages by their dependencies and runs `bun run build` in each
+3. The `lib` and `playground` sync scripts (`scripts/sync.ts`) copy the compiled native binary from `packages/native/zig-out/bin/` to their own directories (`.dll`/`.dylib`/`.so` + `.pdb`)
 
-# Run tests in the lib package
-bun run --cwd ./packages/lib test
+### Native Build
 
-# Synchronize versions across all packages
-bun run sync
-```
+The `native` package uses `zig build` (`build.zig`). It produces a shared library (`term_bed.dll`/`.dylib`/`.so`) in `zig-out/bin/`. Default optimization is `Debug`.
 
-### Linting
-
-The project uses **XO** with TypeScript configuration. See `xo.config.ts` for rules.
-
-## Architecture Patterns
+## Architecture
 
 ### Zig/TypeScript FFI Boundary
 
-**Native exports (Zig)** are C ABI compatible functions defined in `packages/native/src/`:
-- Terminal control and ANSI escape sequences
-- Event system (keyboard, mouse, wheel events)
-- Rasterization and frame buffering
-- Memory management
+**Zig side** (`packages/native/src/lib.zig`): All exports are `pub export fn` with C ABI compatibility. Exports cover:
+- App lifecycle: `startApp`, `stopApp`, `createScene`, `destroyScene`
+- Widget management: `mountWidgetEntity`, `unmountWidgetEntity`
+- Rendering: `renderFrame`, `detectTermSize`
+- Event bus: `event_bus_setup`, `event_bus_emit`, `event_bus_poll`, `event_bus_commit`
+- ANSI helpers: `resetStyle`, `showCursor`, `hideCursor`, `clearScreen`, `drawText`
 
-**TypeScript bindings** use Bun's FFI:
-```typescript
-const lib = dlopen(fetchDllPath(), {
-  renderFrame: {returns: FFIType.void, args: [FFIType.pointer, FFIType.pointer]},
-  event_bus_emit: {returns: FFIType.c_int, args: [FFIType.u16, FFIType.cstring, FFIType.usize]},
-});
-```
+**TypeScript side** (`packages/lib/src/extern/`): Bun FFI bindings via `dlopen()`:
+- `extern/app/lib.ts` — App lifecycle, scene, and render FFI bindings
+- `extern/events.ts` — Event bus FFI bindings
+- `extern/TuiDataViewWrapper.ts` — Safe DataView wrapper for FFI memory access (required by XO lint rules over native `DataView`)
 
-The FFI bindings are typically in `packages/lib/src/extern/` and handle:
-- Loading the native library (DLL/dylib/so)
-- Type safety between Zig and TypeScript
-- Memory management across the boundary
+The FFI type mapping uses branded types from `global.d.ts` (`U8`, `U16`, `U32`, `I8`, `I16`, `I32`, `BOOL`, etc.) to represent C numeric types in TypeScript.
+
+### Event System
+
+The event bus (`packages/native/src/core/event_bus.zig`) is a lock-free SPSC ring queue:
+- Fixed-size slots (256 bytes each), 1024-slot ring buffer
+- 12-byte binary header per event: `event_type` (u32) + `payload_len` (u32) + `sequence` (u64)
+- Flow: `emit` → `poll` → `commit` (single-producer on Zig side, single-consumer on TS side)
+- Event payloads are JSON strings emitted by input handlers, deserialized on the TS side
+- Event types: `KeyboardEvent` (1), `MouseEvent` (2), `WheelEvent` (3) — matching Web API signatures
 
 ### Component System (TypeScript)
 
-The framework uses an Entity-Component-System (ECS) pattern:
-
-- **TuiApp**: Main application controller in `packages/lib/src/app/`
-- **TuiScene**: Scene containers for organizing widgets
-- **Widgets**: Reusable UI components in `packages/lib/src/widgets/`
-- **Event Bus**: Reactive event system in `packages/lib/src/events/`
-
-State management uses **Vue's reactivity system** (`@vue/reactivity`) integrated with a custom event bus for type-safe event handling.
+Entity-Component-System pattern:
+- **TuiWidgetEntity**: Base entity in `packages/lib/src/extern/widgets/`
+- **Components**: Rect, Color, Style, Border, Shadow, Text attached to entities
+- **TuiScene**: Widget container with mount/unmount lifecycle
+- **TuiApp**: Application controller managing scenes and render loop
+- State uses **Vue reactivity** (`@vue/reactivity`)
 
 ### Rendering Pipeline (Zig)
 
-The native rendering engine in `packages/native/src/render/` implements:
-- **Double Buffering**: Separate current and next frame buffers
-- **Dirty Tracking**: Only redraws changed characters for performance
-- **ANSI-based Rendering**: Terminal output via escape sequences
-- **Rasterization**: Character-based rendering with efficient diffing
+`packages/native/src/render/` implements:
+- Double buffering with dirty tracking (only redraw changed characters)
+- ANSI escape sequence rendering
+- Platform-specific input in `packages/native/src/input/`: separate POSIX and Windows implementations
 
-Event handling in `packages/native/src/input/` manages keyboard, mouse, and wheel events with an efficient pooling mechanism.
+### Zig 0.16 Windows API Notes
+
+Zig 0.16 removed many Win32 console wrappers from `std.os.windows.kernel32` (e.g., `GetStdHandle`, `SetConsoleMode`, `GetConsoleScreenBufferInfo`) and types like `CONSOLE_SCREEN_BUFFER_INFO`, `WAIT_OBJECT_0`. The `BOOL` type changed from an integer to an enum — compare with `.FALSE` instead of `windows.FALSE` or integer 0.
+
+When new Win32 functions are needed, declare them directly as `extern "kernel32"` (matching the existing pattern for `ReadConsoleInputW` and `WaitForSingleObject` in `windows_listener.zig`).
 
 ## Coding Conventions
 
 ### Zig Naming Rules
 
-From `README.md` - strictly enforced:
-- **Functions**: camelCase with paired lifecycle methods
-  - `createObject()` / `destroyObject()`
-  - `initSource()` / `deinitSource()`
-  - `openStreaming()` / `closeStreaming()`
-  - `connect()` / `disconnect()`
-  - `lock()` / `unlock()`
-  - `allocOne()` / `freeArr()` / `destroyOne()`
-  - `register()` / `unregister()`
-  - `load()` / `unload()`
-  - `start()` / `stop()`
-  - `enter()` / `exit()`
+Strictly enforced (from README.md):
+- **Functions**: camelCase with **paired lifecycle methods**: `create`/`destroy`, `init`/`deinit`, `open`/`close`, `start`/`stop`, `enter`/`exit`, `lock`/`unlock`, `register`/`unregister`, `load`/`unload`, `alloc`/`free`
 - **Local variables**: snake_case
 - **Global variables**: SCREAMING_SNAKE_CASE
 - **Structs**: PascalCase
 
-### TypeScript/Null Philosophy
+### TypeScript Null Philosophy
 
-From `README.md` - strict differentiation:
-- **`undefined`**: Technical absence (pending requests, lazy loading, not ready yet due to technical reasons)
-- **`null`**: Business logic null value (explicitly part of the domain model)
+Strict differentiation (from README.md):
+- **`undefined`**: Technical absence — value not ready due to technical reasons (pending request, lazy loading)
+- **`null`**: Business logic null — explicitly part of the domain model
 
 ### XO Linting Rules
 
 Key rules from `xo.config.ts`:
-- Use `Uint8Array` instead of `Buffer`
-- Use `Record<string, unknown>` instead of `object` type
-- Use `TuiDataViewWrapper` instead of `DataView` (FFI safety)
-- camelCase or UPPER_CASE for variables (underscores allowed)
-- Flexible filename casing: kebab-case, camelCase, or PascalCase
-
-## Build System Details
-
-### Native Package Build
-
-The `native` package uses Zig's build system (`zig build`). The compiled binary output is placed in `zig-out/` and must be loadable by Bun's FFI.
-
-### Library Sync Scripts
-
-Both `lib` and `playground` packages have a sync step:
-```bash
-bun run ./scripts/sync.ts  # Sync versions or generated files
-```
-
-The root `sync` command (`scripts/sync-version.ts`) propagates the root package version to all workspace packages to maintain version consistency.
-
-## Memory Management
-
-- **Zig**: Uses RAII patterns with explicit paired create/destroy functions
-- **TypeScript**: Reference counting for FFI objects to manage native memory lifecycle
-- **Custom Allocators**: Global allocator in Zig for predictable memory behavior
-
-## Testing
-
-Tests are located in `packages/lib/` and run via:
-```bash
-bun run --cwd ./packages/lib test
-```
-
-The project uses Bun's built-in test runner (`bun test`).
-
-## Key Files Reference
-
-- **Root scripts**: Build automation and version synchronization
-- **global.d.ts**: Shared TypeScript declarations
-- **xo.config.ts**: Linting configuration with FFI safety rules
-- **packages/native/src/lib.zig**: Native exports and FFI interface
-- **packages/lib/src/extern/**: FFI bindings and native library loading
-- **packages/lib/src/app/**: TuiApp and scene management
-- **packages/lib/src/events/**: Event bus and event types
-- **packages/lib/src/widgets/**: Widget components
+- `Uint8Array` instead of `Buffer`
+- `Record<string, unknown>` instead of `object`
+- `TuiDataViewWrapper` instead of `DataView` (FFI safety)
+- camelCase or UPPER_CASE for variables
+- Filenames: kebab-case, camelCase, or PascalCase all allowed
+- 2-space indentation
+- Bitwise operators allowed (`no-bitwise: off`)

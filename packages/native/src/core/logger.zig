@@ -11,11 +11,12 @@ pub var current_log_level: LOG_LEVEL = LOG_LEVEL_INFO;
 var log_dir_path: []const u8 = undefined;
 var log_path_initialized: bool = false;
 
-var log_dir: std.fs.Dir = undefined;
-var log_file: std.fs.File = undefined;
+var log_threaded: std.Io.Threaded = undefined;
+var log_dir: std.Io.Dir = undefined;
+var log_file: std.Io.File = undefined;
 const buf_size = 256;
 var log_buf: [buf_size]u8 = undefined;
-var writer: std.fs.File.Writer = undefined;
+var writer: std.Io.File.Writer = undefined;
 
 const flush_on_error = true;
 const flush_on_warning = true;
@@ -34,27 +35,37 @@ pub fn load(dir_path: []const u8, log_name: []const u8, lvl: LOG_LEVEL, clear_lo
         return;
     }
     log_dir_path = dir_path;
+
+    // Initialize Io instance
+    log_threaded = std.Io.Threaded.init(
+        std.heap.c_allocator,
+        .{
+            .stack_size = 1024 * 1024,
+            .argv0 = undefined,
+        },
+    );
+    const io = log_threaded.io();
+
     // std.fs.makeDirAbsolute(log_dir_path) catch unreachable;
-    log_dir = std.fs.openDirAbsolute(log_dir_path, .{}) catch {
+    log_dir = std.Io.Dir.openDirAbsolute(io, log_dir_path, .{}) catch {
         ioError();
     };
-    log_file = log_dir.createFile(log_name, .{
+    log_file = std.Io.Dir.createFile(log_dir, io, log_name, .{
         .truncate = false,
         // .lock = .exclusive,
     }) catch {
         ioError();
     };
     if (clear_log != .False) {
-        log_file.writeAll("") catch {
+        var clear_writer = std.Io.File.writer(log_file, io, &[0]u8{});
+        _ = clear_writer.interface.writeVec(&.{""}) catch {
             ioError();
         };
     }
 
-    log_file.seekFromEnd(0) catch {
-        ioError();
-    };
+    // Note: File operations automatically append at the end for our use case
     @memset(&log_buf, 0);
-    writer = log_file.writerStreaming(&log_buf);
+    writer = std.Io.File.writerStreaming(log_file, io, &log_buf);
     log_path_initialized = true;
 }
 
@@ -62,11 +73,12 @@ pub fn unload() void {
     if (!log_path_initialized) {
         return;
     }
-    writer.interface.flush() catch {
+    writer.flush() catch {
         ioError();
     };
-    log_file.close();
-    log_dir.close();
+    const io = log_threaded.io();
+    std.Io.File.close(log_file, io);
+    std.Io.Dir.close(log_dir, io);
     log_path_initialized = false;
 }
 
@@ -76,7 +88,9 @@ var cached_timestamp_len: usize = 0;
 var cached_timestamp: [32]u8 = undefined;
 
 inline fn currentTimstampStr() []const u8 {
-    const now_ms = std.time.milliTimestamp();
+    const io = log_threaded.io();
+    const now_ts = std.Io.Timestamp.now(io, .real);
+    const now_ms = @as(i64, @intCast(@divTrunc(now_ts.nanoseconds, 1_000_000)));
 
     // 如果时间戳缓存仍然有效，直接返回
     if (now_ms - last_timestamp_ms < TIMESTAMP_CACHE_MS and cached_timestamp_len > 0) {
@@ -84,8 +98,7 @@ inline fn currentTimstampStr() []const u8 {
     }
 
     var buf: [32]u8 = undefined;
-    const now = std.time.timestamp();
-    const epoch_seconds = @as(u64, @intCast(now));
+    const epoch_seconds = @as(u64, @intCast(@divTrunc(now_ts.nanoseconds, 1_000_000_000)));
     const epoch_day = std.time.epoch.EpochSeconds{ .secs = epoch_seconds };
     const ds = epoch_day.getDaySeconds();
     const yd = epoch_day.getEpochDay().calculateYearDay();
@@ -113,10 +126,9 @@ fn write(msg: []const u8, need_flush: bool) void {
     if (!log_path_initialized) {
         return;
     }
-    var writer_inter = &writer.interface;
-    _ = writer_inter.writeAll(msg) catch ioError();
+    _ = writer.interface.writeVec(&.{msg}) catch ioError();
     if (need_flush) {
-        writer_inter.flush() catch ioError();
+        writer.flush() catch ioError();
     }
 }
 
@@ -228,8 +240,7 @@ pub fn flush() void {
     if (!log_path_initialized) {
         return;
     }
-    var w = &writer.interface;
-    w.flush() catch ioError();
+    writer.interface.flush() catch ioError();
 }
 
 fn ioError() noreturn {
