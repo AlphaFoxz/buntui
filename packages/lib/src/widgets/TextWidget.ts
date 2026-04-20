@@ -9,12 +9,12 @@ import type {
 } from '../extern/widgets/types';
 import {TuiWidgetEntity} from '../extern/widgets/TuiWidgetEntity';
 
-export type TextWidgetOptions = TuiWidgetRect &
-	TuiWidgetColor &
-	TuiWidgetStyle &
-	TuiWidgetBorder &
-	TuiWidgetShadow &
-	TuiWidgetText;
+export type TextWidgetOptions = TuiWidgetRect
+	& TuiWidgetColor
+	& TuiWidgetStyle
+	& TuiWidgetBorder
+	& TuiWidgetShadow
+	& TuiWidgetText;
 
 export class TextWidget extends TuiWidgetEntity {
   #text: string;

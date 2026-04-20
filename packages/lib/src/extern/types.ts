@@ -21,16 +21,16 @@ export type Mountable = {
   unmounted(): void;
 };
 
-export type DataType =
-	| 'u8'
-	| 'i8'
-	| 'u16'
-	| 'i16'
-	| 'u32'
-	| 'i32'
-	| 'u64'
-	| 'i64'
-	| 'f32'
-	| 'f64'
-	| 'pointer'
-	| 'bool';
+export type DataType
+  = | 'u8'
+  	| 'i8'
+  	| 'u16'
+  	| 'i16'
+  	| 'u32'
+  	| 'i32'
+  	| 'u64'
+  	| 'i64'
+  	| 'f32'
+  	| 'f64'
+  	| 'pointer'
+  	| 'bool';

@@ -111,3 +111,37 @@ Key rules from `xo.config.ts`:
 - Filenames: kebab-case, camelCase, or PascalCase all allowed
 - 2-space indentation
 - Bitwise operators allowed (`no-bitwise: off`)
+
+## Issue Tracking
+
+This project uses GitHub Issues + Milestones for tracking. Use `gh` CLI to stay in sync.
+
+**Labels:** `P0` (blocking), `P1` (architecture), `P2` (code quality), `P3` (test coverage), `native`, `lib`, `roadmap`
+
+**Milestones:**
+
+- Phase 0 — Make the core work
+- Phase 1 — Cross-platform support
+- Phase 2 — Widget library
+- Phase 3 — Reactive binding layer
+- Phase 4 — Declarative API (SFC)
+- Phase 5 — Ecosystem
+- Triage — Issues to prioritize
+
+### Sync workflow
+
+When discovering a new bug or design issue: create an issue via `gh issue create` with appropriate `--label` and `--milestone`. When fixing an issue: close it via `gh issue close`. Issue content should be bilingual (English first, Chinese after a `---` separator).
+
+```bash
+# Check current issues
+gh issue list --state open
+
+# Check issues by milestone
+gh issue list --milestone "Phase 0 — Make the core work"
+
+# Create a new issue
+gh issue create --title "..." --label "P0,native" --milestone "Phase 0 — Make the core work"
+
+# Close after fix
+gh issue close <number>
+```

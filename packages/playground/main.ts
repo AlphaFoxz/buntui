@@ -17,7 +17,7 @@ scene
   // .mount(widgets.createText({
   //   rectX: 0,
   //   rectY: 2,
-  //   text: 'Press Ctrl+C to exit.',
+  //   text: 'Press Q to exit.',
   // }));
   .mount(widgets.createFrameRateWatcher());
 
