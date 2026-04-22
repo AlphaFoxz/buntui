@@ -22,7 +22,7 @@ This document defines the protocol for Zig/TypeScript FFI communication. All cha
 
 ## Memory Alignment Rules
 
-`useOffsetCounter` (packages/lib/src/utils/ffi.ts) computes struct layout offsets:
+`useOffsetCounter` (packages/core/src/utils/ffi.ts) computes struct layout offsets:
 - Each field's alignment = `min(fieldSize, pointerSize)` where pointerSize = 8 on 64-bit
 - Padding is inserted before each field to satisfy alignment
 - The total struct size is the sum of all fields + padding
@@ -32,12 +32,12 @@ When adding fields to FFI structs, always verify the TS offset matches the Zig `
 ## String Transfer
 
 ### TS -> Zig
-- Use `toCstring()` (packages/lib/src/utils/ffi.ts) to convert a JS string to a null-terminated `Uint8Array`
+- Use `toCstring()` (packages/core/src/utils/ffi.ts) to convert a JS string to a null-terminated `Uint8Array`
 - Zig receives as `[*:0]const u8`, read with `std.mem.span(cstr)`
 
 ### Zig -> TS
 - Use `CString` from `bun:ffi` to read back: `new CString(ptr, 0, length).toString()`
-- Helper: `cToString(ptr, length)` in packages/lib/src/utils/ffi.ts
+- Helper: `cToString(ptr, length)` in packages/core/src/utils/ffi.ts
 
 ## Pointer Transfer
 
@@ -60,7 +60,7 @@ Total: 16 bytes. The TS side must read a full 16-byte header.
 
 1. Implement the actual logic in the appropriate Zig module under `packages/native/src/`
 2. Add a thin `pub export fn` wrapper in `packages/native/src/lib.zig` that delegates to the module
-3. Add the FFI binding in the corresponding TS file under `packages/lib/src/extern/`
+3. Add the FFI binding in the corresponding TS file under `packages/core/src/extern/`
 4. Ensure the `args` and `returns` FFIType exactly match the Zig signature
 5. Wrap pointer returns with `assertPtr()`
 

@@ -1,15 +1,25 @@
-# Readme
+# README
 
-## About rasterization
+## 目标
 
-TODO Waiting for designing
+- 一个很cool的terminal ui框架
+- 让用户像使用 vite + vue 一样使用本框架（vite + term-bed）。
+  - 提供热重载
+  - 提供多种内置widget
+  - 用户通过编写 .vue 文件可轻松编排layout
+  - 提供@click、@drag、@keydown等事件
+  - 用户在script标签中写的ts代码为node环境的代码、可轻松执行本地命令、访问本地资源
+- 将一些操作系统的体验也融入进来
+  - 提供窗口概念、最大化最小化
+  - 提供场景概念、切换场景
+- 打包产物为 bun 引擎可直接运行的mjs文件
 
-## zig naming rules
+## zig 命名规则
 
-### functions
+### 函数
 
-- Use camelCase
-- **A APPLYING FUNCTION MUST BE PAIRED TO A RELEASING FUNCTION**. Such as:
+- 使用 camelCase
+- **申请资源必须和释放资源一一对应**. 比如：
   - `create`Object() and `destroy`Object()
   - `init`Source() and `deinit`Source()
   - `open`Streaming() and `close`Streaming()
@@ -21,51 +31,37 @@ TODO Waiting for designing
   - `start`() and `stop`()
   - `enter`() and `exit`()
 
-### variables
+### 变量
 
-- Naming local variables using snake_case
-- Naming global variables using SCREAMING_SNAKE_CASE
-- Naming function using camelCase
-- Naming struct using PascalCase
+- 局部变量使用 snake_case
+- 全局变量使用 SCREAMING_SNAKE_CASE
+- 函数使用 camelCase
+- 结构体使用 PascalCase
 
-## undefined and null
+## undefined 和 null
 
-Diffrentiate strictly betten undefined and null
-`undefined` is a technology empty
-`null` is a business empty
+严格区分undefined 和 null
+`undefined` 是技术上的空
+`null` 是业务逻辑上的空
 
-### ts types
+### ts 类型
 
-- undefined: Means "This value not ready yet just because of technical reason", such as a pending request / lazy loading whatever.
-- null: Means "This value precisely can be null in the business logic", not user's optional argument, ONE OF BUSINESS VALUE IS `null`, orelse I need to define a type like
+- undefined: 意味着“这个值仅仅是因为技术原因，现在还没有准备好”，比如一个处于pending状态的请求/懒加载之类的
+- null: 意味着“这个值是业务逻辑上的空”，也许用户甚至直接可以把这个值设置为空，这个业务的值本身就可以是`null`。这个null是不常见但必要的，如果没有这个空我就要定义下面这一坨东西了
 
 ```typescript
-type ParseResult<File> = Bolb | string | 'Some thing wrong with io, so it must be null! Not undefined, I have tried!'
+type ParseResult<File> = Bolb | object | 'IO错误了所以Result是空，注意不是undefined，我已经尽最大努力尝试过了'
 ```
 
-### zig types
+### zig 类型
 
-- undefined: Means "This value not ready yet just because of memory layout reason".
-- null: Optional value.`var serch_result: ?usize = null;`.
+- undefined: 意味着“仅仅是因为初始化未准备好，所这个值还没有准备好”
+- null: 可选值：`var serch_result: ?usize = null;`
 
-## zig atomic
+## 待办列表
 
-### .unordered
-
-### .monotonic
-
-### .acquire
-
-### .release
-
-### .acq_rel
-
-### .seq_cst
-
-## todolist
-
-- [ ] Screen saver animations
-- [ ] Better event system
-- [ ] Draggable widgets
-- [ ] Custom input system
-- [ ] Frame checking at last
+- [ ] 屏保动画
+- [ ] 更好的事件系统
+- [ ] 可拖拽的组件
+- [ ] 自定义热键
+- [ ] 帧率检查

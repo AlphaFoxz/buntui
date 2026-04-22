@@ -9,18 +9,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Monorepo Structure
 
 - **packages/native/** — Zig rendering engine, event handling, terminal control (compiled to shared library)
-- **packages/lib/** — TypeScript framework with ECS-based widget system and Vue reactivity
-- **packages/playground/** — Demo application
+- **packages/core/** — TypeScript runtime framework with ECS-based widget system and Vue reactivity
+- **packages/compiler/** — SFC compiler using Vue compiler-core for template/script compilation
+- **packages/playground/** — Demo application (`bun run dev`)
+
+### Compiler Pipeline
+
+The compiler transforms `.vue` SFC files into TUI TypeScript modules:
+
+1. **parse** (`compiler/src/parse.ts`) — Parses SFC source into blocks (template, script, scriptSetup) via `@vue/compiler-sfc`
+2. **analyzeBindings** (`compiler/src/script/analyzeBindings.ts`) — Extracts reactive bindings from `<script setup>`
+3. **transform** (`compiler/src/template/transform.ts`) — Converts template AST to TUI render tree
+4. **generate** (`compiler/src/template/codegen.ts`) — Emits TypeScript module code from the render tree
+
+The compile entry point (`compiler/src/compile.ts`) orchestrates: parse → analyze script → transform template → codegen.
 
 ## Development Commands
 
 ```bash
-bun run build                                    # Build all packages in dependency order (sync → native → lib → playground)
+bun run build                                    # Build all packages in dependency order (sync → native → core → compiler → playground)
 bun run --cwd ./packages/native build            # zig build only
-bun run --cwd ./packages/lib build               # Sync native binary + build TS
+bun run --cwd ./packages/core build              # Sync native binary + build TS
+bun run --cwd ./packages/compiler build          # Build SFC compiler
 bun run --cwd ./packages/playground build        # Sync native binary + build TS
 bun run dev                                      # Run playground demo (bun run ./main.ts)
-bun run --cwd ./packages/lib test                # Run tests (bun test)
+bun run --cwd ./packages/core test               # Run all core tests
+bun test packages/core/src/some/__tests__/file.test.ts  # Run a single test
 bun run sync                                     # Propagate root version to all packages
 ```
 
@@ -30,7 +44,7 @@ There is no dedicated lint command in package.json. XO is a devDependency for pr
 
 1. `scripts/sync-version.ts` propagates root `version` to all workspace `package.json` files
 2. `scripts/build.ts` topologically sorts packages by their dependencies and runs `bun run build` in each
-3. The `lib` and `playground` sync scripts (`scripts/sync.ts`) copy the compiled native binary from `packages/native/zig-out/bin/` to their own directories (`.dll`/`.dylib`/`.so` + `.pdb`)
+3. The `core` sync script (`packages/core/scripts/sync.ts`) copies the native binary to `packages/core/src/utils/`; the `playground` sync script (`packages/playground/scripts/sync.ts`) copies it to `packages/playground/`
 
 ### Native Build
 
@@ -41,13 +55,13 @@ The `native` package uses `zig build` (`build.zig`). It produces a shared librar
 ### Zig/TypeScript FFI Boundary
 
 **Zig side** (`packages/native/src/lib.zig`): All exports are `pub export fn` with C ABI compatibility. Exports cover:
-- App lifecycle: `startApp`, `stopApp`, `createScene`, `destroyScene`
+- App lifecycle: `setupLogger`, `startApp`, `stopApp`, `createScene`, `destroyScene`
 - Widget management: `mountWidgetEntity`, `unmountWidgetEntity`
 - Rendering: `renderFrame`, `detectTermSize`
-- Event bus: `event_bus_setup`, `event_bus_emit`, `event_bus_poll`, `event_bus_commit`
+- Event bus: `event_bus_setup`, `event_bus_emit`, `event_bus_poll`, `event_bus_commit`, `event_bus_stats`
 - ANSI helpers: `resetStyle`, `showCursor`, `hideCursor`, `clearScreen`, `drawText`
 
-**TypeScript side** (`packages/lib/src/extern/`): Bun FFI bindings via `dlopen()`:
+**TypeScript side** (`packages/core/src/extern/`): Bun FFI bindings via `dlopen()`:
 - `extern/app/lib.ts` — App lifecycle, scene, and render FFI bindings
 - `extern/events.ts` — Event bus FFI bindings
 - `extern/TuiDataViewWrapper.ts` — Safe DataView wrapper for FFI memory access (required by XO lint rules over native `DataView`)
@@ -58,15 +72,16 @@ The FFI type mapping uses branded types from `global.d.ts` (`U8`, `U16`, `U32`, 
 
 The event bus (`packages/native/src/core/event_bus.zig`) is a lock-free SPSC ring queue:
 - Fixed-size slots (256 bytes each), 1024-slot ring buffer
-- 12-byte binary header per event: `event_type` (u32) + `payload_len` (u32) + `sequence` (u64)
+- 16-byte binary header per event: `event_type` (u32) + `payload_len` (u32) + `sequence` (u64)
 - Flow: `emit` → `poll` → `commit` (single-producer on Zig side, single-consumer on TS side)
 - Event payloads are JSON strings emitted by input handlers, deserialized on the TS side
 - Event types: `KeyboardEvent` (1), `MouseEvent` (2), `WheelEvent` (3) — matching Web API signatures
+- Note: `event_bus_emit` FFI takes `u16` for event_type, but `EventHeader` stores it as `u32` (widened on write)
 
 ### Component System (TypeScript)
 
 Entity-Component-System pattern:
-- **TuiWidgetEntity**: Base entity in `packages/lib/src/extern/widgets/`
+- **TuiWidgetEntity**: Base entity in `packages/core/src/extern/widgets/`
 - **Components**: Rect, Color, Style, Border, Shadow, Text attached to entities
 - **TuiScene**: Widget container with mount/unmount lifecycle
 - **TuiApp**: Application controller managing scenes and render loop
@@ -82,6 +97,8 @@ Entity-Component-System pattern:
 ### Zig 0.16 Windows API Notes
 
 Zig 0.16 removed many Win32 console wrappers from `std.os.windows.kernel32` (e.g., `GetStdHandle`, `SetConsoleMode`, `GetConsoleScreenBufferInfo`) and types like `CONSOLE_SCREEN_BUFFER_INFO`, `WAIT_OBJECT_0`. The `BOOL` type changed from an integer to an enum — compare with `.FALSE` instead of `windows.FALSE` or integer 0.
+
+The project defines a custom `Bool` type in `core/typedef.zig` as `enum(u8) { False = 0, True = 1 }` — use `.False`/`.True` for comparison, not integer literals. This is separate from the Win32 `BOOL`.
 
 When new Win32 functions are needed, declare them directly as `extern "kernel32"` (matching the existing pattern for `ReadConsoleInputW` and `WaitForSingleObject` in `windows_listener.zig`).
 
@@ -116,7 +133,7 @@ Key rules from `xo.config.ts`:
 
 This project uses GitHub Issues + Milestones for tracking. Use `gh` CLI to stay in sync.
 
-**Labels:** `P0` (blocking), `P1` (architecture), `P2` (code quality), `P3` (test coverage), `native`, `lib`, `roadmap`
+**Labels:** `P0` (blocking), `P1` (architecture), `P2` (code quality), `P3` (test coverage), `native`, `core`, `compiler`, `roadmap`
 
 **Milestones:**
 

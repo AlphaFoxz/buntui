@@ -30,7 +30,7 @@ type Mountable = {
 
 ## ECS Manager
 
-`ECS_MANAGER` (packages/lib/src/extern/widgets/EcsManager.ts) is a global singleton that manages entity IDs and component storage.
+`ECS_MANAGER` (packages/core/src/extern/widgets/EcsManager.ts) is a global singleton that manages entity IDs and component storage.
 
 Key methods:
 - `createEntity(): bigint` - returns a unique entity ID
@@ -42,7 +42,7 @@ Each component type has its own register/fetch/update methods following the same
 
 ## TuiWidgetEntity
 
-Base abstract class (packages/lib/src/extern/widgets/TuiWidgetEntity.ts).
+Base abstract class (packages/core/src/extern/widgets/TuiWidgetEntity.ts).
 
 All widget entities:
 1. Inherit from `TuiWidgetEntity`
@@ -133,7 +133,7 @@ protected updateRectComponent(rect: Partial<TuiWidgetRect>) {
 
 ## Adding a New Component Type
 
-1. Define the TS type in `packages/lib/src/extern/widgets/types.ts`
+1. Define the TS type in `packages/core/src/extern/widgets/types.ts`
 2. Add size to `TUI_WIDGET_COMPONENT_MEM_USAGE`
 3. Add a new `TuiWidgetComponentType` enum value (next power of 2)
 4. Add register/fetch/update methods to `EcsManager`

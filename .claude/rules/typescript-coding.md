@@ -1,6 +1,6 @@
 # TypeScript Coding Rules
 
-Rules for writing TypeScript code in packages/lib/ and packages/playground/.
+Rules for writing TypeScript code in packages/core/, packages/compiler/, and packages/playground/.
 
 ## XO Lint Restrictions
 
@@ -111,7 +111,7 @@ class KeyboardEvent {
 
 See `events/types.ts` for existing event classes. All event types should match the Web API signatures (MDN).
 
-## Utility Functions (packages/lib/src/utils/ffi.ts)
+## Utility Functions (packages/core/src/utils/ffi.ts)
 
 - `fetchDllPath()` - resolves the native library path
 - `assertPtr(ptr)` - validates FFI pointer, throws if null/undefined

@@ -8,7 +8,8 @@ bun run build
 
 # Build individual packages
 bun run --cwd ./packages/native build       # zig build
-bun run --cwd ./packages/lib build          # sync binary + build TS
+bun run --cwd ./packages/core build         # sync binary + build TS
+bun run --cwd ./packages/compiler build     # build SFC compiler
 bun run --cwd ./packages/playground build   # sync binary + build TS
 
 # Run playground demo
@@ -24,8 +25,9 @@ The build must follow this exact order due to dependencies:
 
 1. **sync-version** (`scripts/sync-version.ts`) - propagates root version to all packages
 2. **native** (`packages/native/`) - `zig build` produces shared library in `zig-out/bin/`
-3. **lib** (`packages/lib/`) - syncs native binary, then builds TypeScript
-4. **playground** (`packages/playground/`) - syncs native binary, then builds TypeScript
+3. **core** (`packages/core/`) - syncs native binary to `src/utils/`, then builds TypeScript
+4. **compiler** (`packages/compiler/`) - builds SFC compiler (depends on `core`)
+5. **playground** (`packages/playground/`) - syncs native binary, then builds TypeScript
 
 The topological sort is handled by `scripts/build.ts`.
 
@@ -34,23 +36,23 @@ The topological sort is handled by `scripts/build.ts`.
 The compiled shared library (`term_bed.dll` / `term_bed.dylib` / `term_bed.so`) is:
 
 1. Built by `zig build` into `packages/native/zig-out/bin/`
-2. Copied to `packages/lib/` by `packages/lib/scripts/sync.ts`
+2. Copied to `packages/core/src/utils/` by `packages/core/scripts/sync.ts`
 3. Copied to `packages/playground/` by `packages/playground/scripts/sync.ts`
 
 On Windows, the `.pdb` file is also synced.
 
 ## DLL Path Resolution
 
-`fetchDllPath()` in `packages/lib/src/utils/ffi.ts` searches in this order:
+`fetchDllPath()` in `packages/core/src/utils/ffi.ts` searches in this order:
 
 1. `path.dirname(Bun.main)` - same directory as the entry script
-2. `import.meta.dir` - same directory as the importing module
+2. `import.meta.dir` - same directory as the importing module (i.e. `packages/core/src/utils/`)
 3. OS `PATH` environment variable (fallback, not yet implemented)
 
 ## Testing
 
 ```bash
-bun run --cwd ./packages/lib test
+bun run --cwd ./packages/core test
 ```
 
 - Test framework: Bun's built-in test runner (`bun test`)
@@ -62,10 +64,10 @@ bun run --cwd ./packages/lib test
 - Use `it()` and `expect()` from Bun test runner
 - Focus areas: FFI boundary, memory layout, type validation
 - Example test files:
-  - `packages/lib/src/extern/__tests__/TuiDataViewWrapper.test.ts`
-  - `packages/lib/src/extern/__tests__/render.test.ts`
-  - `packages/lib/src/utils/__tests__/ffi.test.ts`
-  - `packages/lib/src/utils/__tests__/genId.test.ts`
+  - `packages/core/src/extern/__tests__/TuiDataViewWrapper.test.ts`
+  - `packages/core/src/extern/__tests__/render.test.ts`
+  - `packages/core/src/utils/__tests__/ffi.test.ts`
+  - `packages/core/src/utils/__tests__/genId.test.ts`
 
 ## Linting
 

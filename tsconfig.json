@@ -29,6 +29,8 @@
     ],
   },
   "include": [
-    "packages/**/*"
+    "packages/**/*",
+    "scripts/**/*",
+    "global.d.ts"
   ]
 }

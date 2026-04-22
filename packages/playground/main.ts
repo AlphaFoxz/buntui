@@ -1,4 +1,4 @@
-import {createApp, widgets} from 'lib';
+import {createApp, widgets} from 'core';
 
 const app = createApp({logLevel: 'debug', clearLog: true, debugMode: true});
 
@@ -23,4 +23,3 @@ scene
 
 app.switchScene(scene);
 app.start();
-

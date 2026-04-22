@@ -89,6 +89,5 @@ try {
     message += String(error);
   }
 
-  throw new Error(message);
+  throw new Error(message); 
 }
-
