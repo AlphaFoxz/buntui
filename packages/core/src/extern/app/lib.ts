@@ -12,11 +12,8 @@ const lib = dlopen(fetchDllPath(), {
   startApp: {returns: FFIType.void, args: []},
   stopApp: {returns: FFIType.void, args: []},
   createScene: {returns: FFIType.pointer, args: [FFIType.u32]},
-  mountWidgetEntity: {returns: FFIType.void, args: [FFIType.pointer, FFIType.pointer]},
-  unmountWidgetEntity: {returns: FFIType.void, args: [FFIType.pointer, FFIType.pointer]},
   destroyScene: {returns: FFIType.void, args: [FFIType.pointer]},
   detectTermSize: {returns: FFIType.void, args: [FFIType.pointer]},
-  renderFrame: {returns: FFIType.void, args: [FFIType.pointer, FFIType.pointer]},
   renderDrawList: {
     returns: FFIType.void,
     args: [FFIType.pointer, FFIType.pointer, FFIType.uint64_t],
@@ -55,22 +52,11 @@ const expose = {
   createScene(bgRgba: number): Pointer {
     return assertPtr(lib.createScene(bgRgba));
   },
-  mountWidgetEntity(scene: CStruct, widget: CStruct) {
-    lib.mountWidgetEntity(scene.ptr, widget.ptr);
-  },
-  unmountWidgetEntity(scene: CStruct, widget: CStruct) {
-    lib.unmountWidgetEntity(scene.ptr, widget.ptr);
-  },
   destroyScene(scene: CStruct) {
     lib.destroyScene(scene.ptr);
   },
   detectTermSize(tuiContext: CStruct) {
     lib.detectTermSize(tuiContext.ptr);
-  },
-  renderFrame(tuiContext: CStruct, scene: CStruct | null) {
-    if (scene) {
-      lib.renderFrame(tuiContext.ptr, scene.ptr);
-    }
   },
   renderDrawList(tuiContext: CStruct, drawListBuffer: DrawListBuffer) {
     lib.renderDrawList(tuiContext.ptr, drawListBuffer.ptr, drawListBuffer.byteLength);

@@ -82,6 +82,8 @@ export class TuiApp {
     app.stopApp();
     EVENT_BUS.stop();
     LOGGER.deinit();
+    // eslint-disable-next-line unicorn/no-process-exit -- TUI CLI app needs clean exit
+    process.exit(0);
   }
 
   createScene(options?: Partial<TuiSceneOptions>) {

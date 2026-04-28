@@ -44,14 +44,12 @@ export class TuiScene implements CStruct {
   }
 
   mount(widget: TuiWidgetEntity) {
-    app.mountWidgetEntity(this, widget);
     this.#widgets.add(widget);
     widget.mounted();
     return this;
   }
 
   unmount(widget: TuiWidgetEntity) {
-    app.unmountWidgetEntity(this, widget);
     this.#widgets.delete(widget);
     widget.unmounted();
     return this;
@@ -102,7 +100,8 @@ export class TuiScene implements CStruct {
     buf.setSynchronizedUpdate(true);
     buf.hideCursor();
 
-    for (const widget of this.#widgets) {
+    const sorted = [...this.#widgets].toSorted((a, b) => a.zIndex - b.zIndex);
+    for (const widget of sorted) {
       widget.emitDrawCommands(buf);
     }
   }

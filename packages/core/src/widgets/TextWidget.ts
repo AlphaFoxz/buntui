@@ -1,4 +1,3 @@
-import type {Pointer} from 'bun:ffi';
 import type {
   TuiWidgetBorder,
   TuiWidgetColor,
@@ -13,86 +12,94 @@ import {BorderSides} from '../draw_list/types';
 
 export type TextWidgetOptions = TuiWidgetRect
   & TuiWidgetColor
-  & TuiWidgetStyle
-  & TuiWidgetBorder
-  & TuiWidgetShadow
+  & Partial<TuiWidgetStyle>
+  & Partial<TuiWidgetBorder>
+  & Partial<TuiWidgetShadow>
   & TuiWidgetText;
 
 export class TextWidget extends TuiWidgetEntity {
+  readonly #rect: TuiWidgetRect;
+  readonly #color: TuiWidgetColor;
+  readonly #style: TuiWidgetStyle;
+  readonly #border: TuiWidgetBorder;
+  readonly #shadow: TuiWidgetShadow;
   #text: string;
 
   constructor(options: TextWidgetOptions) {
     super();
-    super.registerRectComponent({
+    this.#rect = {
       rectX: options.rectX,
       rectY: options.rectY,
       rectWidth: options.rectWidth,
       rectHeight: options.rectHeight,
-    });
-    super.registerColorComponent({
+    };
+    this.#color = {
       colorFg: options.colorFg,
       colorBg: options.colorBg,
-    });
-    super.registerStyleComponent({
+    };
+    this.#style = {
       styleZIndex: options.styleZIndex ?? 0,
       styleModifier: options.styleModifier ?? 0,
-    });
-    super.registerBorderComponent({
+    };
+    this.#border = {
       borderColor: options.borderColor ?? 0xFF_FF_FF_FF,
       borderStyle: options.borderStyle ?? 0,
       borderTop: options.borderTop ?? false,
       borderRight: options.borderRight ?? false,
       borderBottom: options.borderBottom ?? false,
       borderLeft: options.borderLeft ?? false,
-    });
-    super.registerShadowComponent({
+    };
+    this.#shadow = {
       shadowOffsetX: options.shadowOffsetX ?? 0,
       shadowOffsetY: options.shadowOffsetY ?? 0,
       shadowColor: options.shadowColor ?? 0,
       shadowCovered: options.shadowCovered ?? false,
-    });
+    };
     this.#text = options.text;
-    super.registerTextComponent();
   }
 
   get rect(): TuiWidgetRect {
-    return super.fetchRectComponent()!;
+    return this.#rect;
   }
 
   updateRect(rect: Partial<TuiWidgetRect>) {
-    super.updateRectComponent(rect);
+    Object.assign(this.#rect, rect);
   }
 
   get color(): TuiWidgetColor {
-    return super.fetchColorComponent()!;
+    return this.#color;
   }
 
   updateColor(color: Partial<TuiWidgetColor>) {
-    super.updateColorComponent(color);
+    Object.assign(this.#color, color);
   }
 
   get style(): TuiWidgetStyle {
-    return super.fetchStyleComponent()!;
+    return this.#style;
   }
 
   updateStyle(style: Partial<TuiWidgetStyle>) {
-    super.updateStyleComponent(style);
+    Object.assign(this.#style, style);
   }
 
   get border(): TuiWidgetBorder {
-    return super.fetchBorderComponent()!;
+    return this.#border;
   }
 
   updateBorder(border: Partial<TuiWidgetBorder>) {
-    super.updateBorderComponent(border);
+    Object.assign(this.#border, border);
   }
 
   get shadow(): TuiWidgetShadow {
-    return super.fetchShadowComponent()!;
+    return this.#shadow;
   }
 
   updateShadow(shadow: Partial<TuiWidgetShadow>) {
-    super.updateShadowComponent(shadow);
+    Object.assign(this.#shadow, shadow);
+  }
+
+  override get zIndex(): number {
+    return this.#style.styleZIndex;
   }
 
   get text() {
@@ -104,9 +111,9 @@ export class TextWidget extends TuiWidgetEntity {
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    const {rectX, rectY, rectWidth, rectHeight} = this.rect;
-    const {colorFg, colorBg} = this.color;
-    const {borderColor, borderStyle, borderTop, borderRight, borderBottom, borderLeft} = this.border;
+    const {rectX, rectY, rectWidth, rectHeight} = this.#rect;
+    const {colorFg, colorBg} = this.#color;
+    const {borderColor, borderStyle, borderTop, borderRight, borderBottom, borderLeft} = this.#border;
 
     buffer.pushClip(rectX, rectY, rectWidth, rectHeight);
 
@@ -151,10 +158,6 @@ export class TextWidget extends TuiWidgetEntity {
 
     buffer.popClip();
   }
-
-  handleText(textPtr: Pointer) {
-    super.updateTextPtr(textPtr);
-  }
 }
 
 export const DEFAULT_TEXT_OPTIONS: TextWidgetOptions = {
@@ -164,18 +167,6 @@ export const DEFAULT_TEXT_OPTIONS: TextWidgetOptions = {
   rectHeight: 0,
   colorFg: 0xFF_FF_FF_FF,
   colorBg: 0x00_00_00_FF,
-  styleZIndex: 0,
-  styleModifier: 0,
-  borderColor: 0xFF_FF_FF_FF,
-  borderStyle: 0,
-  borderTop: false,
-  borderRight: false,
-  borderBottom: false,
-  borderLeft: false,
-  shadowOffsetX: 0,
-  shadowOffsetY: 0,
-  shadowColor: 0,
-  shadowCovered: false,
   text: '',
 };
 
@@ -193,4 +184,3 @@ export function createText(options: string | (Partial<TextWidgetOptions> & {text
 }
 
 export default TextWidget;
-

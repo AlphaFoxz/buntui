@@ -6,11 +6,46 @@ import type {
   TuiListBlock,
 } from './ast';
 
+/**
+ * Maps widget prop names to their runtime update method.
+ * Grouped props (rect, color, etc.) use partial-object update methods.
+ * Primitive props (text) use direct-value update methods.
+ */
+const PROP_UPDATE_MAP: Record<string, {method: string; field: string}> = {
+  // Rect — updateRect({rectX: val})
+  rectX: {method: 'updateRect', field: 'rectX'},
+  rectY: {method: 'updateRect', field: 'rectY'},
+  rectWidth: {method: 'updateRect', field: 'rectWidth'},
+  rectHeight: {method: 'updateRect', field: 'rectHeight'},
+  // Color — updateColor({colorFg: val})
+  colorFg: {method: 'updateColor', field: 'colorFg'},
+  colorBg: {method: 'updateColor', field: 'colorBg'},
+  // Style — updateStyle({styleZIndex: val})
+  styleZIndex: {method: 'updateStyle', field: 'styleZIndex'},
+  styleModifier: {method: 'updateStyle', field: 'styleModifier'},
+  // Border — updateBorder({borderColor: val})
+  borderColor: {method: 'updateBorder', field: 'borderColor'},
+  borderStyle: {method: 'updateBorder', field: 'borderStyle'},
+  borderTop: {method: 'updateBorder', field: 'borderTop'},
+  borderRight: {method: 'updateBorder', field: 'borderRight'},
+  borderBottom: {method: 'updateBorder', field: 'borderBottom'},
+  borderLeft: {method: 'updateBorder', field: 'borderLeft'},
+  // Shadow — updateShadow({shadowOffsetX: val})
+  shadowOffsetX: {method: 'updateShadow', field: 'shadowOffsetX'},
+  shadowOffsetY: {method: 'updateShadow', field: 'shadowOffsetY'},
+  shadowColor: {method: 'updateShadow', field: 'shadowColor'},
+  shadowCovered: {method: 'updateShadow', field: 'shadowCovered'},
+  // Text — updateText(val)
+  text: {method: 'updateText', field: ''},
+};
+
 export type CodegenOptions = {
   /** Module ID for the core package import */
   coreModuleId?: string;
   /** Module ID for @vue/reactivity import */
   reactivityModuleId?: string;
+  /** Script body lines to embed inside setup() */
+  scriptBody?: string[];
 };
 
 export type CodegenResult = {
@@ -37,11 +72,19 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
 
   // Import reactivity helpers if we have dynamic bindings
   if (root.effects.length > 0 || hasDynamicBindings(root)) {
-    imports.push(`import { effect } from '${react}';`);
+    imports.push(`import {effect, unref} from '${react}';`);
   }
 
   // Generate setup function
   lines.push('', 'export function setup(scene) {');
+
+  // Embed script body inside setup() so side effects (setInterval, etc.)
+  // are scoped to the setup call, not module-level
+  if (options?.scriptBody && options.scriptBody.length > 0) {
+    for (const line of options.scriptBody) {
+      lines.push(`  ${line}`);
+    }
+  }
 
   // Widget declarations
   let widgetIndex = 0;
@@ -107,7 +150,8 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
   }
 
   for (const prop of node.dynamicProps) {
-    props.push(`${prop.name}: ${prop.expression}`);
+    // Unref safely unwraps refs (returns raw value for non-refs)
+    props.push(`${prop.name}: unref(${prop.expression})`);
   }
 
   if (props.length > 0) {
@@ -120,8 +164,18 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
 
   // Generate reactive effect bindings
   for (const prop of node.dynamicProps) {
-    // TODO: map prop name to update method
-    lines.push(`// TODO: bind :${prop.name} reactively`);
+    const info = PROP_UPDATE_MAP[prop.name];
+    if (!info) {
+      continue;
+    }
+
+    if (info.field) {
+      // Grouped prop: widget.updateRect({rectX: unref(expr)})
+      lines.push(`effect(() => { ${varName}.${info.method}({${info.field}: unref(${prop.expression})}); });`);
+    } else {
+      // Primitive prop: widget.updateText(unref(expr))
+      lines.push(`effect(() => { ${varName}.${info.method}(unref(${prop.expression})); });`);
+    }
   }
 
   // Generate children

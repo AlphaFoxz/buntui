@@ -55,14 +55,42 @@ export function compile(source: string, options?: CompileOptions): CompileResult
     codegenResult = {code: '// No template block found', imports: []};
   }
 
-  // 4. Combine script + template code
+  // 4. Combine: imports first, then script body, then template setup
   const scriptContent = descriptor.scriptSetup?.content
     ?? descriptor.script?.content
     ?? '';
 
-  const code = scriptContent
-    ? `${scriptContent}\n\n${codegenResult.code}`
-    : codegenResult.code;
+  let code: string;
+  if (scriptContent) {
+    // Separate script imports from body to put all imports at the top
+    const scriptLines = scriptContent.split('\n');
+    const scriptImports: string[] = [];
+    const scriptBody: string[] = [];
+    for (const line of scriptLines) {
+      if (line.trimStart().startsWith('import ')) {
+        scriptImports.push(line);
+      } else {
+        scriptBody.push(line);
+      }
+    }
+
+    const allImports = [...codegenResult.imports, ...scriptImports];
+
+    // Re-generate with script body embedded inside setup()
+    const regenerated = generate(transform(templateAst!, options?.transform), {
+      ...options?.codegen,
+      scriptBody,
+    });
+
+    // Deduplicate imports: merge all import lines, then append the setup code
+    code = [
+      ...allImports,
+      '',
+      ...regenerated.code.split('\n').filter(l => !l.startsWith('import ')),
+    ].join('\n');
+  } else {
+    code = codegenResult.code;
+  }
 
   return {
     code,

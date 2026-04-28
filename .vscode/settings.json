@@ -16,6 +16,10 @@
         "editor.tabSize": 2,
         "prettier.tabWidth": 2
     },
+    "[vue]": {
+        "editor.tabSize": 2,
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
     "zig.debugTestArgs": [
         "test",
         "${path}",

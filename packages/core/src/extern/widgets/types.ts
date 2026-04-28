@@ -1,13 +1,3 @@
-export const TUI_WIDGET_COMPONENT_MEM_USAGE = Object.freeze({
-  ComponentType: 4,
-  Rect: 8,
-  Color: 8,
-  Style: 4,
-  Border: 12,
-  Shadow: 12,
-  Text: 8,
-});
-
 /**
  * @summary 32 bits = 4 bytes
  */
@@ -43,39 +33,38 @@ export type TuiWidgetComponentType = Enum<typeof TuiWidgetComponentType>;
  * @summary 64 bits = 8 bytes
  */
 export type TuiWidgetRect = {
-  readonly rectX: U16;
-  readonly rectY: U16;
-  readonly rectWidth: U16;
-  readonly rectHeight: U16;
+  rectX: U16;
+  rectY: U16;
+  rectWidth: U16;
+  rectHeight: U16;
 };
 
 /*
  * @summary 64 bits = 8 bytes
  */
 export type TuiWidgetColor = {
-  readonly colorFg: U32;
-  readonly colorBg: U32;
-
+  colorFg: U32;
+  colorBg: U32;
 };
 
 /*
  * @summary 32 bits = 4 bytes
  */
 export type TuiWidgetStyle = {
-  readonly styleZIndex: I16;
-  readonly styleModifier: U16;
+  styleZIndex: I16;
+  styleModifier: U16;
 };
 
 /*
  * @summary 96 bits = 12 bytes
  */
 export type TuiWidgetBorder = {
-  readonly borderColor: U32;
-  readonly borderStyle: U8;
-  readonly borderTop: BOOL;
-  readonly borderRight: BOOL;
-  readonly borderBottom: BOOL;
-  readonly borderLeft: BOOL;
+  borderColor: U32;
+  borderStyle: U8;
+  borderTop: BOOL;
+  borderRight: BOOL;
+  borderBottom: BOOL;
+  borderLeft: BOOL;
 };
 
 /**
@@ -130,16 +119,16 @@ export type TuiWidgetBorderStyle = Enum<typeof TuiWidgetBorderStyle>;
  *  ███████████
  */
 export type TuiWidgetShadow = {
-  readonly shadowOffsetX: U16;
-  readonly shadowOffsetY: U16;
-  readonly shadowColor: U32;
+  shadowOffsetX: U16;
+  shadowOffsetY: U16;
+  shadowColor: U32;
   /**
      * @description
      * - true:  The shadow will be drawn over the others with character "█".
      * - false: The shadow will be drawn over the others, but no character will be covered.
      *   It means the affected cell looks "getting darkened".
      */
-  readonly shadowCovered: BOOL;
+  shadowCovered: BOOL;
 };
 
 /**
@@ -147,5 +136,4 @@ export type TuiWidgetShadow = {
  */
 export type TuiWidgetText = {
   text: string;
-  // Readonly textPtr: U64;
 };

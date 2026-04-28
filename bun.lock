@@ -53,6 +53,8 @@
       "name": "playground",
       "version": "0.1.0",
       "dependencies": {
+        "@types/bun": "^1.3.13",
+        "@vue/reactivity": "^3.5.33",
         "compiler": "workspace:*",
         "core": "workspace:*",
       },
