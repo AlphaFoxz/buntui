@@ -1,8 +1,9 @@
-export enum EventType {
-  KeyboardEvent = 1,
-  MouseEvent = 2,
-  WheelEvent = 3,
-}
+export const TuiEventType = {
+  KeyboardEvent: 1,
+  MouseEvent: 2,
+  WheelEvent: 3,
+} as const;
+export type TuiEventType = Enum<typeof TuiEventType>;
 
 export type TuiEvent = KeyboardEvent | MouseEvent | WheelEvent;
 
@@ -67,10 +68,10 @@ export type EventSchema = {
   parse(buffer: ArrayBuffer): any;
 };
 
-export type InferEvent<T> = T extends 1
-  ? KeyboardEvent
-  : T extends 2
-    ? MouseEvent
-    : T extends 3
-      ? WheelEvent
-      : any;
+export type TuiEventMap = {
+  [TuiEventType.KeyboardEvent]: KeyboardEvent;
+  [TuiEventType.MouseEvent]: MouseEvent;
+  [TuiEventType.WheelEvent]: WheelEvent;
+};
+
+export type InferEvent<T extends TuiEventType> = TuiEventMap[T];

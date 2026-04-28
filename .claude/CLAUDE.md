@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **term-bed** is a cross-platform Terminal User Interface (TUI) framework combining Zig (native backend) with TypeScript (high-level API). The architecture bridges the two via FFI using Bun's `dlopen()` — Zig exports C ABI functions, TypeScript consumes them through type-safe bindings.
 
+This project uses **Bun exclusively** as its runtime, package manager, and build tool. Do not use `npm`, `npx`, `yarn`, or `pnpm`. All commands use `bun` (e.g., `bun install`, `bun run`, `bun test`).
+
 ### Monorepo Structure
 
 - **packages/native/** — Zig rendering engine, event handling, terminal control (compiled to shared library)

@@ -3,10 +3,11 @@ import {useOffsetCounter} from '../../utils/ffi';
 import type {CStruct} from '../types';
 import TuiDataView from '../TuiDataViewWrapper';
 
-export enum TuiResizeBehavior {
-  Fixed = 0,
-  Auto = 1,
-}
+export const TuiResizeBehavior = {
+  Fixed: 0,
+  Auto: 1,
+} as const;
+export type TuiResizeBehavior = Enum<typeof TuiResizeBehavior>;
 
 const OFFSET_COUNTER = useOffsetCounter();
 const OFFSETS = Object.freeze({
@@ -76,8 +77,9 @@ export class TuiContext implements CStruct {
     this.#dataView.setUint16(OFFSETS.cols, value, true);
   }
 
-  get resizeBehavior() {
-    return this.#dataView.getUint8(OFFSETS.resizeBehavior);
+  get resizeBehavior(): TuiResizeBehavior {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- FFI boundary
+    return this.#dataView.getUint8(OFFSETS.resizeBehavior) as TuiResizeBehavior;
   }
 
   set resizeBehavior(value: TuiResizeBehavior) {

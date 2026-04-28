@@ -1,14 +1,16 @@
 import path from 'node:path';
 import process from 'node:process';
-import {EventType} from '../events/types';
+import {TuiEventType} from '../events/types';
 import app, {TUI_CONTEXT_INSTANCE} from '../extern/app';
 import {type LogLevel, type TuiAppOptions, type TuiSceneOptions} from '../extern/app/types';
 import {LOGGER} from '../common/logger';
 import {EVENT_BUS} from '../events';
+import {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import TuiScene from '../extern/app/TuiScene';
 
 export class TuiApp {
   readonly #debugMode: boolean;
+  readonly #drawList = new DrawListBuffer();
   #scenes: TuiScene[] = [];
   #currentScene: TuiScene | undefined = undefined;
   #running = false;
@@ -32,18 +34,18 @@ export class TuiApp {
 
   start() {
     if (this.#debugMode) {
-      EVENT_BUS.on(EventType.KeyboardEvent, data => {
+      EVENT_BUS.on(TuiEventType.KeyboardEvent, data => {
         LOGGER.logDebug(`按键事件：${JSON.stringify(data)}`);
       });
-      EVENT_BUS.on(EventType.WheelEvent, data => {
+      EVENT_BUS.on(TuiEventType.WheelEvent, data => {
         LOGGER.logDebug(`鼠标滚轮事件：${JSON.stringify(data)}`);
       });
-      EVENT_BUS.on(EventType.MouseEvent, data => {
+      EVENT_BUS.on(TuiEventType.MouseEvent, data => {
         LOGGER.logDebug(`鼠标事件：${JSON.stringify(data)}`);
       });
     }
 
-    EVENT_BUS.on(EventType.KeyboardEvent, data => {
+    EVENT_BUS.on(TuiEventType.KeyboardEvent, data => {
       if (data.key === 'q' || data.key === 'Q') {
         setTimeout(() => {
           this.stop();
@@ -60,7 +62,14 @@ export class TuiApp {
         return;
       }
 
-      app.renderFrame(TUI_CONTEXT_INSTANCE, this.#currentScene ?? null);
+      const scene = this.#currentScene;
+      if (scene) {
+        this.#drawList.reset();
+        scene.emitDrawCommands(this.#drawList);
+        this.#drawList.finish();
+        app.renderDrawList(TUI_CONTEXT_INSTANCE, this.#drawList);
+      }
+
       setImmediate(render);
     };
 

@@ -1,143 +1,74 @@
-# ECS Component System
+# Rendering Architecture (DrawList)
 
-The TypeScript side uses an Entity-Component-System pattern for widget management.
+TS side manages widget state, generates draw commands each frame into a shared buffer, Zig consumes them for rendering.
 
-## Core Types
+## Frame Lifecycle
 
-### Entity
-```typescript
-type Entity = {
-  readonly id: bigint;
-  setId?: never;
-};
+```
+TS: widget tree → emitDrawCommands() → DrawListBuffer (shared ArrayBuffer)
+    ↓ FFI: renderDrawList(ctx_ptr, buf_ptr, buf_len)
+Zig: parse commands → rasterize to cell grid → diff → emit ANSI → flush
 ```
 
-### CStruct
-```typescript
-type CStruct = {
-  readonly ptr: Pointer;
-  setPtr?: never;
-};
+Synchronous per-frame call. No ring buffer — TS resets the buffer each frame, passes it to Zig, Zig processes and returns.
+
+## Command Buffer Format
+
+```
+[Buffer Header: 8B] [Cmd Header: 8B] [Payload] [Cmd Header: 8B] [Payload] ...
 ```
 
-### Mountable
-```typescript
-type Mountable = {
-  mounted(): void;
-  unmounted(): void;
-};
-```
+**Buffer Header** (8 bytes): magic `0x5442` (u16) + version (u8) + flags (u8) + reserved (u32)
 
-## ECS Manager
+**Command Header** (8 bytes): cmd_type (u16) + flags (u16) + payload_len (u32)
 
-`ECS_MANAGER` (packages/core/src/extern/widgets/EcsManager.ts) is a global singleton that manages entity IDs and component storage.
+All multi-byte fields are little-endian. Commands are packed — no alignment padding between them.
 
-Key methods:
-- `createEntity(): bigint` - returns a unique entity ID
-- `registerRectComponent(entityId, rect): number` - registers a component, returns pointer
-- `fetchRectComponent(entityId): TuiWidgetRect` - reads component data
-- `updateRectComponent(entityId, partial): void` - updates component fields
+## Key Files
 
-Each component type has its own register/fetch/update methods following the same pattern.
+- **Zig**: `packages/native/src/draw_list/` — commands.zig (types), clip_stack.zig, rasterizer.zig, mod.zig (parse loop)
+- **TS**: `packages/core/src/draw_list/` — DrawListBuffer.ts (builder), types.ts (enums)
+- **FFI**: `renderDrawList(ctx, buf_ptr, buf_len)` in lib.zig + extern/app/lib.ts
 
-## TuiWidgetEntity
+## Command Categories
 
-Base abstract class (packages/core/src/extern/widgets/TuiWidgetEntity.ts).
+| Range       | Category          | Examples                              |
+|-------------|-------------------|---------------------------------------|
+| 0x00-0x0F   | Frame state       | SetBackground, PushClip, SetEntityId  |
+| 0x10-0x1F   | Drawing primitives| DrawRect, DrawText, DrawBorder        |
+| 0x20-0x2F   | Terminal control  | SetTitle, ShowCursor, HideCursor      |
+| 0x30-0x3F   | Sync update       | BeginSync, EndSync                    |
+| 0x100-0x7FFF| Compound commands | Future: DrawProgressBar, DrawScrollView |
+| 0x8000-0xFFFF| User extensions  | Plugin system                         |
 
-All widget entities:
-1. Inherit from `TuiWidgetEntity`
-2. Allocate an `ArrayBuffer` sized by `useOffsetCounter()`
-3. Store entity ID and component mask in the buffer
-4. Expose `ptr` (via `CStruct`) and `mounted()/unmounted()` (via `Mountable`)
+## Adding a New Command Type
 
-## Memory Layout
+1. Add `DrawCmd` enum value in both `commands.zig` (Zig) and `types.ts` (TS)
+2. Define payload struct in `commands.zig`
+3. Add rasterization logic in `rasterizer.zig`
+4. Add builder method to `DrawListBuffer.ts`
 
-Entity buffer layout is computed by `useOffsetCounter()`:
+Unknown command types are skipped (payload_len allows parser to advance past them).
 
-```typescript
-const OFFSET_COUNTER = useOffsetCounter();
-const OFFSETS = {
-  id:     OFFSET_COUNTER.mark('u64'),         // 8 bytes
-  mask:   OFFSET_COUNTER.mark('u32'),         // 4 bytes (ComponentType)
-  rect:   OFFSET_COUNTER.mark('pointer'),     // 8 bytes
-  color:  OFFSET_COUNTER.mark('pointer'),     // 8 bytes
-  style:  OFFSET_COUNTER.mark('pointer'),     // 8 bytes
-  border: OFFSET_COUNTER.mark('pointer'),     // 8 bytes
-  shadow: OFFSET_COUNTER.mark('pointer'),     // 8 bytes
-  text:   OFFSET_COUNTER.mark('pointer'),     // 8 bytes
-};
-```
+## Widget Pattern
 
-Alignment: each field is aligned to `min(fieldSize, 8)` bytes.
-
-## Component Mask
-
-A 32-bit bitmask stored at `OFFSETS.mask`. Each bit represents a registered component:
+Each widget class has an `emitDrawCommands(buf: DrawListBuffer)` method:
 
 ```typescript
-enum TuiWidgetComponentType {
-  Rect   = 0x0001,
-  Color  = 0x0002,
-  Style  = 0x0004,
-  Border = 0x0008,
-  Shadow = 0x0010,
-  Text   = 0x0020,
+class TextWidget extends TuiWidgetEntity {
+  override emitDrawCommands(buf: DrawListBuffer): void {
+    const {rectX, rectY, rectWidth, rectHeight} = this.rect;
+    const {colorFg, colorBg} = this.color;
+    buf.pushClip(rectX, rectY, rectWidth, rectHeight);
+    buf.drawRect(rectX, rectY, rectWidth, rectHeight, colorBg);
+    buf.drawText(rectX, rectY, this.text, colorFg, colorBg);
+    buf.popClip();
+  }
 }
 ```
 
-When registering a component, OR the mask:
-```typescript
-const mask = this.#dataView.getUint32(OFFSETS.mask, true);
-this.#dataView.setUint32(OFFSETS.mask, mask | TuiWidgetComponentType.Rect, true);
-```
+TuiScene iterates widgets and calls `emitDrawCommands` on each. Z-ordering is painter's algorithm — traversal order determines draw order.
 
-## Component Sizes
+## Clip Stack
 
-Defined in `TUI_WIDGET_COMPONENT_MEM_USAGE`:
-
-| Component | Size (bytes) | Fields |
-|-----------|-------------|--------|
-| ComponentType (mask) | 4 | u32 |
-| Rect | 8 | x:u16, y:u16, w:u16, h:u16 |
-| Color | 8 | fg:u32, bg:u32 |
-| Style | 4 | zIndex:i16, modifier:u16 |
-| Border | 12 | color:u32, style:u8, top:bool, right:bool, bottom:bool, left:bool |
-| Shadow | 12 | offsetX:u16, offsetY:u16, color:u32, covered:bool |
-| Text | 8 | pointer to string data |
-
-These sizes must match the Zig-side struct definitions exactly.
-
-## Component Registration Pattern
-
-Each component follows the same three-method pattern in `TuiWidgetEntity`:
-
-```typescript
-// 1. Register: write component data to ECS manager + update pointer and mask in entity buffer
-protected registerRectComponent(rect: TuiWidgetRect) {
-  this.#dataView.setBigUint64(OFFSETS.rect,
-    BigInt(ECS_MANAGER.registerRectComponent(this.#entityId, rect)), true);
-  const mask = this.#dataView.getUint32(OFFSETS.mask, true);
-  this.#dataView.setUint32(OFFSETS.mask, mask | TuiWidgetComponentType.Rect, true);
-}
-
-// 2. Fetch: read component data from ECS manager
-protected fetchRectComponent() {
-  return ECS_MANAGER.fetchRectComponent(this.#entityId);
-}
-
-// 3. Update: modify component data in ECS manager
-protected updateRectComponent(rect: Partial<TuiWidgetRect>) {
-  ECS_MANAGER.updateRectComponent(this.#entityId, rect);
-}
-```
-
-## Adding a New Component Type
-
-1. Define the TS type in `packages/core/src/extern/widgets/types.ts`
-2. Add size to `TUI_WIDGET_COMPONENT_MEM_USAGE`
-3. Add a new `TuiWidgetComponentType` enum value (next power of 2)
-4. Add register/fetch/update methods to `EcsManager`
-5. Add a `useOffsetCounter().mark(...)` entry in `TuiWidgetEntity` for the pointer field
-6. Add `register*Component()`, `fetch*Component()`, `update*Component()` protected methods to `TuiWidgetEntity`
-7. Define the matching Zig `extern struct` in `packages/native/src/core/widgets/component.zig`
-8. Verify the byte size matches between TS and Zig
+Zig maintains a 32-deep clip rectangle stack. `PushClip` intersects with current clip. `PopClip` restores. Used for window boundaries, scroll viewports, nested widgets.

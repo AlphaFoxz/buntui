@@ -2,6 +2,7 @@ import {ptr, type Pointer} from 'bun:ffi';
 import TuiDataViewWrapper from '../TuiDataViewWrapper';
 import {useOffsetCounter} from '../../utils/ffi';
 import type {CStruct, Mountable} from '../types';
+import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import ECS_MANAGER from './EcsManager';
 import {
   TUI_WIDGET_COMPONENT_MEM_USAGE, TuiWidgetComponentType, type TuiWidgetBorder, type TuiWidgetColor, type TuiWidgetRect, type TuiWidgetShadow,
@@ -69,6 +70,8 @@ export abstract class TuiWidgetEntity implements CStruct, Mountable {
   unmounted(): void {
     this.#refrenceCount--;
   }
+
+  abstract emitDrawCommands(buf: DrawListBuffer): void;
 
   protected registerRectComponent(rect: TuiWidgetRect) {
     this.#dataView.setBigUint64(OFFSETS.rect, BigInt(ECS_MANAGER.registerRectComponent(this.#entityId, rect)), true);

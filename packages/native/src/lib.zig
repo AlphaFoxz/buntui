@@ -4,6 +4,7 @@ const glo_alloc = @import("./core/glo_alloc.zig");
 const tui_app = @import("./core/tui_app.zig");
 const TuiWidgetEntity = @import("./core/widgets/entity.zig").TuiWidgetEntity;
 const render = @import("./render.zig");
+const draw_list = @import("./draw_list/draw_list.zig");
 const tui_context = @import("./core/tui_context.zig");
 const event_bus = @import("./core/event_bus.zig");
 const std_io = @import("./core/std_io.zig");
@@ -62,6 +63,14 @@ pub export fn renderFrame(
     scene: *tui_app.TuiScene,
 ) void {
     render.renderFrame(ctx, scene);
+}
+
+pub export fn renderDrawList(
+    ctx: *tui_context.TuiContext,
+    buf_ptr: [*]const u8,
+    buf_len: usize,
+) void {
+    draw_list.renderDrawList(ctx, buf_ptr, buf_len);
 }
 
 // ======================== event ========================

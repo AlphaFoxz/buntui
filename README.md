@@ -1,5 +1,30 @@
 # README
 
+## 渲染管线
+
+```
+┌─────────────── TypeScript (Bun) ───────────────┐
+│                                                  │
+│  .vue SFC ──→ Widget Tree ──→ emitDrawCommands() │
+│       (compiler)   (Vue reactivity)       │      │
+│                                          ▼      │
+│                                   DrawListBuffer │
+│                                  (shared memory) │
+└──────────────────────┬───────────────────────────┘
+                       │ FFI: renderDrawList(buf, len)
+                       ▼
+┌─────────────── Zig (Native) ───────────────────┐
+│                                                  │
+│  Parse Commands ──→ Rasterize ──→ Cell Grid      │
+│  (draw_list/)      (per-cmd)    (TuiFrame)  │    │
+│                                          │      │
+│                                     Diff + ANSI  │
+│                                    ───────────► Terminal
+└──────────────────────────────────────────────────┘
+
+每帧流程: reset buffer → widget tree 生成 commands → FFI 传给 Zig → 光栅化到 cell grid → diff 脏区 → 输出 ANSI
+```
+
 ## 目标
 
 - 一个很cool的terminal ui框架

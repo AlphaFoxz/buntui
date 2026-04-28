@@ -17,76 +17,17 @@ These are enforced by `xo.config.ts` but listed here for clarity:
 
 ## Null vs Undefined Philosophy
 
-Strictly differentiate:
-
-- **`undefined`**: Technical absence. The value is not ready due to technical reasons (pending request, lazy loading, not yet initialized).
-- **`null`**: Business logic null. Explicitly part of the domain model (e.g., a user with no avatar).
-
-When designing APIs, use `undefined` for "not provided" and `null` for "intentionally empty".
+- **`undefined`**: Technical absence — value not ready (pending request, lazy loading, not yet initialized).
+- **`null`**: Business logic null — explicitly part of the domain model.
 
 ## Private Fields
 
-Use ECMAScript private fields (`#`) instead of TypeScript `private` keyword:
-
-```typescript
-// Correct:
-class Foo {
-  #value: number;
-  get value() { return this.#value; }
-}
-
-// Wrong:
-class Foo {
-  private value: number;
-  get value() { return this.value; }
-}
-```
+Use ECMAScript private fields (`#`) instead of TypeScript `private` keyword.
 
 ## Interfaces
 
-### CStruct
-All objects passed to FFI as pointers must implement:
-```typescript
-type CStruct = {
-  readonly ptr: Pointer;
-  setPtr?: never;
-};
-```
-
-### Mountable
-Widgets that can be mounted to a scene must implement:
-```typescript
-type Mountable = {
-  mounted(): void;
-  unmounted(): void;
-};
-```
-
-### Disposable
-Resources requiring cleanup must implement:
-```typescript
-type Disposable = {
-  dispose(disposeWidgets?: boolean): void | Promise<void>;
-  [Symbol.dispose](): void;
-  [Symbol.asyncDispose](): void;
-};
-```
-
-## FFI Data Access
-
-When reading/writing binary data for FFI:
-
-1. Create an `ArrayBuffer` of the correct size
-2. Get a pointer via `ptr(buffer)` from `bun:ffi`
-3. Use `TuiDataViewWrapper` (not `DataView`) for all reads/writes
-4. Always specify `littleEndian: true` for multi-byte values (the project uses little-endian throughout)
-
-```typescript
-const buffer = new ArrayBuffer(size);
-const pointer = ptr(buffer);
-const view = new TuiDataViewWrapper(buffer);
-view.setUint32(offset, value, true); // true = little-endian
-```
+- **CStruct**: Objects passed to FFI as pointers (`readonly ptr: Pointer`).
+- **Mountable**: Widgets mounted to a scene (`mounted()` / `unmounted()`).
 
 ## Type Imports
 
@@ -97,25 +38,25 @@ import {type Pointer} from 'bun:ffi';
 import type {CStruct} from '../types';
 ```
 
-## Event Type Classes
+## DrawList Widget Pattern
 
-Events parsed from the FFI event bus use class constructors that accept `Record<string, any>`:
+Each widget implements `emitDrawCommands(buf: DrawListBuffer)`:
 
 ```typescript
-class KeyboardEvent {
-  constructor(json: Record<string, any>) {
-    this.key = json.key as string;
-  }
+override emitDrawCommands(buf: DrawListBuffer): void {
+  const {rectX, rectY, rectWidth, rectHeight} = this.rect;
+  const {colorFg, colorBg} = this.color;
+  buf.pushClip(rectX, rectY, rectWidth, rectHeight);
+  buf.drawRect(rectX, rectY, rectWidth, rectHeight, colorBg);
+  buf.drawText(rectX, rectY, this.text, colorFg, colorBg);
+  buf.popClip();
 }
 ```
 
-See `events/types.ts` for existing event classes. All event types should match the Web API signatures (MDN).
+## Binary Data Access (DrawListBuffer)
 
-## Utility Functions (packages/core/src/utils/ffi.ts)
+`DrawListBuffer` internally uses `TuiDataViewWrapper` to write command headers and payloads into a shared `ArrayBuffer`. Widget code calls high-level methods (`drawRect`, `drawText`, etc.) — never write binary data directly.
 
-- `fetchDllPath()` - resolves the native library path
-- `assertPtr(ptr)` - validates FFI pointer, throws if null/undefined
-- `toCstring(str)` - converts JS string to null-terminated Uint8Array
-- `cToString(ptr, len)` - reads a C string from FFI pointer
-- `toU8(value)` / `toU16(value)` / `toU32(value)` - validated numeric conversions
-- `useOffsetCounter()` - computes struct field offsets with alignment
+## Event Type Classes
+
+Events parsed from the FFI event bus use class constructors that accept `Record<string, any>`. See `events/types.ts` for existing event classes. All event types should match Web API signatures (MDN).

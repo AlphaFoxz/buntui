@@ -11,32 +11,33 @@ export const TUI_WIDGET_COMPONENT_MEM_USAGE = Object.freeze({
 /**
  * @summary 32 bits = 4 bytes
  */
-export enum TuiWidgetComponentType {
+export const TuiWidgetComponentType = {
   /**
    * @see TuiWidgetRect
    */
-  Rect = 0x00_01,
+  Rect: 0x00_01,
   /**
    * @see TuiWidgetColor
    */
-  Color = 0x00_02,
+  Color: 0x00_02,
   /**
    * @see TuiWidgetStyle
    */
-  Style = 0x00_04,
+  Style: 0x00_04,
   /**
    * @see TuiWidgetBorder
    */
-  Border = 0x00_08,
+  Border: 0x00_08,
   /**
    * @see TuiWidgetShadow
    */
-  Shadow = 0x00_10,
+  Shadow: 0x00_10,
   /**
    * @see TuiWidgetText
    */
-  Text = 0x00_20,
-}
+  Text: 0x00_20,
+} as const;
+export type TuiWidgetComponentType = Enum<typeof TuiWidgetComponentType>;
 
 /*
  * @summary 64 bits = 8 bytes
@@ -105,17 +106,18 @@ export type TuiWidgetBorder = {
  * │   │   ┃  │   │   ║  ┃   │   │  ║   │   │
  * ┕━━━┷━━━┛  ╘═══╧═══╝  ┖───┴───┘  ╙───┴───┘
  */
-export enum TuiWidgetBorderStyle {
-  None = 0,
-  Solid = 1,
-  Double = 2,
-  Rounded = 3,
-  bold = 4,
-  Dashed = 5,
-  Dotted = 6,
-  OutsetBold = 7,
-  OutsetDouble = 8,
-}
+export const TuiWidgetBorderStyle = {
+  None: 0,
+  Solid: 1,
+  Double: 2,
+  Rounded: 3,
+  bold: 4,
+  Dashed: 5,
+  Dotted: 6,
+  OutsetBold: 7,
+  OutsetDouble: 8,
+} as const;
+export type TuiWidgetBorderStyle = Enum<typeof TuiWidgetBorderStyle>;
 
 /**
  * @summary 96 bits = 12 bytes

@@ -14,10 +14,11 @@ export type TuiSceneOptions = {
   bgHexRgb: number | string | {r: number; g: number; b: number};
 };
 
-export enum TuiRenderCommandType {
-  RECT = 0,
-  TEXT = 1,
-}
+export const TuiRenderCommandType = {
+  Rect: 0,
+  Text: 1,
+} as const;
+export type TuiRenderCommandType = Enum<typeof TuiRenderCommandType>;
 
 export type TuiRenderCommand = {
   type: TuiRenderCommandType;

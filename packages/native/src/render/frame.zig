@@ -40,8 +40,8 @@ pub const TuiFrame = struct {
     cells: []TuiCell = undefined,
 };
 
-pub var prev_frame = TuiFrame{ .width = 0, .height = 0 };
-pub var next_frame = TuiFrame{ .width = 0, .height = 0 };
+pub var prev_frame: TuiFrame = .{ .width = 0, .height = 0 };
+pub var next_frame: TuiFrame = .{ .width = 0, .height = 0 };
 pub var dirty: std.DynamicBitSet = undefined;
 
 fn resizeFrame(frame: *TuiFrame, rows: TuiScale, cols: TuiScale) void {
@@ -55,10 +55,10 @@ fn resizeFrame(frame: *TuiFrame, rows: TuiScale, cols: TuiScale) void {
         err.outOfMemory();
     };
     for (0..size) |index| {
-        frame.cells[index] = TuiCell{
+        frame.cells[index] = .{
             .entity_id = 0,
-            .fg_rgba = Rgba{ .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF },
-            .bg_rgba = Rgba{ .r = 0, .g = 0, .b = 0, .a = 0xFF },
+            .fg_rgba = .{ .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF },
+            .bg_rgba = .{ .r = 0, .g = 0, .b = 0, .a = 0xFF },
             .char = ' ',
             .font_style = 0,
             .cell_type = .Ascii,

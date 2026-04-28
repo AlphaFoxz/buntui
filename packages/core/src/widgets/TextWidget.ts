@@ -8,6 +8,8 @@ import type {
   TuiWidgetText,
 } from '../extern/widgets/types';
 import {TuiWidgetEntity} from '../extern/widgets/TuiWidgetEntity';
+import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
+import {BorderSides} from '../draw_list/types';
 
 export type TextWidgetOptions = TuiWidgetRect
   & TuiWidgetColor
@@ -99,6 +101,55 @@ export class TextWidget extends TuiWidgetEntity {
 
   updateText(text: string) {
     this.#text = text;
+  }
+
+  override emitDrawCommands(buffer: DrawListBuffer): void {
+    const {rectX, rectY, rectWidth, rectHeight} = this.rect;
+    const {colorFg, colorBg} = this.color;
+    const {borderColor, borderStyle, borderTop, borderRight, borderBottom, borderLeft} = this.border;
+
+    buffer.pushClip(rectX, rectY, rectWidth, rectHeight);
+
+    // Background fill
+    buffer.drawRect({
+      x: rectX,
+      y: rectY,
+      width: rectWidth,
+      height: rectHeight,
+      bgRgba: colorBg,
+    });
+
+    // Text content — offset by border insets so border doesn't overwrite text
+    if (this.#text.length > 0) {
+      const textX = rectX + (borderLeft ? 1 : 0);
+      const textY = rectY + (borderTop ? 1 : 0);
+      buffer.drawText({
+        x: textX,
+        y: textY,
+        text: this.#text,
+        fgRgba: colorFg,
+        bgRgba: colorBg,
+      });
+    }
+
+    // Border
+    if (borderStyle !== 0) {
+      const sides = (borderTop ? BorderSides.Top : 0)
+        | (borderRight ? BorderSides.Right : 0)
+        | (borderBottom ? BorderSides.Bottom : 0)
+        | (borderLeft ? BorderSides.Left : 0);
+      buffer.drawBorder({
+        x: rectX,
+        y: rectY,
+        width: rectWidth,
+        height: rectHeight,
+        colorRgba: borderColor,
+        style: borderStyle,
+        sides,
+      });
+    }
+
+    buffer.popClip();
   }
 
   handleText(textPtr: Pointer) {

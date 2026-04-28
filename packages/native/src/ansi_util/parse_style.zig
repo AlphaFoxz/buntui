@@ -91,7 +91,7 @@ pub fn parseStyle(code: []const u8) ?CellStyle {
                 }
             },
             .parse_fg_256 => {
-                foreground = Color{ .Fixed = FixedColor{ .value = part } };
+                foreground = .{ .Fixed = .{ .value = part } };
                 state = ParseState.parse_8;
             },
             .parse_fg_red => {
@@ -103,7 +103,7 @@ pub fn parseStyle(code: []const u8) ?CellStyle {
                 state = ParseState.parse_fg_blue;
             },
             .parse_fg_blue => {
-                foreground = Color{
+                foreground = .{
                     .Rgba = .{
                         .r = red,
                         .g = green,
@@ -123,7 +123,7 @@ pub fn parseStyle(code: []const u8) ?CellStyle {
                 }
             },
             .parse_bg_256 => {
-                background = Color{ .Fixed = FixedColor{ .value = part } };
+                background = .{ .Fixed = .{ .value = part } };
                 state = ParseState.parse_8;
             },
             .parse_bg_red => {
@@ -135,7 +135,7 @@ pub fn parseStyle(code: []const u8) ?CellStyle {
                 state = ParseState.parse_bg_blue;
             },
             .parse_bg_blue => {
-                background = Color{
+                background = .{
                     .Rgba = .{
                         .r = red,
                         .g = green,
@@ -151,7 +151,7 @@ pub fn parseStyle(code: []const u8) ?CellStyle {
     if (state != ParseState.parse_8)
         return null;
 
-    return CellStyle{
+    return .{
         .foreground = foreground,
         .background = background,
         .font_style = font_style,

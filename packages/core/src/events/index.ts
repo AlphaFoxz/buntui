@@ -2,20 +2,21 @@ import {toArrayBuffer} from 'bun:ffi';
 import eventLib from '../extern/events';
 import TuiDataView from '../extern/TuiDataViewWrapper';
 import {
-  EventType, MouseEvent, KeyboardEvent, WheelEvent, type TuiEvent,
+  TuiEventType, MouseEvent, KeyboardEvent, WheelEvent, type TuiEvent,
+  type InferEvent,
 } from './types';
 
 const schemaRegistry = new Map<number, new (json: Record<string, unknown>) => TuiEvent>([
-  [EventType.KeyboardEvent, KeyboardEvent],
-  [EventType.MouseEvent, MouseEvent],
-  [EventType.WheelEvent, WheelEvent],
+  [TuiEventType.KeyboardEvent, KeyboardEvent],
+  [TuiEventType.MouseEvent, MouseEvent],
+  [TuiEventType.WheelEvent, WheelEvent],
 ]);
 
 const decoder = new TextDecoder('utf-8');
 
 class EventBusImpl {
   #running = false;
-  readonly #handlers: Record<number, Array<(data: TuiEvent) => void>> = {};
+  readonly #handlers: Record<number, Array<(data: any) => void>> = {};
 
   start() {
     this.#running = true;
@@ -71,15 +72,12 @@ class EventBusImpl {
     this.#running = false;
   }
 
-  on(eventType: EventType.MouseEvent, handler: (data: MouseEvent) => void): void;
-  on(eventType: EventType.KeyboardEvent, handler: (data: KeyboardEvent) => void): void;
-  on(eventType: EventType.WheelEvent, handler: (data: WheelEvent) => void): void;
-  on(eventType: EventType, handler: (data: any) => void) {
+  on<T extends TuiEventType>(eventType: T, handler: (data: InferEvent<T>) => void) {
     this.#handlers[eventType] ||= [];
     this.#handlers[eventType].push(handler);
   }
 
-  off(eventType: EventType, handler: (data: TuiEvent) => void) {
+  off(eventType: TuiEventType, handler: (data: TuiEvent) => void) {
     const handlers = this.#handlers[eventType];
     if (handlers) {
       const index = handlers.indexOf(handler);

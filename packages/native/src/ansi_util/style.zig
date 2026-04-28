@@ -207,15 +207,15 @@ pub const FixedColor = packed struct {
 };
 
 pub const BuiltinRgbaColor = struct {
-    pub const Black = Rgba{ .r = 0x00, .g = 0x00, .b = 0x00, .a = 0xFF };
-    pub const Red = Rgba{ .r = 0xFF, .g = 0x00, .b = 0x00, .a = 0xFF };
-    pub const Green = Rgba{ .r = 0x00, .g = 0xFF, .b = 0x00, .a = 0xFF };
-    pub const Yellow = Rgba{ .r = 0xFF, .g = 0xFF, .b = 0x00, .a = 0xFF };
-    pub const Blue = Rgba{ .r = 0x00, .g = 0x00, .b = 0xFF, .a = 0xFF };
-    pub const Magenta = Rgba{ .r = 0xFF, .g = 0x00, .b = 0xFF, .a = 0xFF };
-    pub const Cyan = Rgba{ .r = 0x00, .g = 0xFF, .b = 0xFF, .a = 0xFF };
-    pub const White = Rgba{ .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF };
-    pub const Grey = Rgba{ .r = 0x7F, .g = 0x7F, .b = 0x7F, .a = 0xFF };
+    pub const Black: Rgba = .{ .r = 0x00, .g = 0x00, .b = 0x00, .a = 0xFF };
+    pub const Red: Rgba = .{ .r = 0xFF, .g = 0x00, .b = 0x00, .a = 0xFF };
+    pub const Green: Rgba = .{ .r = 0x00, .g = 0xFF, .b = 0x00, .a = 0xFF };
+    pub const Yellow: Rgba = .{ .r = 0xFF, .g = 0xFF, .b = 0x00, .a = 0xFF };
+    pub const Blue: Rgba = .{ .r = 0x00, .g = 0x00, .b = 0xFF, .a = 0xFF };
+    pub const Magenta: Rgba = .{ .r = 0xFF, .g = 0x00, .b = 0xFF, .a = 0xFF };
+    pub const Cyan: Rgba = .{ .r = 0x00, .g = 0xFF, .b = 0xFF, .a = 0xFF };
+    pub const White: Rgba = .{ .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF };
+    pub const Grey: Rgba = .{ .r = 0x7F, .g = 0x7F, .b = 0x7F, .a = 0xFF };
 };
 
 pub const Color = union(enum) {

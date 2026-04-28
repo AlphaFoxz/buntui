@@ -3,9 +3,10 @@ import {
 } from 'bun:ffi';
 import {genId} from '../../utils/genId';
 import {rgbToRgba} from '../../utils/styles';
+import {useOffsetCounter} from '../../utils/ffi';
 import type {CStruct} from '../types';
 import TuiDataViewWrapper from '../TuiDataViewWrapper';
-import {useOffsetCounter} from '../../utils/ffi';
+import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type TuiWidgetEntity} from '../widgets/TuiWidgetEntity';
 import {type TuiSceneOptions} from './types';
 import app from './lib';
@@ -21,6 +22,7 @@ export class TuiScene implements CStruct {
   readonly #ptr: Pointer;
   readonly #dataView: TuiDataViewWrapper;
   #visible: boolean;
+  readonly #bgRgba: number;
   readonly #widgets = new Set<TuiWidgetEntity>();
 
   constructor(options?: Partial<TuiSceneOptions>) {
@@ -35,6 +37,7 @@ export class TuiScene implements CStruct {
       bgRgba = rgbToRgba(options.bgHexRgb);
     }
 
+    this.#bgRgba = bgRgba;
     this.#ptr = app.createScene(bgRgba);
     const buffer = toArrayBuffer(this.#ptr, 0, OFFSET_COUNTER.currentOffset);
     this.#dataView = new TuiDataViewWrapper(buffer);
@@ -92,6 +95,16 @@ export class TuiScene implements CStruct {
 
   setVisible(visible: boolean) {
     this.#visible = visible;
+  }
+
+  emitDrawCommands(buf: DrawListBuffer): void {
+    buf.setBackground(this.#bgRgba);
+    buf.setSynchronizedUpdate(true);
+    buf.hideCursor();
+
+    for (const widget of this.#widgets) {
+      widget.emitDrawCommands(buf);
+    }
   }
 
   destroy() {

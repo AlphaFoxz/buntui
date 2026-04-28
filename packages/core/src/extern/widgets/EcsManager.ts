@@ -275,8 +275,8 @@ class EcsManagerImpl {
     this.#dataView.setUint8(offset + 4, border.borderStyle);
     this.#dataView.setBool(offset + 5, border.borderTop);
     this.#dataView.setBool(offset + 6, border.borderRight);
-    this.#dataView.setBool(offset + 8, border.borderBottom);
-    this.#dataView.setBool(offset + 7, border.borderLeft);
+    this.#dataView.setBool(offset + 7, border.borderBottom);
+    this.#dataView.setBool(offset + 8, border.borderLeft);
 
     return ptrOffset(this.#ptr, offset);
   }

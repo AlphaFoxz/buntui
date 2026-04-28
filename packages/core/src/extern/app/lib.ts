@@ -1,5 +1,6 @@
 import {dlopen, FFIType, type Pointer} from 'bun:ffi';
 import {fetchDllPath, toCstring, assertPtr} from '../../utils/ffi';
+import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import type {CStruct} from '../types';
 import type {LogLevel} from './types';
 
@@ -16,6 +17,10 @@ const lib = dlopen(fetchDllPath(), {
   destroyScene: {returns: FFIType.void, args: [FFIType.pointer]},
   detectTermSize: {returns: FFIType.void, args: [FFIType.pointer]},
   renderFrame: {returns: FFIType.void, args: [FFIType.pointer, FFIType.pointer]},
+  renderDrawList: {
+    returns: FFIType.void,
+    args: [FFIType.pointer, FFIType.pointer, FFIType.uint64_t],
+  },
 }).symbols;
 
 const expose = {
@@ -66,6 +71,9 @@ const expose = {
     if (scene) {
       lib.renderFrame(tuiContext.ptr, scene.ptr);
     }
+  },
+  renderDrawList(tuiContext: CStruct, drawListBuffer: DrawListBuffer) {
+    lib.renderDrawList(tuiContext.ptr, drawListBuffer.ptr, drawListBuffer.byteLength);
   },
 };
 

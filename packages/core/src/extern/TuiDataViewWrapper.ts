@@ -119,7 +119,7 @@ export class TuiDataViewWrapper {
       throw new Error(`Invalid boolean value: ${value}`);
     }
 
-    return this.#inner.getUint8(byteOffset) !== 0;
+    return value !== 0;
   }
 
   setBool(byteOffset: number, value: boolean) {

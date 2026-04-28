@@ -50,7 +50,7 @@ const expose: FlatXoConfig = [
         'error',
         {
           selector: 'variable',
-          format: ['camelCase', 'UPPER_CASE'],
+          format: ['camelCase', 'PascalCase', 'UPPER_CASE'],
           leadingUnderscore: 'allow',
           trailingUnderscore: 'allow',
         },
@@ -67,6 +67,7 @@ const expose: FlatXoConfig = [
       ],
       '@stylistic/indent': ['error', 2],
       '@stylistic/indent-binary-ops': ['error', 2],
+      '@typescript-eslint/no-redeclare': 'off',
       'unicorn/text-encoding-identifier-case': 'off',
       'no-bitwise': 'off',
       '@typescript-eslint/class-literal-property-style': 'off',

@@ -143,7 +143,8 @@ export function validateU64(value: bigint): boolean {
   return value > 0xFF_FF_FF_FF_FF_FF_FF_FFn || value < 0n;
 }
 
-export enum Bool {
-  False = 0,
-  True = 1,
-}
+export const Bool = {
+  False: 0,
+  True: 1,
+} as const;
+export type Bool = Enum<typeof Bool>;
