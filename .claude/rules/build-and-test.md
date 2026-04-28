@@ -36,7 +36,7 @@ The topological sort is handled by `scripts/build.ts`.
 The compiled shared library (`term_bed.dll` / `term_bed.dylib` / `term_bed.so`) is:
 
 1. Built by `zig build` into `packages/native/zig-out/bin/`
-2. Copied to `packages/core/src/utils/` by `packages/core/scripts/sync.ts`
+2. Copied to `packages/core/src/utils/` and `packages/core/dist/` by `packages/core/scripts/sync.ts`
 3. Copied to `packages/playground/` by `packages/playground/scripts/sync.ts`
 
 On Windows, the `.pdb` file is also synced.
@@ -68,6 +68,7 @@ bun run --cwd ./packages/core test
   - `packages/core/src/extern/__tests__/render.test.ts`
   - `packages/core/src/utils/__tests__/ffi.test.ts`
   - `packages/core/src/utils/__tests__/genId.test.ts`
+  - `packages/core/src/utils/__tests__/styles.test.ts`
 
 ## Linting
 

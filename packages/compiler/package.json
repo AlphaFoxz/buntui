@@ -1,10 +1,11 @@
 {
     "name": "compiler",
     "version": "0.1.0",
-    "main": "src/index.ts",
+    "main": "dist/index.bun.mjs",
+    "types": "dist/index.d.ts",
     "scripts": {
         "test": "bun test",
-        "build": "bun build --target=bun --production ./src/index.ts --outfile ./dist/index.bun.mjs --external @vue/compiler-sfc --external @vue/compiler-core --external @vue/shared --external @vue/reactivity --external core"
+        "build": "bun build --target=bun --production ./src/index.ts --outfile ./dist/index.bun.mjs --external @vue/compiler-sfc --external @vue/compiler-core --external @vue/shared --external @vue/reactivity --external core && tsc --project ./tsconfig.json"
     },
     "dependencies": {
         "@vue/compiler-core": "^3.5.33",

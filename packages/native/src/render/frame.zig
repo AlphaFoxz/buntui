@@ -2,7 +2,6 @@ const std = @import("std");
 const glo_alloc = @import("../core/glo_alloc.zig");
 const err = @import("../core/error.zig");
 const TuiContext = @import("../core/tui_context.zig").TuiContext;
-const TuiScene = @import("../core/tui_app.zig").TuiScene;
 const TuiScale = @import("../core/typedef.zig").TuiScale;
 const Rgba = @import("../ansi_util/style.zig").Rgba;
 
@@ -20,11 +19,7 @@ pub const TuiCell = struct {
     font_style: u16,
     cell_type: CellType,
 
-    // _padding: [3]u8 = undefined,
-
     pub fn eql(self: TuiCell, other: TuiCell) bool {
-        // XXX better compare?
-        // return std.meta.eql(self, other);
         return self.entity_id == other.entity_id and
             self.fg_rgba.eql(other.fg_rgba) and
             self.bg_rgba.eql(other.bg_rgba) and
@@ -85,9 +80,7 @@ pub fn checkScreenSize(ctx: *TuiContext) void {
 }
 
 pub fn dirtyTrack() void {
-    // TODO We could get clear functioin in v0.16 I guess...
     dirty.setRangeValue(.{ .start = 0, .end = dirty.capacity() }, false);
-    // dirty.unsetAll();
 
     for (next_frame.cells, 0..) |cell, index| {
         if (!cell.eql(prev_frame.cells[index])) {

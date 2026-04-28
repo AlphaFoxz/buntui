@@ -43,7 +43,7 @@ The remaining 240 bytes (256 - 16) are available for payload data.
 | 2  | MouseEvent      | MouseEvent       | Mouse click/move |
 | 3  | WheelEvent      | WheelEvent       | Scroll wheel    |
 
-These IDs must be consistent between Zig (`event_bus.zig` EventType enum) and TypeScript (`events/types.ts` EventType enum).
+These IDs must be consistent between Zig (`event_bus.zig` EventType enum) and TypeScript (`events/types.ts` TuiEventType const object).
 
 ## Three-Step Consumer Protocol
 
@@ -80,13 +80,13 @@ Note: `button` and `buttons` fields may be the string `"null"` (not actual null)
 
 ```typescript
 import {EVENT_BUS} from './events';
-import {EventType} from './events/types';
+import {TuiEventType} from './events/types';
 
 // Start consuming
 EVENT_BUS.start();
 
 // Subscribe
-EVENT_BUS.on(EventType.KeyboardEvent, (event) => {
+EVENT_BUS.on(TuiEventType.KeyboardEvent, (event) => {
   console.log(event.key, event.ctrlKey);
 });
 
@@ -112,8 +112,6 @@ Return codes: `0` = success, `-1` = not initialized, `-2` = queue full or event 
 
 ## Known Issues
 
-1. **JSON serialization overhead** (IMPROVEMENTS.md P0-3): Currently uses JSON strings, which is CPU-intensive. Planned migration to binary protocol.
+1. **JSON serialization overhead**: Currently uses JSON strings, which is CPU-intensive. Planned migration to binary protocol.
 
-2. **Event header size** (IMPROVEMENTS.md P0-1): TS code has historically read 12 bytes instead of 16. The correct size is 16 bytes (`u32 + u32 + u64`).
-
-3. **Global singleton** (IMPROVEMENTS.md P1-6): The event bus is a global variable, not supporting multiple instances. Thread safety is guaranteed by SPSC pattern only.
+2. **Global singleton**: The event bus is a global variable, not supporting multiple instances. Thread safety is guaranteed by SPSC pattern only.

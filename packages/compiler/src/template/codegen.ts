@@ -88,7 +88,9 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
 
   // Widget declarations
   let widgetIndex = 0;
+  const childStartIndices: number[] = [];
   for (const child of root.children) {
+    childStartIndices.push(widgetIndex);
     const generated = generateNode(child, widgetIndex);
     if (generated) {
       lines.push(...generated.lines.map(l => `  ${l}`));
@@ -96,15 +98,11 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
     }
   }
 
-  // Mount all top-level widgets
-  widgetIndex = 0;
-  for (const child of root.children) {
+  // Mount all top-level widgets (conditional blocks handle their own mounting)
+  for (let childIndex = 0; childIndex < root.children.length; childIndex++) {
+    const child = root.children[childIndex]!;
     if (child.type === 'TuiWidgetCall') {
-      lines.push(`  scene.mount(${getWidgetVarName(child, widgetIndex)});`);
-      widgetIndex++;
-    } else if (child.type === 'TuiConditionalBlock' || child.type === 'TuiListBlock') {
-      // TODO: generate mount logic for conditional/list blocks
-      widgetIndex++;
+      lines.push(`  scene.mount(${getWidgetVarName(child, childStartIndices[childIndex]!)});`);
     }
   }
 
@@ -191,25 +189,173 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
   return {lines, nextIndex};
 }
 
-function generateConditional(node: TuiConditionalBlock, index: number): NodeGenResult {
-  const lines: string[] = [`if (${node.condition}) {`];
+type FlattenedBranch = {
+  condition: string | null;
+  nodes: TuiWidgetCall[];
+};
 
+function isWidgetCall(node: TuiRenderNode): node is TuiWidgetCall {
+  return node.type === 'TuiWidgetCall';
+}
+
+function flattenConditional(block: TuiConditionalBlock): FlattenedBranch[] {
+  const branches: FlattenedBranch[] = [
+    {condition: block.condition, nodes: block.consequent.filter((n): n is TuiWidgetCall => isWidgetCall(n))},
+  ];
+
+  let current = block.alternate;
+  while (current) {
+    if (Array.isArray(current)) {
+      branches.push({condition: null, nodes: current.filter((n): n is TuiWidgetCall => isWidgetCall(n))});
+      break;
+    }
+
+    branches.push({condition: current.condition, nodes: current.consequent.filter((n): n is TuiWidgetCall => isWidgetCall(n))});
+    current = current.alternate;
+  }
+
+  return branches;
+}
+
+type WidgetInfo = {
+  varName: string;
+  createLine: string;
+  updateEffects: string[];
+};
+
+function generateConditional(block: TuiConditionalBlock, index: number): NodeGenResult {
+  const branches = flattenConditional(block);
+  const lines: string[] = [];
   let nextIndex = index;
-  for (const child of node.consequent) {
-    const result = generateNode(child, nextIndex);
-    if (result) {
-      for (const l of result.lines) {
-        lines.push(`  ${l}`);
-      }
 
-      nextIndex = result.nextIndex;
+  // Collect widget creation info per branch
+  const branchWidgets: WidgetInfo[][] = [];
+
+  for (const branch of branches) {
+    const widgets: WidgetInfo[] = [];
+    for (const node of branch.nodes) {
+      const varName = getWidgetVarName(node, nextIndex);
+      const createLine = buildWidgetCreation(node);
+      const updateEffects = buildGuardedUpdateEffects(node, varName);
+      widgets.push({varName, createLine, updateEffects});
+      nextIndex++;
+    }
+
+    branchWidgets.push(widgets);
+  }
+
+  // Declare all vars as null
+  for (const bw of branchWidgets) {
+    for (const w of bw) {
+      lines.push(`let ${w.varName} = null;`);
     }
   }
 
-  lines.push('}');
+  // Generate the toggle effect: if/else-if/else chain
+  const effectLines: string[] = [];
 
-  // TODO: handle alternate (v-else-if / v-else)
+  for (let i = 0; i < branches.length; i++) {
+    const {condition} = branches[i]!;
+    const keyword = i === 0 ? 'if' : (condition ? 'else if' : 'else');
+    const condPart = condition ? ` (unref(${condition}))` : '';
+
+    effectLines.push(`${keyword}${condPart} {`);
+
+    // Mount this branch's widgets
+    for (const w of branchWidgets[i]!) {
+      effectLines.push(
+        `    if (!${w.varName}) {`,
+        `      ${w.varName} = ${w.createLine};`,
+        `      scene.mount(${w.varName});`,
+        '    }',
+      );
+    }
+
+    // Unmount other branches' widgets
+    for (let j = 0; j < branches.length; j++) {
+      if (j === i) {
+        continue;
+      }
+
+      for (const w of branchWidgets[j]!) {
+        effectLines.push(
+          `    if (${w.varName}) {`,
+          `      scene.unmount(${w.varName});`,
+          `      ${w.varName} = null;`,
+          '    }',
+        );
+      }
+    }
+
+    effectLines.push('}');
+  }
+
+  // If last branch has a condition (no v-else), add final else to unmount all
+  const lastBranch = branches.at(-1)!;
+  if (lastBranch.condition !== null) {
+    effectLines.push(' else {');
+    for (const bw of branchWidgets) {
+      for (const w of bw) {
+        effectLines.push(
+          `    if (${w.varName}) {`,
+          `      scene.unmount(${w.varName});`,
+          `      ${w.varName} = null;`,
+          '    }',
+        );
+      }
+    }
+
+    effectLines.push('}');
+  }
+
+  lines.push('effect(() => {');
+  for (const l of effectLines) {
+    lines.push(`  ${l}`);
+  }
+
+  lines.push('});');
+
+  // Guarded update effects for dynamic props
+  for (const bw of branchWidgets) {
+    for (const w of bw) {
+      lines.push(...w.updateEffects);
+    }
+  }
+
   return {lines, nextIndex};
+}
+
+function buildWidgetCreation(node: TuiWidgetCall): string {
+  const props: string[] = [];
+  for (const prop of node.props) {
+    props.push(`${prop.name}: ${JSON.stringify(prop.value)}`);
+  }
+
+  for (const prop of node.dynamicProps) {
+    props.push(`${prop.name}: unref(${prop.expression})`);
+  }
+
+  return props.length > 0
+    ? `${node.creator}({ ${props.join(', ')} })`
+    : `${node.creator}()`;
+}
+
+function buildGuardedUpdateEffects(node: TuiWidgetCall, varName: string): string[] {
+  const effects: string[] = [];
+  for (const prop of node.dynamicProps) {
+    const info = PROP_UPDATE_MAP[prop.name];
+    if (!info) {
+      continue;
+    }
+
+    if (info.field) {
+      effects.push(`effect(() => { if (${varName}) { ${varName}.${info.method}({${info.field}: unref(${prop.expression})}); } });`);
+    } else {
+      effects.push(`effect(() => { if (${varName}) { ${varName}.${info.method}(unref(${prop.expression})); } });`);
+    }
+  }
+
+  return effects;
 }
 
 function generateList(node: TuiListBlock, index: number): NodeGenResult {

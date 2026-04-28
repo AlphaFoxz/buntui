@@ -59,4 +59,4 @@ override emitDrawCommands(buf: DrawListBuffer): void {
 
 ## Event Type Classes
 
-Events parsed from the FFI event bus use class constructors that accept `Record<string, any>`. See `events/types.ts` for existing event classes. All event types should match Web API signatures (MDN).
+Events parsed from the FFI event bus use class constructors that accept `Record<string, unknown>`. See `events/types.ts` for existing event classes. All event types should match Web API signatures (MDN).

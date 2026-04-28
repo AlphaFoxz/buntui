@@ -58,14 +58,14 @@ The `native` package uses `zig build` (`build.zig`). It produces a shared librar
 
 **Zig side** (`packages/native/src/lib.zig`): All exports are `pub export fn` with C ABI compatibility. Exports cover:
 - App lifecycle: `setupLogger`, `startApp`, `stopApp`, `createScene`, `destroyScene`
-- Widget management: `mountWidgetEntity`, `unmountWidgetEntity`
-- Rendering: `renderFrame`, `detectTermSize`
+- Rendering: `renderDrawList`, `detectTermSize`
 - Event bus: `event_bus_setup`, `event_bus_emit`, `event_bus_poll`, `event_bus_commit`, `event_bus_stats`
 - ANSI helpers: `resetStyle`, `showCursor`, `hideCursor`, `clearScreen`, `drawText`
 
 **TypeScript side** (`packages/core/src/extern/`): Bun FFI bindings via `dlopen()`:
-- `extern/app/lib.ts` — App lifecycle, scene, and render FFI bindings
+- `extern/app/lib.ts` — App lifecycle, scene, render, and DrawList FFI bindings
 - `extern/events.ts` — Event bus FFI bindings
+- `extern/ansi.ts` — ANSI helper FFI bindings
 - `extern/TuiDataViewWrapper.ts` — Safe DataView wrapper for FFI memory access (required by XO lint rules over native `DataView`)
 
 The FFI type mapping uses branded types from `global.d.ts` (`U8`, `U16`, `U32`, `I8`, `I16`, `I32`, `BOOL`, etc.) to represent C numeric types in TypeScript.

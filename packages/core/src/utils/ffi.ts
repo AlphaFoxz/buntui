@@ -1,24 +1,47 @@
 import path from 'node:path';
 import fs from 'node:fs';
+import process from 'node:process';
 import {type Pointer, CString, suffix} from 'bun:ffi';
 import type {DataType} from '../extern/types';
 
-let dllPath: string;
-export function fetchDllPath() {
-  if (!dllPath) {
-    dllPath = path.resolve(path.dirname(Bun.main), `term_bed.${suffix}`);
-    if (fs.existsSync(dllPath)) {
-      return dllPath;
-    }
+let dllPath: string | undefined;
 
-    dllPath = path.resolve(import.meta.dir, `term_bed.${suffix}`);
-    if (fs.existsSync(dllPath)) {
-      return dllPath;
-    }
-    // XXX: find dll from OS's `PATH` variable or process env
+export function setDllPath(p: string) {
+  dllPath = p;
+}
+
+export function fetchDllPath(): string {
+  if (dllPath) {
+    return dllPath;
   }
 
-  return dllPath;
+  const binaryName = `term_bed.${suffix}`;
+
+  const envPath = process.env.TERM_BED_DLL;
+  if (envPath) {
+    dllPath = path.resolve(envPath);
+    return dllPath;
+  }
+
+  const mainDir = path.resolve(path.dirname(Bun.main), binaryName);
+  if (fs.existsSync(mainDir)) {
+    dllPath = mainDir;
+    return dllPath;
+  }
+
+  const srcDir = path.resolve(import.meta.dir, binaryName);
+  if (fs.existsSync(srcDir)) {
+    dllPath = srcDir;
+    return dllPath;
+  }
+
+  const workspaceNative = path.resolve(import.meta.dir, '..', '..', '..', 'packages', 'native', 'zig-out', 'bin', binaryName);
+  if (fs.existsSync(workspaceNative)) {
+    dllPath = workspaceNative;
+    return dllPath;
+  }
+
+  throw new Error(`Cannot find native library: ${binaryName}. Set TERM_BED_DLL env or ensure the binary is in the search path.`);
 }
 
 export function assertPtr(ptr: Pointer | null): Pointer {

@@ -106,6 +106,14 @@ export class TuiScene implements CStruct {
     }
   }
 
+  clearWidgets() {
+    for (const widget of this.#widgets) {
+      widget.unmounted();
+    }
+
+    this.#widgets.clear();
+  }
+
   destroy() {
     for (const widget of this.#widgets) {
       this.unmount(widget);

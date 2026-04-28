@@ -87,16 +87,7 @@ pub extern "kernel32" fn WaitForSingleObject(
     dwMilliseconds: u32,
 ) callconv(.winapi) u32;
 
-// 鼠标按钮状态
-const FROM_LEFT_1ST_BUTTON_PRESSED = 0x0001;
-const RIGHTMOST_BUTTON_PRESSED = 0x0002;
-const FROM_LEFT_2ND_BUTTON_PRESSED = 0x0004;
-
-// 鼠标事件标志
-const MOUSE_MOVED = 0x0001;
-const DOUBLE_CLICK = 0x0002;
-const MOUSE_WHEELED = 0x0004;
-// const MOUSE_HWHEELED = 0x0008;
+// 原生鼠标常量已移除 — VT 模式下鼠标事件通过 parseSgrMouseSequence 处理
 
 const RIGHT_ALT_PRESSED = 0x0001;
 const LEFT_ALT_PRESSED = 0x0002;
@@ -115,7 +106,7 @@ const InputState = enum {
 
 // See https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
 const keyboard_event_fmt =
-    \\{{"key":{s},"shiftKey":{},"altKey":{},"ctrlKey":{},"metaKey":{},"repeat":{},"charCode":{d}}}
+    \\{{"key":"{s}","shiftKey":{},"altKey":{},"ctrlKey":{},"metaKey":{},"repeat":{},"charCode":{d}}}
 ;
 const keyboard_event_fmt_uni =
     \\{{"key":"{u}","shiftKey":{},"altKey":{},"ctrlKey":{},"metaKey":{},"repeat":{},"charCode":{d}}}
@@ -591,17 +582,20 @@ const Parser = struct {
         if (vkey) |k| {
             const name = mapper.mapVirtualKeyName(k) orelse "Unidentified";
             logger.logDebugFmt("功能键: {s}", .{name});
-            _ = keyboardEventJson(
-                IS_VIRTUAL_KEY,
-                .{
-                    .key = name,
-                    .is_shift = false,
-                    .is_alt = false,
-                    .is_ctrl = false,
-                    .is_meta = false,
-                    .char_code = 0,
-                    .is_repeat = false,
-                },
+            _ = event_bus.event_bus_emit_bytes(
+                @intFromEnum(event_bus.EventType.KeyboardEvent),
+                keyboardEventJson(
+                    IS_VIRTUAL_KEY,
+                    .{
+                        .key = name,
+                        .is_shift = false,
+                        .is_alt = false,
+                        .is_ctrl = false,
+                        .is_meta = false,
+                        .char_code = 0,
+                        .is_repeat = false,
+                    },
+                ),
             );
         }
     }
@@ -619,7 +613,7 @@ fn listen() void {
     // const FOCUS_EVENT = 0x0010;
     const KEY_EVENT = 0x0001;
     // const MENU_EVENT = 0x0008;
-    const MOUSE_EVENT = 0x0002;
+    // const MOUSE_EVENT = 0x0002; // VT mode: mouse events come as VT sequences, not MOUSE_EVENT records
     // const WINDOW_BUFFER_SIZE_EVENT = 0x0004;
 
     // 获取当前模式
@@ -644,78 +638,13 @@ fn listen() void {
 
         for (0..events_read) |i| {
             const record = input_buffer[i];
-            if (record.EventType == MOUSE_EVENT) {
-                handleMouseEvent(record);
-            } else if (record.EventType == KEY_EVENT) {
+            if (record.EventType == KEY_EVENT) {
                 handleKeyEvent(record);
             }
         }
         if (logger.current_log_level == logger.LOG_LEVEL_DEBUG) {
             logger.flush();
         }
-    }
-}
-
-inline fn handleMouseEvent(record: INPUT_RECORD) void {
-    const mouse = record.Event.MouseEvent;
-    var handle_flag = false;
-
-    // 检测按钮点击
-    if (mouse.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED != 0) {
-        logger.logDebugFmt("mouse left click: ({}, {})", .{
-            mouse.dwMousePosition.X,
-            mouse.dwMousePosition.Y,
-        });
-        handle_flag = true;
-    }
-
-    if (mouse.dwButtonState & RIGHTMOST_BUTTON_PRESSED != 0) {
-        logger.logDebugFmt("mouse right click: ({}, {})", .{
-            mouse.dwMousePosition.X,
-            mouse.dwMousePosition.Y,
-        });
-        handle_flag = true;
-    }
-
-    if (mouse.dwButtonState & FROM_LEFT_2ND_BUTTON_PRESSED != 0) {
-        logger.logDebugFmt("mouse middle click: ({}, {})", .{
-            mouse.dwMousePosition.X,
-            mouse.dwMousePosition.Y,
-        });
-        handle_flag = true;
-    }
-
-    // 检测鼠标移动
-    if (mouse.dwEventFlags & MOUSE_MOVED != 0 and mouse.dwButtonState == 0) {
-        // try stdout.print("mouse move: ({}, {})\n", .{
-        //     mouse.dwMousePosition.X,
-        //     mouse.dwMousePosition.Y,
-        // });
-        handle_flag = true;
-    }
-
-    // 检测双击
-    if (mouse.dwEventFlags & DOUBLE_CLICK != 0) {
-        logger.logDebugFmt("mouse double click: ({}, {})", .{
-            mouse.dwMousePosition.X,
-            mouse.dwMousePosition.Y,
-        });
-        handle_flag = true;
-    }
-
-    // 检测滚轮
-    if (mouse.dwEventFlags & MOUSE_WHEELED != 0) {
-        const delta = @as(i32, @bitCast(mouse.dwButtonState)) >> 16;
-        const direction = if (delta > 0) "up" else "down";
-        logger.logDebugFmt("mouse wheel {s}: ({}, {})", .{
-            direction,
-            mouse.dwMousePosition.X,
-            mouse.dwMousePosition.Y,
-        });
-        handle_flag = true;
-    }
-    if (!handle_flag) {
-        logger.logWarningFmt("Unhandled mouse event - pos:({},{}), buttons:{X:0>8}, flags:{X:0>8}", .{ mouse.dwMousePosition.X, mouse.dwMousePosition.Y, mouse.dwButtonState, mouse.dwEventFlags });
     }
 }
 

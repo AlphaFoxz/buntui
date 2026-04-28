@@ -1,10 +1,12 @@
 {
     "name": "core",
     "version": "0.1.0",
-    "main": "src/index.ts",
+    "main": "dist/index.bun.mjs",
+    "types": "dist/index.d.ts",
     "scripts": {
         "test": "bun test",
-        "build": "bun run ./scripts/sync.ts && bun build --target=bun --production ./src/index.ts --outfile ./dist/index.bun.mjs"
+        "build": "bun build --target=bun --production ./src/index.ts --outfile ./dist/index.bun.mjs && tsc --project ./tsconfig.json",
+        "sync": "bun run ./scripts/sync.ts"
     },
     "dependencies": {
         "@vue/reactivity": "^3.5.33"

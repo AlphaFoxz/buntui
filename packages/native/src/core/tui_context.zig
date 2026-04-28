@@ -8,8 +8,6 @@ const TuiScale = @import("./typedef.zig").TuiScale;
 const Bool = @import("./typedef.zig").Bool;
 const compile = @import("./compile.zig");
 
-var threaded: std.Io.Threaded = undefined;
-
 pub const TuiResizeBehavior = enum(u8) {
     Fixed = 0,
     Auto = 1,
@@ -31,10 +29,6 @@ pub fn detectTermSize(context: *TuiContext) void {
     context.rows = 35;
     context.cols = 90;
 
-    // Initialize Io instance
-    _ = std.Io.Threaded.init; // We'll use std.Io.File.stdout() directly
-    _ = threaded; // Mark as used for future use
-
     switch (builtin.os.tag) {
         .windows => {
             detectWindowsTermRect(context);
@@ -45,11 +39,6 @@ pub fn detectTermSize(context: *TuiContext) void {
         else => {
             err.unsupportedOS();
         },
-    }
-    if (builtin.os.tag == .windows) {
-        detectWindowsTermRect(context);
-    } else {
-        detectPosixTermRect(context);
     }
 }
 

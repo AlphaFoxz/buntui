@@ -50,22 +50,35 @@ pub fn load(dir_path: []const u8, log_name: []const u8, lvl: LOG_LEVEL, clear_lo
     log_dir = std.Io.Dir.openDirAbsolute(io, log_dir_path, .{}) catch {
         ioError();
     };
+
+    // 当需要保留旧日志时，先读取旧内容到内存
+    var old_content: ?[]const u8 = null;
+    if (clear_log == .False) {
+        const existing = std.Io.Dir.openFile(log_dir, io, log_name, .{ .mode = .read_only }) catch null;
+        if (existing) |f| {
+            var read_buf: [4096]u8 = undefined;
+            var reader = std.Io.File.readerStreaming(f, io, &read_buf);
+            old_content = std.Io.Reader.allocRemaining(&reader.interface, std.heap.c_allocator, .limited(10 * 1024 * 1024)) catch null;
+            std.Io.File.close(f, io);
+        }
+    }
+
     log_file = std.Io.Dir.createFile(log_dir, io, log_name, .{
-        .truncate = false,
-        // .lock = .exclusive,
+        .truncate = true,
     }) catch {
         ioError();
     };
-    if (clear_log != .False) {
-        var clear_writer = std.Io.File.writer(log_file, io, &[0]u8{});
-        _ = clear_writer.interface.writeVec(&.{""}) catch {
-            ioError();
-        };
-    }
 
-    // Note: File operations automatically append at the end for our use case
     @memset(&log_buf, 0);
     writer = std.Io.File.writerStreaming(log_file, io, &log_buf);
+
+    // 写回旧日志
+    if (old_content) |content| {
+        defer std.heap.c_allocator.free(content);
+        _ = writer.interface.writeVec(&.{content}) catch ioError();
+        writer.flush() catch ioError();
+    }
+
     log_path_initialized = true;
 }
 

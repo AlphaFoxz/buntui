@@ -1,13 +1,10 @@
 import {compile} from 'compiler';
+import {type BunPlugin, type PluginBuilder} from 'bun';
 
-type BunPluginBuilder = {
-  onLoad: (args: {filter: RegExp}, callback: (args: {path: string}) => Promise<{contents: string; loader: string}>) => void;
-};
-
-function termBedVuePlugin(): {name: string; setup: (build: BunPluginBuilder) => void} {
+function termBedVuePlugin(): BunPlugin {
   return {
     name: 'term-bed-vue',
-    setup(build: BunPluginBuilder) {
+    setup(build: PluginBuilder) {
       build.onLoad({filter: /\.vue$/v}, async args => {
         const source = await Bun.file(args.path).text();
         const result = compile(source, {
@@ -23,4 +20,3 @@ function termBedVuePlugin(): {name: string; setup: (build: BunPluginBuilder) => 
 void Bun.plugin(termBedVuePlugin());
 
 export {termBedVuePlugin};
-export type {BunPluginBuilder};

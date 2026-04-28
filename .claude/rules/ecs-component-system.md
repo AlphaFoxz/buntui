@@ -26,7 +26,7 @@ All multi-byte fields are little-endian. Commands are packed — no alignment pa
 
 ## Key Files
 
-- **Zig**: `packages/native/src/draw_list/` — commands.zig (types), clip_stack.zig, rasterizer.zig, mod.zig (parse loop)
+- **Zig**: `packages/native/src/draw_list/` — commands.zig (types), clip_stack.zig, rasterizer.zig, draw_list.zig (parse loop)
 - **TS**: `packages/core/src/draw_list/` — DrawListBuffer.ts (builder), types.ts (enums)
 - **FFI**: `renderDrawList(ctx, buf_ptr, buf_len)` in lib.zig + extern/app/lib.ts
 

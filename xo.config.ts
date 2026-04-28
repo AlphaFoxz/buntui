@@ -7,6 +7,7 @@ const expose: FlatXoConfig = [
   {
     ignores: [
       '**/*.test.ts',
+      '**/dist/**',
       'designs/**',
       'scripts/**',
       'xo.config.ts'

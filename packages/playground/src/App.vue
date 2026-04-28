@@ -187,6 +187,7 @@
 
     <!-- Z-Index: green (top, zIndex=2) -->
     <Text
+        v-if="show"
         :rectX="35"
         :rectY="29"
         :rectWidth="24"
@@ -269,8 +270,11 @@
 import { ref, computed } from '@vue/reactivity'
 
 const currentTimeStr = ref(Date.now().toString())
+const show = ref(true)
+
 setInterval(() => {
     currentTimeStr.value = Date.now().toString()
+    show.value = !show.value
 }, 1000)
 const title = computed(() => {
     return `term-bed Demo ${currentTimeStr.value} s`

@@ -15,6 +15,7 @@ import type {
   TuiDynamicProp,
   TuiEventBinding,
   TuiReactiveEffect,
+  TuiConditionalBlock,
 } from './ast';
 
 export type TransformOptions = {
@@ -30,10 +31,21 @@ export function transform(root: RootNode, _options?: TransformOptions): TuiRende
   const effects: TuiReactiveEffect[] = [];
   const children: TuiRenderNode[] = [];
 
-  for (const node of root.children) {
-    const transformed = transformNode(node, usedCreators, effects);
-    if (transformed) {
-      children.push(transformed);
+  let i = 0;
+  while (i < root.children.length) {
+    const node = root.children[i]!;
+
+    if (node.type === NodeTypes.ELEMENT && findDirective(node, 'if')) {
+      const {block, nextIndex} = processConditionalChain(node, root.children, i, usedCreators);
+      children.push(block);
+      i = nextIndex;
+    } else {
+      const transformed = transformNode(node, usedCreators, effects);
+      if (transformed) {
+        children.push(transformed);
+      }
+
+      i++;
     }
   }
 
@@ -80,6 +92,10 @@ function transformElement(
       props.push(transformStaticProp(prop));
     } else if (prop.type === NodeTypes.DIRECTIVE) {
       const result = transformDirective(prop, widgetId);
+      if (!result) {
+        continue;
+      }
+
       if (result.type === 'event') {
         events.push(result.binding);
       } else if (result.type === 'dynamic') {
@@ -139,7 +155,12 @@ function resolveExpContent(dir: DirectiveNode): string {
   return '';
 }
 
-function transformDirective(dir: DirectiveNode, _widgetId: string): DirectiveResult {
+function transformDirective(dir: DirectiveNode, _widgetId: string): DirectiveResult | undefined {
+  // Skip v-if / v-else-if / v-else — handled by processConditionalChain
+  if (dir.name === 'if' || dir.name === 'else-if' || dir.name === 'else') {
+    return undefined;
+  }
+
   // V-on: event binding
   if (dir.name === 'on' && dir.arg) {
     const event = resolveArgContent(dir);
@@ -180,4 +201,68 @@ function transformDirective(dir: DirectiveNode, _widgetId: string): DirectiveRes
       loc: dir.loc,
     },
   };
+}
+
+function findDirective(node: ElementNode, name: string): DirectiveNode | undefined {
+  for (const prop of node.props) {
+    if (prop.type === NodeTypes.DIRECTIVE && prop.name === name) {
+      return prop;
+    }
+  }
+
+  return undefined;
+}
+
+function processConditionalChain(
+  firstElement: ElementNode,
+  siblings: readonly TemplateChildNode[],
+  startIndex: number,
+  usedCreators: Set<string>,
+): {block: TuiConditionalBlock; nextIndex: number} {
+  const vIfDir = findDirective(firstElement, 'if')!;
+
+  const consequentWidget = transformElement(firstElement, usedCreators);
+  const block: TuiConditionalBlock = {
+    type: 'TuiConditionalBlock',
+    condition: resolveExpContent(vIfDir),
+    consequent: [consequentWidget],
+    loc: firstElement.loc,
+  };
+
+  let current = block;
+  let i = startIndex + 1;
+
+  while (i < siblings.length) {
+    const sibling = siblings[i]!;
+    if (sibling.type !== NodeTypes.ELEMENT) {
+      break;
+    }
+
+    const vElseIf = findDirective(sibling, 'else-if');
+    if (vElseIf) {
+      const altWidget = transformElement(sibling, usedCreators);
+      const altBlock: TuiConditionalBlock = {
+        type: 'TuiConditionalBlock',
+        condition: resolveExpContent(vElseIf),
+        consequent: [altWidget],
+        loc: sibling.loc,
+      };
+      current.alternate = altBlock;
+      current = altBlock;
+      i++;
+      continue;
+    }
+
+    const vElse = findDirective(sibling, 'else');
+    if (vElse) {
+      const altWidget = transformElement(sibling, usedCreators);
+      current.alternate = [altWidget];
+      i++;
+      break;
+    }
+
+    break;
+  }
+
+  return {block, nextIndex: i};
 }

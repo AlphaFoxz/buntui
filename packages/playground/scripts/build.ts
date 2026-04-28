@@ -1,10 +1,11 @@
+import process from 'node:process';
 import {compile} from 'compiler';
 
 const result = await Bun.build({
   entrypoints: ['src/main.ts'],
   outdir: 'dist',
   target: 'bun',
-  external: ['core', '@vue/reactivity', 'native'],
+  external: ['core', '@vue/reactivity', 'native', 'compiler'],
   plugins: [
     {
       name: 'term-bed-vue',
@@ -27,6 +28,7 @@ if (!result.success) {
     console.error(error);
   }
 
+  // eslint-disable-next-line unicorn/no-process-exit -- build script is a CLI app
   process.exit(1);
 }
 

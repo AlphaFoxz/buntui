@@ -7,10 +7,9 @@ const input = @import("../input.zig");
 const err = @import("./error.zig");
 const logger = @import("./logger.zig");
 const event_bus = @import("./event_bus.zig");
-const Rgba = @import("../ansi_util/style.zig").Rgba;
 const frame = @import("../render/frame.zig");
+const Rgba = @import("../ansi_util/style.zig").Rgba;
 const Bool = @import("./typedef.zig").Bool;
-const TuiWidgetEntity = @import("./widgets/entity.zig").TuiWidgetEntity;
 
 // ======================== app ========================
 pub fn startApp() void {
@@ -37,41 +36,9 @@ pub fn stopApp() void {
 }
 
 // ======================== scene ========================
-fn compareTuiWidgetEntity(a: *TuiWidgetEntity, b: *TuiWidgetEntity) bool {
-    return a.z_index > b.z_index;
-}
-// XXX impl binary search
-inline fn quickSearch(container: []*TuiWidgetEntity, target: *TuiWidgetEntity) ?usize {
-    for (0..container.len) |w| {
-        if (container[w] == target) {
-            return w;
-        }
-    }
-    return null;
-}
 pub const TuiScene = extern struct {
     bg_rgba: Rgba,
-    widgets: *std.ArrayList(*TuiWidgetEntity),
     sorted: Bool = .True,
-
-    pub fn mountWidget(self: *TuiScene, widget: *TuiWidgetEntity) void {
-        self.widgets.append(glo_alloc.allocator(), widget) catch {
-            err.outOfMemory();
-        };
-        self.sorted = .False;
-    }
-
-    pub fn unmountWidget(self: *TuiScene, widget: *TuiWidgetEntity) void {
-        const index = quickSearch(self.widgets.items, widget);
-        if (index != null) {
-            _ = self.widgets.orderedRemove(index.?);
-        }
-    }
-
-    pub fn sort(self: *TuiScene) void {
-        std.mem.sort(TuiWidgetEntity, self.widgets.items, .{}, compareTuiWidgetEntity);
-        self.sorted = .True;
-    }
 };
 
 pub fn createScene(bg_rgba: Rgba) *TuiScene {
@@ -79,21 +46,13 @@ pub fn createScene(bg_rgba: Rgba) *TuiScene {
     const scene = alloc.create(TuiScene) catch {
         err.outOfMemory();
     };
-    const widgets = alloc.create(std.ArrayList(*TuiWidgetEntity)) catch {
-        err.outOfMemory();
-    };
-    widgets.* = std.ArrayList(*TuiWidgetEntity).initCapacity(alloc, 0) catch {
-        err.outOfMemory();
-    };
     scene.* = TuiScene{
         .bg_rgba = bg_rgba,
-        .widgets = widgets,
     };
     return scene;
 }
 
 pub fn destroyScene(scene: *TuiScene) void {
     var alloc = glo_alloc.allocator();
-    scene.widgets.deinit(alloc);
-    defer alloc.destroy(scene);
+    alloc.destroy(scene);
 }
