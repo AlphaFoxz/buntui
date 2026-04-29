@@ -15,9 +15,9 @@ export function fetchDllPath(): string {
     return dllPath;
   }
 
-  const binaryName = `term_bed.${suffix}`;
+  const binaryName = `buntui.${suffix}`;
 
-  const envPath = process.env.TERM_BED_DLL;
+  const envPath = process.env.BUNTUI_DLL;
   if (envPath) {
     dllPath = path.resolve(envPath);
     return dllPath;
@@ -41,7 +41,7 @@ export function fetchDllPath(): string {
     return dllPath;
   }
 
-  throw new Error(`Cannot find native library: ${binaryName}. Set TERM_BED_DLL env or ensure the binary is in the search path.`);
+  throw new Error(`Cannot find native library: ${binaryName}. Set BUNTUI_DLL env or ensure the binary is in the search path.`);
 }
 
 export function assertPtr(ptr: Pointer | null): Pointer {

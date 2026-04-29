@@ -33,7 +33,7 @@ The topological sort is handled by `scripts/build.ts`.
 
 ## Native Binary Distribution
 
-The compiled shared library (`term_bed.dll` / `term_bed.dylib` / `term_bed.so`) is:
+The compiled shared library (`buntui.dll` / `buntui.dylib` / `buntui.so`) is:
 
 1. Built by `zig build` into `packages/native/zig-out/bin/`
 2. Copied to `packages/core/src/utils/` and `packages/core/dist/` by `packages/core/scripts/sync.ts`

@@ -1,20 +1,20 @@
 import process from 'node:process';
-import {compile} from 'compiler';
+import {compile} from '@buntui/compiler';
 
 const result = await Bun.build({
   entrypoints: ['src/main.ts'],
   outdir: 'dist',
   target: 'bun',
-  external: ['core', '@vue/reactivity', 'native', 'compiler'],
+  external: ['@buntui/core', '@vue/reactivity', '@buntui/native', '@buntui/compiler'],
   plugins: [
     {
-      name: 'term-bed-vue',
+      name: 'buntui-vue',
       setup(build) {
         build.onLoad({filter: /\.vue$/v}, async args => {
           const source = await Bun.file(args.path).text();
           const compiled = compile(source, {
             filename: args.path,
-            codegen: {coreModuleId: 'core', reactivityModuleId: '@vue/reactivity'},
+            codegen: {coreModuleId: '@buntui/core', reactivityModuleId: '@vue/reactivity'},
           });
           return {contents: compiled.code, loader: 'ts'};
         });

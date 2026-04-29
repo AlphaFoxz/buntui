@@ -18,8 +18,8 @@ export class TuiApp {
   constructor(options?: Partial<TuiAppOptions>) {
     const logLevel: LogLevel = options?.logLevel ?? 'info';
     const logFileDir = options?.logFilePath ?? path.dirname(Bun.main);
-    const backendLogName = options?.backendLogName ?? 'term_bed-backend.log';
-    const frontendLogName = options?.frontendLogName ?? 'term_bed-frontend.log';
+    const backendLogName = options?.backendLogName ?? 'buntui-backend.log';
+    const frontendLogName = options?.frontendLogName ?? 'buntui-frontend.log';
     const clearLog = options?.clearLog ?? false;
     app.setupLogger(logFileDir, backendLogName, logLevel, clearLog);
     this.#debugMode = options?.debugMode ?? false;

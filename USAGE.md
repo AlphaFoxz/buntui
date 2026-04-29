@@ -3,14 +3,14 @@
 ## Install
 
 ```bash
-bun i term-bed@latest
+bun i buntui@latest
 ```
 
 ## Create a `index.vue`
 
 ```vue
 <script>
-import { app } from 'term-bed'
+import { app } from 'buntui'
 
 const count = ref(0)
 

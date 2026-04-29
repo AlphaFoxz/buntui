@@ -2,7 +2,7 @@ import {cp} from 'node:fs/promises';
 import path from 'node:path';
 import {suffix} from 'bun:ffi';
 
-const appName = 'term_bed';
+const appName = 'buntui';
 
 const rootDir = path.resolve(import.meta.dir, '..', '..');
 const tasks = [

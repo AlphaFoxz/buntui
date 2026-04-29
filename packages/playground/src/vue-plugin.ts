@@ -1,15 +1,15 @@
-import {compile} from 'compiler';
+import {compile} from '@buntui/compiler';
 import {type BunPlugin, type PluginBuilder} from 'bun';
 
-function termBedVuePlugin(): BunPlugin {
+function buntuiVuePlugin(): BunPlugin {
   return {
-    name: 'term-bed-vue',
+    name: 'buntui-vue',
     setup(build: PluginBuilder) {
       build.onLoad({filter: /\.vue$/v}, async args => {
         const source = await Bun.file(args.path).text();
         const result = compile(source, {
           filename: args.path,
-          codegen: {coreModuleId: 'core', reactivityModuleId: '@vue/reactivity'},
+          codegen: {coreModuleId: '@buntui/core', reactivityModuleId: '@vue/reactivity'},
         });
         return {contents: result.code, loader: 'ts'};
       });
@@ -17,6 +17,6 @@ function termBedVuePlugin(): BunPlugin {
   };
 }
 
-void Bun.plugin(termBedVuePlugin());
+void Bun.plugin(buntuiVuePlugin());
 
-export {termBedVuePlugin};
+export {buntuiVuePlugin};

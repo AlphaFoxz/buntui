@@ -15,7 +15,7 @@ pub fn build(b: *std.Build) void {
     root_module.linkSystemLibrary("c", .{});
 
     const lib = b.addLibrary(.{
-        .name = "term_bed",
+        .name = "buntui",
         .root_module = root_module,
         .linkage = .dynamic,
     });

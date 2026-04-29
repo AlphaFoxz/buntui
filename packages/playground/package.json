@@ -1,5 +1,5 @@
 {
-    "name": "playground",
+    "name": "@buntui/playground",
     "version": "0.1.0",
     "scripts": {
         "dev": "bun --preload ./src/vue-plugin.ts src/main.ts",
@@ -8,10 +8,10 @@
     "dependencies": {
         "@types/bun": "^1.3.13",
         "@vue/reactivity": "^3.5.33",
-        "compiler": "workspace:*",
-        "core": "workspace:*"
+        "@buntui/compiler": "workspace:*",
+        "@buntui/core": "workspace:*"
     },
     "devDependencies": {
-        "native": "workspace:*"
+        "@buntui/native": "workspace:*"
     }
 }

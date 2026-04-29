@@ -14,14 +14,14 @@
       },
     },
     "packages/compiler": {
-      "name": "compiler",
+      "name": "@buntui/compiler",
       "version": "0.1.0",
       "dependencies": {
+        "@buntui/core": "workspace:*",
         "@vue/compiler-core": "^3.5.33",
         "@vue/compiler-sfc": "^3.5.33",
         "@vue/reactivity": "^3.5.33",
         "@vue/shared": "^3.5.33",
-        "core": "workspace:*",
       },
       "devDependencies": {
         "@types/bun": "^1.3.13",
@@ -31,14 +31,11 @@
       },
     },
     "packages/core": {
-      "name": "core",
+      "name": "@buntui/core",
       "version": "0.1.0",
-      "dependencies": {
-        "@vue/reactivity": "^3.5.33",
-      },
       "devDependencies": {
+        "@buntui/native": "workspace:*",
         "@types/bun": "^1.3.13",
-        "native": "workspace:*",
         "string-width": "^8.2.0",
       },
       "peerDependencies": {
@@ -46,20 +43,20 @@
       },
     },
     "packages/native": {
-      "name": "native",
+      "name": "@buntui/native",
       "version": "0.1.0",
     },
     "packages/playground": {
-      "name": "playground",
+      "name": "@buntui/playground",
       "version": "0.1.0",
       "dependencies": {
+        "@buntui/compiler": "workspace:*",
+        "@buntui/core": "workspace:*",
         "@types/bun": "^1.3.13",
         "@vue/reactivity": "^3.5.33",
-        "compiler": "workspace:*",
-        "core": "workspace:*",
       },
       "devDependencies": {
-        "native": "workspace:*",
+        "@buntui/native": "workspace:*",
       },
     },
   },
@@ -95,6 +92,14 @@
     "@babel/traverse": ["@babel/traverse@7.29.0", "", { "dependencies": { "@babel/code-frame": "^7.29.0", "@babel/generator": "^7.29.0", "@babel/helper-globals": "^7.28.0", "@babel/parser": "^7.29.0", "@babel/template": "^7.28.6", "@babel/types": "^7.29.0", "debug": "^4.3.1" } }, "sha512-4HPiQr0X7+waHfyXPZpWPfWL/J7dcN1mx9gL6WdQVMbPnF3+ZhSMs8tCxN7oHddJE9fhNE7+lxdnlyemKfJRuA=="],
 
     "@babel/types": ["@babel/types@7.29.0", "", { "dependencies": { "@babel/helper-string-parser": "^7.27.1", "@babel/helper-validator-identifier": "^7.28.5" } }, "sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A=="],
+
+    "@buntui/compiler": ["@buntui/compiler@workspace:packages/compiler"],
+
+    "@buntui/core": ["@buntui/core@workspace:packages/core"],
+
+    "@buntui/native": ["@buntui/native@workspace:packages/native"],
+
+    "@buntui/playground": ["@buntui/playground@workspace:packages/playground"],
 
     "@emnapi/core": ["@emnapi/core@1.10.0", "", { "dependencies": { "@emnapi/wasi-threads": "1.2.1", "tslib": "^2.4.0" } }, "sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw=="],
 
@@ -322,15 +327,11 @@
 
     "common-path-prefix": ["common-path-prefix@3.0.0", "", {}, "sha512-QE33hToZseCH3jS0qN96O/bSh3kaw/h+Tq7ngyY9eWDUnTlTNUyqfqvCXioLe5Na5jFsL78ra/wuBU4iuEgd4w=="],
 
-    "compiler": ["compiler@workspace:packages/compiler"],
-
     "concat-map": ["concat-map@0.0.1", "", {}, "sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg=="],
 
     "confusing-browser-globals": ["confusing-browser-globals@1.0.11", "", {}, "sha512-JsPKdmh8ZkmnHxDk55FZ1TqVLvEQTvoByJZRN9jzI0UjxK/QgAmsphz7PGtqgPieQZ/CQcHWXCR7ATDNhGe+YA=="],
 
     "convert-source-map": ["convert-source-map@2.0.0", "", {}, "sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg=="],
-
-    "core": ["core@workspace:packages/core"],
 
     "core-js-compat": ["core-js-compat@3.49.0", "", { "dependencies": { "browserslist": "^4.28.1" } }, "sha512-VQXt1jr9cBz03b331DFDCCP90b3fanciLkgiOoy8SBHy06gNf+vQ1A3WFLqG7I8TipYIKeYK9wxd0tUrvHcOZA=="],
 
@@ -688,8 +689,6 @@
 
     "napi-postinstall": ["napi-postinstall@0.3.4", "", { "bin": { "napi-postinstall": "lib/cli.js" } }, "sha512-PHI5f1O0EP5xJ9gQmFGMS6IZcrVvTjpXjz7Na41gTE7eE2hK11lg04CECCYEEjdc17EV4DO+fkGEtt7TpTaTiQ=="],
 
-    "native": ["native@workspace:packages/native"],
-
     "natural-compare": ["natural-compare@1.4.0", "", {}, "sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw=="],
 
     "node-exports-info": ["node-exports-info@1.6.0", "", { "dependencies": { "array.prototype.flatmap": "^1.3.3", "es-errors": "^1.3.0", "object.entries": "^1.1.9", "semver": "^6.3.1" } }, "sha512-pyFS63ptit/P5WqUkt+UUfe+4oevH+bFeIiPPdfb0pFeYEu/1ELnJu5l+5EcTKYL5M7zaAa7S8ddywgXypqKCw=="],
@@ -741,8 +740,6 @@
     "picomatch": ["picomatch@4.0.4", "", {}, "sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A=="],
 
     "pkg-dir": ["pkg-dir@8.0.0", "", { "dependencies": { "find-up-simple": "^1.0.0" } }, "sha512-4peoBq4Wks0riS0z8741NVv+/8IiTvqnZAr8QGgtdifrtpdXbNw/FxRS1l6NFqm4EMzuS0EDqNNx4XGaz8cuyQ=="],
-
-    "playground": ["playground@workspace:packages/playground"],
 
     "plur": ["plur@5.1.0", "", { "dependencies": { "irregular-plurals": "^3.3.0" } }, "sha512-VP/72JeXqak2KiOzjgKtQen5y3IZHn+9GOuLDafPv0eXa47xq0At93XahYBs26MsifCQ4enGKwbjBTKgb9QJXg=="],
 

@@ -1,6 +1,6 @@
 import path from 'node:path';
-import {createApp} from 'core';
-import {createDevServer, type DevServerOptions} from 'compiler';
+import {createApp} from '@buntui/core';
+import {createDevServer, type DevServerOptions} from '@buntui/compiler';
 import {setup} from './App.vue';
 
 const VUE_FILE = path.join(import.meta.dir, 'App.vue');
@@ -13,7 +13,7 @@ app.start();
 
 createDevServer({
   file: VUE_FILE,
-  compileOptions: {codegen: {coreModuleId: 'core', reactivityModuleId: '@vue/reactivity'}},
+  compileOptions: {codegen: {coreModuleId: '@buntui/core', reactivityModuleId: '@vue/reactivity'}},
   onClear() {
     scene.clearWidgets();
   },

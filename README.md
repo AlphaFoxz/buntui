@@ -28,7 +28,7 @@
 ## 目标
 
 - 一个很cool的terminal ui框架
-- 让用户像使用 vite + vue 一样使用本框架（vite + term-bed）。
+- 让用户像使用 vite + vue 一样使用本框架（vite + buntui）。
   - 提供热重载
   - 提供多种内置widget
   - 用户通过编写 .vue 文件可轻松编排layout

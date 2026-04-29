@@ -60,7 +60,7 @@ export type CodegenResult = {
  * and mounts them to the scene.
  */
 export function generate(root: TuiRenderRoot, options?: CodegenOptions): CodegenResult {
-  const core = options?.coreModuleId ?? 'core';
+  const core = options?.coreModuleId ?? '@buntui/core';
   const react = options?.reactivityModuleId ?? '@vue/reactivity';
   const imports: string[] = [];
   const lines: string[] = [];

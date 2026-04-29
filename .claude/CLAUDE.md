@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**term-bed** is a cross-platform Terminal User Interface (TUI) framework combining Zig (native backend) with TypeScript (high-level API). The architecture bridges the two via FFI using Bun's `dlopen()` — Zig exports C ABI functions, TypeScript consumes them through type-safe bindings.
+**buntui** is a cross-platform Terminal User Interface (TUI) framework combining Zig (native backend) with TypeScript (high-level API). The architecture bridges the two via FFI using Bun's `dlopen()` — Zig exports C ABI functions, TypeScript consumes them through type-safe bindings.
 
 This project uses **Bun exclusively** as its runtime, package manager, and build tool. Do not use `npm`, `npx`, `yarn`, or `pnpm`. All commands use `bun` (e.g., `bun install`, `bun run`, `bun test`).
 
@@ -50,7 +50,7 @@ There is no dedicated lint command in package.json. XO is a devDependency for pr
 
 ### Native Build
 
-The `native` package uses `zig build` (`build.zig`). It produces a shared library (`term_bed.dll`/`.dylib`/`.so`) in `zig-out/bin/`. Default optimization is `Debug`.
+The `native` package uses `zig build` (`build.zig`). It produces a shared library (`buntui.dll`/`.dylib`/`.so`) in `zig-out/bin/`. Default optimization is `Debug`.
 
 ## Architecture
 

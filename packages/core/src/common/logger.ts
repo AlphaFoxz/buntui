@@ -84,7 +84,7 @@ class LoggerImpl {
 
     const backendLogPath = path.resolve(
       this.#logFileDir,
-      options.backendLogName || 'term_bed.log',
+      options.backendLogName || 'buntui.log',
     );
     // TODO zig should do this
     if (!fs.existsSync(backendLogPath)) {

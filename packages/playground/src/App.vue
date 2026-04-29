@@ -277,6 +277,6 @@ setInterval(() => {
     show.value = !show.value
 }, 1000)
 const title = computed(() => {
-    return `term-bed Demo ${currentTimeStr.value} s`
+    return `buntui Demo ${currentTimeStr.value} s`
 })
 </script>
