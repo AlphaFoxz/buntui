@@ -2,13 +2,13 @@ import type {SourceLocation} from '@vue/compiler-core';
 
 /**
  * TUI widget creation call in the generated render function.
- * e.g. `createText({ text: 'Hello', rectX: 10 })`
+ * e.g. `createBox({ text: 'Hello', rectX: 10 })`
  */
 export type TuiWidgetCall = {
   readonly type: 'TuiWidgetCall';
-  /** The tag name from template, e.g. "Text" */
+  /** The tag name from template, e.g. "Box" */
   tag: string;
-  /** Resolved creator function name, e.g. "createText" */
+  /** Resolved creator function name, e.g. "createBox" */
   creator: string;
   /** Static props (known at compile time) */
   props: TuiStaticProp[];

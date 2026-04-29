@@ -17,7 +17,7 @@ This project uses **Bun exclusively** as its runtime, package manager, and build
 
 ### Public API
 
-**`@buntui/core`** exports: `createApp`, `widgets` (namespace), `createText`, `createFrameRateWatcher`
+**`@buntui/core`** exports: `createApp`, `widgets` (namespace), `createBox`, `createFrameRateWatcher`
 
 **`@buntui/compiler`** exports: `compile`, `parse`, `transform`, `generate`, `createDevServer`, plus types `CompileOptions`, `CompileResult`, `SFCParseOptions`, `CodegenOptions`, `CodegenResult`, `DevServerOptions`
 

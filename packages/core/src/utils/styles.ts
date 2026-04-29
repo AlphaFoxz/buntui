@@ -22,3 +22,8 @@ export function rgbToRgba(
 
   return ((n << 8) | 0xFF) >>> 0;
 }
+
+export function withAlpha(rgbaValue: number, alpha: number): number {
+  const a = Math.max(0, Math.min(255, Math.round(alpha)));
+  return ((rgbaValue & 0x00_FF_FF_FF) | (a << 24)) >>> 0;
+}

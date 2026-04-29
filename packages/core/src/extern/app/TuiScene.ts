@@ -1,6 +1,7 @@
 import {genId} from '../../utils/genId';
 import {rgbToRgba} from '../../utils/styles';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {MouseEvent} from '../../events/types';
 import {type TuiWidgetEntity} from '../widgets/TuiWidgetEntity';
 import {type TuiSceneOptions} from './types';
 
@@ -66,6 +67,24 @@ export class TuiScene {
     for (const widget of sorted) {
       widget.emitDrawCommands(buf);
     }
+  }
+
+  /**
+   * Find the topmost widget at the given terminal coordinates (1-based from SGR).
+   * Returns the widget or undefined if nothing is hit.
+   */
+  hitTest(rawEvent: MouseEvent): TuiWidgetEntity | undefined {
+    const mx = rawEvent.x - 1;
+    const my = rawEvent.y - 1;
+
+    const sorted = [...this.#widgets].toSorted((a, b) => b.zIndex - a.zIndex);
+    for (const widget of sorted) {
+      if (widget.containsPoint(mx, my)) {
+        return widget;
+      }
+    }
+
+    return undefined;
   }
 
   clearWidgets() {

@@ -1,12 +1,12 @@
 import {TUI_CONTEXT_INSTANCE} from '../extern/app/TuiContext';
-import TextWidget, {DEFAULT_TEXT_OPTIONS, type TextWidgetOptions} from './TextWidget';
+import BoxWidget, {DEFAULT_BOX_OPTIONS, type BoxWidgetOptions} from './BoxWidget';
 
-export type FrameRateWatcherOptions = Omit<TextWidgetOptions, 'text'>;
+export type FrameRateWatcherOptions = Omit<BoxWidgetOptions, 'text'>;
 
-export class FrameRateWatcher extends TextWidget {
+export class FrameRateWatcher extends BoxWidget {
   #latestTick = 0n;
   #timer: NodeJS.Timeout | null = null;
-  constructor(options: Omit<TextWidgetOptions, 'text'>) {
+  constructor(options: Omit<BoxWidgetOptions, 'text'>) {
     super({
       ...options,
       text: '0 fps',
@@ -32,7 +32,7 @@ export class FrameRateWatcher extends TextWidget {
 
 export function createFrameRateWatcher(options?: Partial<FrameRateWatcherOptions>) {
   return new FrameRateWatcher({
-    ...DEFAULT_TEXT_OPTIONS,
+    ...DEFAULT_BOX_OPTIONS,
     ...options,
   });
 }

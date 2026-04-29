@@ -1,5 +1,6 @@
 export {createApp} from './app';
 export * as widgets from './widgets';
-export {createText} from './widgets/TextWidget';
+export {createBox} from './widgets/BoxWidget';
 export {createFrameRateWatcher} from './widgets/FrameRateWatcher';
+export {rgbToRgba, withAlpha} from './utils/styles';
 

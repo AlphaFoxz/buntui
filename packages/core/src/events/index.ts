@@ -6,14 +6,12 @@ import {
   type InferEvent,
 } from './types';
 
-const schemaRegistry = new Map<number, new (json: Record<string, unknown>) => TuiEvent>([
+const schemaRegistry = new Map<number, new (buffer: ArrayBuffer) => TuiEvent>([
   [TuiEventType.KeyboardEvent, KeyboardEvent],
   [TuiEventType.MouseEvent, MouseEvent],
   [TuiEventType.WheelEvent, WheelEvent],
   [TuiEventType.TermResizeEvent, TermResizeEvent],
 ]);
-
-const decoder = new TextDecoder('utf-8');
 
 class EventBusImpl {
   #running = false;
@@ -39,16 +37,13 @@ class EventBusImpl {
 
           const payloadBuf = toArrayBuffer(slotPtr, 16, payloadLength);
 
-          const jsonString = decoder.decode(payloadBuf);
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- JSON.parse returns any, validated by event constructors
-          const json: Record<string, unknown> = JSON.parse(jsonString);
           const SCHEMA_CLASS = schemaRegistry.get(eventType);
           if (!SCHEMA_CLASS) {
             console.warn(`Unknown event type: ${eventType}`);
             throw new Error(`Unknown event type: ${eventType}`);
           }
 
-          const event = new SCHEMA_CLASS(json);
+          const event = new SCHEMA_CLASS(payloadBuf);
 
           const handlers = this.#handlers[eventType];
           if (handlers) {

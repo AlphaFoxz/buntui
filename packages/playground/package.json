@@ -1,6 +1,6 @@
 {
     "name": "@buntui/playground",
-    "version": "0.1.0",
+    "version": "0.0.0-alpha",
     "scripts": {
         "dev": "bun --preload ./src/vue-plugin.ts src/main.ts",
         "build": "bun run ./scripts/build.ts"

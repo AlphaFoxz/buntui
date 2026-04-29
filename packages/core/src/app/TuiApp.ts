@@ -1,12 +1,13 @@
 import path from 'node:path';
 import process from 'node:process';
-import {TuiEventType} from '../events/types';
+import {type MouseEvent, TuiEventType} from '../events/types';
 import app, {TUI_CONTEXT_INSTANCE} from '../extern/app';
 import {type LogLevel, type TuiAppOptions, type TuiSceneOptions} from '../extern/app/types';
 import {LOGGER} from '../common/logger';
 import {EVENT_BUS} from '../events';
 import {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import TuiScene from '../extern/app/TuiScene';
+import type {TuiWidgetEntity} from '../extern/widgets/TuiWidgetEntity';
 
 export class TuiApp {
   readonly #debugMode: boolean;
@@ -14,6 +15,11 @@ export class TuiApp {
   #scenes: TuiScene[] = [];
   #currentScene: TuiScene | undefined = undefined;
   #running = false;
+  #mouseHandler: ((data: MouseEvent) => void) | undefined;
+  #pressTarget: TuiWidgetEntity | undefined;
+  #isDragging = false;
+  #dragOffsetX = 0;
+  #dragOffsetY = 0;
 
   constructor(options?: Partial<TuiAppOptions>) {
     const logLevel: LogLevel = options?.logLevel ?? 'info';
@@ -58,6 +64,70 @@ export class TuiApp {
       app.detectTermSize(TUI_CONTEXT_INSTANCE);
       LOGGER.logInfo(`Terminal resized: ${TUI_CONTEXT_INSTANCE.rows}x${TUI_CONTEXT_INSTANCE.cols}`);
     });
+
+    this.#mouseHandler = (data: MouseEvent) => {
+      const scene = this.#currentScene;
+      if (!scene) {
+        return;
+      }
+
+      // Mouse move (button not set, buttons may indicate held state)
+      if (data.button === undefined) {
+        if (this.#pressTarget && this.#pressTarget.draggable && data.buttons && data.buttons > 0) {
+          if (!this.#isDragging) {
+            this.#isDragging = true;
+            this.#pressTarget.dispatch('dragstart', data);
+          }
+
+          const mx = data.x - 1;
+          const my = data.y - 1;
+          const newX = Math.max(0, mx - this.#dragOffsetX);
+          const newY = Math.max(0, my - this.#dragOffsetY);
+          this.#pressTarget.updateRect({
+            rectX: newX,
+            rectY: newY,
+          });
+          this.#pressTarget.dispatch('drag', data);
+        }
+
+        return;
+      }
+
+      // Press
+      if (!data.isRelease) {
+        this.#pressTarget = scene.hitTest(data);
+        if (this.#pressTarget) {
+          this.#pressTarget.dispatch('mousedown', data);
+          this.#dragOffsetX = (data.x - 1) - this.#pressTarget.rect.rectX;
+          this.#dragOffsetY = (data.y - 1) - this.#pressTarget.rect.rectY;
+        }
+
+        return;
+      }
+
+      // Release
+      if (this.#isDragging) {
+        this.#pressTarget?.dispatch('dragend', data);
+        this.#isDragging = false;
+        this.#pressTarget = undefined;
+        return;
+      }
+
+      if (this.#pressTarget) {
+        this.#pressTarget.dispatch('mouseup', data);
+
+        // Click only if release also hits the same widget
+        const releaseTarget = scene.hitTest(data);
+        if (releaseTarget === this.#pressTarget) {
+          this.#pressTarget.dispatch('click', data);
+        }
+
+        this.#pressTarget = undefined;
+      }
+    };
+
+    EVENT_BUS.on(TuiEventType.MouseEvent, this.#mouseHandler);
+
     app.startApp();
     EVENT_BUS.start();
     app.detectTermSize(TUI_CONTEXT_INSTANCE);
@@ -76,7 +146,7 @@ export class TuiApp {
         app.renderDrawList(TUI_CONTEXT_INSTANCE, this.#drawList);
       }
 
-      setTimeout(render, 16);
+      setTimeout(render, 5);
     };
 
     setTimeout(render, 0);
@@ -84,6 +154,11 @@ export class TuiApp {
 
   stop() {
     this.#running = false;
+    if (this.#mouseHandler) {
+      EVENT_BUS.off(TuiEventType.MouseEvent, this.#mouseHandler);
+      this.#mouseHandler = undefined;
+    }
+
     setAppInstance(undefined);
     this.#currentScene?.destroy();
     app.stopApp();

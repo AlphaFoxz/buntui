@@ -35,8 +35,13 @@ const PROP_UPDATE_MAP: Record<string, {method: string; field: string}> = {
   shadowOffsetY: {method: 'updateShadow', field: 'shadowOffsetY'},
   shadowColor: {method: 'updateShadow', field: 'shadowColor'},
   shadowCovered: {method: 'updateShadow', field: 'shadowCovered'},
-  // Text — updateText(val)
+  // Box — updateText(val)
   text: {method: 'updateText', field: ''},
+};
+
+// Flag props that map to setter calls instead of constructor args
+const FLAG_PROP_MAP: Record<string, string> = {
+  draggable: 'setDraggable',
 };
 
 export type CodegenOptions = {
@@ -143,13 +148,24 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
 
   // Build options object from props
   const props: string[] = [];
+  const flagLines: string[] = [];
   for (const prop of node.props) {
-    props.push(`${prop.name}: ${JSON.stringify(prop.value)}`);
+    const setter = FLAG_PROP_MAP[prop.name];
+    if (setter) {
+      flagLines.push(`${varName}.${setter}(${prop.value === 'true'});`);
+    } else {
+      props.push(`${prop.name}: ${JSON.stringify(prop.value)}`);
+    }
   }
 
   for (const prop of node.dynamicProps) {
-    // Unref safely unwraps refs (returns raw value for non-refs)
-    props.push(`${prop.name}: unref(${prop.expression})`);
+    const setter = FLAG_PROP_MAP[prop.name];
+    if (setter) {
+      flagLines.push(`${varName}.${setter}(unref(${prop.expression}));`);
+    } else {
+      // Unref safely unwraps refs (returns raw value for non-refs)
+      props.push(`${prop.name}: unref(${prop.expression})`);
+    }
   }
 
   if (props.length > 0) {
@@ -175,6 +191,14 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
       lines.push(`effect(() => { ${varName}.${info.method}(unref(${prop.expression})); });`);
     }
   }
+
+  // Generate event handler registrations
+  for (const eventBinding of node.events) {
+    lines.push(`${varName}.on('${eventBinding.event}', ${eventBinding.handler});`);
+  }
+
+  // Generate flag prop setter calls
+  lines.push(...flagLines);
 
   // Generate children
   let nextIndex = index + 1;
@@ -221,6 +245,8 @@ type WidgetInfo = {
   varName: string;
   createLine: string;
   updateEffects: string[];
+  eventLines: string[];
+  flagLines: string[];
 };
 
 function generateConditional(block: TuiConditionalBlock, index: number): NodeGenResult {
@@ -237,7 +263,9 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
       const varName = getWidgetVarName(node, nextIndex);
       const createLine = buildWidgetCreation(node);
       const updateEffects = buildGuardedUpdateEffects(node, varName);
-      widgets.push({varName, createLine, updateEffects});
+      const eventLines = buildEventLines(node, varName);
+      const flagLines = buildFlagLines(node, varName);
+      widgets.push({varName, createLine, updateEffects, eventLines, flagLines});
       nextIndex++;
     }
 
@@ -266,6 +294,16 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
       effectLines.push(
         `    if (!${w.varName}) {`,
         `      ${w.varName} = ${w.createLine};`,
+      );
+      for (const eventLine of w.eventLines) {
+        effectLines.push(`      ${eventLine}`);
+      }
+
+      for (const flagLine of w.flagLines) {
+        effectLines.push(`      ${flagLine}`);
+      }
+
+      effectLines.push(
         `      scene.mount(${w.varName});`,
         '    }',
       );
@@ -328,6 +366,10 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
 function buildWidgetCreation(node: TuiWidgetCall): string {
   const props: string[] = [];
   for (const prop of node.props) {
+    if (FLAG_PROP_MAP[prop.name]) {
+      continue;
+    }
+
     props.push(`${prop.name}: ${JSON.stringify(prop.value)}`);
   }
 
@@ -358,6 +400,34 @@ function buildGuardedUpdateEffects(node: TuiWidgetCall, varName: string): string
   return effects;
 }
 
+function buildEventLines(node: TuiWidgetCall, varName: string): string[] {
+  const result: string[] = [];
+  for (const eventBinding of node.events) {
+    result.push(`${varName}.on('${eventBinding.event}', ${eventBinding.handler});`);
+  }
+
+  return result;
+}
+
+function buildFlagLines(node: TuiWidgetCall, varName: string): string[] {
+  const result: string[] = [];
+  for (const prop of node.props) {
+    const setter = FLAG_PROP_MAP[prop.name];
+    if (setter) {
+      result.push(`${varName}.${setter}(${prop.value === 'true'});`);
+    }
+  }
+
+  for (const prop of node.dynamicProps) {
+    const setter = FLAG_PROP_MAP[prop.name];
+    if (setter) {
+      result.push(`${varName}.${setter}(unref(${prop.expression}));`);
+    }
+  }
+
+  return result;
+}
+
 function generateList(node: TuiListBlock, index: number): NodeGenResult {
   const lines: string[] = [];
   const indexExpr = node.indexVar ? `, ${node.indexVar}` : '';
@@ -381,7 +451,7 @@ function generateList(node: TuiListBlock, index: number): NodeGenResult {
 }
 
 function getWidgetVarName(node: TuiWidgetCall, index: number): string {
-  return `${node.tag.toLowerCase()}${index}`;
+  return `_${node.tag.toLowerCase()}${index}`;
 }
 
 function hasDynamicBindings(root: TuiRenderRoot): boolean {

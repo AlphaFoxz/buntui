@@ -1,6 +1,6 @@
 {
     "name": "buntui",
-    "version": "0.1.0",
+    "version": "0.0.0-alpha",
     "private": true,
     "scripts": {
         "dev": "bun run --cwd ./packages/playground dev",

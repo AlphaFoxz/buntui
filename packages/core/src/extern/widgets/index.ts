@@ -1,1 +1,1 @@
-export {TextWidget} from '../../widgets/TextWidget';
+export {BoxWidget} from '../../widgets/BoxWidget';

@@ -10,14 +10,14 @@ import {TuiWidgetEntity} from '../extern/widgets/TuiWidgetEntity';
 import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import {BorderSides} from '../draw_list/types';
 
-export type TextWidgetOptions = TuiWidgetRect
+export type BoxWidgetOptions = TuiWidgetRect
   & TuiWidgetColor
   & Partial<TuiWidgetStyle>
   & Partial<TuiWidgetBorder>
   & Partial<TuiWidgetShadow>
   & TuiWidgetText;
 
-export class TextWidget extends TuiWidgetEntity {
+export class BoxWidget extends TuiWidgetEntity {
   readonly #rect: TuiWidgetRect;
   readonly #color: TuiWidgetColor;
   readonly #style: TuiWidgetStyle;
@@ -25,7 +25,7 @@ export class TextWidget extends TuiWidgetEntity {
   readonly #shadow: TuiWidgetShadow;
   #text: string;
 
-  constructor(options: TextWidgetOptions) {
+  constructor(options: BoxWidgetOptions) {
     super();
     this.#rect = {
       rectX: options.rectX,
@@ -58,11 +58,11 @@ export class TextWidget extends TuiWidgetEntity {
     this.#text = options.text;
   }
 
-  get rect(): TuiWidgetRect {
+  override get rect(): TuiWidgetRect {
     return this.#rect;
   }
 
-  updateRect(rect: Partial<TuiWidgetRect>) {
+  override updateRect(rect: Partial<TuiWidgetRect>) {
     Object.assign(this.#rect, rect);
   }
 
@@ -100,6 +100,11 @@ export class TextWidget extends TuiWidgetEntity {
 
   override get zIndex(): number {
     return this.#style.styleZIndex;
+  }
+
+  override containsPoint(x: number, y: number): boolean {
+    const {rectX, rectY, rectWidth, rectHeight} = this.#rect;
+    return x >= rectX && x < rectX + rectWidth && y >= rectY && y < rectY + rectHeight;
   }
 
   get text() {
@@ -160,7 +165,7 @@ export class TextWidget extends TuiWidgetEntity {
   }
 }
 
-export const DEFAULT_TEXT_OPTIONS: TextWidgetOptions = {
+export const DEFAULT_BOX_OPTIONS: BoxWidgetOptions = {
   rectX: 0,
   rectY: 0,
   rectWidth: 0,
@@ -170,17 +175,17 @@ export const DEFAULT_TEXT_OPTIONS: TextWidgetOptions = {
   text: '',
 };
 
-export function createText(options: Partial<TextWidgetOptions> & {text: string}): TextWidget;
-export function createText(text: string): TextWidget;
-export function createText(options: string | (Partial<TextWidgetOptions> & {text: string})) {
+export function createBox(options: Partial<BoxWidgetOptions> & {text: string}): BoxWidget;
+export function createBox(text: string): BoxWidget;
+export function createBox(options: string | (Partial<BoxWidgetOptions> & {text: string})) {
   if (typeof options === 'string') {
-    return new TextWidget({...DEFAULT_TEXT_OPTIONS, text: options});
+    return new BoxWidget({...DEFAULT_BOX_OPTIONS, text: options});
   }
 
-  return new TextWidget({
-    ...DEFAULT_TEXT_OPTIONS,
+  return new BoxWidget({
+    ...DEFAULT_BOX_OPTIONS,
     ...options,
   });
 }
 
-export default TextWidget;
+export default BoxWidget;

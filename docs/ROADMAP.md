@@ -15,7 +15,7 @@ Goal: a working imperative API — create app, mount text widgets, see output, h
 | 0-3 | Wire event processing into app loop | ✅ Done |
 | 0-4 | Fix event header size mismatch (12 → 16 bytes on TS side) | ✅ Done |
 | 0-5 | Scene background color from parameter, not hard-coded | ✅ Done |
-| 0-6 | End-to-end smoke test: render a TextWidget and verify output | ✅ Done |
+| 0-6 | End-to-end smoke test: render a BoxWidget and verify output | ✅ Done |
 
 ## Phase 1 — Cross-platform support (current phase) — [#12](https://github.com/AlphaFoxz/buntui/issues/12)
 
@@ -60,7 +60,7 @@ Goal: write UIs with Vue-like template syntax as shown in USAGE.md.
 |---|------|--------|
 | 4-1 | Design component descriptor format (`defineComponent`-like API) | ✅ Done |
 | 4-2 | Build a Vite plugin that compiles `.vue` SFCs to buntui render functions | ✅ Done |
-| 4-3 | Template compiler: `<Text>`, `<scene>` → imperative mount calls | ✅ Done |
+| 4-3 | Template compiler: `<Box>`, `<scene>` → imperative mount calls | ✅ Done |
 | 4-4 | Event binding syntax (`@keydown`, `@click`) | Not started |
 | 4-5 | Prop binding (`:x`, `:y`, `v-if`, `v-for`) | ✅ Done |
 | 4-6 | `bun run dev` dev server with HMR | ✅ Done |

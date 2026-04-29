@@ -55,7 +55,7 @@ Unknown command types are skipped (payload_len allows parser to advance past the
 Each widget class has an `emitDrawCommands(buf: DrawListBuffer)` method:
 
 ```typescript
-class TextWidget extends TuiWidgetEntity {
+class BoxWidget extends TuiWidgetEntity {
   override emitDrawCommands(buf: DrawListBuffer): void {
     const {rectX, rectY, rectWidth, rectHeight} = this.rect;
     const {colorFg, colorBg} = this.color;

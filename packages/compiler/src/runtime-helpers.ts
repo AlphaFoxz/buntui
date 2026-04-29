@@ -4,7 +4,7 @@
  */
 export const RUNTIME_HELPERS = {
   // Widget creation
-  CREATE_TEXT: 'createText',
+  CREATE_BOX: 'createBox',
   CREATE_FRAME_RATE_WATCHER: 'createFrameRateWatcher',
 
   // App & scene
@@ -20,6 +20,6 @@ export const RUNTIME_HELPERS = {
  * Map of PascalCase template tag names to their core package widget creators.
  */
 export const WIDGET_TAG_MAP: Record<string, string> = {
-  Text: RUNTIME_HELPERS.CREATE_TEXT,
+  Box: RUNTIME_HELPERS.CREATE_BOX,
   FrameRateWatcher: RUNTIME_HELPERS.CREATE_FRAME_RATE_WATCHER,
 } as const;

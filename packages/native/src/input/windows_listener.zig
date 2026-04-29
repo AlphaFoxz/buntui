@@ -4,6 +4,7 @@ const logger = @import("../core/logger.zig");
 const windows = std.os.windows;
 const mode = @import("./windows_mode.zig");
 const event_bus = @import("../core/event_bus.zig");
+const payloads = @import("../core/event_payloads.zig");
 const mapper = @import("./windows_mapper.zig");
 
 comptime {
@@ -87,160 +88,129 @@ pub extern "kernel32" fn WaitForSingleObject(
     dwMilliseconds: u32,
 ) callconv(.winapi) u32;
 
-// 原生鼠标常量已移除 — VT 模式下鼠标事件通过 parseSgrMouseSequence 处理
-
 const RIGHT_ALT_PRESSED = 0x0001;
 const LEFT_ALT_PRESSED = 0x0002;
 const RIGHT_CTRL_PRESSED = 0x0004;
 const LEFT_CTRL_PRESSED = 0x0008;
 const SHIFT_PRESSED = 0x0010;
 
-// 定义简单的状态机状态
 const InputState = enum {
     Normal,
-    EscReceived, // 收到了 \x1b
-    CsiReceived, // 收到了 [
+    EscReceived,
+    CsiReceived,
     Ss3Received,
-    // 实际的 parser 可能会更复杂，这里简化演示
 };
 
-// See https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
-const keyboard_event_fmt =
-    \\{{"key":"{s}","shiftKey":{},"altKey":{},"ctrlKey":{},"metaKey":{},"repeat":{},"charCode":{d}}}
-;
-const keyboard_event_fmt_uni =
-    \\{{"key":"{u}","shiftKey":{},"altKey":{},"ctrlKey":{},"metaKey":{},"repeat":{},"charCode":{d}}}
-;
-const keyboard_event_fmt_vir =
-    \\{{"key":"{s}","shiftKey":{},"altKey":{},"ctrlKey":{},"metaKey":{},"repeat":{},"charCode":{d}}}
-;
-// See https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent
-const mouse_event_fmt =
-    \\{{"button":{s},"buttons":{s},"x":{d},"y":{d},"shiftKey":{},"altKey":{},"ctrlKey":{},"metaKey":{}}}
-;
-// See https://developer.mozilla.org/en-US/docs/Web/API/WheelEvent
-const wheel_event_fmt =
-    \\{{"button":{s},"buttons":{s},"x":{d},"y":{d},"shiftKey":{},"altKey":{},"ctrlKey":{},"metaKey":{},"wheelDeltaY":{d}}}
-;
-const term_resize_event_fmt =
-    \\{{"rows":{d},"cols":{d}}}
-;
-var event_buf: [256]u8 = undefined;
-const IS_UNICODE_KEY: u8 = 0x0001;
-const IS_VIRTUAL_KEY: u8 = 0x0002;
+// Binary payload buffer (240 bytes = slot data area minus header)
+var binary_buf: [240]u8 = undefined;
 
-inline fn keyboardEventJson(comptime flag: u8, attrs: struct { key: []const u8, is_shift: bool, is_alt: bool, is_ctrl: bool, is_meta: bool, is_repeat: bool, char_code: u16 }) []const u8 {
-    const is_unicode = flag & IS_UNICODE_KEY != 0;
-    const is_virtual = flag & IS_VIRTUAL_KEY != 0;
-    const fmt = if (is_unicode)
-        keyboard_event_fmt_uni
-    else if (is_virtual)
-        keyboard_event_fmt_vir
-    else
-        keyboard_event_fmt;
-    return std.fmt.bufPrint(
-        &event_buf,
-        fmt,
-        .{
-            if (is_unicode) attrs.char_code else attrs.key,
-            attrs.is_shift,
-            attrs.is_alt,
-            attrs.is_ctrl,
-            attrs.is_meta,
-            attrs.is_repeat,
-            attrs.char_code,
-        },
-    ) catch unreachable;
+inline fn buildModifiers(is_shift: bool, is_alt: bool, is_ctrl: bool, is_meta: bool, is_repeat: bool) u8 {
+    var mods: u8 = 0;
+    if (is_shift) mods |= payloads.MOD_SHIFT;
+    if (is_ctrl) mods |= payloads.MOD_CTRL;
+    if (is_alt) mods |= payloads.MOD_ALT;
+    if (is_meta) mods |= payloads.MOD_META;
+    if (is_repeat) mods |= payloads.MOD_REPEAT;
+    return mods;
 }
-inline fn mouseEventJson(attrs: struct { button: []const u8, buttons: []const u8, x: i32, y: i32, is_shift: bool, is_alt: bool, is_ctrl: bool, is_meta: bool }) []const u8 {
-    return std.fmt.bufPrint(
-        &event_buf,
-        mouse_event_fmt,
-        .{
-            attrs.button,
-            attrs.buttons,
-            attrs.x,
-            attrs.y,
-            attrs.is_shift,
-            attrs.is_alt,
-            attrs.is_ctrl,
-            attrs.is_meta,
-        },
-    ) catch unreachable;
+
+inline fn emitKeyboardEvent(modifiers: u8, char_code: u16, key: []const u8) void {
+    binary_buf[0] = modifiers;
+    std.mem.writeInt(u16, binary_buf[1..3], char_code, .little);
+    const key_len: u8 = @intCast(@min(key.len, 236));
+    binary_buf[3] = key_len;
+    if (key_len > 0) {
+        @memcpy(binary_buf[4 .. 4 + key_len], key[0..key_len]);
+    }
+    _ = event_bus.event_bus_emit_bytes(
+        @intFromEnum(event_bus.EventType.KeyboardEvent),
+        binary_buf[0 .. 4 + key_len],
+    );
 }
-inline fn wheelEventJson(attrs: struct { button: []const u8, buttons: []const u8, x: i32, y: i32, is_shift: bool, is_alt: bool, is_ctrl: bool, is_meta: bool, wheel_delta_y: i8 }) []const u8 {
-    return std.fmt.bufPrint(
-        &event_buf,
-        wheel_event_fmt,
-        .{
-            attrs.button,
-            attrs.buttons,
-            attrs.x,
-            attrs.y,
-            attrs.is_shift,
-            attrs.is_alt,
-            attrs.is_ctrl,
-            attrs.is_meta,
-            attrs.wheel_delta_y,
-        },
-    ) catch unreachable;
+
+inline fn emitMouseEvent(modifiers: u8, has_button: bool, button: u8, has_buttons: bool, buttons: u8, x: u16, y: u16, is_release: bool) void {
+    const payload = payloads.MousePayload{
+        .modifiers = modifiers,
+        .flags = (if (has_button) payloads.HAS_BUTTON else @as(u8, 0)) |
+            (if (has_buttons) payloads.HAS_BUTTONS else @as(u8, 0)) |
+            (if (is_release) payloads.IS_RELEASE else @as(u8, 0)),
+        .button = button,
+        .buttons = buttons,
+        .x = x,
+        .y = y,
+    };
+    _ = event_bus.event_bus_emit_bytes(
+        @intFromEnum(event_bus.EventType.MouseEvent),
+        std.mem.asBytes(&payload),
+    );
 }
+
+inline fn emitWheelEvent(modifiers: u8, has_button: bool, button: u8, has_buttons: bool, buttons: u8, x: u16, y: u16, wheel_delta_y: i8) void {
+    const payload = payloads.WheelPayload{
+        .modifiers = modifiers,
+        .flags = (if (has_button) payloads.HAS_BUTTON else @as(u8, 0)) |
+            (if (has_buttons) payloads.HAS_BUTTONS else @as(u8, 0)),
+        .button = button,
+        .buttons = buttons,
+        .x = x,
+        .y = y,
+        .wheel_delta_y = wheel_delta_y,
+    };
+    _ = event_bus.event_bus_emit_bytes(
+        @intFromEnum(event_bus.EventType.WheelEvent),
+        std.mem.asBytes(&payload),
+    );
+}
+
+inline fn emitResizeEvent(rows: u16, cols: u16) void {
+    const payload = payloads.TermResizePayload{
+        .rows = rows,
+        .cols = cols,
+    };
+    _ = event_bus.event_bus_emit_bytes(
+        @intFromEnum(event_bus.EventType.TermResizeEvent),
+        std.mem.asBytes(&payload),
+    );
+}
+
 const Parser = struct {
     state: InputState = .Normal,
     buffer: [64]u8 = undefined,
     buf_idx: usize = 0,
 
     pub fn processEvent(self: *Parser, record: KEY_EVENT_RECORD) void {
-        // 1. 过滤掉按键释放事件 (通常 TUI 不需要处理 KeyUp)
         if (record.bKeyDown == .FALSE) return;
 
         const char_code = record.uChar.UnicodeChar;
 
-        // ---------------------------------------------------------
-        // 情况 A: 汉字 / Unicode 字符
-        // ---------------------------------------------------------
-        // Windows 使用 UTF-16 (u16)，大部分汉字在这个范围内
-        // 如果是 Emoji 等辅助平面字符，可能需要处理两个连续的 Event (Surrogate Pairs)
-        if (char_code > 0xFF) { // 大于 255 基本上就是宽字符了
+        // Unicode characters (CJK, etc.)
+        if (char_code > 0xFF) {
             logger.logDebugFmt("汉字/Unicode输入: {u} (Code: {d})", .{ char_code, char_code });
             self.reset();
-            _ = event_bus.event_bus_emit_bytes(
-                @intFromEnum(event_bus.EventType.KeyboardEvent),
-                keyboardEventJson(
-                    IS_UNICODE_KEY,
-                    .{
-                        .key = "",
-                        .is_shift = false,
-                        .is_alt = false,
-                        .is_ctrl = false,
-                        .is_meta = false,
-                        .is_repeat = false,
-                        .char_code = char_code,
-                    },
-                ),
+            var key_buf: [4]u8 = undefined;
+            const key_len = std.unicode.utf8Encode(char_code, &key_buf) catch 0;
+            emitKeyboardEvent(
+                buildModifiers(false, false, false, false, false),
+                char_code,
+                key_buf[0..key_len],
             );
             return;
         }
 
         const ascii: u8 = @intCast(char_code);
 
-        // ---------------------------------------------------------
-        // 情况 B: 鼠标事件 / ANSI 序列处理 (状态机)
-        // ---------------------------------------------------------
         switch (self.state) {
             .Normal => {
-                if (ascii == 0x1B) { // ESC 键
+                if (ascii == 0x1B) {
                     self.state = .EscReceived;
                     self.buf_idx = 0;
                     self.buffer[self.buf_idx] = ascii;
                     self.buf_idx += 1;
                 } else {
-                    // 普通 ASCII 字符
                     self.handleNormalKey(record);
                 }
             },
             .EscReceived => {
-                // 如果紧接着 ESC 收到的是 '[' (0x5B)，说明是 CSI 序列 (可能是鼠标，也可能是方向键)
                 if (ascii == '[') {
                     self.state = .CsiReceived;
                     self.buffer[self.buf_idx] = ascii;
@@ -250,29 +220,21 @@ const Parser = struct {
                     self.buffer[self.buf_idx] = ascii;
                     self.buf_idx += 1;
                 } else {
-                    // 如果 ESC 后面跟的不是 [，那说明用户就是按了一下 ESC，然后按了别的键
-                    // 处理之前的 ESC
                     logger.logDebug("按键: ESC");
                     self.reset();
-                    // 重新处理当前这个字符
                     self.processEvent(record);
                 }
             },
             .CsiReceived => {
-                // 这里开始收集序列参数，例如: \x1b[<0;23;45M
                 self.buffer[self.buf_idx] = ascii;
                 self.buf_idx += 1;
 
-                // 判断序列结束字符
-                // 鼠标 VT 序列通常以 'M' (按下) 或 'm' (释放) 结尾
-                // 普通功能键通常以 '~' 或 字母(A-Z) 结尾
                 if ((ascii >= 'A' and ascii <= 'Z') or (ascii >= 'a' and ascii <= 'z') or ascii == '~') {
                     self.parseBufferedSequence();
                     self.reset();
                 }
             },
             .Ss3Received => {
-                // 三个字节的序列
                 self.buffer[self.buf_idx] = ascii;
                 self.buf_idx += 1;
                 if (self.buf_idx == 3) {
@@ -291,57 +253,31 @@ const Parser = struct {
         const is_alt = (state & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)) != 0;
         const is_shift = (state & SHIFT_PRESSED) != 0;
         const is_repeat = record.wRepeatCount > 1;
-        var slice: ?[]const u8 = null;
 
         if (unicode_char == 0) {
             logger.logDebugFmt("特殊键 (VirtualKey: {})", .{virtual_code});
-            // 情况 1: 特殊键 (F1, Home, Arrow, etc.)
-            // char 字段设为 null，只传 code
-            logger.logDebugFmt("特殊键: {}", .{virtual_code});
-
-            slice = keyboardEventJson(IS_VIRTUAL_KEY, .{
-                .key = if (mapper.mapVirtualKeyName(virtual_code)) |name| name else "Unidentified",
-                .is_shift = is_shift,
-                .is_alt = is_alt,
-                .is_ctrl = is_ctrl,
-                .is_meta = virtual_code == mapper.VK_LWIN or virtual_code == mapper.VK_RWIN,
-                .is_repeat = is_repeat,
-                .char_code = virtual_code,
-            });
+            const name = mapper.mapVirtualKeyName(virtual_code) orelse "Unidentified";
+            emitKeyboardEvent(
+                buildModifiers(is_shift, is_alt, is_ctrl, virtual_code == mapper.VK_LWIN or virtual_code == mapper.VK_RWIN, is_repeat),
+                virtual_code,
+                name,
+            );
         } else if (unicode_char < 32 or unicode_char == 0x7F) {
             logger.logDebugFmt("控制字符 (Ctrl+Key): {}", .{unicode_char});
-            slice = keyboardEventJson(
-                IS_VIRTUAL_KEY,
-                .{
-                    .key = mapper.unicodeToKeyName(unicode_char),
-                    .is_shift = is_shift,
-                    .is_alt = is_alt,
-                    .is_ctrl = is_ctrl,
-                    .is_meta = false,
-                    .is_repeat = is_repeat,
-                    .char_code = unicode_char,
-                },
+            emitKeyboardEvent(
+                buildModifiers(is_shift, is_alt, is_ctrl, false, is_repeat),
+                unicode_char,
+                mapper.unicodeToKeyName(unicode_char),
             );
         } else {
             logger.logDebugFmt("普通字符: {u}", .{unicode_char});
-            slice = keyboardEventJson(
-                IS_UNICODE_KEY,
-                .{
-                    .key = "",
-                    .is_shift = is_shift,
-                    .is_alt = is_alt,
-                    .is_ctrl = is_ctrl,
-                    .is_meta = false,
-                    .is_repeat = is_repeat,
-                    .char_code = unicode_char,
-                },
-            );
-        }
-
-        if (slice) |s| {
-            _ = event_bus.event_bus_emit_bytes(
-                @intFromEnum(event_bus.EventType.KeyboardEvent),
-                s,
+            // Encode unicode_char as UTF-8 for the key field
+            var key_buf: [4]u8 = undefined;
+            const key_len = std.unicode.utf8Encode(unicode_char, &key_buf) catch 0;
+            emitKeyboardEvent(
+                buildModifiers(is_shift, is_alt, is_ctrl, false, is_repeat),
+                unicode_char,
+                key_buf[0..key_len],
             );
         }
     }
@@ -381,29 +317,18 @@ const Parser = struct {
                 "F4"
             else
                 "";
-            _ = event_bus.event_bus_emit_bytes(
-                @intFromEnum(event_bus.EventType.KeyboardEvent),
-                keyboardEventJson(
-                    IS_VIRTUAL_KEY,
-                    .{
-                        .key = key,
-                        .is_shift = false,
-                        .is_alt = false,
-                        .is_ctrl = false,
-                        .is_meta = false,
-                        .char_code = 0,
-                        .is_repeat = false,
-                    },
-                ),
+            emitKeyboardEvent(
+                buildModifiers(false, false, false, false, false),
+                0,
+                key,
             );
         }
     }
 
     fn parseSgrMouseSequence(_: *Parser, seq: []const u8) void {
-        // 这是一个 SGR 鼠标模式序列: \x1b[<b;x;yM
         if (seq.len < 6) return;
         const content = seq[3 .. seq.len - 1];
-        const is_release = seq[seq.len - 1] == 'm'; // 'M' (按下/移动) 或 'm' (松开)
+        const is_release = seq[seq.len - 1] == 'm';
 
         var iter = std.mem.splitScalar(u8, content, ';');
         const pb_str = iter.next() orelse return;
@@ -430,121 +355,63 @@ const Parser = struct {
             pb ^= 0x20;
         }
 
-        var button: ?[]const u8 = null;
-        var buttons: ?[]const u8 = null;
+        const mods = buildModifiers(is_shift, is_alt, is_ctrl, false, false);
 
         switch (pb) {
             0 => {
-                logger.logDebugFmt("鼠标左键{s}，x: {}, y: {}", .{
-                    if (is_release) "释放" else "按下",
-                    px,
-                    py,
-                });
-                button = "0";
+                if (is_drag) {
+                    logger.logDebugFmt("鼠标左键拖动，x: {}, y: {}", .{ px, py });
+                    emitMouseEvent(mods, false, 0, true, 1, px, py, false);
+                } else {
+                    logger.logDebugFmt("鼠标左键{s}，x: {}, y: {}", .{
+                        if (is_release) "释放" else "按下",
+                        px,
+                        py,
+                    });
+                    emitMouseEvent(mods, true, 0, false, 0, px, py, is_release);
+                }
             },
             1 => {
-                logger.logDebugFmt("鼠标中键{s}，x: {}, y: {}", .{
-                    if (is_release) "释放" else "按下",
-                    px,
-                    py,
-                });
-                button = "1";
+                if (is_drag) {
+                    logger.logDebugFmt("鼠标中键拖动，x: {}, y: {}", .{ px, py });
+                    emitMouseEvent(mods, false, 1, true, 1, px, py, false);
+                } else {
+                    logger.logDebugFmt("鼠标中键{s}，x: {}, y: {}", .{
+                        if (is_release) "释放" else "按下",
+                        px,
+                        py,
+                    });
+                    emitMouseEvent(mods, true, 1, false, 0, px, py, is_release);
+                }
             },
             2 => {
-                logger.logDebugFmt("鼠标右键{s}，x: {}, y: {}", .{
-                    if (is_release) "释放" else "按下",
-                    px,
-                    py,
-                });
-                button = "2";
+                if (is_drag) {
+                    logger.logDebugFmt("鼠标右键拖动，x: {}, y: {}", .{ px, py });
+                    emitMouseEvent(mods, false, 2, true, 1, px, py, false);
+                } else {
+                    logger.logDebugFmt("鼠标右键{s}，x: {}, y: {}", .{
+                        if (is_release) "释放" else "按下",
+                        px,
+                        py,
+                    });
+                    emitMouseEvent(mods, true, 2, false, 0, px, py, is_release);
+                }
             },
             3 => {
                 logger.logDebugFmt("鼠标移动，x: {}, y: {}, 是否拖动: {}", .{ px, py, is_drag });
-                if (is_drag) {
-                    buttons = "1";
-                } else {
-                    buttons = "0";
-                }
+                emitMouseEvent(mods, false, 0, true, if (is_drag) 1 else 0, px, py, false);
             },
             64 => {
                 logger.logDebugFmt("鼠标滚轮上，x: {}, y: {}", .{ px, py });
-                _ = event_bus.event_bus_emit_bytes(
-                    @intFromEnum(event_bus.EventType.WheelEvent),
-                    wheelEventJson(
-                        .{
-                            .button = "1",
-                            .buttons = "null",
-                            .x = px,
-                            .y = py,
-                            .is_shift = is_shift,
-                            .is_alt = is_alt,
-                            .is_ctrl = is_ctrl,
-                            .is_meta = false,
-                            .wheel_delta_y = -1,
-                        },
-                    ),
-                );
-                return;
+                emitWheelEvent(mods, true, 1, false, 0, px, py, -1);
             },
             65 => {
                 logger.logDebugFmt("鼠标滚轮下，x: {}, y: {}", .{ px, py });
-                _ = event_bus.event_bus_emit_bytes(
-                    @intFromEnum(event_bus.EventType.WheelEvent),
-                    wheelEventJson(
-                        .{
-                            .button = "1",
-                            .buttons = "null",
-                            .x = px,
-                            .y = py,
-                            .is_shift = is_shift,
-                            .is_alt = is_alt,
-                            .is_ctrl = is_ctrl,
-                            .is_meta = false,
-                            .wheel_delta_y = 1,
-                        },
-                    ),
-                );
-                return;
+                emitWheelEvent(mods, true, 1, false, 0, px, py, 1);
             },
             else => {
                 logger.logWarningFmt("不支持的鼠标事件序列，pb: {}, x: {}, y: {}", .{ pb, px, py });
             },
-        }
-        if (button) |b| {
-            _ = event_bus.event_bus_emit_bytes(
-                @intFromEnum(event_bus.EventType.MouseEvent),
-                mouseEventJson(
-                    .{
-                        .button = b,
-                        .buttons = "null",
-                        .x = px,
-                        .y = py,
-                        .is_shift = is_shift,
-                        .is_alt = is_alt,
-                        .is_ctrl = is_ctrl,
-                        .is_meta = false,
-                    },
-                ),
-            );
-        } else if (buttons) |b| {
-            _ = event_bus.event_bus_emit_bytes(
-                @intFromEnum(event_bus.EventType.MouseEvent),
-                mouseEventJson(
-                    .{
-                        .button = "null",
-                        .buttons = b,
-                        .x = px,
-                        .y = py,
-                        .is_shift = is_shift,
-                        .is_alt = is_alt,
-                        .is_ctrl = is_ctrl,
-                        .is_meta = false,
-                    },
-                ),
-            );
-        } else {
-            logger.logDebugFmt("未知SGR鼠标序列: {x}", .{seq});
-            return;
         }
     }
 
@@ -557,8 +424,8 @@ const Parser = struct {
             if (std.mem.eql(u8, seq, "\x1b[H")) break :blk mapper.VK_HOME;
             if (std.mem.eql(u8, seq, "\x1b[F")) break :blk mapper.VK_END;
 
-            if (std.mem.eql(u8, seq, "\x1b[5~")) break :blk mapper.VK_PRIOR; // PageUp
-            if (std.mem.eql(u8, seq, "\x1b[6~")) break :blk mapper.VK_NEXT; // PageDown
+            if (std.mem.eql(u8, seq, "\x1b[5~")) break :blk mapper.VK_PRIOR;
+            if (std.mem.eql(u8, seq, "\x1b[6~")) break :blk mapper.VK_NEXT;
             if (std.mem.eql(u8, seq, "\x1b[2~")) break :blk mapper.VK_INSERT;
             if (std.mem.eql(u8, seq, "\x1b[3~")) break :blk mapper.VK_DELETE;
 
@@ -585,20 +452,10 @@ const Parser = struct {
         if (vkey) |k| {
             const name = mapper.mapVirtualKeyName(k) orelse "Unidentified";
             logger.logDebugFmt("功能键: {s}", .{name});
-            _ = event_bus.event_bus_emit_bytes(
-                @intFromEnum(event_bus.EventType.KeyboardEvent),
-                keyboardEventJson(
-                    IS_VIRTUAL_KEY,
-                    .{
-                        .key = name,
-                        .is_shift = false,
-                        .is_alt = false,
-                        .is_ctrl = false,
-                        .is_meta = false,
-                        .char_code = 0,
-                        .is_repeat = false,
-                    },
-                ),
+            emitKeyboardEvent(
+                buildModifiers(false, false, false, false, false),
+                k,
+                name,
             );
         }
     }
@@ -613,18 +470,14 @@ fn listen() void {
     logger.logInfo("input listener starting...");
     const stdin_handle = GetStdHandle(@intFromEnum(mode.STD_HANDLE.INPUT_HANDLE)).?;
 
-    // const FOCUS_EVENT = 0x0010;
     const KEY_EVENT = 0x0001;
-    // const MENU_EVENT = 0x0008;
-    // const MOUSE_EVENT = 0x0002; // VT mode: mouse events come as VT sequences, not MOUSE_EVENT records
     const TERM_RESIZE_EVENT = 0x0004;
 
-    // 获取当前模式
     mode.switchMouseInputMode();
 
     while (!should_stop.load(.acquire)) {
         const waitResult = WaitForSingleObject(stdin_handle, 16);
-        if (waitResult != 0) { // WAIT_OBJECT_0 = 0
+        if (waitResult != 0) {
             continue;
         }
         var input_buffer: [128]INPUT_RECORD = undefined;
@@ -659,12 +512,8 @@ inline fn handleKeyEvent(record: INPUT_RECORD) void {
 }
 inline fn handleResizeEvent(record: INPUT_RECORD) void {
     const size = record.Event.WindowBufferSizeEvent.dwSize;
-    const json = std.fmt.bufPrint(&event_buf, term_resize_event_fmt, .{
-        size.Y,
-        size.X,
-    }) catch unreachable;
-    _ = event_bus.event_bus_emit_bytes(
-        @intFromEnum(event_bus.EventType.TermResizeEvent),
-        json,
+    emitResizeEvent(
+        @intCast(size.Y),
+        @intCast(size.X),
     );
 }

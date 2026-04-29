@@ -394,11 +394,75 @@ fn rasterizeDrawLine(state: *RasterizerState, cells: []TuiCell, payload: []const
 
 // ============ Helpers ============
 
-fn writeCell(cells: []TuiCell, frame_width: TuiScale, frame_height: TuiScale, x: TuiScale, y: TuiScale, cell: TuiCell) void {
+fn writeCell(cells: []TuiCell, frame_width: TuiScale, frame_height: TuiScale, x: TuiScale, y: TuiScale, new_cell: TuiCell) void {
     if (x >= frame_width or y >= frame_height) return;
     const idx = @as(usize, y) * frame_width + x;
     if (idx >= cells.len) return;
-    cells[idx] = cell;
+
+    const existing = cells[idx];
+
+    if (new_cell.bg_rgba.a == 0xFF and new_cell.fg_rgba.a == 0xFF) {
+        cells[idx] = new_cell;
+    } else {
+        // Blend new background over existing
+        var bg = new_cell.bg_rgba;
+        bg.alphaCompositing(existing.bg_rgba);
+
+        if (new_cell.char == ' ' or new_cell.char == 0) {
+            // Background-only overlay: preserve existing character,
+            // tint its fg through the overlay color.
+            // Exception: Hidden cells are structural markers (wide-char continuations)
+            // and must always take precedence over the existing cell_type.
+            var fg = new_cell.bg_rgba;
+            fg.alphaBlending(existing.fg_rgba);
+            cells[idx] = .{
+                .entity_id = new_cell.entity_id,
+                .fg_rgba = fg,
+                .bg_rgba = bg,
+                .char = existing.char,
+                .font_style = existing.font_style,
+                .cell_type = if (new_cell.cell_type == .Hidden) .Hidden else existing.cell_type,
+            };
+        } else {
+            // Text overlay: blend new fg over composited bg
+            var fg = new_cell.fg_rgba;
+            fg.alphaBlending(bg);
+            cells[idx] = .{
+                .entity_id = new_cell.entity_id,
+                .fg_rgba = fg,
+                .bg_rgba = bg,
+                .char = new_cell.char,
+                .font_style = new_cell.font_style,
+                .cell_type = new_cell.cell_type,
+            };
+        }
+    }
+
+    // Wide/Hidden pair integrity: a CJK character occupies two consecutive cells
+    // (Wide at col N, Hidden at col N+1). When any operation breaks this pair,
+    // both halves must be cleared — a terminal cannot render half of a wide glyph.
+    if (existing.cell_type == .Wide and cells[idx].cell_type != .Wide) {
+        // Wide cell replaced: clear orphaned Hidden continuation at N+1
+        const next_x = x + 1;
+        if (next_x < frame_width) {
+            const next_idx = @as(usize, y) * frame_width + next_x;
+            if (next_idx < cells.len and cells[next_idx].cell_type == .Hidden) {
+                cells[next_idx].char = ' ';
+                cells[next_idx].cell_type = .Ascii;
+                cells[next_idx].font_style = 0;
+            }
+        }
+    } else if (existing.cell_type == .Hidden and cells[idx].cell_type != .Hidden) {
+        // Hidden continuation replaced: clear the preceding Wide cell at N-1
+        if (x > 0) {
+            const prev_idx = @as(usize, y) * frame_width + (x - 1);
+            if (cells[prev_idx].cell_type == .Wide) {
+                cells[prev_idx].char = ' ';
+                cells[prev_idx].cell_type = .Ascii;
+                cells[prev_idx].font_style = 0;
+            }
+        }
+    }
 }
 
 fn writeBorderCell(cells: []TuiCell, state: *RasterizerState, x: TuiScale, y: TuiScale, char: u16, color: Rgba) void {

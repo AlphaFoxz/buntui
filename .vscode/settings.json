@@ -20,6 +20,10 @@
         "editor.tabSize": 2,
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "prettier.printWidth": 80
+    },
     "zig.debugTestArgs": [
         "test",
         "${path}",

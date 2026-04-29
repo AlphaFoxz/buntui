@@ -1,6 +1,6 @@
 <template>
     <!-- Title bar -->
-    <Text
+    <Box
         :rectX="0"
         :rectY="0"
         :rectWidth="60"
@@ -11,7 +11,10 @@
     />
 
     <!-- Solid border, English -->
-    <Text
+    <Box
+        :draggable="true"
+        @dragstart="handleDragstart"
+        @dragend="handleDragend"
         :rectX="1"
         :rectY="2"
         :rectWidth="28"
@@ -24,11 +27,13 @@
         :borderRight="true"
         :borderBottom="true"
         :borderLeft="true"
-        text="Solid Border (English)"
+        :text="text1"
     />
 
     <!-- Rounded border, Chinese -->
-    <Text
+    <Box
+        @mousedown="handleMousedown"
+        @mouseup="handleMouseup"
         :rectX="31"
         :rectY="2"
         :rectWidth="28"
@@ -41,11 +46,12 @@
         :borderRight="true"
         :borderBottom="true"
         :borderLeft="true"
-        text="圆角边框（中文）"
+        :text="text2"
     />
 
     <!-- Double border, mixed -->
-    <Text
+    <Box
+        @contextmenu="handleContextmenu"
         :rectX="1"
         :rectY="8"
         :rectWidth="28"
@@ -58,11 +64,11 @@
         :borderRight="true"
         :borderBottom="true"
         :borderLeft="true"
-        text="Double 双线边框 Mixed"
+        :text="text3"
     />
 
     <!-- Bold border -->
-    <Text
+    <Box
         :rectX="31"
         :rectY="8"
         :rectWidth="28"
@@ -79,7 +85,7 @@
     />
 
     <!-- Partial: top + bottom only -->
-    <Text
+    <Box
         :rectX="1"
         :rectY="14"
         :rectWidth="28"
@@ -96,7 +102,7 @@
     />
 
     <!-- Partial: left only -->
-    <Text
+    <Box
         :rectX="31"
         :rectY="14"
         :rectWidth="28"
@@ -113,7 +119,7 @@
     />
 
     <!-- No border, highlighted row -->
-    <Text
+    <Box
         :rectX="1"
         :rectY="18"
         :rectWidth="58"
@@ -124,7 +130,7 @@
     />
 
     <!-- No border, subtle row -->
-    <Text
+    <Box
         :rectX="1"
         :rectY="19"
         :rectWidth="58"
@@ -135,7 +141,7 @@
     />
 
     <!-- Dashed border -->
-    <Text
+    <Box
         :rectX="1"
         :rectY="21"
         :rectWidth="20"
@@ -152,7 +158,7 @@
     />
 
     <!-- OutsetBold border -->
-    <Text
+    <Box
         :rectX="22"
         :rectY="21"
         :rectWidth="20"
@@ -169,7 +175,7 @@
     />
 
     <!-- OutsetDouble border -->
-    <Text
+    <Box
         :rectX="43"
         :rectY="21"
         :rectWidth="20"
@@ -186,7 +192,7 @@
     />
 
     <!-- Z-Index: green (top, zIndex=2) -->
-    <Text
+    <Box
         v-if="show"
         :rectX="35"
         :rectY="29"
@@ -205,13 +211,14 @@
     />
 
     <!-- Z-Index: blue (middle, zIndex=1) -->
-    <Text
+    <Box
+        draggable
         :rectX="25"
         :rectY="31"
         :rectWidth="24"
         :rectHeight="5"
         :colorFg="0x1e_1e_2e_ff"
-        :colorBg="0x89_b4_fa_ff"
+        :colorBg="0x89_b4_fa_55"
         :borderColor="0x89_b4_fa_ff"
         :borderStyle="1"
         :borderTop="true"
@@ -223,7 +230,7 @@
     />
 
     <!-- Z-Index: red (bottom, zIndex=0) -->
-    <Text
+    <Box
         :rectX="15"
         :rectY="33"
         :rectWidth="24"
@@ -241,7 +248,7 @@
     />
 
     <!-- Z-index label -->
-    <Text
+    <Box
         :rectX="1"
         :rectY="29"
         :rectWidth="20"
@@ -252,7 +259,7 @@
     />
 
     <!-- Footer -->
-    <Text
+    <Box
         :rectX="0"
         :rectY="25"
         :rectWidth="60"
@@ -279,4 +286,28 @@ setInterval(() => {
 const title = computed(() => {
     return `buntui Demo ${currentTimeStr.value} s`
 })
+
+const text1 = ref('Solid Border (English)')
+function handleDragstart() {
+    text1.value = 'Dragging...'
+}
+function handleDragend() {
+    text1.value = 'Dragged!'
+}
+
+const text2 = ref('圆角边框（中文）')
+function handleClick() {
+    text2.value = 'Clicked!'
+}
+function handleMousedown() {
+    text2.value = 'MouseDown!'
+}
+function handleMouseup() {
+    text2.value = 'MouseUp!'
+}
+
+const text3 = ref('Double 双线边框 Mixed')
+function handleContextmenu() {
+    text3.value = 'contextMenu'
+}
 </script>
