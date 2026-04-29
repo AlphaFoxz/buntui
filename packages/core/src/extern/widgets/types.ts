@@ -100,7 +100,7 @@ export const TuiWidgetBorderStyle = {
   Solid: 1,
   Double: 2,
   Rounded: 3,
-  bold: 4,
+  Bold: 4,
   Dashed: 5,
   Dotted: 6,
   OutsetBold: 7,

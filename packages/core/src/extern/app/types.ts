@@ -11,7 +11,7 @@ export type TuiAppOptions = {
 
 export type TuiSceneOptions = {
   visible: boolean;
-  bgHexRgb: number | string | {r: number; g: number; b: number};
+  bgHexRgb?: number | string | {r: number; g: number; b: number};
 };
 
 export const TuiRenderCommandType = {

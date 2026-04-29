@@ -122,6 +122,9 @@ const mouse_event_fmt =
 const wheel_event_fmt =
     \\{{"button":{s},"buttons":{s},"x":{d},"y":{d},"shiftKey":{},"altKey":{},"ctrlKey":{},"metaKey":{},"wheelDeltaY":{d}}}
 ;
+const term_resize_event_fmt =
+    \\{{"rows":{d},"cols":{d}}}
+;
 var event_buf: [256]u8 = undefined;
 const IS_UNICODE_KEY: u8 = 0x0001;
 const IS_VIRTUAL_KEY: u8 = 0x0002;
@@ -614,7 +617,7 @@ fn listen() void {
     const KEY_EVENT = 0x0001;
     // const MENU_EVENT = 0x0008;
     // const MOUSE_EVENT = 0x0002; // VT mode: mouse events come as VT sequences, not MOUSE_EVENT records
-    // const WINDOW_BUFFER_SIZE_EVENT = 0x0004;
+    const TERM_RESIZE_EVENT = 0x0004;
 
     // 获取当前模式
     mode.switchMouseInputMode();
@@ -640,6 +643,8 @@ fn listen() void {
             const record = input_buffer[i];
             if (record.EventType == KEY_EVENT) {
                 handleKeyEvent(record);
+            } else if (record.EventType == TERM_RESIZE_EVENT) {
+                handleResizeEvent(record);
             }
         }
         if (logger.current_log_level == logger.LOG_LEVEL_DEBUG) {
@@ -651,4 +656,15 @@ fn listen() void {
 var parser = Parser{};
 inline fn handleKeyEvent(record: INPUT_RECORD) void {
     parser.processEvent(record.Event.KeyEvent);
+}
+inline fn handleResizeEvent(record: INPUT_RECORD) void {
+    const size = record.Event.WindowBufferSizeEvent.dwSize;
+    const json = std.fmt.bufPrint(&event_buf, term_resize_event_fmt, .{
+        size.Y,
+        size.X,
+    }) catch unreachable;
+    _ = event_bus.event_bus_emit_bytes(
+        @intFromEnum(event_bus.EventType.TermResizeEvent),
+        json,
+    );
 }

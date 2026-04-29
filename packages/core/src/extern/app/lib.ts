@@ -1,5 +1,5 @@
-import {dlopen, FFIType, type Pointer} from 'bun:ffi';
-import {fetchDllPath, toCstring, assertPtr} from '../../utils/ffi';
+import {dlopen, FFIType} from 'bun:ffi';
+import {fetchDllPath, toCstring} from '../../utils/ffi';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import type {CStruct} from '../types';
 import type {LogLevel} from './types';
@@ -11,8 +11,6 @@ const lib = dlopen(fetchDllPath(), {
   },
   startApp: {returns: FFIType.void, args: []},
   stopApp: {returns: FFIType.void, args: []},
-  createScene: {returns: FFIType.pointer, args: [FFIType.u32]},
-  destroyScene: {returns: FFIType.void, args: [FFIType.pointer]},
   detectTermSize: {returns: FFIType.void, args: [FFIType.pointer]},
   renderDrawList: {
     returns: FFIType.void,
@@ -49,12 +47,6 @@ const expose = {
   },
   startApp: lib.startApp,
   stopApp: lib.stopApp,
-  createScene(bgRgba: number): Pointer {
-    return assertPtr(lib.createScene(bgRgba));
-  },
-  destroyScene(scene: CStruct) {
-    lib.destroyScene(scene.ptr);
-  },
   detectTermSize(tuiContext: CStruct) {
     lib.detectTermSize(tuiContext.ptr);
   },

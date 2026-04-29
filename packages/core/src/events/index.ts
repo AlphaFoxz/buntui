@@ -2,7 +2,7 @@ import {toArrayBuffer} from 'bun:ffi';
 import eventLib from '../extern/events';
 import TuiDataView from '../extern/TuiDataViewWrapper';
 import {
-  TuiEventType, MouseEvent, KeyboardEvent, WheelEvent, type TuiEvent,
+  TuiEventType, MouseEvent, KeyboardEvent, WheelEvent, TermResizeEvent, type TuiEvent,
   type InferEvent,
 } from './types';
 
@@ -10,6 +10,7 @@ const schemaRegistry = new Map<number, new (json: Record<string, unknown>) => Tu
   [TuiEventType.KeyboardEvent, KeyboardEvent],
   [TuiEventType.MouseEvent, MouseEvent],
   [TuiEventType.WheelEvent, WheelEvent],
+  [TuiEventType.TermResizeEvent, TermResizeEvent],
 ]);
 
 const decoder = new TextDecoder('utf-8');
@@ -77,7 +78,7 @@ class EventBusImpl {
     this.#handlers[eventType].push(handler);
   }
 
-  off(eventType: TuiEventType, handler: (data: TuiEvent) => void) {
+  off<T extends TuiEventType>(eventType: T, handler: (data: InferEvent<T>) => void) {
     const handlers = this.#handlers[eventType];
     if (handlers) {
       const index = handlers.indexOf(handler);

@@ -2,10 +2,11 @@ export const TuiEventType = {
   KeyboardEvent: 1,
   MouseEvent: 2,
   WheelEvent: 3,
+  TermResizeEvent: 4,
 } as const;
 export type TuiEventType = Enum<typeof TuiEventType>;
 
-export type TuiEvent = KeyboardEvent | MouseEvent | WheelEvent;
+export type TuiEvent = KeyboardEvent | MouseEvent | WheelEvent | TermResizeEvent;
 
 // See https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent
 export class KeyboardEvent {
@@ -64,6 +65,16 @@ export class WheelEvent extends MouseEvent {
   }
 }
 
+export class TermResizeEvent {
+  readonly rows: number;
+  readonly cols: number;
+
+  constructor(json: Record<string, unknown>) {
+    this.rows = Number(json.rows);
+    this.cols = Number(json.cols);
+  }
+}
+
 export type EventSchema = {
   parse(buffer: ArrayBuffer): any;
 };
@@ -72,6 +83,7 @@ export type TuiEventMap = {
   [TuiEventType.KeyboardEvent]: KeyboardEvent;
   [TuiEventType.MouseEvent]: MouseEvent;
   [TuiEventType.WheelEvent]: WheelEvent;
+  [TuiEventType.TermResizeEvent]: TermResizeEvent;
 };
 
 export type InferEvent<T extends TuiEventType> = TuiEventMap[T];

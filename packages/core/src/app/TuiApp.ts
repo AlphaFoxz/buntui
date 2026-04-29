@@ -30,6 +30,7 @@ export class TuiApp {
       frontendLogName,
       backendLogName,
     });
+    setAppInstance(this);
   }
 
   start() {
@@ -52,6 +53,11 @@ export class TuiApp {
         });
       }
     });
+
+    EVENT_BUS.on(TuiEventType.TermResizeEvent, () => {
+      app.detectTermSize(TUI_CONTEXT_INSTANCE);
+      LOGGER.logInfo(`Terminal resized: ${TUI_CONTEXT_INSTANCE.rows}x${TUI_CONTEXT_INSTANCE.cols}`);
+    });
     app.startApp();
     EVENT_BUS.start();
     app.detectTermSize(TUI_CONTEXT_INSTANCE);
@@ -70,14 +76,15 @@ export class TuiApp {
         app.renderDrawList(TUI_CONTEXT_INSTANCE, this.#drawList);
       }
 
-      setImmediate(render);
+      setTimeout(render, 16);
     };
 
-    render();
+    setTimeout(render, 0);
   }
 
   stop() {
     this.#running = false;
+    setAppInstance(undefined);
     this.#currentScene?.destroy();
     app.stopApp();
     EVENT_BUS.stop();
@@ -128,7 +135,12 @@ export class TuiApp {
   }
 }
 
-const appInstance: TuiApp | undefined = undefined;
+let appInstance: TuiApp | undefined;
+
+function setAppInstance(instance: TuiApp | undefined) {
+  appInstance = instance;
+}
+
 function onUnexceptExit(error: unknown) {
   let errorString = 'Unexcept exit';
   const errorType = typeof error;

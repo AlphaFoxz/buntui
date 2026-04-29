@@ -126,7 +126,7 @@ export function toU8<T extends boolean | number>(value: T): U8<T> {
     return (value ? 1 : 0) as U8<T>;
   }
 
-  if (!validateU8(value)) {
+  if (isOutOfRangeU8(value)) {
     throw new Error('can not convert to u8');
   }
 
@@ -135,7 +135,7 @@ export function toU8<T extends boolean | number>(value: T): U8<T> {
 }
 
 export function toU16(value: number) {
-  if (!validateU16(value)) {
+  if (isOutOfRangeU16(value)) {
     throw new Error('Can not convert to u16');
   }
 
@@ -143,26 +143,26 @@ export function toU16(value: number) {
 }
 
 export function toU32(value: number) {
-  if (!validateU32(value)) {
+  if (isOutOfRangeU32(value)) {
     throw new Error('Can not convert to u32');
   }
 
   return value;
 }
 
-export function validateU8(value: number): boolean {
+export function isOutOfRangeU8(value: number): boolean {
   return value > 0xFF || value < 0;
 }
 
-export function validateU16(value: number): boolean {
+export function isOutOfRangeU16(value: number): boolean {
   return value > 0xFF_FF || value < 0;
 }
 
-export function validateU32(value: number): boolean {
+export function isOutOfRangeU32(value: number): boolean {
   return value > 0xFF_FF_FF_FF || value < 0;
 }
 
-export function validateU64(value: bigint): boolean {
+export function isOutOfRangeU64(value: bigint): boolean {
   return value > 0xFF_FF_FF_FF_FF_FF_FF_FFn || value < 0n;
 }
 

@@ -22,6 +22,7 @@ pub const EventType = enum(u16) {
     KeyboardEvent = 1,
     MouseEvent = 2,
     WheelEvent = 3,
+    TermResizeEvent = 4,
 };
 
 // ============ SPSC 无锁环形队列 ============

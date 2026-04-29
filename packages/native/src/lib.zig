@@ -36,14 +36,6 @@ pub export fn stopApp() void {
     tui_app.stopApp();
 }
 
-pub export fn createScene(bg_rgba: ansi.style.Rgba) *tui_app.TuiScene {
-    return tui_app.createScene(bg_rgba);
-}
-
-pub export fn destroyScene(scene: *tui_app.TuiScene) void {
-    tui_app.destroyScene(scene);
-}
-
 pub export fn detectTermSize(ctx: *tui_context.TuiContext) void {
     tui_context.detectTermSize(ctx);
 }

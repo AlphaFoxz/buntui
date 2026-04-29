@@ -4,7 +4,7 @@ import TextWidget, {DEFAULT_TEXT_OPTIONS, type TextWidgetOptions} from './TextWi
 export type FrameRateWatcherOptions = Omit<TextWidgetOptions, 'text'>;
 
 export class FrameRateWatcher extends TextWidget {
-  readonly #latestTick = 0n;
+  #latestTick = 0n;
   #timer: NodeJS.Timeout | null = null;
   constructor(options: Omit<TextWidgetOptions, 'text'>) {
     super({
@@ -16,7 +16,9 @@ export class FrameRateWatcher extends TextWidget {
   override mounted(): void {
     super.mounted();
     this.#timer = setInterval(() => {
-      this.updateText(`${TUI_CONTEXT_INSTANCE.tick - this.#latestTick} fps`);
+      const currentTick = TUI_CONTEXT_INSTANCE.tick;
+      this.updateText(`${currentTick - this.#latestTick} fps`);
+      this.#latestTick = currentTick;
     }, 1 * 1000);
   }
 

@@ -64,7 +64,26 @@ pub fn renderDrawList(ctx: *tui_context.TuiContext, buf_ptr: [*]const u8, buf_le
     // Ensure frame buffers
     frame.checkScreenSize(ctx);
 
-    // Clear next_frame with default background
+    // Pre-scan: extract SetBackground before clearing cells so the initial fill
+    // uses the scene's actual bg color instead of the reset default (black).
+    {
+        var pre_offset: usize = BUFFER_HEADER_SIZE;
+        while (pre_offset + CMD_HEADER_SIZE <= buf_len) {
+            const pre_cmd_type = readU16(buf, pre_offset);
+            const pre_payload_len = readU32(buf, pre_offset + 4);
+            if (pre_offset + CMD_HEADER_SIZE + pre_payload_len > buf_len) break;
+            if (@as(DrawCmd, @enumFromInt(pre_cmd_type)) == .SetBackground) {
+                const pre_payload = buf[pre_offset + CMD_HEADER_SIZE .. pre_offset + CMD_HEADER_SIZE + pre_payload_len];
+                if (pre_payload.len >= 4) {
+                    raster_state.default_bg = Rgba.fromU32(readU32(pre_payload, 0));
+                }
+                break;
+            }
+            pre_offset += CMD_HEADER_SIZE + pre_payload_len;
+        }
+    }
+
+    // Clear next_frame with default background (now has the correct scene color)
     for (frame.next_frame.cells) |*cell| {
         cell.* = .{
             .entity_id = 0,

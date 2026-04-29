@@ -8,9 +8,6 @@
         "build": "bun build --target=bun --production ./src/index.ts --outfile ./dist/index.bun.mjs && tsc --project ./tsconfig.json",
         "sync": "bun run ./scripts/sync.ts"
     },
-    "dependencies": {
-        "@vue/reactivity": "^3.5.33"
-    },
     "devDependencies": {
         "@types/bun": "^1.3.13",
         "native": "workspace:*",
