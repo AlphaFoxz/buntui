@@ -15,7 +15,7 @@
     },
     "packages/compiler": {
       "name": "@buntui/compiler",
-      "version": "0.1.0",
+      "version": "0.0.0-alpha",
       "dependencies": {
         "@buntui/core": "workspace:*",
         "@vue/compiler-core": "^3.5.33",
@@ -32,7 +32,7 @@
     },
     "packages/core": {
       "name": "@buntui/core",
-      "version": "0.1.0",
+      "version": "0.0.0-alpha",
       "devDependencies": {
         "@buntui/native": "workspace:*",
         "@types/bun": "^1.3.13",
@@ -42,16 +42,30 @@
         "typescript": "^6.0.3",
       },
     },
+    "packages/extensions": {
+      "name": "@buntui/extensions",
+      "version": "0.0.0-alpha",
+      "dependencies": {
+        "@buntui/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@types/bun": "^1.3.13",
+      },
+      "peerDependencies": {
+        "typescript": "^6.0.3",
+      },
+    },
     "packages/native": {
       "name": "@buntui/native",
-      "version": "0.1.0",
+      "version": "0.0.0-alpha",
     },
     "packages/playground": {
       "name": "@buntui/playground",
-      "version": "0.1.0",
+      "version": "0.0.0-alpha",
       "dependencies": {
         "@buntui/compiler": "workspace:*",
         "@buntui/core": "workspace:*",
+        "@buntui/extensions": "workspace:*",
         "@types/bun": "^1.3.13",
         "@vue/reactivity": "^3.5.33",
       },
@@ -96,6 +110,8 @@
     "@buntui/compiler": ["@buntui/compiler@workspace:packages/compiler"],
 
     "@buntui/core": ["@buntui/core@workspace:packages/core"],
+
+    "@buntui/extensions": ["@buntui/extensions@workspace:packages/extensions"],
 
     "@buntui/native": ["@buntui/native@workspace:packages/native"],
 

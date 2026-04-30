@@ -5,7 +5,7 @@ const result = await Bun.build({
   entrypoints: ['src/main.ts'],
   outdir: 'dist',
   target: 'bun',
-  external: ['@buntui/core', '@vue/reactivity', '@buntui/native', '@buntui/compiler'],
+  external: ['@buntui/core', '@vue/reactivity', '@buntui/native', '@buntui/compiler', '@buntui/extensions'],
   plugins: [
     {
       name: 'buntui-vue',

@@ -265,7 +265,9 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
       const updateEffects = buildGuardedUpdateEffects(node, varName);
       const eventLines = buildEventLines(node, varName);
       const flagLines = buildFlagLines(node, varName);
-      widgets.push({varName, createLine, updateEffects, eventLines, flagLines});
+      widgets.push({
+        varName, createLine, updateEffects, eventLines, flagLines,
+      });
       nextIndex++;
     }
 
