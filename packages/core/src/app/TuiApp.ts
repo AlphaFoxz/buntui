@@ -1,6 +1,6 @@
 import path from 'node:path';
 import process from 'node:process';
-import {type MouseEvent, TuiEventType} from '../events/types';
+import {MouseEvent, TuiEventType} from '../events/types';
 import app, {TUI_CONTEXT_INSTANCE} from '../extern/app';
 import {type LogLevel, type TuiAppOptions, type TuiSceneOptions} from '../extern/app/types';
 import {LOGGER} from '../common/logger';
@@ -93,6 +93,23 @@ export class TuiApp {
         return;
       }
 
+      // Right-click: only handle press → release for contextmenu
+      if (data.button === MouseEvent.RIGHT_MOUSE_BUTTON) {
+        if (!data.isRelease) {
+          this.#pressTarget = scene.hitTest(data);
+        } else if (this.#pressTarget) {
+          const releaseTarget = scene.hitTest(data);
+          if (releaseTarget === this.#pressTarget) {
+            this.#pressTarget.dispatch('contextmenu', data);
+          }
+
+          this.#pressTarget = undefined;
+        }
+
+        return;
+      }
+
+      // Left / middle button from here on
       // Press
       if (!data.isRelease) {
         this.#pressTarget = scene.hitTest(data);
@@ -116,7 +133,6 @@ export class TuiApp {
       if (this.#pressTarget) {
         this.#pressTarget.dispatch('mouseup', data);
 
-        // Click only if release also hits the same widget
         const releaseTarget = scene.hitTest(data);
         if (releaseTarget === this.#pressTarget) {
           this.#pressTarget.dispatch('click', data);

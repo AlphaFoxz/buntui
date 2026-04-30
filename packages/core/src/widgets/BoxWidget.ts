@@ -131,7 +131,9 @@ export class BoxWidget extends TuiWidgetEntity {
       bgRgba: colorBg,
     });
 
-    // Text content — offset by border insets so border doesn't overwrite text
+    // Text content — offset by border insets so border doesn't overwrite text.
+    // bgRgba is transparent because drawRect already set the background;
+    // passing colorBg again would double-blend semi-transparent backgrounds.
     if (this.#text.length > 0) {
       const textX = rectX + (borderLeft ? 1 : 0);
       const textY = rectY + (borderTop ? 1 : 0);
@@ -140,7 +142,7 @@ export class BoxWidget extends TuiWidgetEntity {
         y: textY,
         text: this.#text,
         fgRgba: colorFg,
-        bgRgba: colorBg,
+        bgRgba: 0x00_00_00_00,
       });
     }
 
