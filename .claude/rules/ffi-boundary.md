@@ -1,3 +1,10 @@
+---
+paths:
+  - "packages/core/src/extern/**"
+  - "packages/native/src/lib.zig"
+  - "packages/native/src/core/**"
+---
+
 # FFI Boundary Protocol
 
 This document defines the protocol for Zig/TypeScript FFI communication.
@@ -38,17 +45,7 @@ This document defines the protocol for Zig/TypeScript FFI communication.
 **Event bus**:
 - `event_bus_setup`, `event_bus_emit`, `event_bus_poll`, `event_bus_commit`, `event_bus_stats`
 
-**ANSI helpers**:
-- `resetStyle`, `showCursor`, `hideCursor`, `clearScreen`, `drawText`
-
-## EventHeader Memory Layout (16 bytes)
-
-```
-Offset  Size  Field         Type
-0       4     event_type    u32
-4       4     payload_len   u32
-8       8     sequence      u64
-```
+Event payloads are binary (not JSON). Event types: KeyboardEvent (1), MouseEvent (2), WheelEvent (3), TermResizeEvent (4).
 
 ## Adding a New FFI Export
 

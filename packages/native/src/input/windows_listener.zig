@@ -177,6 +177,7 @@ const Parser = struct {
     state: InputState = .Normal,
     buffer: [64]u8 = undefined,
     buf_idx: usize = 0,
+    pending_esc_modifiers: u8 = 0,
 
     pub fn processEvent(self: *Parser, record: KEY_EVENT_RECORD) void {
         if (record.bKeyDown == .FALSE) return;
@@ -202,10 +203,27 @@ const Parser = struct {
         switch (self.state) {
             .Normal => {
                 if (ascii == 0x1B) {
-                    self.state = .EscReceived;
-                    self.buf_idx = 0;
-                    self.buffer[self.buf_idx] = ascii;
-                    self.buf_idx += 1;
+                    // Windows VT input mode: a real Escape key press has
+                    // VirtualKeyCode == VK_ESCAPE, while the 0x1B byte that
+                    // starts a VT sequence (mouse, etc.) uses VK 0 or another
+                    // value. Emit directly for a real key press so it isn't
+                    // lost waiting for a follow-up character that never comes.
+                    if (record.wVirtualKeyCode == mapper.VK_ESCAPE) {
+                        self.handleNormalKey(record);
+                    } else {
+                        const ks = record.dwControlKeyState;
+                        self.pending_esc_modifiers = buildModifiers(
+                            (ks & SHIFT_PRESSED) != 0,
+                            (ks & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)) != 0,
+                            (ks & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) != 0,
+                            false,
+                            record.wRepeatCount > 1,
+                        );
+                        self.state = .EscReceived;
+                        self.buf_idx = 0;
+                        self.buffer[self.buf_idx] = ascii;
+                        self.buf_idx += 1;
+                    }
                 } else {
                     self.handleNormalKey(record);
                 }
@@ -220,7 +238,7 @@ const Parser = struct {
                     self.buffer[self.buf_idx] = ascii;
                     self.buf_idx += 1;
                 } else {
-                    logger.logDebug("按键: ESC");
+                    emitKeyboardEvent(self.pending_esc_modifiers, 0x1B, "Escape");
                     self.reset();
                     self.processEvent(record);
                 }
@@ -263,12 +281,31 @@ const Parser = struct {
                 name,
             );
         } else if (unicode_char < 32 or unicode_char == 0x7F) {
-            logger.logDebugFmt("控制字符 (Ctrl+Key): {}", .{unicode_char});
-            emitKeyboardEvent(
-                buildModifiers(is_shift, is_alt, is_ctrl, false, is_repeat),
-                unicode_char,
-                mapper.unicodeToKeyName(unicode_char),
-            );
+            // Prefer virtual key mapping for control chars (e.g. Backspace may
+            // report unicode_char=0x7F in VT input mode, but virtual_code is
+            // always VK_BACK).
+            const vk_name = mapper.mapVirtualKeyName(virtual_code);
+            const key_name = vk_name orelse mapper.unicodeToKeyName(unicode_char);
+
+            // Ctrl+letter: 0x01-0x1A maps to Ctrl+A through Ctrl+Z.
+            // VT input mode may not set CTRL in dwControlKeyState, so infer it.
+            if (unicode_char >= 0x01 and unicode_char <= 0x1A and std.mem.eql(u8, key_name, "Unidentified")) {
+                var letter_buf = [_]u8{0};
+                letter_buf[0] = @as(u8, @intCast(unicode_char - 0x01 + 'a'));
+                logger.logDebugFmt("Ctrl+字母: {s}", .{letter_buf[0..]});
+                emitKeyboardEvent(
+                    buildModifiers(is_shift, is_alt, true, false, is_repeat),
+                    unicode_char,
+                    letter_buf[0..],
+                );
+            } else {
+                logger.logDebugFmt("控制字符 (Unicode: {}, VK: {}, Key: {s})", .{ unicode_char, virtual_code, key_name });
+                emitKeyboardEvent(
+                    buildModifiers(is_shift, is_alt, is_ctrl, false, is_repeat),
+                    unicode_char,
+                    key_name,
+                );
+            }
         } else {
             logger.logDebugFmt("普通字符: {u}", .{unicode_char});
             // Encode unicode_char as UTF-8 for the key field
@@ -416,47 +453,109 @@ const Parser = struct {
     }
 
     fn parseCsiSequence(_: *Parser, seq: []const u8) void {
+        // seq starts with \x1b[, e.g. "\x1b[A" or "\x1b[1;2D"
+        const content = seq[2..];
+        if (content.len == 0) return;
+
+        const final_char = content[content.len - 1];
+        const params = content[0 .. content.len - 1];
+
+        var mod_shift: bool = false;
+        var mod_alt: bool = false;
+        var mod_ctrl: bool = false;
+        var param1: u16 = 0;
+
+        if (params.len > 0) {
+            var iter = std.mem.splitScalar(u8, params, ';');
+            if (iter.next()) |p1| {
+                param1 = std.fmt.parseInt(u16, p1, 10) catch 0;
+            }
+            if (iter.next()) |p2| {
+                const mod_num = std.fmt.parseInt(u8, p2, 10) catch 1;
+                switch (mod_num) {
+                    2 => mod_shift = true,
+                    3 => mod_alt = true,
+                    4 => {
+                        mod_shift = true;
+                        mod_alt = true;
+                    },
+                    5 => mod_ctrl = true,
+                    6 => {
+                        mod_shift = true;
+                        mod_ctrl = true;
+                    },
+                    7 => {
+                        mod_alt = true;
+                        mod_ctrl = true;
+                    },
+                    8 => {
+                        mod_shift = true;
+                        mod_alt = true;
+                        mod_ctrl = true;
+                    },
+                    else => {},
+                }
+            }
+        }
+
         const vkey: ?u16 = blk: {
-            if (std.mem.eql(u8, seq, "\x1b[A")) break :blk mapper.VK_UP;
-            if (std.mem.eql(u8, seq, "\x1b[B")) break :blk mapper.VK_DOWN;
-            if (std.mem.eql(u8, seq, "\x1b[C")) break :blk mapper.VK_RIGHT;
-            if (std.mem.eql(u8, seq, "\x1b[D")) break :blk mapper.VK_LEFT;
-            if (std.mem.eql(u8, seq, "\x1b[H")) break :blk mapper.VK_HOME;
-            if (std.mem.eql(u8, seq, "\x1b[F")) break :blk mapper.VK_END;
-
-            if (std.mem.eql(u8, seq, "\x1b[5~")) break :blk mapper.VK_PRIOR;
-            if (std.mem.eql(u8, seq, "\x1b[6~")) break :blk mapper.VK_NEXT;
-            if (std.mem.eql(u8, seq, "\x1b[2~")) break :blk mapper.VK_INSERT;
-            if (std.mem.eql(u8, seq, "\x1b[3~")) break :blk mapper.VK_DELETE;
-
-            if (std.mem.eql(u8, seq, "\x1b[15~")) break :blk mapper.VK_F5;
-            if (std.mem.eql(u8, seq, "\x1b[17~")) break :blk mapper.VK_F6;
-            if (std.mem.eql(u8, seq, "\x1b[18~")) break :blk mapper.VK_F7;
-            if (std.mem.eql(u8, seq, "\x1b[19~")) break :blk mapper.VK_F8;
-            if (std.mem.eql(u8, seq, "\x1b[20~")) break :blk mapper.VK_F9;
-            if (std.mem.eql(u8, seq, "\x1b[21~")) break :blk mapper.VK_F10;
-            if (std.mem.eql(u8, seq, "\x1b[23~")) break :blk mapper.VK_F11;
-            if (std.mem.eql(u8, seq, "\x1b[24~")) break :blk mapper.VK_F12;
-            if (std.mem.eql(u8, seq, "\x1b[25~")) break :blk mapper.VK_F13;
-            if (std.mem.eql(u8, seq, "\x1b[26~")) break :blk mapper.VK_F14;
-            if (std.mem.eql(u8, seq, "\x1b[27~")) break :blk mapper.VK_F15;
-            if (std.mem.eql(u8, seq, "\x1b[28~")) break :blk mapper.VK_F16;
-            if (std.mem.eql(u8, seq, "\x1b[29~")) break :blk mapper.VK_F17;
-            if (std.mem.eql(u8, seq, "\x1b[30~")) break :blk mapper.VK_F18;
-            if (std.mem.eql(u8, seq, "\x1b[31~")) break :blk mapper.VK_F19;
-            if (std.mem.eql(u8, seq, "\x1b[32~")) break :blk mapper.VK_F20;
-
-            logger.logDebugFmt("其他 ANSI 序列: {x}", .{seq});
-            break :blk null;
+            switch (final_char) {
+                'A' => break :blk mapper.VK_UP,
+                'B' => break :blk mapper.VK_DOWN,
+                'C' => break :blk mapper.VK_RIGHT,
+                'D' => break :blk mapper.VK_LEFT,
+                'H' => break :blk mapper.VK_HOME,
+                'F' => break :blk mapper.VK_END,
+                '~' => {
+                    switch (param1) {
+                        2 => break :blk mapper.VK_INSERT,
+                        3 => break :blk mapper.VK_DELETE,
+                        5 => break :blk mapper.VK_PRIOR,
+                        6 => break :blk mapper.VK_NEXT,
+                        15 => break :blk mapper.VK_F5,
+                        17 => break :blk mapper.VK_F6,
+                        18 => break :blk mapper.VK_F7,
+                        19 => break :blk mapper.VK_F8,
+                        20 => break :blk mapper.VK_F9,
+                        21 => break :blk mapper.VK_F10,
+                        23 => break :blk mapper.VK_F11,
+                        24 => break :blk mapper.VK_F12,
+                        25 => break :blk mapper.VK_F13,
+                        26 => break :blk mapper.VK_F14,
+                        27 => break :blk mapper.VK_F15,
+                        28 => break :blk mapper.VK_F16,
+                        29 => break :blk mapper.VK_F17,
+                        30 => break :blk mapper.VK_F18,
+                        31 => break :blk mapper.VK_F19,
+                        32 => break :blk mapper.VK_F20,
+                        else => {
+                            logger.logDebugFmt("其他 CSI~ 序列: {s}", .{seq});
+                            break :blk null;
+                        },
+                    }
+                },
+                else => {
+                    logger.logDebugFmt("其他 CSI 序列: {s}", .{seq});
+                    break :blk null;
+                },
+            }
         };
+
         if (vkey) |k| {
             const name = mapper.mapVirtualKeyName(k) orelse "Unidentified";
             logger.logDebugFmt("功能键: {s}", .{name});
             emitKeyboardEvent(
-                buildModifiers(false, false, false, false, false),
+                buildModifiers(mod_shift, mod_alt, mod_ctrl, false, false),
                 k,
                 name,
             );
+        }
+    }
+
+    pub fn flushPendingEsc(self: *Parser) void {
+        if (self.state == .EscReceived) {
+            emitKeyboardEvent(self.pending_esc_modifiers, 0x1B, "Escape");
+            self.reset();
         }
     }
 
@@ -478,6 +577,7 @@ fn listen() void {
     while (!should_stop.load(.acquire)) {
         const waitResult = WaitForSingleObject(stdin_handle, 16);
         if (waitResult != 0) {
+            parser.flushPendingEsc();
             continue;
         }
         var input_buffer: [128]INPUT_RECORD = undefined;

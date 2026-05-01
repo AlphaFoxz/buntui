@@ -1,5 +1,5 @@
-import type {Mountable} from '../types';
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
+import type {Mountable} from '../extern/types';
 import type {TuiWidgetRect} from './types';
 
 type WidgetEventHandler = (data: unknown) => void;
@@ -8,6 +8,7 @@ export abstract class TuiWidgetEntity implements Mountable {
   #refrenceCount = 0;
   #draggable = false;
   readonly #eventHandlers = new Map<string, Set<WidgetEventHandler>>();
+  readonly #children: TuiWidgetEntity[] = [];
 
   get refrenceCount() {
     return this.#refrenceCount;
@@ -32,6 +33,19 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   setDraggable(value: boolean): void {
     this.#draggable = value;
+  }
+
+  addChild(child: TuiWidgetEntity): void {
+    this.#children.push(child);
+    child.mounted();
+  }
+
+  removeChild(child: TuiWidgetEntity): void {
+    const index = this.#children.indexOf(child);
+    if (index !== -1) {
+      this.#children.splice(index, 1);
+      child.unmounted();
+    }
   }
 
   updateRect(_rect: Partial<TuiWidgetRect>): void {
@@ -79,4 +93,30 @@ export abstract class TuiWidgetEntity implements Mountable {
   }
 
   abstract emitDrawCommands(buf: DrawListBuffer): void;
+
+  /**
+   * Propagate a position delta to all children.
+   * Called by subclasses in their updateRect when position changes.
+   */
+  protected propagatePositionDelta(dx: number, dy: number): void {
+    if (dx === 0 && dy === 0) {
+      return;
+    }
+
+    for (const child of this.#children) {
+      child.updateRect({
+        rectX: child.rect.rectX + dx,
+        rectY: child.rect.rectY + dy,
+      });
+    }
+  }
+
+  /**
+   * Render all children. Call at the end of emitDrawCommands in container widgets.
+   */
+  protected renderChildren(buf: DrawListBuffer): void {
+    for (const child of this.#children) {
+      child.emitDrawCommands(buf);
+    }
+  }
 }

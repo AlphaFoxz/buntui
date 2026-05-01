@@ -7,6 +7,7 @@ const TuiScale = @import("../core/typedef.zig").TuiScale;
 const cmd = @import("./commands.zig");
 const ClipStack = @import("./clip_stack.zig").ClipStack;
 const ClipRect = @import("./clip_stack.zig").ClipRect;
+const binary = @import("./binary.zig");
 
 const DrawCmd = cmd.DrawCmd;
 const TuiCell = frame.TuiCell;
@@ -89,6 +90,60 @@ fn rasterizeSetEntityId(state: *RasterizerState, payload: []const u8) void {
     state.entity_id = readU64(payload, 0);
 }
 
+// ============ Clip Helpers ============
+
+/// Compute the intersection of a rectangular region with the current clip,
+/// returning a ClipRect suitable for use as loop bounds. Returns an empty
+/// rect (width or height == 0) when the region is entirely clipped out.
+fn clipIntersect(clip: ClipRect, x: TuiScale, y: TuiScale, w: TuiScale, h: TuiScale) ClipRect {
+    return clip.intersect(.{ .x = x, .y = y, .width = w, .height = h });
+}
+
+/// Intersect a single-row strip with the clip rect. Used for functions that
+/// iterate over a fixed row (e.g. border edges, text rendering).
+fn clipRow(clip: ClipRect, row: TuiScale, col_start: TuiScale, col_end: TuiScale) struct { start: TuiScale, end: TuiScale } {
+    if (row < clip.y or row >= clip.y + clip.height) return .{ .start = col_start, .end = col_start };
+    const cs = @max(col_start, clip.x);
+    const ce = @min(col_end, clip.x + clip.width);
+    return .{ .start = cs, .end = if (ce > cs) ce else cs };
+}
+
+// ============ Wide Char Helper ============
+
+/// Write a wide character cell and its Hidden continuation cell.
+/// The continuation cell is only written if next_col is within the clip.
+fn writeWidePair(
+    cells: []TuiCell,
+    state: *RasterizerState,
+    col: TuiScale,
+    row: TuiScale,
+    clip: ClipRect,
+    char: u16,
+    fg: Rgba,
+    bg: Rgba,
+    font_style: u16,
+) void {
+    writeCell(cells, state.frame_width, state.frame_height, col, row, .{
+        .entity_id = state.entity_id,
+        .fg_rgba = fg,
+        .bg_rgba = bg,
+        .char = char,
+        .font_style = font_style,
+        .cell_type = .Wide,
+    });
+    const next_col = col + 1;
+    if (clip.contains(next_col, row)) {
+        writeCell(cells, state.frame_width, state.frame_height, next_col, row, .{
+            .entity_id = state.entity_id,
+            .fg_rgba = fg,
+            .bg_rgba = bg,
+            .char = 0,
+            .font_style = 0,
+            .cell_type = .Hidden,
+        });
+    }
+}
+
 // ============ Drawing Primitives ============
 
 fn rasterizeDrawRect(state: *RasterizerState, cells: []TuiCell, payload: []const u8, flags: u16) void {
@@ -103,38 +158,32 @@ fn rasterizeDrawRect(state: *RasterizerState, cells: []TuiCell, payload: []const
     const is_wide = (flags & 0x01) != 0;
 
     const clip = state.clip_stack.current();
+    const visible = clipIntersect(clip, x, y, w, h);
+    if (visible.isEmpty()) return;
 
-    var row: TuiScale = y;
-    while (row < y + h) : (row += 1) {
-        var col: TuiScale = x;
-        while (col < x + w) {
-            if (clip.contains(col, row)) {
+    const col_step: TuiScale = if (is_wide) 2 else 1;
+
+    // Snap start column to the original Wide-grid alignment.
+    // Wide chars occupy pairs (x, x+1), (x+2, x+3), ... — if visible.x
+    // lands on a Hidden continuation cell, skip it to avoid misalignment.
+    const aligned_x: TuiScale = if (is_wide and (visible.x - x) % 2 != 0) visible.x + 1 else visible.x;
+
+    var row: TuiScale = visible.y;
+    while (row < visible.y + visible.height) : (row += 1) {
+        var col: TuiScale = aligned_x;
+        while (col < visible.x + visible.width) : (col += col_step) {
+            if (is_wide) {
+                writeWidePair(cells, state, col, row, clip, fill_char, bg_rgba, bg_rgba, font_style);
+            } else {
                 writeCell(cells, state.frame_width, state.frame_height, col, row, .{
                     .entity_id = state.entity_id,
                     .fg_rgba = bg_rgba,
                     .bg_rgba = bg_rgba,
                     .char = fill_char,
                     .font_style = font_style,
-                    .cell_type = if (is_wide) .Wide else .Ascii,
+                    .cell_type = .Ascii,
                 });
-                if (is_wide) {
-                    // Mark next cell as hidden for wide char
-                    const next_col = col + 1;
-                    if (next_col < x + w and clip.contains(next_col, row)) {
-                        writeCell(cells, state.frame_width, state.frame_height, next_col, row, .{
-                            .entity_id = state.entity_id,
-                            .fg_rgba = bg_rgba,
-                            .bg_rgba = bg_rgba,
-                            .char = 0,
-                            .font_style = 0,
-                            .cell_type = .Hidden,
-                        });
-                    }
-                    col += 2;
-                    continue;
-                }
             }
-            col += 1;
         }
     }
 }
@@ -153,38 +202,34 @@ fn rasterizeDrawText(state: *RasterizerState, cells: []TuiCell, payload: []const
     if (text_bytes.len < text_len) return;
 
     const clip = state.clip_stack.current();
+    const row_range = clipRow(clip, start_y, start_x, start_x + text_len);
+    if (row_range.start == row_range.end) return;
+    const col_min = row_range.start;
+    const col_max = row_range.end;
+
     var col: TuiScale = start_x;
 
     var utf8_iter = std.unicode.Utf8View.init(text_bytes[0..text_len]) catch return;
     var it = utf8_iter.iterator();
     while (it.nextCodepoint()) |cp| {
-        if (col >= clip.x + clip.width) break;
-        const is_wide = isWideCodepoint(cp);
+        if (col >= col_max) break;
+        const wide = isWideCodepoint(cp);
 
-        if (clip.contains(col, start_y)) {
-            writeCell(cells, state.frame_width, state.frame_height, col, start_y, .{
-                .entity_id = state.entity_id,
-                .fg_rgba = fg_rgba,
-                .bg_rgba = bg_rgba,
-                .char = @intCast(cp),
-                .font_style = font_style,
-                .cell_type = if (is_wide) .Wide else .Ascii,
-            });
-            if (is_wide) {
-                const next_col = col + 1;
-                if (clip.contains(next_col, start_y)) {
-                    writeCell(cells, state.frame_width, state.frame_height, next_col, start_y, .{
-                        .entity_id = state.entity_id,
-                        .fg_rgba = fg_rgba,
-                        .bg_rgba = bg_rgba,
-                        .char = 0,
-                        .font_style = 0,
-                        .cell_type = .Hidden,
-                    });
-                }
+        if (col >= col_min) {
+            if (wide) {
+                writeWidePair(cells, state, col, start_y, clip, @intCast(cp), fg_rgba, bg_rgba, font_style);
+            } else {
+                writeCell(cells, state.frame_width, state.frame_height, col, start_y, .{
+                    .entity_id = state.entity_id,
+                    .fg_rgba = fg_rgba,
+                    .bg_rgba = bg_rgba,
+                    .char = @intCast(cp),
+                    .font_style = font_style,
+                    .cell_type = .Ascii,
+                });
             }
         }
-        col += if (is_wide) @as(TuiScale, 2) else @as(TuiScale, 1);
+        col += if (wide) @as(TuiScale, 2) else @as(TuiScale, 1);
     }
 }
 
@@ -209,66 +254,54 @@ fn rasterizeDrawBorder(state: *RasterizerState, cells: []TuiCell, payload: []con
     const has_bottom = (sides & 0x04) != 0;
     const has_left = (sides & 0x08) != 0;
 
-    // Top-left corner
-    if (has_top and has_left and clip.contains(x, y)) {
+    // Corners — single-cell writes, clip check is cheap
+    if (has_top and has_left and clip.contains(x, y))
         writeBorderCell(cells, state, x, y, chars.top_left, color_rgba);
-    }
-    // Top-right corner
-    if (has_top and has_right and clip.contains(x + w - 1, y)) {
+    if (has_top and has_right and clip.contains(x + w - 1, y))
         writeBorderCell(cells, state, x + w - 1, y, chars.top_right, color_rgba);
-    }
-    // Bottom-left corner
-    if (has_bottom and has_left and clip.contains(x, y + h - 1)) {
+    if (has_bottom and has_left and clip.contains(x, y + h - 1))
         writeBorderCell(cells, state, x, y + h - 1, chars.bottom_left, color_rgba);
-    }
-    // Bottom-right corner
-    if (has_bottom and has_right and clip.contains(x + w - 1, y + h - 1)) {
+    if (has_bottom and has_right and clip.contains(x + w - 1, y + h - 1))
         writeBorderCell(cells, state, x + w - 1, y + h - 1, chars.bottom_right, color_rgba);
-    }
 
-    // Top edge
-    if (has_top) {
-        const start_col: TuiScale = if (has_left) x + 1 else x;
-        const end_col: TuiScale = if (has_right) x + w - 1 else x + w;
-        var col: TuiScale = start_col;
-        while (col < end_col) : (col += 1) {
-            if (clip.contains(col, y)) {
-                writeBorderCell(cells, state, col, y, chars.horizontal, color_rgba);
+    // Edges — use clipRow to eliminate per-cell clip checks
+    if (has_top) drawBorderEdge(cells, state, clip, .horizontal, chars.horizontal, color_rgba, y, if (has_left) x + 1 else x, if (has_right) x + w - 1 else x + w);
+    if (has_bottom) drawBorderEdge(cells, state, clip, .horizontal, chars.horizontal, color_rgba, y + h - 1, if (has_left) x + 1 else x, if (has_right) x + w - 1 else x + w);
+    if (has_left) drawBorderEdge(cells, state, clip, .vertical, chars.vertical, color_rgba, x, if (has_top) y + 1 else y, if (has_bottom) y + h - 1 else y + h);
+    if (has_right) drawBorderEdge(cells, state, clip, .vertical, chars.vertical, color_rgba, x + w - 1, if (has_top) y + 1 else y, if (has_bottom) y + h - 1 else y + h);
+}
+
+const EdgeDirection = enum { horizontal, vertical };
+
+fn drawBorderEdge(
+    cells: []TuiCell,
+    state: *RasterizerState,
+    clip: ClipRect,
+    dir: EdgeDirection,
+    char: u16,
+    color: Rgba,
+    fixed: TuiScale,
+    range_start: TuiScale,
+    range_end: TuiScale,
+) void {
+    switch (dir) {
+        .horizontal => {
+            const r = clipRow(clip, fixed, range_start, range_end);
+            var col: TuiScale = r.start;
+            while (col < r.end) : (col += 1) {
+                writeBorderCell(cells, state, col, fixed, char, color);
             }
-        }
-    }
-    // Bottom edge
-    if (has_bottom) {
-        const start_col: TuiScale = if (has_left) x + 1 else x;
-        const end_col: TuiScale = if (has_right) x + w - 1 else x + w;
-        var col: TuiScale = start_col;
-        while (col < end_col) : (col += 1) {
-            if (clip.contains(col, y + h - 1)) {
-                writeBorderCell(cells, state, col, y + h - 1, chars.horizontal, color_rgba);
+        },
+        .vertical => {
+            // Intersect vertical strip [range_start, range_end) at column fixed
+            if (fixed < clip.x or fixed >= clip.x + clip.width) return;
+            const rs = @max(range_start, clip.y);
+            const re = @min(range_end, clip.y + clip.height);
+            var row: TuiScale = rs;
+            while (row < re) : (row += 1) {
+                writeBorderCell(cells, state, fixed, row, char, color);
             }
-        }
-    }
-    // Left edge
-    if (has_left) {
-        const start_row: TuiScale = if (has_top) y + 1 else y;
-        const end_row: TuiScale = if (has_bottom) y + h - 1 else y + h;
-        var row: TuiScale = start_row;
-        while (row < end_row) : (row += 1) {
-            if (clip.contains(x, row)) {
-                writeBorderCell(cells, state, x, row, chars.vertical, color_rgba);
-            }
-        }
-    }
-    // Right edge
-    if (has_right) {
-        const start_row: TuiScale = if (has_top) y + 1 else y;
-        const end_row: TuiScale = if (has_bottom) y + h - 1 else y + h;
-        var row: TuiScale = start_row;
-        while (row < end_row) : (row += 1) {
-            if (clip.contains(x + w - 1, row)) {
-                writeBorderCell(cells, state, x + w - 1, row, chars.vertical, color_rgba);
-            }
-        }
+        },
     }
 }
 
@@ -283,26 +316,22 @@ fn rasterizeDrawShadow(state: *RasterizerState, cells: []TuiCell, payload: []con
     const shadow_color = Rgba.fromU32(readU32(payload, 12));
 
     const clip = state.clip_stack.current();
-
-    // Shadow region: (x+offset_x, y+offset_y) to (x+w+offset_x, y+h+offset_y)
-    // Exclude the source rectangle area
     const sx: TuiScale = x + offset_x;
     const sy: TuiScale = y + offset_y;
-    const sw: TuiScale = w;
-    const sh: TuiScale = h;
 
-    var row: TuiScale = sy;
-    while (row < sy + sh) : (row += 1) {
-        var col: TuiScale = sx;
-        while (col < sx + sw) : (col += 1) {
+    const visible = clipIntersect(clip, sx, sy, w, h);
+    if (visible.isEmpty()) return;
+
+    var row: TuiScale = visible.y;
+    while (row < visible.y + visible.height) : (row += 1) {
+        var col: TuiScale = visible.x;
+        while (col < visible.x + visible.width) : (col += 1) {
             // Skip cells inside the source rectangle
             if (col >= x and col < x + w and row >= y and row < y + h) continue;
-            if (!clip.contains(col, row)) continue;
 
             const idx = @as(usize, row) * state.frame_width + col;
             if (idx >= cells.len) continue;
 
-            // Alpha blend shadow over existing cell background
             var cell_bg = cells[idx].bg_rgba;
             cell_bg.alphaCompositing(shadow_color);
             cells[idx].bg_rgba = cell_bg;
@@ -319,12 +348,13 @@ fn rasterizeDrawFill(state: *RasterizerState, cells: []TuiCell, payload: []const
     const fill_color = Rgba.fromU32(readU32(payload, 8));
 
     const clip = state.clip_stack.current();
+    const visible = clipIntersect(clip, x, y, w, h);
+    if (visible.isEmpty()) return;
 
-    var row: TuiScale = y;
-    while (row < y + h) : (row += 1) {
-        var col: TuiScale = x;
-        while (col < x + w) : (col += 1) {
-            if (!clip.contains(col, row)) continue;
+    var row: TuiScale = visible.y;
+    while (row < visible.y + visible.height) : (row += 1) {
+        var col: TuiScale = visible.x;
+        while (col < visible.x + visible.width) : (col += 1) {
             const idx = @as(usize, row) * state.frame_width + col;
             if (idx >= cells.len) continue;
 
@@ -623,25 +653,6 @@ fn isWideCodepoint(cp: u32) bool {
 
 // ============ Binary Reading Helpers ============
 
-fn readU16(buf: []const u8, offset: usize) u16 {
-    return @as(u16, buf[offset]) |
-        (@as(u16, buf[offset + 1]) << 8);
-}
-
-fn readU32(buf: []const u8, offset: usize) u32 {
-    return @as(u32, buf[offset]) |
-        (@as(u32, buf[offset + 1]) << 8) |
-        (@as(u32, buf[offset + 2]) << 16) |
-        (@as(u32, buf[offset + 3]) << 24);
-}
-
-fn readU64(buf: []const u8, offset: usize) u64 {
-    return @as(u64, buf[offset]) |
-        (@as(u64, buf[offset + 1]) << 8) |
-        (@as(u64, buf[offset + 2]) << 16) |
-        (@as(u64, buf[offset + 3]) << 24) |
-        (@as(u64, buf[offset + 4]) << 32) |
-        (@as(u64, buf[offset + 5]) << 40) |
-        (@as(u64, buf[offset + 6]) << 48) |
-        (@as(u64, buf[offset + 7]) << 56);
-}
+const readU16 = binary.readU16;
+const readU32 = binary.readU32;
+const readU64 = binary.readU64;

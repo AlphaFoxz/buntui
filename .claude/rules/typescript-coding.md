@@ -1,3 +1,12 @@
+---
+paths:
+  - "packages/core/**"
+  - "packages/compiler/**"
+  - "packages/playground/**"
+  - "packages/extensions/**"
+  - "packages/buntui/**"
+---
+
 # TypeScript Coding Rules
 
 Rules for writing TypeScript code in packages/core/, packages/compiler/, and packages/playground/.
@@ -59,4 +68,4 @@ override emitDrawCommands(buf: DrawListBuffer): void {
 
 ## Event Type Classes
 
-Events parsed from the FFI event bus use class constructors that accept `Record<string, unknown>`. See `events/types.ts` for existing event classes. All event types should match Web API signatures (MDN).
+Events parsed from the FFI event bus use class constructors that accept `ArrayBuffer` (binary payload parsed with `TuiDataViewWrapper`). See `events/types.ts` for existing event classes. All event types should match Web API signatures (MDN). Modifier bitmasks must match Zig `core/event_payloads.zig`.

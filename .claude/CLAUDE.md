@@ -6,18 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **buntui** is a cross-platform Terminal User Interface (TUI) framework combining Zig (native backend) with TypeScript (high-level API). The architecture bridges the two via FFI using Bun's `dlopen()` — Zig exports C ABI functions, TypeScript consumes them through type-safe bindings.
 
-This project uses **Bun exclusively** as its runtime, package manager, and build tool. Do not use `npm`, `npx`, `yarn`, or `pnpm`. All commands use `bun` (e.g., `bun install`, `bun run`, `bun test`).
+This project uses **Bun exclusively** as its runtime, package manager, and build tool. Do not use `npm`, `npx`, `yarn`, or `pnpm`. All commands use `bun` (e.g., `bun install`, `bun run`, `bun test`). Use `bunx` instead of `npx` for one-off package execution.
 
 ### Monorepo Structure
 
 - **packages/native/** (`@buntui/native`) — Zig rendering engine, event handling, terminal control (compiled to shared library)
-- **packages/core/** (`@buntui/core`) — TypeScript runtime framework with ECS-based widget system and Vue reactivity
+- **packages/core/** (`@buntui/core`) — TypeScript runtime framework with widget system, focus/pointer management, and Vue reactivity
+- **packages/extensions/** (`@buntui/extensions`) — Extension widgets (MatrixWidget, FrameRateWatcher)
+- **packages/buntui/** (`@buntui/buntui`) — Umbrella package re-exporting `@buntui/core` + `@buntui/extensions`
 - **packages/compiler/** (`@buntui/compiler`) — SFC compiler using Vue compiler-core for template/script compilation, plus dev server with HMR
 - **packages/playground/** (`@buntui/playground`) — Demo application (`bun run dev`)
 
 ### Public API
 
-**`@buntui/core`** exports: `createApp`, `widgets` (namespace), `createBox`, `createFrameRateWatcher`
+**`@buntui/core`** exports: `createApp`, `widgets` (namespace), `TuiWidgetEntity`, `Focusable`, `DrawListBuffer`, `TUI_CONTEXT_INSTANCE`, widget creators (`createBox`, `createInputWidget`, `createButtonWidget`, `createCheckboxWidget`, `createRadioGroupWidget`), and associated types.
 
 **`@buntui/compiler`** exports: `compile`, `parse`, `transform`, `generate`, `createDevServer`, plus types `CompileOptions`, `CompileResult`, `SFCParseOptions`, `CodegenOptions`, `CodegenResult`, `DevServerOptions`
 
@@ -49,6 +51,8 @@ bun run --cwd ./packages/core test               # Run all core tests
 bun test packages/core/src/some/__tests__/file.test.ts  # Run a single test
 bun run sync                                     # Propagate root version to all packages
 ```
+
+Tests use Bun's built-in test runner (`it()` + `expect()`). Test files go in `__tests__/` directories next to the source, named `*.test.ts`.
 
 There is no dedicated lint command in package.json. XO is a devDependency for programmatic use.
 
@@ -101,19 +105,18 @@ The event bus (`packages/native/src/core/event_bus.zig`) is a lock-free SPSC rin
 - Fixed-size slots (256 bytes each), 1024-slot ring buffer
 - 16-byte binary header per event: `event_type` (u32) + `payload_len` (u32) + `sequence` (u64)
 - Flow: `emit` → `poll` → `commit` (single-producer on Zig side, single-consumer on TS side)
-- Event payloads are JSON strings emitted by input handlers, deserialized on the TS side
+- Event payloads are **binary** (not JSON) — parsed directly from `ArrayBuffer` using `TuiDataViewWrapper`
 - Event types: `KeyboardEvent` (1), `MouseEvent` (2), `WheelEvent` (3), `TermResizeEvent` (4)
-- Note: `event_bus_emit` FFI takes `u16` for event_type, but `EventHeader` stores it as `u32` (widened on write)
 
 TS consumer protocol: `poll()` → read data → `commit()`. These must always be paired (use `finally` block).
 
 ### Component System (TypeScript)
 
-Entity-Component-System pattern:
-- **TuiWidgetEntity**: Base entity in `packages/core/src/extern/widgets/`
-- **Components**: Rect, Color, Style, Border, Shadow, Text attached to entities
-- **TuiScene**: Widget container with mount/unmount lifecycle
-- **TuiApp**: Application controller managing scenes and render loop (16ms frame timer)
+- **TuiWidgetEntity**: Abstract base in `packages/core/src/widgets/`. Provides `emitDrawCommands()`, `on/off/dispatch` event system, `containsPoint()` hit testing, `zIndex`, `draggable` support.
+- **Focusable**: Interface for focusable widgets (`acceptsFocus`, `focus()`, `blur()`, `handleKey()`). Checked via `isFocusable()` type guard.
+- **Widget types**: BoxWidget, ButtonWidget, CheckboxWidget, InputWidget, RadioGroupWidget — each in its own subdirectory under `widgets/`.
+- **TuiScene**: Widget container with mount/unmount, `hitTest()` for pointer events, zIndex-sorted rendering, synchronized update support.
+- **TuiApp**: Application controller in `packages/core/src/app/TuiApp.ts`. Manages FocusManager, PointerManager, RenderLoop (5ms tick), scene lifecycle, and event bus integration.
 - State uses **Vue reactivity** (`@vue/reactivity`)
 
 ### Rendering Pipeline (Zig)
@@ -168,7 +171,7 @@ Key rules from `xo.config.ts`:
 
 This project uses GitHub Issues + Milestones for tracking. Use `gh` CLI to stay in sync.
 
-**Labels:** `P0` (blocking), `P1` (architecture), `P2` (code quality), `P3` (test coverage), `native`, `core`, `compiler`, `roadmap`
+**Labels:** `P0` (blocking), `P1` (architecture), `P2` (code quality), `P3` (test coverage), `native`, `lib`, `roadmap`
 
 **Milestones:**
 

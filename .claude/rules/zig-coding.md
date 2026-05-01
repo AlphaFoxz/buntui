@@ -1,3 +1,8 @@
+---
+paths:
+  - "packages/native/**"
+---
+
 # Zig Coding Rules
 
 Rules for writing Zig code in packages/native/.

@@ -113,11 +113,3 @@ export type TuiRenderRoot = {
   usedCreators: Set<string>;
 };
 
-/**
- * A compiled binding extracted from `<script setup>`.
- */
-export type ScriptBinding = {
-  readonly type: 'ref' | 'computed' | 'const' | 'import' | 'func';
-  name: string;
-  expression: string;
-};

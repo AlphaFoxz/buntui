@@ -1,0 +1,230 @@
+import {it, expect, describe} from 'bun:test';
+import {CheckboxWidget} from '../CheckboxWidget';
+import type {KeyboardEvent} from '../../../events/types';
+
+function key(options: Partial<KeyboardEvent> & {key: string}): KeyboardEvent {
+  return {
+    key: options.key,
+    shiftKey: options.shiftKey ?? false,
+    ctrlKey: options.ctrlKey ?? false,
+    altKey: options.altKey ?? false,
+    metaKey: options.metaKey ?? false,
+    repeat: options.repeat ?? false,
+    charCode: options.charCode ?? 0,
+  };
+}
+
+function createCheckbox(options?: {label?: string; checked?: boolean; disabled?: boolean; rectX?: number; rectY?: number; rectWidth?: number; rectHeight?: number}) {
+  return new CheckboxWidget({
+    label: options?.label ?? 'Option',
+    checked: options?.checked ?? false,
+    disabled: options?.disabled ?? false,
+    rectX: options?.rectX ?? 0,
+    rectY: options?.rectY ?? 0,
+    rectWidth: options?.rectWidth ?? 15,
+    rectHeight: options?.rectHeight ?? 1,
+  });
+}
+
+describe('construction', () => {
+  it('initializes with default options', () => {
+    const cb = new CheckboxWidget();
+    expect(cb.checked).toBe(false);
+    expect(cb.label).toBe('');
+    expect(cb.disabled).toBe(false);
+    expect(cb.acceptsFocus).toBe(true);
+    const r = cb.rect;
+    expect(r.rectWidth).toBe(10);
+    expect(r.rectHeight).toBe(1);
+  });
+
+  it('initializes with custom options', () => {
+    const cb = createCheckbox({label: 'Enable dark mode', checked: true});
+    expect(cb.label).toBe('Enable dark mode');
+    expect(cb.checked).toBe(true);
+  });
+
+  it('initializes as disabled', () => {
+    const cb = createCheckbox({disabled: true});
+    expect(cb.disabled).toBe(true);
+    expect(cb.acceptsFocus).toBe(false);
+  });
+});
+
+describe('checked toggle via keyboard', () => {
+  it('Space toggles checked state', () => {
+    const cb = createCheckbox();
+    expect(cb.checked).toBe(false);
+    cb.handleKey(key({key: ' '}));
+    expect(cb.checked).toBe(true);
+    cb.handleKey(key({key: ' '}));
+    expect(cb.checked).toBe(false);
+  });
+
+  it('Enter toggles checked state', () => {
+    const cb = createCheckbox();
+    cb.handleKey(key({key: 'Enter'}));
+    expect(cb.checked).toBe(true);
+  });
+
+  it('toggle dispatches change event with checked value', () => {
+    const cb = createCheckbox();
+    const changes: unknown[] = [];
+    cb.on('change', data => changes.push(data));
+    cb.handleKey(key({key: ' '}));
+    expect(changes).toHaveLength(1);
+    expect((changes[0] as Record<string, boolean>).checked).toBe(true);
+    cb.handleKey(key({key: ' '}));
+    expect(changes).toHaveLength(2);
+    expect((changes[1] as Record<string, boolean>).checked).toBe(false);
+  });
+
+  it('other keys do nothing', () => {
+    const cb = createCheckbox();
+    cb.handleKey(key({key: 'a'}));
+    cb.handleKey(key({key: 'Tab'}));
+    cb.handleKey(key({key: 'Escape'}));
+    expect(cb.checked).toBe(false);
+  });
+
+  it('ignores undefined key', () => {
+    const cb = createCheckbox();
+    cb.handleKey({key: undefined, shiftKey: false, ctrlKey: false, altKey: false, metaKey: false, repeat: false, charCode: 0});
+    expect(cb.checked).toBe(false);
+  });
+
+  it('disabled widget ignores keyboard toggle', () => {
+    const cb = createCheckbox({disabled: true});
+    cb.handleKey(key({key: ' '}));
+    expect(cb.checked).toBe(false);
+    cb.handleKey(key({key: 'Enter'}));
+    expect(cb.checked).toBe(false);
+  });
+});
+
+describe('checked toggle via click', () => {
+  it('click toggles checked state', () => {
+    const cb = createCheckbox();
+    cb.dispatch('click', undefined);
+    expect(cb.checked).toBe(true);
+    cb.dispatch('click', undefined);
+    expect(cb.checked).toBe(false);
+  });
+
+  it('click dispatches change event', () => {
+    const cb = createCheckbox();
+    const changes: unknown[] = [];
+    cb.on('change', data => changes.push(data));
+    cb.dispatch('click', undefined);
+    expect(changes).toHaveLength(1);
+    expect((changes[0] as Record<string, boolean>).checked).toBe(true);
+  });
+
+  it('disabled widget ignores click', () => {
+    const cb = createCheckbox({disabled: true});
+    cb.dispatch('click', undefined);
+    expect(cb.checked).toBe(false);
+  });
+});
+
+describe('setChecked', () => {
+  it('sets checked state directly', () => {
+    const cb = createCheckbox();
+    expect(cb.checked).toBe(false);
+    cb.setChecked(true);
+    expect(cb.checked).toBe(true);
+    cb.setChecked(false);
+    expect(cb.checked).toBe(false);
+  });
+
+  it('does not dispatch change event', () => {
+    const cb = createCheckbox();
+    const changes: unknown[] = [];
+    cb.on('change', data => changes.push(data));
+    cb.setChecked(true);
+    expect(changes).toHaveLength(0);
+  });
+});
+
+describe('label setter', () => {
+  it('setLabel updates label', () => {
+    const cb = createCheckbox({label: 'Old'});
+    expect(cb.label).toBe('Old');
+    cb.setLabel('New');
+    expect(cb.label).toBe('New');
+  });
+
+  it('updateText alias updates label', () => {
+    const cb = createCheckbox();
+    cb.updateText('Updated');
+    expect(cb.label).toBe('Updated');
+  });
+});
+
+describe('disabled state', () => {
+  it('setDisabled changes state', () => {
+    const cb = createCheckbox();
+    expect(cb.acceptsFocus).toBe(true);
+    cb.setDisabled(true);
+    expect(cb.disabled).toBe(true);
+    expect(cb.acceptsFocus).toBe(false);
+    cb.setDisabled(false);
+    expect(cb.acceptsFocus).toBe(true);
+  });
+});
+
+describe('focus / blur', () => {
+  it('focus dispatches focus event', () => {
+    const cb = createCheckbox();
+    let focused = false;
+    cb.on('focus', () => { focused = true; });
+    cb.focus();
+    expect(focused).toBe(true);
+  });
+
+  it('blur dispatches blur event', () => {
+    const cb = createCheckbox();
+    let blurred = false;
+    cb.on('blur', () => { blurred = true; });
+    cb.blur();
+    expect(blurred).toBe(true);
+  });
+});
+
+describe('rect and hit testing', () => {
+  it('containsPoint checks bounds correctly', () => {
+    const cb = createCheckbox({rectX: 5, rectY: 3, rectWidth: 15, rectHeight: 1});
+    expect(cb.containsPoint(5, 3)).toBe(true);
+    expect(cb.containsPoint(19, 3)).toBe(true);
+    expect(cb.containsPoint(20, 3)).toBe(false);
+    expect(cb.containsPoint(4, 3)).toBe(false);
+    expect(cb.containsPoint(10, 4)).toBe(false);
+  });
+
+  it('updateRect updates position and size', () => {
+    const cb = createCheckbox();
+    cb.updateRect({rectX: 10, rectY: 20, rectWidth: 30, rectHeight: 3});
+    const r = cb.rect;
+    expect(r.rectX).toBe(10);
+    expect(r.rectY).toBe(20);
+    expect(r.rectWidth).toBe(30);
+    expect(r.rectHeight).toBe(3);
+  });
+
+  it('updateRect partially updates fields', () => {
+    const cb = createCheckbox({rectX: 5});
+    cb.updateRect({rectX: 15});
+    expect(cb.rect.rectX).toBe(15);
+  });
+});
+
+describe('unmounted', () => {
+  it('unmounted while focused calls blur', () => {
+    const cb = createCheckbox();
+    let blurred = false;
+    cb.on('blur', () => { blurred = true; });
+    cb.focus();
+    cb.unmounted();
+    expect(blurred).toBe(true);
+  });
+});

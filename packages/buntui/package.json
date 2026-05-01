@@ -1,0 +1,19 @@
+{
+    "name": "buntui",
+    "version": "0.0.0-alpha",
+    "main": "dist/index.bun.mjs",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "bun build --target=bun --production ./src/index.ts --outfile ./dist/index.bun.mjs && tsc --project ./tsconfig.json"
+    },
+    "dependencies": {
+        "@buntui/core": "workspace:*",
+        "@buntui/extensions": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/bun": "^1.3.13"
+    },
+    "peerDependencies": {
+        "typescript": "^6.0.3"
+    }
+}

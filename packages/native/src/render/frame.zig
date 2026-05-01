@@ -39,28 +39,21 @@ pub var prev_frame: TuiFrame = .{ .width = 0, .height = 0 };
 pub var next_frame: TuiFrame = .{ .width = 0, .height = 0 };
 pub var dirty: std.DynamicBitSet = undefined;
 
-fn resizeFrame(frame: *TuiFrame, rows: TuiScale, cols: TuiScale) void {
+fn resizeFrame(f: *TuiFrame, rows: TuiScale, cols: TuiScale) void {
     const allocator = glo_alloc.allocator();
-    if (frame.width > 0) {
-        allocator.free(frame.cells);
+    if (f.width > 0) {
+        allocator.free(f.cells);
     }
 
     const size = rows * cols;
-    frame.cells = allocator.alloc(TuiCell, size) catch {
+    // Allocate without initializing — renderDrawList fills next_frame
+    // immediately after checkScreenSize, and dirtyTrack naturally marks
+    // everything dirty on the first frame after a resize.
+    f.cells = allocator.alloc(TuiCell, size) catch {
         err.outOfMemory();
     };
-    for (0..size) |index| {
-        frame.cells[index] = .{
-            .entity_id = 0,
-            .fg_rgba = .{ .r = 0xFF, .g = 0xFF, .b = 0xFF, .a = 0xFF },
-            .bg_rgba = .{ .r = 0, .g = 0, .b = 0, .a = 0xFF },
-            .char = ' ',
-            .font_style = 0,
-            .cell_type = .Ascii,
-        };
-    }
-    frame.width = cols;
-    frame.height = rows;
+    f.width = cols;
+    f.height = rows;
     if (dirty.capacity() != size) {
         dirty.resize(size, false) catch {
             err.outOfMemory();
@@ -68,15 +61,19 @@ fn resizeFrame(frame: *TuiFrame, rows: TuiScale, cols: TuiScale) void {
     }
 }
 
-pub fn checkScreenSize(ctx: *TuiContext) void {
+pub fn checkScreenSize(ctx: *TuiContext) bool {
     const size = ctx.rows * ctx.cols;
+    var resized = false;
 
     if (ctx.cols != prev_frame.width or prev_frame.cells.len != size) {
         resizeFrame(&prev_frame, ctx.rows, ctx.cols);
+        resized = true;
     }
     if (ctx.cols != next_frame.width or next_frame.cells.len != size) {
         resizeFrame(&next_frame, ctx.rows, ctx.cols);
+        resized = true;
     }
+    return resized;
 }
 
 pub fn dirtyTrack() void {

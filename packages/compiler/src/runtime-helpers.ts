@@ -5,7 +5,14 @@
 export const RUNTIME_HELPERS = {
   // Widget creation
   CREATE_BOX: 'createBox',
+  CREATE_TEXT: 'createTextWidget',
   CREATE_FRAME_RATE_WATCHER: 'createFrameRateWatcher',
+  CREATE_INPUT: 'createInputWidget',
+  CREATE_BUTTON: 'createButtonWidget',
+  CREATE_CHECKBOX: 'createCheckboxWidget',
+  CREATE_RADIO_GROUP: 'createRadioGroupWidget',
+  CREATE_TAB_BAR: 'createTabBarWidget',
+  CREATE_SWITCH: 'createSwitchWidget',
 
   // App & scene
   CREATE_APP: 'createApp',
@@ -21,5 +28,12 @@ export const RUNTIME_HELPERS = {
  */
 export const WIDGET_TAG_MAP: Record<string, string> = {
   Box: RUNTIME_HELPERS.CREATE_BOX,
+  Text: RUNTIME_HELPERS.CREATE_TEXT,
   FrameRateWatcher: RUNTIME_HELPERS.CREATE_FRAME_RATE_WATCHER,
+  Input: RUNTIME_HELPERS.CREATE_INPUT,
+  Button: RUNTIME_HELPERS.CREATE_BUTTON,
+  Checkbox: RUNTIME_HELPERS.CREATE_CHECKBOX,
+  RadioGroup: RUNTIME_HELPERS.CREATE_RADIO_GROUP,
+  TabBar: RUNTIME_HELPERS.CREATE_TAB_BAR,
+  Switch: RUNTIME_HELPERS.CREATE_SWITCH,
 } as const;

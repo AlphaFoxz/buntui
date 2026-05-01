@@ -277,7 +277,7 @@ pub fn unicodeToKeyName(unicode: u16) []const u8 {
         0x0D => return "Enter",
         0x1B => return "Escape",
         0x20 => return " ",
-        0x7F => return "Delete",
+        0x7F => return "Backspace",
         else => return "Unidentified",
     }
 }

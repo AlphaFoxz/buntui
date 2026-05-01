@@ -1,25 +1,22 @@
 import path from 'node:path';
 import process from 'node:process';
-import {MouseEvent, TuiEventType} from '../events/types';
+import {TuiEventType} from '../events/types';
 import app, {TUI_CONTEXT_INSTANCE} from '../extern/app';
 import {type LogLevel, type TuiAppOptions, type TuiSceneOptions} from '../extern/app/types';
 import {LOGGER} from '../common/logger';
 import {EVENT_BUS} from '../events';
-import {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import TuiScene from '../extern/app/TuiScene';
-import type {TuiWidgetEntity} from '../extern/widgets/TuiWidgetEntity';
+import {FocusManager} from './FocusManager';
+import {PointerManager} from './PointerManager';
+import {RenderLoop} from './RenderLoop';
 
 export class TuiApp {
   readonly #debugMode: boolean;
-  readonly #drawList = new DrawListBuffer();
   #scenes: TuiScene[] = [];
   #currentScene: TuiScene | undefined = undefined;
-  #running = false;
-  #mouseHandler: ((data: MouseEvent) => void) | undefined;
-  #pressTarget: TuiWidgetEntity | undefined;
-  #isDragging = false;
-  #dragOffsetX = 0;
-  #dragOffsetY = 0;
+  readonly #focusManager = new FocusManager();
+  readonly #pointerManager: PointerManager;
+  readonly #renderLoop: RenderLoop;
 
   constructor(options?: Partial<TuiAppOptions>) {
     const logLevel: LogLevel = options?.logLevel ?? 'info';
@@ -36,6 +33,10 @@ export class TuiApp {
       frontendLogName,
       backendLogName,
     });
+
+    const getScene = () => this.#currentScene;
+    this.#pointerManager = new PointerManager(getScene, this.#focusManager);
+    this.#renderLoop = new RenderLoop(getScene);
     setAppInstance(this);
   }
 
@@ -52,7 +53,7 @@ export class TuiApp {
       });
     }
 
-    EVENT_BUS.on(TuiEventType.KeyboardEvent, data => {
+    this.#focusManager.start(data => {
       if (data.key === 'q' || data.key === 'Q') {
         setTimeout(() => {
           this.stop();
@@ -65,115 +66,31 @@ export class TuiApp {
       LOGGER.logInfo(`Terminal resized: ${TUI_CONTEXT_INSTANCE.rows}x${TUI_CONTEXT_INSTANCE.cols}`);
     });
 
-    this.#mouseHandler = (data: MouseEvent) => {
-      const scene = this.#currentScene;
-      if (!scene) {
-        return;
-      }
-
-      // Mouse move (button not set, buttons may indicate held state)
-      if (data.button === undefined) {
-        if (this.#pressTarget && this.#pressTarget.draggable && data.buttons && data.buttons > 0) {
-          if (!this.#isDragging) {
-            this.#isDragging = true;
-            this.#pressTarget.dispatch('dragstart', data);
-          }
-
-          const mx = data.x - 1;
-          const my = data.y - 1;
-          const newX = Math.max(0, mx - this.#dragOffsetX);
-          const newY = Math.max(0, my - this.#dragOffsetY);
-          this.#pressTarget.updateRect({
-            rectX: newX,
-            rectY: newY,
-          });
-          this.#pressTarget.dispatch('drag', data);
-        }
-
-        return;
-      }
-
-      // Right-click: only handle press → release for contextmenu
-      if (data.button === MouseEvent.RIGHT_MOUSE_BUTTON) {
-        if (!data.isRelease) {
-          this.#pressTarget = scene.hitTest(data);
-        } else if (this.#pressTarget) {
-          const releaseTarget = scene.hitTest(data);
-          if (releaseTarget === this.#pressTarget) {
-            this.#pressTarget.dispatch('contextmenu', data);
-          }
-
-          this.#pressTarget = undefined;
-        }
-
-        return;
-      }
-
-      // Left / middle button from here on
-      // Press
-      if (!data.isRelease) {
-        this.#pressTarget = scene.hitTest(data);
-        if (this.#pressTarget) {
-          this.#pressTarget.dispatch('mousedown', data);
-          this.#dragOffsetX = (data.x - 1) - this.#pressTarget.rect.rectX;
-          this.#dragOffsetY = (data.y - 1) - this.#pressTarget.rect.rectY;
-        }
-
-        return;
-      }
-
-      // Release
-      if (this.#isDragging) {
-        this.#pressTarget?.dispatch('dragend', data);
-        this.#isDragging = false;
-        this.#pressTarget = undefined;
-        return;
-      }
-
-      if (this.#pressTarget) {
-        this.#pressTarget.dispatch('mouseup', data);
-
-        const releaseTarget = scene.hitTest(data);
-        if (releaseTarget === this.#pressTarget) {
-          this.#pressTarget.dispatch('click', data);
-        }
-
-        this.#pressTarget = undefined;
-      }
-    };
-
-    EVENT_BUS.on(TuiEventType.MouseEvent, this.#mouseHandler);
+    this.#pointerManager.start();
 
     app.startApp();
     EVENT_BUS.start();
     app.detectTermSize(TUI_CONTEXT_INSTANCE);
     LOGGER.logInfo(`TUI_CONTEXT_INSTANCE.scale: ${TUI_CONTEXT_INSTANCE.rows} ${TUI_CONTEXT_INSTANCE.cols}`);
-    this.#running = true;
-    const render = () => {
-      if (!this.#running) {
-        return;
-      }
+    this.#renderLoop.start();
+  }
 
-      const scene = this.#currentScene;
-      if (scene) {
-        this.#drawList.reset();
-        scene.emitDrawCommands(this.#drawList);
-        this.#drawList.finish();
-        app.renderDrawList(TUI_CONTEXT_INSTANCE, this.#drawList);
-      }
+  get focusedWidget() {
+    return this.#focusManager.focusedWidget;
+  }
 
-      setTimeout(render, 5);
-    };
+  focusWidget(widget: Parameters<FocusManager['focusWidget']>[0]): void {
+    this.#focusManager.focusWidget(widget);
+  }
 
-    setTimeout(render, 0);
+  blurWidget(): void {
+    this.#focusManager.blurWidget();
   }
 
   stop() {
-    this.#running = false;
-    if (this.#mouseHandler) {
-      EVENT_BUS.off(TuiEventType.MouseEvent, this.#mouseHandler);
-      this.#mouseHandler = undefined;
-    }
+    this.#renderLoop.stop();
+    this.#pointerManager.stop();
+    this.#focusManager.stop();
 
     setAppInstance(undefined);
     this.#currentScene?.destroy();
@@ -255,4 +172,3 @@ process.on('unhandledRejection', onUnexceptExit);
 process.on('uncaughtException', onUnexceptExit);
 
 export default TuiApp;
-

@@ -7,12 +7,15 @@ const frame = @import("../render/frame.zig");
 const ansi = @import("../ansi_util.zig");
 const cmd = @import("./commands.zig");
 const rasterizer = @import("./rasterizer.zig");
+const binary = @import("./binary.zig");
 
 const BUFFER_HEADER_SIZE = cmd.BUFFER_HEADER_SIZE;
 const BUFFER_MAGIC = cmd.BUFFER_MAGIC;
 const BUFFER_VERSION = cmd.BUFFER_VERSION;
 const CMD_HEADER_SIZE = cmd.CMD_HEADER_SIZE;
 const DrawCmd = cmd.DrawCmd;
+const readU16 = binary.readU16;
+const readU32 = binary.readU32;
 const Rgba = @import("../ansi_util/style.zig").Rgba;
 const Color = @import("../ansi_util/style.zig").Color;
 const CellStyle = @import("../ansi_util/style.zig").CellStyle;
@@ -41,7 +44,7 @@ pub fn renderDrawList(ctx: *tui_context.TuiContext, buf_ptr: [*]const u8, buf_le
     const buf = buf_ptr[0..buf_len];
 
     // Parse buffer header
-    const magic = readU16From(buf, 0);
+    const magic = readU16(buf, 0);
     if (magic != BUFFER_MAGIC) {
         logger.logErrorFmt("DrawList: invalid magic 0x{X}, expected 0x{X}", .{ magic, BUFFER_MAGIC });
         return;
@@ -61,8 +64,9 @@ pub fn renderDrawList(ctx: *tui_context.TuiContext, buf_ptr: [*]const u8, buf_le
     }
     raster_state.reset(ctx.cols, ctx.rows);
 
-    // Ensure frame buffers
-    frame.checkScreenSize(ctx);
+    // Ensure frame buffers; force full redraw on resize so prev_frame
+    // (which no longer represents the terminal state) doesn't cause ghost cells.
+    const resized = frame.checkScreenSize(ctx);
 
     // Pre-scan: extract SetBackground before clearing cells so the initial fill
     // uses the scene's actual bg color instead of the reset default (black).
@@ -117,15 +121,17 @@ pub fn renderDrawList(ctx: *tui_context.TuiContext, buf_ptr: [*]const u8, buf_le
         switch (cmd_enum) {
             .SetCursor => {
                 if (payload.len >= 4) {
-                    post.cursor_x = readU16From(payload, 0);
-                    post.cursor_y = readU16From(payload, 2);
+                    post.cursor_x = readU16(payload, 0);
+                    post.cursor_y = readU16(payload, 2);
                 }
             },
             .ShowCursor => {
                 post.show_cursor = true;
+                post.hide_cursor = false;
             },
             .HideCursor => {
                 post.hide_cursor = true;
+                post.show_cursor = false;
             },
             .SetCursorMode => {
                 if (payload.len >= 1) {
@@ -134,7 +140,7 @@ pub fn renderDrawList(ctx: *tui_context.TuiContext, buf_ptr: [*]const u8, buf_le
             },
             .SetTitle => {
                 if (payload.len >= 2) {
-                    const title_len = readU16From(payload, 0);
+                    const title_len = readU16(payload, 0);
                     if (payload.len >= 2 + title_len) {
                         post.title = payload[2 .. 2 + title_len];
                     }
@@ -148,8 +154,12 @@ pub fn renderDrawList(ctx: *tui_context.TuiContext, buf_ptr: [*]const u8, buf_le
         offset += CMD_HEADER_SIZE + payload_len;
     }
 
-    // Diff and emit ANSI
-    frame.dirtyTrack();
+    // Diff and emit ANSI — after resize, force all cells dirty to avoid ghost content
+    if (resized) {
+        frame.dirty.setRangeValue(.{ .start = 0, .end = frame.dirty.capacity() }, true);
+    } else {
+        frame.dirtyTrack();
+    }
 
     const writer: *Io.Writer = &std_io.writer.interface;
     const dirty = frame.dirty;
@@ -187,6 +197,7 @@ pub fn renderDrawList(ctx: *tui_context.TuiContext, buf_ptr: [*]const u8, buf_le
     if (post.hide_cursor) {
         ansi.cursor.hideCursor(writer) catch {};
     } else if (post.show_cursor) {
+        ansi.cursor.setCursor(writer, post.cursor_x, post.cursor_y) catch {};
         ansi.cursor.showCursor(writer) catch {};
     }
     if (post.cursor_mode) |mode_raw| {
@@ -208,15 +219,3 @@ pub fn renderDrawList(ctx: *tui_context.TuiContext, buf_ptr: [*]const u8, buf_le
     ctx.tick += 1;
 }
 
-fn readU16From(buf: []const u8, offset: usize) u16 {
-    return @as(u16, buf[offset]) | (@as(u16, buf[offset + 1]) << 8);
-}
-
-const readU16 = readU16From;
-
-fn readU32(buf: []const u8, offset: usize) u32 {
-    return @as(u32, buf[offset]) |
-        (@as(u32, buf[offset + 1]) << 8) |
-        (@as(u32, buf[offset + 2]) << 16) |
-        (@as(u32, buf[offset + 3]) << 24);
-}

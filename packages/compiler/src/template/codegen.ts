@@ -35,13 +35,16 @@ const PROP_UPDATE_MAP: Record<string, {method: string; field: string}> = {
   shadowOffsetY: {method: 'updateShadow', field: 'shadowOffsetY'},
   shadowColor: {method: 'updateShadow', field: 'shadowColor'},
   shadowCovered: {method: 'updateShadow', field: 'shadowCovered'},
-  // Box — updateText(val)
+  // Text — updateText(val)
   text: {method: 'updateText', field: ''},
 };
 
 // Flag props that map to setter calls instead of constructor args
 const FLAG_PROP_MAP: Record<string, string> = {
   draggable: 'setDraggable',
+  disabled: 'setDisabled',
+  checked: 'setChecked',
+  value: 'setValue',
 };
 
 export type CodegenOptions = {
@@ -51,6 +54,8 @@ export type CodegenOptions = {
   reactivityModuleId?: string;
   /** Script body lines to embed inside setup() */
   scriptBody?: string[];
+  /** Override import source for specific widget creators (creator name → module ID) */
+  widgetModuleMap?: Record<string, string>;
 };
 
 export type CodegenResult = {
@@ -70,9 +75,19 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
   const imports: string[] = [];
   const lines: string[] = [];
 
-  // Collect imports from used creators
+  // Collect imports from used creators, grouped by module
   if (root.usedCreators.size > 0) {
-    imports.push(`import { ${[...root.usedCreators].join(', ')} } from '${core}';`);
+    const moduleGroups = new Map<string, string[]>();
+    for (const creator of root.usedCreators) {
+      const mod = options?.widgetModuleMap?.[creator] ?? core;
+      const group = moduleGroups.get(mod) ?? [];
+      group.push(creator);
+      moduleGroups.set(mod, group);
+    }
+
+    for (const [mod, creators] of moduleGroups) {
+      imports.push(`import { ${creators.join(', ')} } from '${mod}';`);
+    }
   }
 
   // Import reactivity helpers if we have dynamic bindings
@@ -200,13 +215,22 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
   // Generate flag prop setter calls
   lines.push(...flagLines);
 
-  // Generate children
+  // Generate children and add them to the parent widget
   let nextIndex = index + 1;
   for (const child of node.children) {
-    const result = generateNode(child, nextIndex);
-    if (result) {
-      lines.push(...result.lines);
-      nextIndex = result.nextIndex;
+    if (child.type === 'TuiWidgetCall') {
+      const childVarName = getWidgetVarName(child, nextIndex);
+      const result = generateNode(child, nextIndex);
+      if (result) {
+        lines.push(...result.lines, `${varName}.addChild(${childVarName});`);
+        nextIndex = result.nextIndex;
+      }
+    } else {
+      const result = generateNode(child, nextIndex);
+      if (result) {
+        lines.push(...result.lines);
+        nextIndex = result.nextIndex;
+      }
     }
   }
 

@@ -2,24 +2,24 @@
 
 ## 渲染管线
 
-```
-┌─────────────── TypeScript (Bun) ───────────────┐
+```text
+┌─────────────── TypeScript (Bun) ─────────────────┐
 │                                                  │
 │  .vue SFC ──→ Widget Tree ──→ emitDrawCommands() │
 │       (compiler)   (Vue reactivity)       │      │
-│                                          ▼      │
+│                                           ▼      │
 │                                   DrawListBuffer │
 │                                  (shared memory) │
 └──────────────────────┬───────────────────────────┘
                        │ FFI: renderDrawList(buf, len)
                        ▼
-┌─────────────── Zig (Native) ───────────────────┐
+┌─────────────── Zig (Native) ─────────────────────┐
 │                                                  │
 │  Parse Commands ──→ Rasterize ──→ Cell Grid      │
 │  (draw_list/)      (per-cmd)    (TuiFrame)  │    │
-│                                          │      │
-│                                     Diff + ANSI  │
-│                                    ───────────► Terminal
+│                                             │    │
+│                                      Diff + ANSI │
+│                                          ───────────► Terminal
 └──────────────────────────────────────────────────┘
 
 每帧流程: reset buffer → widget tree 生成 commands → FFI 传给 Zig → 光栅化到 cell grid → diff 脏区 → 输出 ANSI
@@ -28,7 +28,7 @@
 ## 目标
 
 - 一个很cool的terminal ui框架
-- 让用户像使用 vite + vue 一样使用本框架（vite + buntui）。
+- 让用户像使用 vue 一样使用本框架。
   - 提供热重载
   - 提供多种内置widget
   - 用户通过编写 .vue 文件可轻松编排layout

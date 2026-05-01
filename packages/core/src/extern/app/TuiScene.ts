@@ -2,7 +2,7 @@ import {genId} from '../../utils/genId';
 import {rgbToRgba} from '../../utils/styles';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import type {MouseEvent} from '../../events/types';
-import {type TuiWidgetEntity} from '../widgets/TuiWidgetEntity';
+import {type TuiWidgetEntity} from '../../widgets/TuiWidgetEntity';
 import {type TuiSceneOptions} from './types';
 
 export class TuiScene {

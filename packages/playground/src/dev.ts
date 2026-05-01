@@ -8,7 +8,15 @@ const VUE_FILE = path.join(import.meta.dir, 'App.vue');
 
 createDevServer({
   file: VUE_FILE,
-  compileOptions: {codegen: {coreModuleId: '@buntui/core', reactivityModuleId: '@vue/reactivity'}},
+  compileOptions: {
+    codegen: {
+      coreModuleId: '@buntui/core',
+      reactivityModuleId: '@vue/reactivity',
+      widgetModuleMap: {
+        createFrameRateWatcher: '@buntui/extensions',
+      },
+    },
+  },
   onClear() {
     scene.clearWidgets();
   },

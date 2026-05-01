@@ -104,8 +104,16 @@ function transformElement(
     }
   }
 
-  // TODO: handle children (recursive transform)
   // TODO: handle v-if, v-for (wrap in conditional/list blocks)
+
+  // Transform children recursively
+  const children: TuiRenderNode[] = [];
+  for (const child of node.children) {
+    const transformed = transformNode(child, usedCreators, []);
+    if (transformed) {
+      children.push(transformed);
+    }
+  }
 
   return {
     type: 'TuiWidgetCall',
@@ -114,7 +122,7 @@ function transformElement(
     props,
     dynamicProps,
     events,
-    children: [],
+    children,
     loc: node.loc,
   };
 }

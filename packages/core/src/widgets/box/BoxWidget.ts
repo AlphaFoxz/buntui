@@ -1,21 +1,19 @@
+import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import {BorderSides} from '../../draw_list/types';
 import type {
   TuiWidgetBorder,
   TuiWidgetColor,
   TuiWidgetRect,
   TuiWidgetShadow,
   TuiWidgetStyle,
-  TuiWidgetText,
-} from '../extern/widgets/types';
-import {TuiWidgetEntity} from '../extern/widgets/TuiWidgetEntity';
-import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
-import {BorderSides} from '../draw_list/types';
+} from '../types';
+import {TuiWidgetEntity} from '../TuiWidgetEntity';
 
 export type BoxWidgetOptions = TuiWidgetRect
   & TuiWidgetColor
   & Partial<TuiWidgetStyle>
   & Partial<TuiWidgetBorder>
-  & Partial<TuiWidgetShadow>
-  & TuiWidgetText;
+  & Partial<TuiWidgetShadow>;
 
 export class BoxWidget extends TuiWidgetEntity {
   readonly #rect: TuiWidgetRect;
@@ -23,7 +21,6 @@ export class BoxWidget extends TuiWidgetEntity {
   readonly #style: TuiWidgetStyle;
   readonly #border: TuiWidgetBorder;
   readonly #shadow: TuiWidgetShadow;
-  #text: string;
 
   constructor(options: BoxWidgetOptions) {
     super();
@@ -55,7 +52,6 @@ export class BoxWidget extends TuiWidgetEntity {
       shadowColor: options.shadowColor ?? 0,
       shadowCovered: options.shadowCovered ?? false,
     };
-    this.#text = options.text;
   }
 
   override get rect(): TuiWidgetRect {
@@ -63,7 +59,10 @@ export class BoxWidget extends TuiWidgetEntity {
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>) {
+    const oldX = this.#rect.rectX;
+    const oldY = this.#rect.rectY;
     Object.assign(this.#rect, rect);
+    this.propagatePositionDelta(this.#rect.rectX - oldX, this.#rect.rectY - oldY);
   }
 
   get color(): TuiWidgetColor {
@@ -107,17 +106,9 @@ export class BoxWidget extends TuiWidgetEntity {
     return x >= rectX && x < rectX + rectWidth && y >= rectY && y < rectY + rectHeight;
   }
 
-  get text() {
-    return this.#text;
-  }
-
-  updateText(text: string) {
-    this.#text = text;
-  }
-
   override emitDrawCommands(buffer: DrawListBuffer): void {
     const {rectX, rectY, rectWidth, rectHeight} = this.#rect;
-    const {colorFg, colorBg} = this.#color;
+    const {colorBg} = this.#color;
     const {borderColor, borderStyle, borderTop, borderRight, borderBottom, borderLeft} = this.#border;
 
     buffer.pushClip(rectX, rectY, rectWidth, rectHeight);
@@ -130,21 +121,6 @@ export class BoxWidget extends TuiWidgetEntity {
       height: rectHeight,
       bgRgba: colorBg,
     });
-
-    // Text content — offset by border insets so border doesn't overwrite text.
-    // bgRgba is transparent because drawRect already set the background;
-    // passing colorBg again would double-blend semi-transparent backgrounds.
-    if (this.#text.length > 0) {
-      const textX = rectX + (borderLeft ? 1 : 0);
-      const textY = rectY + (borderTop ? 1 : 0);
-      buffer.drawText({
-        x: textX,
-        y: textY,
-        text: this.#text,
-        fgRgba: colorFg,
-        bgRgba: 0x00_00_00_00,
-      });
-    }
 
     // Border
     if (borderStyle !== 0) {
@@ -164,6 +140,7 @@ export class BoxWidget extends TuiWidgetEntity {
     }
 
     buffer.popClip();
+    this.renderChildren(buffer);
   }
 }
 
@@ -174,20 +151,10 @@ export const DEFAULT_BOX_OPTIONS: BoxWidgetOptions = {
   rectHeight: 0,
   colorFg: 0xFF_FF_FF_FF,
   colorBg: 0x00_00_00_FF,
-  text: '',
 };
 
-export function createBox(options: Partial<BoxWidgetOptions> & {text: string}): BoxWidget;
-export function createBox(text: string): BoxWidget;
-export function createBox(options: string | (Partial<BoxWidgetOptions> & {text: string})) {
-  if (typeof options === 'string') {
-    return new BoxWidget({...DEFAULT_BOX_OPTIONS, text: options});
-  }
-
-  return new BoxWidget({
-    ...DEFAULT_BOX_OPTIONS,
-    ...options,
-  });
+export function createBox(options: Partial<BoxWidgetOptions> = {}): BoxWidget {
+  return new BoxWidget({...DEFAULT_BOX_OPTIONS, ...options});
 }
 
 export default BoxWidget;

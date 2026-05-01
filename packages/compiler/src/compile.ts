@@ -2,8 +2,7 @@ import {baseParse, type RootNode} from '@vue/compiler-core';
 import type {SFCDescriptor} from '@vue/compiler-sfc';
 import {parse} from './parse';
 import {transform, type TransformOptions} from './template/transform';
-import {generate, type CodegenOptions, type CodegenResult} from './template/codegen';
-import {analyzeBindings, type BindingAnalysisResult} from './script/analyzeBindings';
+import {generate, type CodegenOptions} from './template/codegen';
 
 export type CompileOptions = {
   /** SFC parse options */
@@ -21,8 +20,6 @@ export type CompileResult = {
   imports: string[];
   /** Template AST (if template block exists) */
   templateAst?: RootNode;
-  /** Script binding analysis (if script block exists) */
-  bindings?: BindingAnalysisResult;
   /** Descriptors for each SFC block */
   descriptor: SFCDescriptor;
 };
@@ -30,75 +27,68 @@ export type CompileResult = {
 /**
  * Compile a Vue SFC source into a TUI TypeScript module.
  *
- * Pipeline: parse → analyze script → transform template → codegen
+ * Pipeline: parse → transform → codegen
  */
 export function compile(source: string, options?: CompileOptions): CompileResult {
   // 1. Parse SFC
   const descriptor = parse(source, {filename: options?.filename});
 
-  // 2. Analyze script setup bindings
-  let bindings: BindingAnalysisResult | undefined;
-  if (descriptor.scriptSetup) {
-    bindings = analyzeBindings(descriptor.scriptSetup);
+  // 2. Transform template to TUI render tree (once)
+  if (!descriptor.template) {
+    return {
+      code: '// No template block found',
+      imports: [],
+      descriptor,
+    };
   }
 
-  // 3. Transform template to TUI render tree
-  let templateAst: RootNode | undefined;
-  let codegenResult: CodegenResult;
+  const templateAst = baseParse(descriptor.template.content);
+  const renderRoot = transform(templateAst, options?.transform);
 
-  if (descriptor.template) {
-    templateAst = baseParse(descriptor.template.content);
-
-    const renderRoot = transform(templateAst, options?.transform);
-    codegenResult = generate(renderRoot, options?.codegen);
-  } else {
-    codegenResult = {code: '// No template block found', imports: []};
-  }
-
-  // 4. Combine: imports first, then script body, then template setup
+  // 3. Split script imports from body
   const scriptContent = descriptor.scriptSetup?.content
     ?? descriptor.script?.content
     ?? '';
+  const {scriptImports, scriptBody} = splitScript(scriptContent);
 
-  let code: string;
-  if (scriptContent) {
-    // Separate script imports from body to put all imports at the top
-    const scriptLines = scriptContent.split('\n');
-    const scriptImports: string[] = [];
-    const scriptBody: string[] = [];
-    for (const line of scriptLines) {
-      if (line.trimStart().startsWith('import ')) {
-        scriptImports.push(line);
-      } else {
-        scriptBody.push(line);
-      }
-    }
+  // 4. Codegen (single pass, with script body if present)
+  const codegenResult = generate(renderRoot, {
+    ...options?.codegen,
+    scriptBody: scriptBody.length > 0 ? scriptBody : undefined,
+  });
 
-    const allImports = [...codegenResult.imports, ...scriptImports];
-
-    // Re-generate with script body embedded inside setup()
-    const regenerated = generate(transform(templateAst!, options?.transform), {
-      ...options?.codegen,
-      scriptBody,
-    });
-
-    // Deduplicate imports: merge all import lines, then append the setup code
-    code = [
-      ...allImports,
-      '',
-      ...regenerated.code.split('\n').filter(l => !l.startsWith('import ')),
-    ].join('\n');
-  } else {
-    code = codegenResult.code;
-  }
+  // 5. Combine: deduplicate imports, then code
+  const allImports = [...codegenResult.imports, ...scriptImports];
+  const code = [
+    ...allImports,
+    '',
+    ...codegenResult.code.split('\n').filter(l => !l.startsWith('import ')),
+  ].join('\n');
 
   return {
     code,
-    imports: codegenResult.imports,
+    imports: allImports,
     templateAst,
-    bindings,
     descriptor,
   };
+}
+
+function splitScript(content: string): {scriptImports: string[]; scriptBody: string[]} {
+  if (!content) {
+    return {scriptImports: [], scriptBody: []};
+  }
+
+  const scriptImports: string[] = [];
+  const scriptBody: string[] = [];
+  for (const line of content.split('\n')) {
+    if (line.trimStart().startsWith('import ')) {
+      scriptImports.push(line);
+    } else {
+      scriptBody.push(line);
+    }
+  }
+
+  return {scriptImports, scriptBody};
 }
 
 export {type SFCDescriptor} from '@vue/compiler-sfc';

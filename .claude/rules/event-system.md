@@ -1,3 +1,11 @@
+---
+paths:
+  - "packages/core/src/events/**"
+  - "packages/core/src/app/**"
+  - "packages/native/src/core/event_bus.zig"
+  - "packages/native/src/input/**"
+---
+
 # Event System
 
 The event system bridges Zig (producer) and TypeScript (consumer) through a lock-free ring buffer.
@@ -42,6 +50,7 @@ The remaining 240 bytes (256 - 16) are available for payload data.
 | 1  | KeyboardEvent   | KeyboardEvent    | Key press/release |
 | 2  | MouseEvent      | MouseEvent       | Mouse click/move |
 | 3  | WheelEvent      | WheelEvent       | Scroll wheel    |
+| 4  | TermResizeEvent | TermResizeEvent  | Terminal resize |
 
 These IDs must be consistent between Zig (`event_bus.zig` EventType enum) and TypeScript (`events/types.ts` TuiEventType const object).
 
@@ -57,24 +66,31 @@ The TS side must follow this protocol exactly:
 
 ## Event Payload Format
 
-Currently, payloads are JSON strings matching Web API signatures:
+Payloads are binary, parsed on the TS side from `ArrayBuffer` using `TuiDataViewWrapper`. Modifier bitmasks must match Zig `core/event_payloads.zig`.
 
-### KeyboardEvent
-```json
-{"key":"a","shiftKey":false,"altKey":false,"ctrlKey":false,"metaKey":false,"repeat":false,"charCode":97}
+### KeyboardEvent (binary layout)
+
+```
+[modifiers:u8] [char_code:u16 LE] [key_len:u8] [key_bytes:u8*key_len]
 ```
 
-### MouseEvent
-```json
-{"button":"0","buttons":"null","x":23,"y":45,"shiftKey":false,"altKey":false,"ctrlKey":false,"metaKey":false}
+Modifier bitmask: Shift=0x01, Ctrl=0x02, Alt=0x04, Meta=0x08, Repeat=0x10.
+
+### MouseEvent (binary layout)
+
+```
+[modifiers:u8] [flags:u8] [button:u8] [buttons:u8] [x:u16 LE] [y:u16 LE]
 ```
 
-### WheelEvent (extends MouseEvent)
-```json
-{"button":"1","buttons":"null","x":23,"y":45,"shiftKey":false,"altKey":false,"ctrlKey":false,"metaKey":false,"wheelDeltaY":-1}
-```
+Flags bitmask: HAS_BUTTON=0x01, HAS_BUTTONS=0x02, IS_RELEASE=0x10. `button`/`buttons` are `undefined` when their flag is not set.
 
-Note: `button` and `buttons` fields may be the string `"null"` (not actual null) when not applicable.
+### WheelEvent (binary layout)
+
+Same as MouseEvent (8 bytes) + `[wheel_delta_y:i8]`.
+
+### TermResizeEvent (binary layout)
+
+`[rows:u16 LE] [cols:u16 LE]`
 
 ## TS EventBus Usage
 
@@ -101,10 +117,10 @@ The consumer runs on `setImmediate` loop - it polls continuously while running.
 ```zig
 const event_bus = @import("./core/event_bus.zig");
 
-// Emit with a byte slice
+// Emit binary payload
 _ = event_bus.event_bus_emit_bytes(
     @intFromEnum(event_bus.EventType.KeyboardEvent),
-    json_string,
+    payload_bytes,
 );
 ```
 
@@ -112,6 +128,4 @@ Return codes: `0` = success, `-1` = not initialized, `-2` = queue full or event 
 
 ## Known Issues
 
-1. **JSON serialization overhead**: Currently uses JSON strings, which is CPU-intensive. Planned migration to binary protocol.
-
-2. **Global singleton**: The event bus is a global variable, not supporting multiple instances. Thread safety is guaranteed by SPSC pattern only.
+1. **Global singleton**: The event bus is a global variable, not supporting multiple instances. Thread safety is guaranteed by SPSC pattern only.
