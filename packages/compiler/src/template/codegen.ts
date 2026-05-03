@@ -48,7 +48,9 @@ const PROP_UPDATE_MAP: Record<string, {method: string; field: string}> = {
   paddingLeft: {method: 'updatePadding', field: 'paddingLeft'},
 };
 
-// Flag props that map to setter calls instead of constructor args
+// Flag props that map to setter calls for reactive updates.
+// These props are passed to the constructor for initial values and use
+// setter methods for reactive effect generation on dynamic bindings.
 const FLAG_PROP_MAP: Record<string, string> = {
   draggable: 'setDraggable',
   disabled: 'setDisabled',
@@ -58,6 +60,11 @@ const FLAG_PROP_MAP: Record<string, string> = {
   tabs: 'setTabs',
   options: 'setOptions',
 };
+
+// Props that are boolean flags (bare attrs like `readonly` parse as string "true").
+// Only these need string→bool conversion. Other FLAG_PROP_MAP entries (label, tabs, options)
+// are string/array props and should be passed as-is.
+const BOOLEAN_FLAGS = new Set(['disabled', 'checked', 'readonly', 'draggable']);
 
 export type CodegenOptions = {
   /** Module ID for the core package import */
@@ -181,26 +188,22 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
   const varName = getWidgetVarName(node, index);
   const args: string[] = [];
 
-  // Build options object from props
+  // Build options object from props — all props (static and dynamic) go to the constructor.
+  // FLAG_PROP_MAP entries indicate boolean/flag props that need string→bool conversion for
+  // static values, and are also used for reactive effect generation for dynamic values.
   const props: string[] = [];
-  const flagLines: string[] = [];
   for (const prop of node.props) {
-    const setter = FLAG_PROP_MAP[prop.name];
-    if (setter) {
-      flagLines.push(`${varName}.${setter}(${prop.value === 'true'});`);
+    const isFlag = BOOLEAN_FLAGS.has(prop.name);
+    // Bare boolean attrs (readonly, disabled, etc.) arrive as string "true"/"false"
+    if (isFlag) {
+      props.push(`${prop.name}: ${prop.value === 'true'}`);
     } else {
       props.push(`${prop.name}: ${JSON.stringify(prop.value)}`);
     }
   }
 
   for (const prop of node.dynamicProps) {
-    const setter = FLAG_PROP_MAP[prop.name];
-    if (setter) {
-      flagLines.push(`${varName}.${setter}(unref(${prop.expression}));`);
-    } else {
-      // Unref safely unwraps refs (returns raw value for non-refs)
-      props.push(`${prop.name}: unref(${prop.expression})`);
-    }
+    props.push(`${prop.name}: unref(${prop.expression})`);
   }
 
   if (props.length > 0) {
@@ -237,9 +240,6 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
   for (const eventBinding of node.events) {
     lines.push(`${varName}.on('${eventBinding.event}', ${eventBinding.handler});`);
   }
-
-  // Generate flag prop setter calls
-  lines.push(...flagLines);
 
   // Generate children and add them to the parent widget
   let nextIndex = index + 1;
@@ -303,7 +303,6 @@ type WidgetInfo = {
   createLine: string;
   updateEffects: string[];
   eventLines: string[];
-  flagLines: string[];
 };
 
 type WidgetTree = {
@@ -324,8 +323,7 @@ function collectWidgetTree(
   for (const child of node.children) {
     if (child.type === 'TuiWidgetCall') {
       const childResult = collectWidgetTree(child, nextIndex);
-      addChildLines.push(`${varName}.addChild(${childResult.tree.root.varName});`);
-      addChildLines.push(...childResult.tree.addChildLines);
+      addChildLines.push(`${varName}.addChild(${childResult.tree.root.varName});`, ...childResult.tree.addChildLines);
       descendants.push(childResult.tree.root, ...childResult.tree.descendants);
       nextIndex = childResult.nextIndex;
     }
@@ -338,7 +336,6 @@ function collectWidgetTree(
         createLine: buildWidgetCreation(node),
         updateEffects: buildGuardedUpdateEffects(node, varName),
         eventLines: buildEventLines(node, varName),
-        flagLines: buildFlagLines(node, varName),
       },
       descendants,
       addChildLines,
@@ -400,23 +397,15 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
         effectLines.push(`      ${addLine}`);
       }
 
-      // Events and flags for root
+      // Events for root
       for (const eventLine of tree.root.eventLines) {
         effectLines.push(`      ${eventLine}`);
       }
 
-      for (const flagLine of tree.root.flagLines) {
-        effectLines.push(`      ${flagLine}`);
-      }
-
-      // Events and flags for descendants
+      // Events for descendants
       for (const d of tree.descendants) {
         for (const eventLine of d.eventLines) {
           effectLines.push(`      ${eventLine}`);
-        }
-
-        for (const flagLine of d.flagLines) {
-          effectLines.push(`      ${flagLine}`);
         }
       }
 
@@ -546,29 +535,6 @@ function buildEventLines(node: TuiWidgetCall, varName: string): string[] {
   const result: string[] = [];
   for (const eventBinding of node.events) {
     result.push(`${varName}.on('${eventBinding.event}', ${eventBinding.handler});`);
-  }
-
-  return result;
-}
-
-function buildFlagLines(node: TuiWidgetCall, varName: string): string[] {
-  if (node.isComponent) {
-    return [];
-  }
-
-  const result: string[] = [];
-  for (const prop of node.props) {
-    const setter = FLAG_PROP_MAP[prop.name];
-    if (setter) {
-      result.push(`${varName}.${setter}(${prop.value === 'true'});`);
-    }
-  }
-
-  for (const prop of node.dynamicProps) {
-    const setter = FLAG_PROP_MAP[prop.name];
-    if (setter) {
-      result.push(`${varName}.${setter}(unref(${prop.expression}));`);
-    }
   }
 
   return result;
