@@ -2,7 +2,7 @@ import type {SourceLocation} from '@vue/compiler-core';
 
 /**
  * TUI widget creation call in the generated render function.
- * e.g. `createBox({ text: 'Hello', rectX: 10 })`
+ * e.g. `createBox({ text: 'Hello', x: 10 })`
  */
 export type TuiWidgetCall = {
   readonly type: 'TuiWidgetCall';
@@ -10,6 +10,8 @@ export type TuiWidgetCall = {
   tag: string;
   /** Resolved creator function name, e.g. "createBox" */
   creator: string;
+  /** True when this tag resolves to an imported .vue component */
+  isComponent?: boolean;
   /** Static props (known at compile time) */
   props: TuiStaticProp[];
   /** Dynamic props (bound to reactive expressions) */
@@ -24,7 +26,7 @@ export type TuiWidgetCall = {
 
 /**
  * A static prop known at compile time.
- * e.g. `rectX={10}` or `text="Hello"`
+ * e.g. `x={10}` or `text="Hello"`
  */
 export type TuiStaticProp = {
   readonly type: 'TuiStaticProp';
@@ -34,7 +36,7 @@ export type TuiStaticProp = {
 
 /**
  * A dynamic prop bound to a JS expression.
- * e.g. `:text="message"` or `v-bind:rectX="pos.x"`
+ * e.g. `:text="message"` or `v-bind:x="pos.x"`
  */
 export type TuiDynamicProp = {
   readonly type: 'TuiDynamicProp';

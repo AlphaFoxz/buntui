@@ -43,13 +43,16 @@ export function compile(source: string, options?: CompileOptions): CompileResult
   }
 
   const templateAst = baseParse(descriptor.template.content);
-  const renderRoot = transform(templateAst, options?.transform);
 
-  // 3. Split script imports from body
+  // 3. Split script imports from body (before transform, so we know component imports)
   const scriptContent = descriptor.scriptSetup?.content
     ?? descriptor.script?.content
     ?? '';
   const {scriptImports, scriptBody} = splitScript(scriptContent);
+  const componentMap = extractComponentImports(scriptImports);
+
+  // 2. Transform template to TUI render tree
+  const renderRoot = transform(templateAst, {...options?.transform, components: componentMap});
 
   // 4. Codegen (single pass, with script body if present)
   const codegenResult = generate(renderRoot, {
@@ -89,6 +92,23 @@ function splitScript(content: string): {scriptImports: string[]; scriptBody: str
   }
 
   return {scriptImports, scriptBody};
+}
+
+/**
+ * Extract default import identifiers from `.vue` import statements.
+ * e.g. `import Matrix from './AppMatrix.vue'` → `{Matrix: 'Matrix'}`
+ */
+function extractComponentImports(scriptImports: string[]): Record<string, string> {
+  const components: Record<string, string> = {};
+  const defaultImportRe = /import\s+(\w+)\s+from\s+['"][^'"]+\.vue['"]/v;
+  for (const line of scriptImports) {
+    const match = defaultImportRe.exec(line);
+    if (match?.[1]) {
+      components[match[1]] = match[1];
+    }
+  }
+
+  return components;
 }
 
 export {type SFCDescriptor} from '@vue/compiler-sfc';

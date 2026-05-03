@@ -12,11 +12,11 @@ import type {
  * Primitive props (text) use direct-value update methods.
  */
 const PROP_UPDATE_MAP: Record<string, {method: string; field: string}> = {
-  // Rect — updateRect({rectX: val})
-  rectX: {method: 'updateRect', field: 'rectX'},
-  rectY: {method: 'updateRect', field: 'rectY'},
-  rectWidth: {method: 'updateRect', field: 'rectWidth'},
-  rectHeight: {method: 'updateRect', field: 'rectHeight'},
+  // Rect — updateRect({x: val})
+  x: {method: 'updateRect', field: 'x'},
+  y: {method: 'updateRect', field: 'y'},
+  width: {method: 'updateRect', field: 'width'},
+  height: {method: 'updateRect', field: 'height'},
   // Color — updateColor({colorFg: val})
   colorFg: {method: 'updateColor', field: 'colorFg'},
   colorBg: {method: 'updateColor', field: 'colorBg'},
@@ -35,8 +35,17 @@ const PROP_UPDATE_MAP: Record<string, {method: string; field: string}> = {
   shadowOffsetY: {method: 'updateShadow', field: 'shadowOffsetY'},
   shadowColor: {method: 'updateShadow', field: 'shadowColor'},
   shadowCovered: {method: 'updateShadow', field: 'shadowCovered'},
-  // Text — updateText(val)
-  text: {method: 'updateText', field: ''},
+  // Text — updateValue(val)
+  value: {method: 'updateValue', field: ''},
+  // Stack layout — updateDirection(val)
+  direction: {method: 'updateDirection', field: ''},
+  gap: {method: 'updateGap', field: ''},
+  align: {method: 'updateAlign', field: ''},
+  // Padding — updatePadding({paddingTop: val})
+  paddingTop: {method: 'updatePadding', field: 'paddingTop'},
+  paddingRight: {method: 'updatePadding', field: 'paddingRight'},
+  paddingBottom: {method: 'updatePadding', field: 'paddingBottom'},
+  paddingLeft: {method: 'updatePadding', field: 'paddingLeft'},
 };
 
 // Flag props that map to setter calls instead of constructor args
@@ -44,7 +53,10 @@ const FLAG_PROP_MAP: Record<string, string> = {
   draggable: 'setDraggable',
   disabled: 'setDisabled',
   checked: 'setChecked',
-  value: 'setValue',
+  readonly: 'setReadonly',
+  label: 'setLabel',
+  tabs: 'setTabs',
+  options: 'setOptions',
 };
 
 export type CodegenOptions = {
@@ -121,7 +133,7 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
   // Mount all top-level widgets (conditional blocks handle their own mounting)
   for (let childIndex = 0; childIndex < root.children.length; childIndex++) {
     const child = root.children[childIndex]!;
-    if (child.type === 'TuiWidgetCall') {
+    if (child.type === 'TuiWidgetCall' && !child.isComponent) {
       lines.push(`  scene.mount(${getWidgetVarName(child, childStartIndices[childIndex]!)});`);
     }
   }
@@ -158,6 +170,14 @@ function generateNode(node: TuiRenderNode, index: number): NodeGenResult | undef
 }
 
 function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
+  // Component call: ImportName.setup(scene)
+  if (node.isComponent) {
+    return {
+      lines: [`${node.creator}.setup(scene);`],
+      nextIndex: index + 1,
+    };
+  }
+
   const varName = getWidgetVarName(node, index);
   const args: string[] = [];
 
@@ -194,16 +214,22 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
   // Generate reactive effect bindings
   for (const prop of node.dynamicProps) {
     const info = PROP_UPDATE_MAP[prop.name];
-    if (!info) {
+    if (info) {
+      if (info.field) {
+        // Grouped prop: widget.updateRect({x: unref(expr)})
+        lines.push(`effect(() => { ${varName}.${info.method}({${info.field}: unref(${prop.expression})}); });`);
+      } else {
+        // Primitive prop: widget.updateText(unref(expr))
+        lines.push(`effect(() => { ${varName}.${info.method}(unref(${prop.expression})); });`);
+      }
+
       continue;
     }
 
-    if (info.field) {
-      // Grouped prop: widget.updateRect({rectX: unref(expr)})
-      lines.push(`effect(() => { ${varName}.${info.method}({${info.field}: unref(${prop.expression})}); });`);
-    } else {
-      // Primitive prop: widget.updateText(unref(expr))
-      lines.push(`effect(() => { ${varName}.${info.method}(unref(${prop.expression})); });`);
+    // Flag props (disabled, checked, etc.): reactive setter calls
+    const setter = FLAG_PROP_MAP[prop.name];
+    if (setter) {
+      lines.push(`effect(() => { ${varName}.${setter}(unref(${prop.expression})); });`);
     }
   }
 
@@ -218,7 +244,14 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
   // Generate children and add them to the parent widget
   let nextIndex = index + 1;
   for (const child of node.children) {
-    if (child.type === 'TuiWidgetCall') {
+    if (child.type === 'TuiWidgetCall' && child.isComponent) {
+      // Component children mount directly to scene, no addChild
+      const result = generateNode(child, nextIndex);
+      if (result) {
+        lines.push(...result.lines);
+        nextIndex = result.nextIndex;
+      }
+    } else if (child.type === 'TuiWidgetCall') {
       const childVarName = getWidgetVarName(child, nextIndex);
       const result = generateNode(child, nextIndex);
       if (result) {
@@ -273,35 +306,72 @@ type WidgetInfo = {
   flagLines: string[];
 };
 
+type WidgetTree = {
+  root: WidgetInfo;
+  descendants: WidgetInfo[];
+  addChildLines: string[];
+};
+
+function collectWidgetTree(
+  node: TuiWidgetCall,
+  startIndex: number,
+): {tree: WidgetTree; nextIndex: number} {
+  const varName = getWidgetVarName(node, startIndex);
+  const addChildLines: string[] = [];
+  const descendants: WidgetInfo[] = [];
+  let nextIndex = startIndex + 1;
+
+  for (const child of node.children) {
+    if (child.type === 'TuiWidgetCall') {
+      const childResult = collectWidgetTree(child, nextIndex);
+      addChildLines.push(`${varName}.addChild(${childResult.tree.root.varName});`);
+      addChildLines.push(...childResult.tree.addChildLines);
+      descendants.push(childResult.tree.root, ...childResult.tree.descendants);
+      nextIndex = childResult.nextIndex;
+    }
+  }
+
+  return {
+    tree: {
+      root: {
+        varName,
+        createLine: buildWidgetCreation(node),
+        updateEffects: buildGuardedUpdateEffects(node, varName),
+        eventLines: buildEventLines(node, varName),
+        flagLines: buildFlagLines(node, varName),
+      },
+      descendants,
+      addChildLines,
+    },
+    nextIndex,
+  };
+}
+
 function generateConditional(block: TuiConditionalBlock, index: number): NodeGenResult {
   const branches = flattenConditional(block);
   const lines: string[] = [];
   let nextIndex = index;
 
-  // Collect widget creation info per branch
-  const branchWidgets: WidgetInfo[][] = [];
-
+  // Collect widget trees per branch (including children)
+  const branchTrees: WidgetTree[][] = [];
   for (const branch of branches) {
-    const widgets: WidgetInfo[] = [];
+    const trees: WidgetTree[] = [];
     for (const node of branch.nodes) {
-      const varName = getWidgetVarName(node, nextIndex);
-      const createLine = buildWidgetCreation(node);
-      const updateEffects = buildGuardedUpdateEffects(node, varName);
-      const eventLines = buildEventLines(node, varName);
-      const flagLines = buildFlagLines(node, varName);
-      widgets.push({
-        varName, createLine, updateEffects, eventLines, flagLines,
-      });
-      nextIndex++;
+      const result = collectWidgetTree(node, nextIndex);
+      trees.push(result.tree);
+      nextIndex = result.nextIndex;
     }
 
-    branchWidgets.push(widgets);
+    branchTrees.push(trees);
   }
 
-  // Declare all vars as null
-  for (const bw of branchWidgets) {
-    for (const w of bw) {
-      lines.push(`let ${w.varName} = null;`);
+  // Declare all vars as null (root + descendants)
+  for (const trees of branchTrees) {
+    for (const tree of trees) {
+      lines.push(`let ${tree.root.varName} = null;`);
+      for (const d of tree.descendants) {
+        lines.push(`let ${d.varName} = null;`);
+      }
     }
   }
 
@@ -315,24 +385,42 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
 
     effectLines.push(`${keyword}${condPart} {`);
 
-    // Mount this branch's widgets
-    for (const w of branchWidgets[i]!) {
-      effectLines.push(
-        `    if (!${w.varName}) {`,
-        `      ${w.varName} = ${w.createLine};`,
-      );
-      for (const eventLine of w.eventLines) {
+    // Mount this branch's widgets (root + descendants)
+    for (const tree of branchTrees[i]!) {
+      effectLines.push(`    if (!${tree.root.varName}) {`);
+
+      // Create root and descendants
+      effectLines.push(`      ${tree.root.varName} = ${tree.root.createLine};`);
+      for (const d of tree.descendants) {
+        effectLines.push(`      ${d.varName} = ${d.createLine};`);
+      }
+
+      // Add children to parents
+      for (const addLine of tree.addChildLines) {
+        effectLines.push(`      ${addLine}`);
+      }
+
+      // Events and flags for root
+      for (const eventLine of tree.root.eventLines) {
         effectLines.push(`      ${eventLine}`);
       }
 
-      for (const flagLine of w.flagLines) {
+      for (const flagLine of tree.root.flagLines) {
         effectLines.push(`      ${flagLine}`);
       }
 
-      effectLines.push(
-        `      scene.mount(${w.varName});`,
-        '    }',
-      );
+      // Events and flags for descendants
+      for (const d of tree.descendants) {
+        for (const eventLine of d.eventLines) {
+          effectLines.push(`      ${eventLine}`);
+        }
+
+        for (const flagLine of d.flagLines) {
+          effectLines.push(`      ${flagLine}`);
+        }
+      }
+
+      effectLines.push(`      scene.mount(${tree.root.varName});`, '    }');
     }
 
     // Unmount other branches' widgets
@@ -341,13 +429,17 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
         continue;
       }
 
-      for (const w of branchWidgets[j]!) {
+      for (const tree of branchTrees[j]!) {
         effectLines.push(
-          `    if (${w.varName}) {`,
-          `      scene.unmount(${w.varName});`,
-          `      ${w.varName} = null;`,
-          '    }',
+          `    if (${tree.root.varName}) {`,
+          `      scene.unmount(${tree.root.varName});`,
+          `      ${tree.root.varName} = null;`,
         );
+        for (const d of tree.descendants) {
+          effectLines.push(`      ${d.varName} = null;`);
+        }
+
+        effectLines.push('    }');
       }
     }
 
@@ -358,14 +450,18 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
   const lastBranch = branches.at(-1)!;
   if (lastBranch.condition !== null) {
     effectLines.push(' else {');
-    for (const bw of branchWidgets) {
-      for (const w of bw) {
+    for (const trees of branchTrees) {
+      for (const tree of trees) {
         effectLines.push(
-          `    if (${w.varName}) {`,
-          `      scene.unmount(${w.varName});`,
-          `      ${w.varName} = null;`,
-          '    }',
+          `    if (${tree.root.varName}) {`,
+          `      scene.unmount(${tree.root.varName});`,
+          `      ${tree.root.varName} = null;`,
         );
+        for (const d of tree.descendants) {
+          effectLines.push(`      ${d.varName} = null;`);
+        }
+
+        effectLines.push('    }');
       }
     }
 
@@ -379,10 +475,13 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
 
   lines.push('});');
 
-  // Guarded update effects for dynamic props
-  for (const bw of branchWidgets) {
-    for (const w of bw) {
-      lines.push(...w.updateEffects);
+  // Guarded update effects for all widgets (root + descendants)
+  for (const trees of branchTrees) {
+    for (const tree of trees) {
+      lines.push(...tree.root.updateEffects);
+      for (const d of tree.descendants) {
+        lines.push(...d.updateEffects);
+      }
     }
   }
 
@@ -390,6 +489,10 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
 }
 
 function buildWidgetCreation(node: TuiWidgetCall): string {
+  if (node.isComponent) {
+    return `${node.creator}.setup(scene)`;
+  }
+
   const props: string[] = [];
   for (const prop of node.props) {
     if (FLAG_PROP_MAP[prop.name]) {
@@ -409,17 +512,26 @@ function buildWidgetCreation(node: TuiWidgetCall): string {
 }
 
 function buildGuardedUpdateEffects(node: TuiWidgetCall, varName: string): string[] {
+  if (node.isComponent) {
+    return [];
+  }
+
   const effects: string[] = [];
   for (const prop of node.dynamicProps) {
     const info = PROP_UPDATE_MAP[prop.name];
-    if (!info) {
+    if (info) {
+      if (info.field) {
+        effects.push(`effect(() => { if (${varName}) { ${varName}.${info.method}({${info.field}: unref(${prop.expression})}); } });`);
+      } else {
+        effects.push(`effect(() => { if (${varName}) { ${varName}.${info.method}(unref(${prop.expression})); } });`);
+      }
+
       continue;
     }
 
-    if (info.field) {
-      effects.push(`effect(() => { if (${varName}) { ${varName}.${info.method}({${info.field}: unref(${prop.expression})}); } });`);
-    } else {
-      effects.push(`effect(() => { if (${varName}) { ${varName}.${info.method}(unref(${prop.expression})); } });`);
+    const setter = FLAG_PROP_MAP[prop.name];
+    if (setter) {
+      effects.push(`effect(() => { if (${varName}) { ${varName}.${setter}(unref(${prop.expression})); } });`);
     }
   }
 
@@ -427,6 +539,10 @@ function buildGuardedUpdateEffects(node: TuiWidgetCall, varName: string): string
 }
 
 function buildEventLines(node: TuiWidgetCall, varName: string): string[] {
+  if (node.isComponent) {
+    return [];
+  }
+
   const result: string[] = [];
   for (const eventBinding of node.events) {
     result.push(`${varName}.on('${eventBinding.event}', ${eventBinding.handler});`);
@@ -436,6 +552,10 @@ function buildEventLines(node: TuiWidgetCall, varName: string): string[] {
 }
 
 function buildFlagLines(node: TuiWidgetCall, varName: string): string[] {
+  if (node.isComponent) {
+    return [];
+  }
+
   const result: string[] = [];
   for (const prop of node.props) {
     const setter = FLAG_PROP_MAP[prop.name];

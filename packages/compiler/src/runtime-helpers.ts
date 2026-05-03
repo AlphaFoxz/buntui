@@ -36,4 +36,5 @@ export const WIDGET_TAG_MAP: Record<string, string> = {
   RadioGroup: RUNTIME_HELPERS.CREATE_RADIO_GROUP,
   TabBar: RUNTIME_HELPERS.CREATE_TAB_BAR,
   Switch: RUNTIME_HELPERS.CREATE_SWITCH,
+  Matrix: 'createMatrixWidget',
 } as const;
