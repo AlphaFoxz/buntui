@@ -28,38 +28,38 @@ function mouse(options: Partial<MouseEvent> & {x: number; y: number}): MouseEven
   };
 }
 
-function createButton(options?: {text?: string; disabled?: boolean; rectX?: number; rectY?: number; rectWidth?: number; rectHeight?: number}) {
+function createButton(options?: {value?: string; disabled?: boolean; x?: number; y?: number; width?: number; height?: number}) {
   return new ButtonWidget({
-    text: options?.text ?? 'OK',
+    value: options?.value ?? 'OK',
     disabled: options?.disabled ?? false,
-    rectX: options?.rectX ?? 0,
-    rectY: options?.rectY ?? 0,
-    rectWidth: options?.rectWidth ?? 10,
-    rectHeight: options?.rectHeight ?? 3,
+    x: options?.x ?? 0,
+    y: options?.y ?? 0,
+    width: options?.width ?? 10,
+    height: options?.height ?? 3,
   });
 }
 
 describe('construction', () => {
   it('initializes with default options', () => {
     const button = new ButtonWidget();
-    expect(button.text).toBe('');
+    expect(button.value).toBe('');
     expect(button.disabled).toBe(false);
     expect(button.acceptsFocus).toBe(true);
     const r = button.rect;
-    expect(r.rectX).toBe(0);
-    expect(r.rectY).toBe(0);
-    expect(r.rectWidth).toBe(10);
-    expect(r.rectHeight).toBe(3);
+    expect(r.x).toBe(0);
+    expect(r.y).toBe(0);
+    expect(r.width).toBe(10);
+    expect(r.height).toBe(3);
   });
 
   it('initializes with custom options', () => {
-    const button = createButton({text: 'Submit', rectX: 5, rectY: 10, rectWidth: 15, rectHeight: 5});
-    expect(button.text).toBe('Submit');
+    const button = createButton({value: 'Submit', x: 5, y: 10, width: 15, height: 5});
+    expect(button.value).toBe('Submit');
     const r = button.rect;
-    expect(r.rectX).toBe(5);
-    expect(r.rectY).toBe(10);
-    expect(r.rectWidth).toBe(15);
-    expect(r.rectHeight).toBe(5);
+    expect(r.x).toBe(5);
+    expect(r.y).toBe(10);
+    expect(r.width).toBe(15);
+    expect(r.height).toBe(5);
   });
 
   it('initializes as disabled', () => {
@@ -201,18 +201,18 @@ describe('disabled state', () => {
   });
 });
 
-describe('text setter', () => {
-  it('setText updates text', () => {
-    const button = createButton({text: 'Old'});
-    expect(button.text).toBe('Old');
-    button.setText('New');
-    expect(button.text).toBe('New');
+describe('value setter', () => {
+  it('updateValue updates value', () => {
+    const button = createButton({value: 'Old'});
+    expect(button.value).toBe('Old');
+    button.updateValue('New');
+    expect(button.value).toBe('New');
   });
 });
 
 describe('rect and hit testing', () => {
   it('containsPoint checks bounds correctly', () => {
-    const button = createButton({rectX: 5, rectY: 5, rectWidth: 10, rectHeight: 3});
+    const button = createButton({x: 5, y: 5, width: 10, height: 3});
     expect(button.containsPoint(5, 5)).toBe(true);
     expect(button.containsPoint(14, 5)).toBe(true);
     expect(button.containsPoint(15, 5)).toBe(false);
@@ -223,20 +223,20 @@ describe('rect and hit testing', () => {
 
   it('updateRect updates position and size', () => {
     const button = createButton();
-    button.updateRect({rectX: 10, rectY: 20, rectWidth: 30, rectHeight: 5});
+    button.updateRect({x: 10, y: 20, width: 30, height: 5});
     const r = button.rect;
-    expect(r.rectX).toBe(10);
-    expect(r.rectY).toBe(20);
-    expect(r.rectWidth).toBe(30);
-    expect(r.rectHeight).toBe(5);
+    expect(r.x).toBe(10);
+    expect(r.y).toBe(20);
+    expect(r.width).toBe(30);
+    expect(r.height).toBe(5);
   });
 
   it('updateRect partially updates fields', () => {
-    const button = createButton({rectX: 5, rectY: 10});
-    button.updateRect({rectX: 15});
+    const button = createButton({x: 5, y: 10});
+    button.updateRect({x: 15});
     const r = button.rect;
-    expect(r.rectX).toBe(15);
-    expect(r.rectY).toBe(10);
+    expect(r.x).toBe(15);
+    expect(r.y).toBe(10);
   });
 });
 

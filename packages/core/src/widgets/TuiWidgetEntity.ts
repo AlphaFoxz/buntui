@@ -1,6 +1,6 @@
 import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import type {Mountable} from '../extern/types';
-import type {TuiWidgetRect} from './types';
+import type {TuiWidgetRect, TuiWidgetSize} from './types';
 
 type WidgetEventHandler = (data: unknown) => void;
 
@@ -24,10 +24,10 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   get rect(): TuiWidgetRect {
     return {
-      rectX: 0,
-      rectY: 0,
-      rectWidth: 0,
-      rectHeight: 0,
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
     };
   }
 
@@ -95,6 +95,15 @@ export abstract class TuiWidgetEntity implements Mountable {
   abstract emitDrawCommands(buf: DrawListBuffer): void;
 
   /**
+   * Report the widget's natural/content size without external constraints.
+   * Return undefined if the widget has no intrinsic size (e.g. Box without explicit dimensions).
+   * Used by layout containers (Stack, future Flex/Scroll) to compute child positions.
+   */
+  intrinsicSize(): TuiWidgetSize | undefined {
+    return undefined;
+  }
+
+  /**
    * Propagate a position delta to all children.
    * Called by subclasses in their updateRect when position changes.
    */
@@ -105,8 +114,8 @@ export abstract class TuiWidgetEntity implements Mountable {
 
     for (const child of this.#children) {
       child.updateRect({
-        rectX: child.rect.rectX + dx,
-        rectY: child.rect.rectY + dy,
+        x: child.rect.x + dx,
+        y: child.rect.y + dy,
       });
     }
   }

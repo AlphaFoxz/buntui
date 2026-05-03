@@ -17,22 +17,20 @@ This project uses **Bun exclusively** as its runtime, package manager, and build
 - **packages/compiler/** (`@buntui/compiler`) — SFC compiler using Vue compiler-core for template/script compilation, plus dev server with HMR
 - **packages/playground/** (`@buntui/playground`) — Demo application (`bun run dev`)
 
-### Public API
-
-**`@buntui/core`** exports: `createApp`, `widgets` (namespace), `TuiWidgetEntity`, `Focusable`, `DrawListBuffer`, `TUI_CONTEXT_INSTANCE`, widget creators (`createBox`, `createInputWidget`, `createButtonWidget`, `createCheckboxWidget`, `createRadioGroupWidget`), and associated types.
-
-**`@buntui/compiler`** exports: `compile`, `parse`, `transform`, `generate`, `createDevServer`, plus types `CompileOptions`, `CompileResult`, `SFCParseOptions`, `CodegenOptions`, `CodegenResult`, `DevServerOptions`
-
 ### Compiler Pipeline
 
 The compiler transforms `.vue` SFC files into TUI TypeScript modules:
 
 1. **parse** (`compiler/src/parse.ts`) — Parses SFC source into blocks (template, script, scriptSetup) via `@vue/compiler-sfc`
-2. **analyzeBindings** (`compiler/src/script/analyzeBindings.ts`) — Extracts reactive bindings from `<script setup>`
-3. **transform** (`compiler/src/template/transform.ts`) — Converts template AST to TUI render tree
-4. **generate** (`compiler/src/template/codegen.ts`) — Emits TypeScript module code from the render tree
+2. **transform** (`compiler/src/template/transform.ts`) — Converts template AST to TUI render tree
+3. **generate** (`compiler/src/template/codegen.ts`) — Emits TypeScript module code from the render tree
 
-The compile entry point (`compiler/src/compile.ts`) orchestrates: parse → analyze script → transform template → codegen.
+The compile entry point (`compiler/src/compile.ts`) orchestrates: parse → transform → codegen.
+
+**SFC template tags** map to widget creators via `WIDGET_TAG_MAP` in `compiler/src/runtime-helpers.ts`:
+`<Box>` → `createBox`, `<Text>` → `createTextWidget`, `<Input>` → `createInputWidget`, `<Button>` → `createButtonWidget`, `<Checkbox>` → `createCheckboxWidget`, `<RadioGroup>` → `createRadioGroupWidget`, `<TabBar>` → `createTabBarWidget`, `<Switch>` → `createSwitchWidget`, `<Matrix>` → `createMatrixWidget`, `<FrameRateWatcher>` → `createFrameRateWatcher`.
+
+The template AST (`compiler/src/template/ast.ts`) supports `v-if`/`v-else-if`/`v-else` conditionals (`TuiConditionalBlock`), `v-for` list rendering (`TuiListBlock`), static/dynamic props, and event bindings (`@click`, `@key`, etc.).
 
 ### Dev Server / HMR
 
@@ -46,7 +44,7 @@ bun run --cwd ./packages/native build            # zig build only
 bun run --cwd ./packages/core build              # Sync native binary + build TS
 bun run --cwd ./packages/compiler build          # Build SFC compiler
 bun run --cwd ./packages/playground build        # Sync native binary + build TS
-bun run dev                                      # Run playground demo (bun run ./main.ts with --preload for vue plugin)
+bun run dev                                      # Run playground demo (bun --preload ./src/vue-plugin.ts src/dev.ts)
 bun run --cwd ./packages/core test               # Run all core tests
 bun test packages/core/src/some/__tests__/file.test.ts  # Run a single test
 bun run sync                                     # Propagate root version to all packages
@@ -57,6 +55,8 @@ Tests use Bun's built-in test runner (`it()` + `expect()`). Test files go in `__
 There is no dedicated lint command in package.json. XO is a devDependency for programmatic use.
 
 ### Build Pipeline
+
+Build order matters: **native must build first** because `core` copies its shared library (`.dll`/`.dylib`/`.so`) via a sync script.
 
 1. `scripts/sync-version.ts` propagates root `version` to all workspace `package.json` files
 2. `scripts/build.ts` topologically sorts packages by their dependencies and runs `bun run build` in each
@@ -71,11 +71,7 @@ The `native` package uses `zig build` (`build.zig`). It produces a shared librar
 
 ### Zig/TypeScript FFI Boundary
 
-**Zig side** (`packages/native/src/lib.zig`): All exports are `pub export fn` with C ABI compatibility. Exports cover:
-- App lifecycle: `setupLogger`, `startApp`, `stopApp`, `createScene`, `destroyScene`
-- Rendering: `renderDrawList`, `detectTermSize`
-- Event bus: `event_bus_setup`, `event_bus_emit`, `event_bus_poll`, `event_bus_commit`, `event_bus_stats`
-- ANSI helpers: `resetStyle`, `showCursor`, `hideCursor`, `clearScreen`, `drawText`
+**Zig side** (`packages/native/src/lib.zig`): All exports are `pub export fn` with C ABI compatibility. `lib.zig` is a thin wrapper only — all business logic lives in separate modules. Exports cover app lifecycle, rendering, event bus, and ANSI helpers.
 
 **TypeScript side** (`packages/core/src/extern/`): Bun FFI bindings via `dlopen()`:
 - `extern/app/lib.ts` — App lifecycle, scene, render, and DrawList FFI bindings
@@ -114,7 +110,6 @@ TS consumer protocol: `poll()` → read data → `commit()`. These must always b
 
 - **TuiWidgetEntity**: Abstract base in `packages/core/src/widgets/`. Provides `emitDrawCommands()`, `on/off/dispatch` event system, `containsPoint()` hit testing, `zIndex`, `draggable` support.
 - **Focusable**: Interface for focusable widgets (`acceptsFocus`, `focus()`, `blur()`, `handleKey()`). Checked via `isFocusable()` type guard.
-- **Widget types**: BoxWidget, ButtonWidget, CheckboxWidget, InputWidget, RadioGroupWidget — each in its own subdirectory under `widgets/`.
 - **TuiScene**: Widget container with mount/unmount, `hitTest()` for pointer events, zIndex-sorted rendering, synchronized update support.
 - **TuiApp**: Application controller in `packages/core/src/app/TuiApp.ts`. Manages FocusManager, PointerManager, RenderLoop (5ms tick), scene lifecycle, and event bus integration.
 - State uses **Vue reactivity** (`@vue/reactivity`)
@@ -122,6 +117,7 @@ TS consumer protocol: `poll()` → read data → `commit()`. These must always b
 ### Rendering Pipeline (Zig)
 
 `packages/native/src/render/` implements:
+
 - Double buffering with dirty tracking (only redraw changed characters)
 - ANSI escape sequence rendering
 - Platform-specific input in `packages/native/src/input/`: separate POSIX and Windows implementations
@@ -139,6 +135,7 @@ When new Win32 functions are needed, declare them directly as `extern "kernel32"
 ### Zig Naming Rules
 
 Strictly enforced (from README.md):
+
 - **Functions**: camelCase with **paired lifecycle methods**: `create`/`destroy`, `init`/`deinit`, `open`/`close`, `start`/`stop`, `enter`/`exit`, `lock`/`unlock`, `register`/`unregister`, `load`/`unload`, `alloc`/`free`
 - **Local variables**: snake_case
 - **Global variables**: SCREAMING_SNAKE_CASE
@@ -153,12 +150,14 @@ Strictly enforced (from README.md):
 ### Null vs Undefined Philosophy
 
 Strict differentiation:
+
 - **`undefined`**: Technical absence — value not ready due to technical reasons (pending request, lazy loading)
 - **`null`**: Business logic null — explicitly part of the domain model
 
 ### XO Linting Rules
 
 Key rules from `xo.config.ts`:
+
 - `Uint8Array` instead of `Buffer`
 - `Record<string, unknown>` instead of `object`
 - `TuiDataViewWrapper` instead of `DataView` (FFI safety)

@@ -1,37 +1,39 @@
+import type {TuiColor} from '../../utils/color';
+
 export type SwitchWidgetOptions = {
-  rectX?: number;
-  rectY?: number;
-  rectWidth?: number;
-  rectHeight?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
   label?: string;
   checked?: boolean;
   disabled?: boolean;
 
   // Normal state
-  colorFgNormal?: number;
-  colorBgNormal?: number;
-  colorCrossNormal?: number;
-  colorCheckNormal?: number;
-  colorDimNormal?: number;
+  colorFgNormal?: TuiColor;
+  colorBgNormal?: TuiColor;
+  colorCrossNormal?: TuiColor;
+  colorCheckNormal?: TuiColor;
+  colorDimNormal?: TuiColor;
 
   // Hovered state
-  colorFgHovered?: number;
-  colorBgHovered?: number;
-  colorCrossHovered?: number;
-  colorCheckHovered?: number;
-  colorDimHovered?: number;
+  colorFgHovered?: TuiColor;
+  colorBgHovered?: TuiColor;
+  colorCrossHovered?: TuiColor;
+  colorCheckHovered?: TuiColor;
+  colorDimHovered?: TuiColor;
 
   // Focused state (keyboard)
-  colorFgFocused?: number;
-  colorBgFocused?: number;
-  colorCrossFocused?: number;
-  colorCheckFocused?: number;
-  colorDimFocused?: number;
+  colorFgFocused?: TuiColor;
+  colorBgFocused?: TuiColor;
+  colorCrossFocused?: TuiColor;
+  colorCheckFocused?: TuiColor;
+  colorDimFocused?: TuiColor;
 
   // Disabled state
-  colorFgDisabled?: number;
-  colorBgDisabled?: number;
-  colorCrossDisabled?: number;
-  colorCheckDisabled?: number;
-  colorDimDisabled?: number;
+  colorFgDisabled?: TuiColor;
+  colorBgDisabled?: TuiColor;
+  colorCrossDisabled?: TuiColor;
+  colorCheckDisabled?: TuiColor;
+  colorDimDisabled?: TuiColor;
 };

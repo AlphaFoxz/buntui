@@ -1,5 +1,4 @@
-import type {KeyboardEvent} from '../events/types';
-import {TuiEventType} from '../events/types';
+import {type KeyboardEvent, TuiEventType} from '../events/types';
 import {EVENT_BUS} from '../events';
 import type {TuiWidgetEntity} from '../widgets/TuiWidgetEntity';
 import type {Focusable} from '../widgets/Focusable';

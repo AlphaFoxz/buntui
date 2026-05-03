@@ -3,13 +3,14 @@ import {type KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect} from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import type {Focusable} from '../Focusable';
+import {parseColor} from '../../utils/color';
 import type {CheckboxWidgetOptions} from './types';
 
 const DEFAULT_CHECKBOX_OPTIONS: Required<CheckboxWidgetOptions> = {
-  rectX: 0,
-  rectY: 0,
-  rectWidth: 10,
-  rectHeight: 1,
+  x: 0,
+  y: 0,
+  width: 10,
+  height: 1,
   label: '',
   checked: false,
   disabled: false,
@@ -28,10 +29,10 @@ const DEFAULT_CHECKBOX_OPTIONS: Required<CheckboxWidgetOptions> = {
 };
 
 export class CheckboxWidget extends TuiWidgetEntity implements Focusable {
-  #rectX: number;
-  #rectY: number;
-  #rectWidth: number;
-  #rectHeight: number;
+  #x: number;
+  #y: number;
+  #width: number;
+  #height: number;
   #label: string;
   #checked: boolean;
   #focused = false;
@@ -51,22 +52,22 @@ export class CheckboxWidget extends TuiWidgetEntity implements Focusable {
     super();
     const resolved = {...DEFAULT_CHECKBOX_OPTIONS, ...options};
 
-    this.#rectX = resolved.rectX;
-    this.#rectY = resolved.rectY;
-    this.#rectWidth = resolved.rectWidth;
-    this.#rectHeight = resolved.rectHeight;
+    this.#x = resolved.x;
+    this.#y = resolved.y;
+    this.#width = resolved.width;
+    this.#height = resolved.height;
     this.#label = resolved.label;
     this.#checked = resolved.checked;
     this.#disabled = resolved.disabled;
 
-    this.#colorFgNormal = resolved.colorFgNormal;
-    this.#colorBgNormal = resolved.colorBgNormal;
-    this.#colorFgHovered = resolved.colorFgHovered;
-    this.#colorBgHovered = resolved.colorBgHovered;
-    this.#colorFgFocused = resolved.colorFgFocused;
-    this.#colorBgFocused = resolved.colorBgFocused;
-    this.#colorFgDisabled = resolved.colorFgDisabled;
-    this.#colorBgDisabled = resolved.colorBgDisabled;
+    this.#colorFgNormal = parseColor(resolved.colorFgNormal);
+    this.#colorBgNormal = parseColor(resolved.colorBgNormal);
+    this.#colorFgHovered = parseColor(resolved.colorFgHovered);
+    this.#colorBgHovered = parseColor(resolved.colorBgHovered);
+    this.#colorFgFocused = parseColor(resolved.colorFgFocused);
+    this.#colorBgFocused = parseColor(resolved.colorBgFocused);
+    this.#colorFgDisabled = parseColor(resolved.colorFgDisabled);
+    this.#colorBgDisabled = parseColor(resolved.colorBgDisabled);
 
     this.on('click', () => {
       if (this.#disabled) {
@@ -107,10 +108,10 @@ export class CheckboxWidget extends TuiWidgetEntity implements Focusable {
 
   override get rect(): TuiWidgetRect {
     return {
-      rectX: this.#rectX,
-      rectY: this.#rectY,
-      rectWidth: this.#rectWidth,
-      rectHeight: this.#rectHeight,
+      x: this.#x,
+      y: this.#y,
+      width: this.#width,
+      height: this.#height,
     };
   }
 
@@ -155,51 +156,51 @@ export class CheckboxWidget extends TuiWidgetEntity implements Focusable {
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {
-    if (rect.rectX !== undefined) {
-      this.#rectX = rect.rectX;
+    if (rect.x !== undefined) {
+      this.#x = rect.x;
     }
 
-    if (rect.rectY !== undefined) {
-      this.#rectY = rect.rectY;
+    if (rect.y !== undefined) {
+      this.#y = rect.y;
     }
 
-    if (rect.rectWidth !== undefined) {
-      this.#rectWidth = rect.rectWidth;
+    if (rect.width !== undefined) {
+      this.#width = rect.width;
     }
 
-    if (rect.rectHeight !== undefined) {
-      this.#rectHeight = rect.rectHeight;
+    if (rect.height !== undefined) {
+      this.#height = rect.height;
     }
   }
 
   override containsPoint(x: number, y: number): boolean {
-    return x >= this.#rectX
-      && x < this.#rectX + this.#rectWidth
-      && y >= this.#rectY
-      && y < this.#rectY + this.#rectHeight;
+    return x >= this.#x
+      && x < this.#x + this.#width
+      && y >= this.#y
+      && y < this.#y + this.#height;
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    if (this.#rectWidth <= 0 || this.#rectHeight <= 0) {
+    if (this.#width <= 0 || this.#height <= 0) {
       return;
     }
 
-    buffer.pushClip(this.#rectX, this.#rectY, this.#rectWidth, this.#rectHeight);
+    buffer.pushClip(this.#x, this.#y, this.#width, this.#height);
 
     const {fg, bg} = this.#resolveColors();
 
     buffer.drawRect({
-      x: this.#rectX,
-      y: this.#rectY,
-      width: this.#rectWidth,
-      height: this.#rectHeight,
+      x: this.#x,
+      y: this.#y,
+      width: this.#width,
+      height: this.#height,
       bgRgba: bg,
     });
 
     const indicator = this.#checked ? '[✓]' : '[ ]';
-    const textY = this.#rectY + Math.floor(this.#rectHeight / 2);
+    const textY = this.#y + Math.floor(this.#height / 2);
     buffer.drawText({
-      x: this.#rectX,
+      x: this.#x,
       y: textY,
       text: indicator,
       fgRgba: fg,
@@ -207,8 +208,8 @@ export class CheckboxWidget extends TuiWidgetEntity implements Focusable {
     });
 
     if (this.#label.length > 0) {
-      const labelX = this.#rectX + indicator.length + 1;
-      const maxLabelWidth = this.#rectWidth - indicator.length - 1;
+      const labelX = this.#x + indicator.length + 1;
+      const maxLabelWidth = this.#width - indicator.length - 1;
       if (maxLabelWidth > 0) {
         const visibleLabel = this.#label.slice(0, Math.max(0, maxLabelWidth));
         buffer.drawText({

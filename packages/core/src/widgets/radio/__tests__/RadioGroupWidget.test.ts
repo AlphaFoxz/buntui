@@ -28,15 +28,15 @@ function mouse(options: Partial<MouseEvent> & {x: number; y: number}): MouseEven
   };
 }
 
-function createRadio(options?: {options?: string[]; value?: number; disabled?: boolean; rectX?: number; rectY?: number; rectWidth?: number; rectHeight?: number}) {
+function createRadio(options?: {options?: string[]; value?: number; disabled?: boolean; x?: number; y?: number; width?: number; height?: number}) {
   return new RadioGroupWidget({
     options: options?.options ?? ['Red', 'Green', 'Blue'],
     value: options?.value ?? -1,
     disabled: options?.disabled ?? false,
-    rectX: options?.rectX ?? 0,
-    rectY: options?.rectY ?? 0,
-    rectWidth: options?.rectWidth ?? 20,
-    rectHeight: options?.rectHeight ?? 3,
+    x: options?.x ?? 0,
+    y: options?.y ?? 0,
+    width: options?.width ?? 20,
+    height: options?.height ?? 3,
   });
 }
 
@@ -152,7 +152,7 @@ describe('keyboard selection', () => {
 
 describe('mouse selection', () => {
   it('click selects item by y position', () => {
-    const radio = createRadio({rectX: 5, rectY: 5, rectHeight: 3});
+    const radio = createRadio({x: 5, y: 5, height: 3});
     // Click on second option: y=7 → innerY = (7-1) - 5 = 1
     radio.dispatch('mousedown', mouse({x: 7, y: 7}));
     expect(radio.value).toBe(1);
@@ -160,7 +160,7 @@ describe('mouse selection', () => {
   });
 
   it('click dispatches change event', () => {
-    const radio = createRadio({rectX: 5, rectY: 5, rectHeight: 3});
+    const radio = createRadio({x: 5, y: 5, height: 3});
     const changes: unknown[] = [];
     radio.on('change', data => changes.push(data));
     radio.dispatch('mousedown', mouse({x: 7, y: 6}));
@@ -170,23 +170,23 @@ describe('mouse selection', () => {
   });
 
   it('click outside option range does nothing', () => {
-    const radio = createRadio({rectX: 5, rectY: 5, rectHeight: 5});
+    const radio = createRadio({x: 5, y: 5, height: 5});
     radio.dispatch('mousedown', mouse({x: 7, y: 9})); // innerY=3, only 3 options (0-2)
     expect(radio.value).toBe(-1);
   });
 
   it('disabled widget ignores click', () => {
-    const radio = createRadio({disabled: true, rectX: 5, rectY: 5});
+    const radio = createRadio({disabled: true, x: 5, y: 5});
     radio.dispatch('mousedown', mouse({x: 7, y: 6}));
     expect(radio.value).toBe(-1);
   });
 });
 
-describe('setValue', () => {
+describe('updateValue', () => {
   it('sets value directly', () => {
     const radio = createRadio();
     expect(radio.value).toBe(-1);
-    radio.setValue(2);
+    radio.updateValue(2);
     expect(radio.value).toBe(2);
     expect(radio.selectedLabel).toBe('Blue');
   });
@@ -195,7 +195,7 @@ describe('setValue', () => {
     const radio = createRadio();
     const changes: unknown[] = [];
     radio.on('change', data => changes.push(data));
-    radio.setValue(1);
+    radio.updateValue(1);
     expect(changes).toHaveLength(0);
   });
 });
@@ -263,7 +263,7 @@ describe('focus / blur', () => {
 
 describe('rect and hit testing', () => {
   it('containsPoint checks bounds correctly', () => {
-    const radio = createRadio({rectX: 5, rectY: 3, rectWidth: 20, rectHeight: 3});
+    const radio = createRadio({x: 5, y: 3, width: 20, height: 3});
     expect(radio.containsPoint(5, 3)).toBe(true);
     expect(radio.containsPoint(24, 3)).toBe(true);
     expect(radio.containsPoint(25, 3)).toBe(false);
@@ -274,12 +274,12 @@ describe('rect and hit testing', () => {
 
   it('updateRect updates position and size', () => {
     const radio = createRadio();
-    radio.updateRect({rectX: 10, rectY: 20, rectWidth: 30, rectHeight: 5});
+    radio.updateRect({x: 10, y: 20, width: 30, height: 5});
     const r = radio.rect;
-    expect(r.rectX).toBe(10);
-    expect(r.rectY).toBe(20);
-    expect(r.rectWidth).toBe(30);
-    expect(r.rectHeight).toBe(5);
+    expect(r.x).toBe(10);
+    expect(r.y).toBe(20);
+    expect(r.width).toBe(30);
+    expect(r.height).toBe(5);
   });
 });
 

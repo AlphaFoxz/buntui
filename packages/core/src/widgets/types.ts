@@ -33,10 +33,10 @@ export type TuiWidgetComponentType = Enum<typeof TuiWidgetComponentType>;
  * @summary 64 bits = 8 bytes
  */
 export type TuiWidgetRect = {
-  rectX: U16;
-  rectY: U16;
-  rectWidth: U16;
-  rectHeight: U16;
+  x: U16;
+  y: U16;
+  width: U16;
+  height: U16;
 };
 
 /*
@@ -135,5 +135,37 @@ export type TuiWidgetShadow = {
  * @summary 64 bits = 8 bytes
  */
 export type TuiWidgetText = {
-  text: string;
+  value: string;
 };
+
+/**
+ * A 2D size used for intrinsic size reporting by widgets.
+ */
+export type TuiWidgetSize = {
+  width: U16;
+  height: U16;
+};
+
+/**
+ * Four-sided padding for layout containers.
+ */
+export type TuiWidgetPadding = {
+  paddingTop: U16;
+  paddingRight: U16;
+  paddingBottom: U16;
+  paddingLeft: U16;
+};
+
+export const LayoutDirection = {
+  Horizontal: 0,
+  Vertical: 1,
+} as const;
+export type LayoutDirection = Enum<typeof LayoutDirection>;
+
+export const LayoutAlignment = {
+  Start: 0,
+  Center: 1,
+  End: 2,
+  Stretch: 3,
+} as const;
+export type LayoutAlignment = Enum<typeof LayoutAlignment>;

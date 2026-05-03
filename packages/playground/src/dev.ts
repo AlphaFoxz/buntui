@@ -14,6 +14,7 @@ createDevServer({
       reactivityModuleId: '@vue/reactivity',
       widgetModuleMap: {
         createFrameRateWatcher: '@buntui/extensions',
+        createMatrixWidget: '@buntui/extensions',
       },
     },
   },

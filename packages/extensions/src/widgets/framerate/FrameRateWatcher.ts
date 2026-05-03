@@ -19,13 +19,13 @@ export class FrameRateWatcher extends BoxWidget {
       ...options,
     });
     this.#label = new TextWidget({
-      rectX: (options.rectX ?? 0) as U16,
-      rectY: (options.rectY ?? 0) as U16,
-      rectWidth: (options.rectWidth ?? 0) as U16,
-      rectHeight: (options.rectHeight ?? 0) as U16,
+      x: (options.x ?? 0) as U16,
+      y: (options.y ?? 0) as U16,
+      width: (options.width ?? 0) as U16,
+      height: (options.height ?? 0) as U16,
       colorFg: (options.colorFg ?? 0xFF_FF_FF_FF) as U32,
       colorBg: 0x00_00_00_00 as U32,
-      text: '0 fps',
+      value: '0 fps',
     });
     this.addChild(this.#label);
   }
@@ -34,7 +34,7 @@ export class FrameRateWatcher extends BoxWidget {
     super.mounted();
     this.#timer = setInterval(() => {
       const currentTick = TUI_CONTEXT_INSTANCE.tick;
-      this.#label.updateText(`${currentTick - this.#latestTick} fps`);
+      this.#label.updateValue(`${currentTick - this.#latestTick} fps`);
       this.#latestTick = currentTick;
     }, 1 * 1000);
   }

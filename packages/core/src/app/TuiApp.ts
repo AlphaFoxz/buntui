@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 import path from 'node:path';
 import process from 'node:process';
 import {TuiEventType} from '../events/types';
@@ -97,7 +98,6 @@ export class TuiApp {
     app.stopApp();
     EVENT_BUS.stop();
     LOGGER.deinit();
-    // eslint-disable-next-line unicorn/no-process-exit -- TUI CLI app needs clean exit
     process.exit(0);
   }
 

@@ -1,25 +1,27 @@
+import type {TuiColor} from '../../utils/color';
+
 export type CheckboxWidgetOptions = {
-  rectX?: number;
-  rectY?: number;
-  rectWidth?: number;
-  rectHeight?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
   label?: string;
   checked?: boolean;
   disabled?: boolean;
 
   // Normal state
-  colorFgNormal?: number;
-  colorBgNormal?: number;
+  colorFgNormal?: TuiColor;
+  colorBgNormal?: TuiColor;
 
   // Hovered state
-  colorFgHovered?: number;
-  colorBgHovered?: number;
+  colorFgHovered?: TuiColor;
+  colorBgHovered?: TuiColor;
 
   // Focused state (keyboard)
-  colorFgFocused?: number;
-  colorBgFocused?: number;
+  colorFgFocused?: TuiColor;
+  colorBgFocused?: TuiColor;
 
   // Disabled state
-  colorFgDisabled?: number;
-  colorBgDisabled?: number;
+  colorFgDisabled?: TuiColor;
+  colorBgDisabled?: TuiColor;
 };

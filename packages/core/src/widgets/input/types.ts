@@ -1,16 +1,20 @@
+import type {TuiColor} from '../../utils/color';
+
 export type InputWidgetOptions = {
-  rectX?: number;
-  rectY?: number;
-  rectWidth?: number;
-  rectHeight?: number;
-  colorFg?: number;
-  colorBg?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  colorFg?: TuiColor;
+  colorBg?: TuiColor;
   placeholder?: string;
   value?: string;
-  borderColorUnfocused?: number;
-  borderColorFocused?: number;
+  borderColorUnfocused?: TuiColor;
+  borderColorFocused?: TuiColor;
   borderStyle?: number;
   maxLength?: number;
-  selectionBgColor?: number;
-  selectionFgColor?: number;
+  selectionBgColor?: TuiColor;
+  selectionFgColor?: TuiColor;
+  label?: string;
+  readonly?: boolean;
 };

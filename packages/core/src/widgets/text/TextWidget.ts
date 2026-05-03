@@ -1,40 +1,61 @@
+import {stringDisplayWidth, truncateToWidth, charDisplayWidth} from '../../utils/string-width';
+import {parseColor, type TuiColor} from '../../utils/color';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import type {
   TuiWidgetColor,
   TuiWidgetRect,
+  TuiWidgetSize,
   TuiWidgetStyle,
   TuiWidgetText,
 } from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
+import type {TextOverflow} from './types';
 
-export type TextWidgetOptions = TuiWidgetRect
-  & TuiWidgetColor
+export type TextWidgetOptions = Omit<TuiWidgetRect & TuiWidgetColor & TuiWidgetText, 'colorFg' | 'colorBg'>
   & Partial<TuiWidgetStyle>
-  & TuiWidgetText;
+  & {
+    colorFg?: TuiColor;
+    colorBg?: TuiColor;
+    overflow?: TextOverflow;
+    scrollSpeed?: number;
+    scrollPauseMs?: number;
+  };
 
 export class TextWidget extends TuiWidgetEntity {
   readonly #rect: TuiWidgetRect;
   readonly #color: TuiWidgetColor;
   readonly #style: TuiWidgetStyle;
-  #text: string;
+  #value: string;
+
+  readonly #overflow: TextOverflow;
+  readonly #scrollSpeed: number;
+  readonly #scrollPauseMs: number;
+  #scrollOffset = 0;
+  #pauseRemaining = 0;
+  #waitingReset = false;
+  #lastTimestamp = 0;
+  #firstRender = true;
 
   constructor(options: TextWidgetOptions) {
     super();
     this.#rect = {
-      rectX: options.rectX,
-      rectY: options.rectY,
-      rectWidth: options.rectWidth,
-      rectHeight: options.rectHeight,
+      x: options.x,
+      y: options.y,
+      width: options.width,
+      height: options.height,
     };
     this.#color = {
-      colorFg: options.colorFg,
-      colorBg: options.colorBg,
+      colorFg: parseColor(options.colorFg ?? 0xFF_FF_FF_FF),
+      colorBg: parseColor(options.colorBg ?? 0x00_00_00_00),
     };
     this.#style = {
       styleZIndex: options.styleZIndex ?? 0,
       styleModifier: options.styleModifier ?? 0,
     };
-    this.#text = options.text;
+    this.#value = options.value;
+    this.#overflow = options.overflow ?? 'marquee';
+    this.#scrollSpeed = options.scrollSpeed ?? 4;
+    this.#scrollPauseMs = options.scrollPauseMs ?? 1000;
   }
 
   override get rect(): TuiWidgetRect {
@@ -50,7 +71,13 @@ export class TextWidget extends TuiWidgetEntity {
   }
 
   updateColor(color: Partial<TuiWidgetColor>) {
-    Object.assign(this.#color, color);
+    if (color.colorFg !== undefined) {
+      this.#color.colorFg = parseColor(color.colorFg);
+    }
+
+    if (color.colorBg !== undefined) {
+      this.#color.colorBg = parseColor(color.colorBg);
+    }
   }
 
   get style(): TuiWidgetStyle {
@@ -66,65 +93,192 @@ export class TextWidget extends TuiWidgetEntity {
   }
 
   override containsPoint(x: number, y: number): boolean {
-    const {rectX, rectY, rectWidth, rectHeight} = this.#rect;
-    return x >= rectX && x < rectX + rectWidth && y >= rectY && y < rectY + rectHeight;
+    const {x: rx, y: ry, width: rw, height: rh} = this.#rect;
+    return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
   }
 
-  get text() {
-    return this.#text;
+  get value() {
+    return this.#value;
   }
 
-  updateText(text: string) {
-    this.#text = text;
+  updateValue(value: string) {
+    this.#value = value;
+    this.#scrollOffset = 0;
+    this.#pauseRemaining = 0;
+    this.#waitingReset = false;
+    this.#firstRender = true;
+  }
+
+  override intrinsicSize(): TuiWidgetSize | undefined {
+    return {
+      width: stringDisplayWidth(this.#value) as U16,
+      height: 1 as U16,
+    };
+  }
+
+  override unmounted(): void {
+    super.unmounted();
+    this.#lastTimestamp = 0;
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    const {rectX, rectY, rectWidth, rectHeight} = this.#rect;
+    const {x, y, width, height} = this.#rect;
     const {colorFg, colorBg} = this.#color;
 
-    buffer.pushClip(rectX, rectY, rectWidth, rectHeight);
+    buffer.pushClip(x, y, width, height);
 
     // Optional background fill
     if (colorBg !== 0x00_00_00_00) {
       buffer.drawRect({
-        x: rectX,
-        y: rectY,
-        width: rectWidth,
-        height: rectHeight,
+        x: x,
+        y: y,
+        width: width,
+        height: height,
         bgRgba: colorBg,
       });
     }
 
     // Text content
-    if (this.#text.length > 0) {
-      buffer.drawText({
-        x: rectX,
-        y: rectY,
-        text: this.#text,
-        fgRgba: colorFg,
-        bgRgba: 0x00_00_00_00,
-      });
+    if (this.#value.length > 0) {
+      if (this.#overflow === 'marquee') {
+        this.#drawMarquee(buffer, {
+          x,
+          y,
+          visibleWidth: width,
+          fgRgba: colorFg,
+        });
+      } else {
+        buffer.drawText({
+          x: x,
+          y: y,
+          text: this.#value,
+          fgRgba: colorFg,
+          bgRgba: 0x00_00_00_00,
+        });
+      }
     }
 
     buffer.popClip();
   }
+
+  #drawMarquee(
+    buffer: DrawListBuffer,
+    {x, y, visibleWidth, fgRgba}: {
+      x: number;
+      y: number;
+      visibleWidth: number;
+      fgRgba: number;
+    },
+  ): void {
+    const textWidth = stringDisplayWidth(this.#value);
+    if (textWidth <= visibleWidth) {
+      buffer.drawText({
+        x: x,
+        y: y,
+        text: this.#value,
+        fgRgba,
+        bgRgba: 0x00_00_00_00,
+      });
+      return;
+    }
+
+    // Advance animation
+    const now = Date.now();
+    if (this.#lastTimestamp === 0) {
+      this.#lastTimestamp = now;
+    }
+
+    const deltaMs = now - this.#lastTimestamp;
+    this.#lastTimestamp = now;
+
+    if (this.#firstRender) {
+      this.#firstRender = false;
+      this.#pauseRemaining = this.#scrollPauseMs;
+    }
+
+    // Calculate maxOffset: ensure scroll reaches far enough to fully display tail characters
+    let tailWidth = 0;
+    const chars = [...this.#value];
+    for (let i = chars.length - 1; i >= 0; i--) {
+      const char = chars[i]!;
+      const cw = charDisplayWidth(char);
+      if (tailWidth + cw > visibleWidth) {
+        break;
+      }
+
+      tailWidth += cw;
+    }
+
+    const maxOffset = Math.max(textWidth - visibleWidth, textWidth - tailWidth);
+
+    if (this.#pauseRemaining > 0) {
+      this.#pauseRemaining -= deltaMs;
+      if (this.#pauseRemaining < 0) {
+        this.#pauseRemaining = 0;
+        if (this.#waitingReset) {
+          this.#waitingReset = false;
+          this.#scrollOffset = 0;
+          this.#pauseRemaining = this.#scrollPauseMs;
+        }
+      }
+    } else {
+      const deltaOffset = (this.#scrollSpeed * deltaMs) / 1000;
+      this.#scrollOffset += deltaOffset;
+
+      if (this.#scrollOffset >= maxOffset) {
+        this.#scrollOffset = maxOffset;
+        this.#pauseRemaining = this.#scrollPauseMs;
+        this.#waitingReset = true;
+      }
+    }
+
+    // Cell-aligned scroll for consistent speed
+    const cellOffset = Math.floor(this.#scrollOffset);
+
+    // Find first character not fully scrolled off the left edge
+    let charStart = 0;
+    let posBefore = 0;
+    for (const char of this.#value) {
+      const cw = charDisplayWidth(char);
+      if (posBefore + cw > cellOffset) {
+        break;
+      }
+
+      posBefore += cw;
+      charStart++;
+    }
+
+    // Calculate how many cells are available from the draw position to the right clip edge
+    const cellsFromDraw = visibleWidth - (posBefore - cellOffset);
+    const visibleText = truncateToWidth(this.#value.slice(charStart), cellsFromDraw);
+
+    const drawX = x + posBefore - cellOffset;
+
+    buffer.drawText({
+      x: drawX,
+      y: y,
+      text: visibleText,
+      fgRgba,
+      bgRgba: 0x00_00_00_00,
+    });
+  }
 }
 
 export const DEFAULT_TEXT_OPTIONS: TextWidgetOptions = {
-  rectX: 0 as U16,
-  rectY: 0 as U16,
-  rectWidth: 0 as U16,
-  rectHeight: 0 as U16,
+  x: 0 as U16,
+  y: 0 as U16,
+  width: 0 as U16,
+  height: 0 as U16,
   colorFg: 0xFF_FF_FF_FF as U32,
   colorBg: 0x00_00_00_00 as U32,
-  text: '',
+  value: '',
 };
 
-export function createTextWidget(options: Partial<TextWidgetOptions> & {text: string}): TextWidget;
-export function createTextWidget(text: string): TextWidget;
-export function createTextWidget(options: string | (Partial<TextWidgetOptions> & {text: string})) {
+export function createTextWidget(options: Partial<TextWidgetOptions> & {value: string}): TextWidget;
+export function createTextWidget(value: string): TextWidget;
+export function createTextWidget(options: string | (Partial<TextWidgetOptions> & {value: string})) {
   if (typeof options === 'string') {
-    return new TextWidget({...DEFAULT_TEXT_OPTIONS, text: options});
+    return new TextWidget({...DEFAULT_TEXT_OPTIONS, value: options});
   }
 
   return new TextWidget({

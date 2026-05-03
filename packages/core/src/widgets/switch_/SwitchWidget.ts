@@ -3,13 +3,14 @@ import {type KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect} from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import type {Focusable} from '../Focusable';
+import {parseColor} from '../../utils/color';
 import type {SwitchWidgetOptions} from './types';
 
 const DEFAULT_SWITCH_OPTIONS: Required<SwitchWidgetOptions> = {
-  rectX: 0,
-  rectY: 0,
-  rectWidth: 12,
-  rectHeight: 1,
+  x: 0,
+  y: 0,
+  width: 12,
+  height: 1,
   label: '',
   checked: false,
   disabled: false,
@@ -48,10 +49,10 @@ type SwitchColors = {
 };
 
 export class SwitchWidget extends TuiWidgetEntity implements Focusable {
-  #rectX: number;
-  #rectY: number;
-  #rectWidth: number;
-  #rectHeight: number;
+  #x: number;
+  #y: number;
+  #width: number;
+  #height: number;
   #label: string;
   #checked: boolean;
   #focused = false;
@@ -83,34 +84,34 @@ export class SwitchWidget extends TuiWidgetEntity implements Focusable {
     super();
     const resolved = {...DEFAULT_SWITCH_OPTIONS, ...options};
 
-    this.#rectX = resolved.rectX;
-    this.#rectY = resolved.rectY;
-    this.#rectWidth = resolved.rectWidth;
-    this.#rectHeight = resolved.rectHeight;
+    this.#x = resolved.x;
+    this.#y = resolved.y;
+    this.#width = resolved.width;
+    this.#height = resolved.height;
     this.#label = resolved.label;
     this.#checked = resolved.checked;
     this.#disabled = resolved.disabled;
 
-    this.#colorFgNormal = resolved.colorFgNormal;
-    this.#colorBgNormal = resolved.colorBgNormal;
-    this.#colorCrossNormal = resolved.colorCrossNormal;
-    this.#colorCheckNormal = resolved.colorCheckNormal;
-    this.#colorDimNormal = resolved.colorDimNormal;
-    this.#colorFgHovered = resolved.colorFgHovered;
-    this.#colorBgHovered = resolved.colorBgHovered;
-    this.#colorCrossHovered = resolved.colorCrossHovered;
-    this.#colorCheckHovered = resolved.colorCheckHovered;
-    this.#colorDimHovered = resolved.colorDimHovered;
-    this.#colorFgFocused = resolved.colorFgFocused;
-    this.#colorBgFocused = resolved.colorBgFocused;
-    this.#colorCrossFocused = resolved.colorCrossFocused;
-    this.#colorCheckFocused = resolved.colorCheckFocused;
-    this.#colorDimFocused = resolved.colorDimFocused;
-    this.#colorFgDisabled = resolved.colorFgDisabled;
-    this.#colorBgDisabled = resolved.colorBgDisabled;
-    this.#colorCrossDisabled = resolved.colorCrossDisabled;
-    this.#colorCheckDisabled = resolved.colorCheckDisabled;
-    this.#colorDimDisabled = resolved.colorDimDisabled;
+    this.#colorFgNormal = parseColor(resolved.colorFgNormal);
+    this.#colorBgNormal = parseColor(resolved.colorBgNormal);
+    this.#colorCrossNormal = parseColor(resolved.colorCrossNormal);
+    this.#colorCheckNormal = parseColor(resolved.colorCheckNormal);
+    this.#colorDimNormal = parseColor(resolved.colorDimNormal);
+    this.#colorFgHovered = parseColor(resolved.colorFgHovered);
+    this.#colorBgHovered = parseColor(resolved.colorBgHovered);
+    this.#colorCrossHovered = parseColor(resolved.colorCrossHovered);
+    this.#colorCheckHovered = parseColor(resolved.colorCheckHovered);
+    this.#colorDimHovered = parseColor(resolved.colorDimHovered);
+    this.#colorFgFocused = parseColor(resolved.colorFgFocused);
+    this.#colorBgFocused = parseColor(resolved.colorBgFocused);
+    this.#colorCrossFocused = parseColor(resolved.colorCrossFocused);
+    this.#colorCheckFocused = parseColor(resolved.colorCheckFocused);
+    this.#colorDimFocused = parseColor(resolved.colorDimFocused);
+    this.#colorFgDisabled = parseColor(resolved.colorFgDisabled);
+    this.#colorBgDisabled = parseColor(resolved.colorBgDisabled);
+    this.#colorCrossDisabled = parseColor(resolved.colorCrossDisabled);
+    this.#colorCheckDisabled = parseColor(resolved.colorCheckDisabled);
+    this.#colorDimDisabled = parseColor(resolved.colorDimDisabled);
 
     this.on('click', () => {
       if (this.#disabled) {
@@ -151,10 +152,10 @@ export class SwitchWidget extends TuiWidgetEntity implements Focusable {
 
   override get rect(): TuiWidgetRect {
     return {
-      rectX: this.#rectX,
-      rectY: this.#rectY,
-      rectWidth: this.#rectWidth,
-      rectHeight: this.#rectHeight,
+      x: this.#x,
+      y: this.#y,
+      width: this.#width,
+      height: this.#height,
     };
   }
 
@@ -199,52 +200,52 @@ export class SwitchWidget extends TuiWidgetEntity implements Focusable {
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {
-    if (rect.rectX !== undefined) {
-      this.#rectX = rect.rectX;
+    if (rect.x !== undefined) {
+      this.#x = rect.x;
     }
 
-    if (rect.rectY !== undefined) {
-      this.#rectY = rect.rectY;
+    if (rect.y !== undefined) {
+      this.#y = rect.y;
     }
 
-    if (rect.rectWidth !== undefined) {
-      this.#rectWidth = rect.rectWidth;
+    if (rect.width !== undefined) {
+      this.#width = rect.width;
     }
 
-    if (rect.rectHeight !== undefined) {
-      this.#rectHeight = rect.rectHeight;
+    if (rect.height !== undefined) {
+      this.#height = rect.height;
     }
   }
 
   override containsPoint(x: number, y: number): boolean {
-    return x >= this.#rectX
-      && x < this.#rectX + this.#rectWidth
-      && y >= this.#rectY
-      && y < this.#rectY + this.#rectHeight;
+    return x >= this.#x
+      && x < this.#x + this.#width
+      && y >= this.#y
+      && y < this.#y + this.#height;
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    if (this.#rectWidth <= 0 || this.#rectHeight <= 0) {
+    if (this.#width <= 0 || this.#height <= 0) {
       return;
     }
 
-    buffer.pushClip(this.#rectX, this.#rectY, this.#rectWidth, this.#rectHeight);
+    buffer.pushClip(this.#x, this.#y, this.#width, this.#height);
 
     const colors = this.#resolveColors();
-    const textY = this.#rectY + Math.floor(this.#rectHeight / 2);
+    const textY = this.#y + Math.floor(this.#height / 2);
 
     // Background
     buffer.drawRect({
-      x: this.#rectX,
-      y: this.#rectY,
-      width: this.#rectWidth,
-      height: this.#rectHeight,
+      x: this.#x,
+      y: this.#y,
+      width: this.#width,
+      height: this.#height,
       bgRgba: colors.bg,
     });
 
     // ✗ — red bg when off (active), dim when on
     buffer.drawText({
-      x: this.#rectX,
+      x: this.#x,
       y: textY,
       text: '✗',
       fgRgba: this.#checked ? colors.dim : colors.bg,
@@ -253,7 +254,7 @@ export class SwitchWidget extends TuiWidgetEntity implements Focusable {
 
     // | — always dim
     buffer.drawText({
-      x: this.#rectX + 1,
+      x: this.#x + 1,
       y: textY,
       text: '|',
       fgRgba: colors.dim,
@@ -262,7 +263,7 @@ export class SwitchWidget extends TuiWidgetEntity implements Focusable {
 
     // ✓ — dim when off, green bg when on (active)
     buffer.drawText({
-      x: this.#rectX + 2,
+      x: this.#x + 2,
       y: textY,
       text: '✓',
       fgRgba: this.#checked ? colors.bg : colors.dim,
@@ -271,8 +272,8 @@ export class SwitchWidget extends TuiWidgetEntity implements Focusable {
 
     // Label
     if (this.#label.length > 0) {
-      const labelX = this.#rectX + 4;
-      const maxLabelWidth = this.#rectWidth - 4;
+      const labelX = this.#x + 4;
+      const maxLabelWidth = this.#width - 4;
       if (maxLabelWidth > 0) {
         const visibleLabel = this.#label.slice(0, Math.max(0, maxLabelWidth));
         buffer.drawText({

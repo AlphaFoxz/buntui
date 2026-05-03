@@ -3,13 +3,14 @@ import {type KeyboardEvent, type MouseEvent} from '../../events/types';
 import type {TuiWidgetRect} from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import type {Focusable} from '../Focusable';
+import {parseColor} from '../../utils/color';
 import type {TabBarWidgetOptions} from './types';
 
 const DEFAULT_TAB_BAR_OPTIONS: Required<TabBarWidgetOptions> = {
-  rectX: 0,
-  rectY: 0,
-  rectWidth: 40,
-  rectHeight: 1,
+  x: 0,
+  y: 0,
+  width: 40,
+  height: 1,
   tabs: [],
   value: 0,
   disabled: false,
@@ -30,10 +31,10 @@ const DEFAULT_TAB_BAR_OPTIONS: Required<TabBarWidgetOptions> = {
 };
 
 export class TabBarWidget extends TuiWidgetEntity implements Focusable {
-  #rectX: number;
-  #rectY: number;
-  #rectWidth: number;
-  #rectHeight: number;
+  #x: number;
+  #y: number;
+  #width: number;
+  #height: number;
   #tabs: string[];
   #value: number;
   #hoveredIndex = -1;
@@ -54,23 +55,23 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
     super();
     const resolved = {...DEFAULT_TAB_BAR_OPTIONS, ...options};
 
-    this.#rectX = resolved.rectX;
-    this.#rectY = resolved.rectY;
-    this.#rectWidth = resolved.rectWidth;
-    this.#rectHeight = resolved.rectHeight;
+    this.#x = resolved.x;
+    this.#y = resolved.y;
+    this.#width = resolved.width;
+    this.#height = resolved.height;
     this.#tabs = resolved.tabs;
     this.#value = resolved.value;
     this.#disabled = resolved.disabled;
 
-    this.#colorFgNormal = resolved.colorFgNormal;
-    this.#colorBgNormal = resolved.colorBgNormal;
-    this.#colorFgActive = resolved.colorFgActive;
-    this.#colorBgActive = resolved.colorBgActive;
-    this.#colorFgFocused = resolved.colorFgFocused;
-    this.#colorBgFocused = resolved.colorBgFocused;
-    this.#colorFgDisabled = resolved.colorFgDisabled;
-    this.#colorBgDisabled = resolved.colorBgDisabled;
-    this.#colorFgSeparator = resolved.colorFgSeparator;
+    this.#colorFgNormal = parseColor(resolved.colorFgNormal);
+    this.#colorBgNormal = parseColor(resolved.colorBgNormal);
+    this.#colorFgActive = parseColor(resolved.colorFgActive);
+    this.#colorBgActive = parseColor(resolved.colorBgActive);
+    this.#colorFgFocused = parseColor(resolved.colorFgFocused);
+    this.#colorBgFocused = parseColor(resolved.colorBgFocused);
+    this.#colorFgDisabled = parseColor(resolved.colorFgDisabled);
+    this.#colorBgDisabled = parseColor(resolved.colorBgDisabled);
+    this.#colorFgSeparator = parseColor(resolved.colorFgSeparator);
 
     this.on('mousedown', (data: unknown) => {
       if (this.#disabled) {
@@ -163,7 +164,7 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
     return this.#tabs[this.#value] ?? '';
   }
 
-  setValue(index: number): void {
+  updateValue(index: number): void {
     this.#value = index;
   }
 
@@ -188,51 +189,51 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
 
   override get rect(): TuiWidgetRect {
     return {
-      rectX: this.#rectX,
-      rectY: this.#rectY,
-      rectWidth: this.#rectWidth,
-      rectHeight: this.#rectHeight,
+      x: this.#x,
+      y: this.#y,
+      width: this.#width,
+      height: this.#height,
     };
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {
-    if (rect.rectX !== undefined) {
-      this.#rectX = rect.rectX;
+    if (rect.x !== undefined) {
+      this.#x = rect.x;
     }
 
-    if (rect.rectY !== undefined) {
-      this.#rectY = rect.rectY;
+    if (rect.y !== undefined) {
+      this.#y = rect.y;
     }
 
-    if (rect.rectWidth !== undefined) {
-      this.#rectWidth = rect.rectWidth;
+    if (rect.width !== undefined) {
+      this.#width = rect.width;
     }
 
-    if (rect.rectHeight !== undefined) {
-      this.#rectHeight = rect.rectHeight;
+    if (rect.height !== undefined) {
+      this.#height = rect.height;
     }
   }
 
   override containsPoint(x: number, y: number): boolean {
-    return x >= this.#rectX
-      && x < this.#rectX + this.#rectWidth
-      && y >= this.#rectY
-      && y < this.#rectY + this.#rectHeight;
+    return x >= this.#x
+      && x < this.#x + this.#width
+      && y >= this.#y
+      && y < this.#y + this.#height;
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    if (this.#rectWidth <= 0 || this.#rectHeight <= 0 || this.#tabs.length === 0) {
+    if (this.#width <= 0 || this.#height <= 0 || this.#tabs.length === 0) {
       return;
     }
 
-    buffer.pushClip(this.#rectX, this.#rectY, this.#rectWidth, this.#rectHeight);
+    buffer.pushClip(this.#x, this.#y, this.#width, this.#height);
 
     const baseBg = this.#disabled ? this.#colorBgDisabled : this.#colorBgNormal;
     buffer.drawRect({
-      x: this.#rectX,
-      y: this.#rectY,
-      width: this.#rectWidth,
-      height: this.#rectHeight,
+      x: this.#x,
+      y: this.#y,
+      width: this.#width,
+      height: this.#height,
       bgRgba: baseBg,
     });
 
@@ -249,17 +250,17 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
           : (this.#focused ? this.#colorBgFocused : this.#colorBgActive);
         buffer.drawRect({
           x,
-          y: this.#rectY,
+          y: this.#y,
           width,
-          height: this.#rectHeight,
+          height: this.#height,
           bgRgba: bg,
         });
       } else if (isHovered && !this.#disabled) {
         buffer.drawRect({
           x,
-          y: this.#rectY,
+          y: this.#y,
           width,
-          height: this.#rectHeight,
+          height: this.#height,
           bgRgba: this.#colorBgFocused,
         });
       }
@@ -274,7 +275,7 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
       const visibleText = text.slice(0, Math.max(0, width));
       buffer.drawText({
         x,
-        y: this.#rectY,
+        y: this.#y,
         text: visibleText,
         fgRgba: fg,
         bgRgba: 0x00_00_00_00,
@@ -285,7 +286,7 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
         const sepFg = this.#disabled ? this.#colorFgDisabled : this.#colorFgSeparator;
         buffer.drawText({
           x: sepX,
-          y: this.#rectY,
+          y: this.#y,
           text: '│',
           fgRgba: sepFg,
           bgRgba: 0x00_00_00_00,
@@ -306,7 +307,7 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
 
   #computeTabLayout(): Array<{x: number; width: number; label: string}> {
     const layout: Array<{x: number; width: number; label: string}> = [];
-    let currentX = this.#rectX;
+    let currentX = this.#x;
     for (let i = 0; i < this.#tabs.length; i++) {
       const label = this.#tabs[i]!;
       const cellWidth = label.length + 2;

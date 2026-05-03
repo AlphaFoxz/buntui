@@ -14,15 +14,15 @@ function key(options: Partial<KeyboardEvent> & {key: string}): KeyboardEvent {
   };
 }
 
-function createSwitch(options?: {label?: string; checked?: boolean; disabled?: boolean; rectX?: number; rectY?: number; rectWidth?: number; rectHeight?: number}) {
+function createSwitch(options?: {label?: string; checked?: boolean; disabled?: boolean; x?: number; y?: number; width?: number; height?: number}) {
   return new SwitchWidget({
     label: options?.label ?? '',
     checked: options?.checked ?? false,
     disabled: options?.disabled ?? false,
-    rectX: options?.rectX ?? 0,
-    rectY: options?.rectY ?? 0,
-    rectWidth: options?.rectWidth ?? 12,
-    rectHeight: options?.rectHeight ?? 1,
+    x: options?.x ?? 0,
+    y: options?.y ?? 0,
+    width: options?.width ?? 12,
+    height: options?.height ?? 1,
   });
 }
 
@@ -34,8 +34,8 @@ describe('construction', () => {
     expect(sw.disabled).toBe(false);
     expect(sw.acceptsFocus).toBe(true);
     const r = sw.rect;
-    expect(r.rectWidth).toBe(12);
-    expect(r.rectHeight).toBe(1);
+    expect(r.width).toBe(12);
+    expect(r.height).toBe(1);
   });
 
   it('initializes with custom options', () => {
@@ -200,7 +200,7 @@ describe('focus / blur', () => {
 
 describe('rect and hit testing', () => {
   it('containsPoint checks bounds correctly', () => {
-    const sw = createSwitch({rectX: 5, rectY: 3, rectWidth: 12, rectHeight: 1});
+    const sw = createSwitch({x: 5, y: 3, width: 12, height: 1});
     expect(sw.containsPoint(5, 3)).toBe(true);
     expect(sw.containsPoint(16, 3)).toBe(true);
     expect(sw.containsPoint(17, 3)).toBe(false);
@@ -210,18 +210,18 @@ describe('rect and hit testing', () => {
 
   it('updateRect updates position and size', () => {
     const sw = createSwitch();
-    sw.updateRect({rectX: 10, rectY: 20, rectWidth: 30, rectHeight: 3});
+    sw.updateRect({x: 10, y: 20, width: 30, height: 3});
     const r = sw.rect;
-    expect(r.rectX).toBe(10);
-    expect(r.rectY).toBe(20);
-    expect(r.rectWidth).toBe(30);
-    expect(r.rectHeight).toBe(3);
+    expect(r.x).toBe(10);
+    expect(r.y).toBe(20);
+    expect(r.width).toBe(30);
+    expect(r.height).toBe(3);
   });
 
   it('updateRect partially updates fields', () => {
-    const sw = createSwitch({rectX: 5});
-    sw.updateRect({rectX: 15});
-    expect(sw.rect.rectX).toBe(15);
+    const sw = createSwitch({x: 5});
+    sw.updateRect({x: 15});
+    expect(sw.rect.x).toBe(15);
   });
 });
 

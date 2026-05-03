@@ -28,7 +28,7 @@ function mouse(options: Partial<MouseEvent> & {x: number; y: number}): MouseEven
   };
 }
 
-// Tab layout with tabs ['Tab1', 'Tab2', 'Tab3'] at rectX=5:
+// Tab layout with tabs ['Tab1', 'Tab2', 'Tab3'] at x=5:
 // Tab0: x=5,  width=6 (5..10)   | Sep: 11
 // Tab1: x=12, width=6 (12..17)  | Sep: 18
 // Tab2: x=19, width=6 (19..24)
@@ -36,19 +36,19 @@ function createTabBar(options?: {
   tabs?: string[];
   value?: number;
   disabled?: boolean;
-  rectX?: number;
-  rectY?: number;
-  rectWidth?: number;
-  rectHeight?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 }) {
   return new TabBarWidget({
     tabs: options?.tabs ?? ['Tab1', 'Tab2', 'Tab3'],
     value: options?.value ?? 0,
     disabled: options?.disabled ?? false,
-    rectX: options?.rectX ?? 5,
-    rectY: options?.rectY ?? 0,
-    rectWidth: options?.rectWidth ?? 40,
-    rectHeight: options?.rectHeight ?? 1,
+    x: options?.x ?? 5,
+    y: options?.y ?? 0,
+    width: options?.width ?? 40,
+    height: options?.height ?? 1,
   });
 }
 
@@ -157,7 +157,7 @@ describe('keyboard navigation', () => {
 
 describe('mouse selection', () => {
   it('click selects tab by x position', () => {
-    const bar = createTabBar({rectX: 5});
+    const bar = createTabBar({x: 5});
     // Tab1 at x=12..17
     bar.dispatch('mousedown', mouse({x: 14, y: 0}));
     expect(bar.value).toBe(1);
@@ -165,7 +165,7 @@ describe('mouse selection', () => {
   });
 
   it('click dispatches change event', () => {
-    const bar = createTabBar({rectX: 5});
+    const bar = createTabBar({x: 5});
     const changes: unknown[] = [];
     bar.on('change', data => changes.push(data));
     bar.dispatch('mousedown', mouse({x: 19, y: 0}));
@@ -175,30 +175,30 @@ describe('mouse selection', () => {
   });
 
   it('click on separator does nothing', () => {
-    const bar = createTabBar({rectX: 5, value: 0});
+    const bar = createTabBar({x: 5, value: 0});
     // Separator at x=11
     bar.dispatch('mousedown', mouse({x: 11, y: 0}));
     expect(bar.value).toBe(0);
   });
 
   it('click outside tab area does nothing', () => {
-    const bar = createTabBar({rectX: 5, value: 0});
+    const bar = createTabBar({x: 5, value: 0});
     bar.dispatch('mousedown', mouse({x: 50, y: 0}));
     expect(bar.value).toBe(0);
   });
 
   it('disabled widget ignores click', () => {
-    const bar = createTabBar({disabled: true, rectX: 5});
+    const bar = createTabBar({disabled: true, x: 5});
     bar.dispatch('mousedown', mouse({x: 14, y: 0}));
     expect(bar.value).toBe(0);
   });
 });
 
-describe('setValue', () => {
+describe('updateValue', () => {
   it('sets value directly', () => {
     const bar = createTabBar();
     expect(bar.value).toBe(0);
-    bar.setValue(2);
+    bar.updateValue(2);
     expect(bar.value).toBe(2);
     expect(bar.activeLabel).toBe('Tab3');
   });
@@ -207,7 +207,7 @@ describe('setValue', () => {
     const bar = createTabBar();
     const changes: unknown[] = [];
     bar.on('change', data => changes.push(data));
-    bar.setValue(1);
+    bar.updateValue(1);
     expect(changes).toHaveLength(0);
   });
 });
@@ -267,7 +267,7 @@ describe('focus / blur', () => {
 
 describe('rect and hit testing', () => {
   it('containsPoint checks bounds correctly', () => {
-    const bar = createTabBar({rectX: 5, rectY: 3, rectWidth: 30, rectHeight: 1});
+    const bar = createTabBar({x: 5, y: 3, width: 30, height: 1});
     expect(bar.containsPoint(5, 3)).toBe(true);
     expect(bar.containsPoint(34, 3)).toBe(true);
     expect(bar.containsPoint(35, 3)).toBe(false);
@@ -277,12 +277,12 @@ describe('rect and hit testing', () => {
 
   it('updateRect updates position and size', () => {
     const bar = createTabBar();
-    bar.updateRect({rectX: 10, rectY: 20, rectWidth: 50, rectHeight: 2});
+    bar.updateRect({x: 10, y: 20, width: 50, height: 2});
     const r = bar.rect;
-    expect(r.rectX).toBe(10);
-    expect(r.rectY).toBe(20);
-    expect(r.rectWidth).toBe(50);
-    expect(r.rectHeight).toBe(2);
+    expect(r.x).toBe(10);
+    expect(r.y).toBe(20);
+    expect(r.width).toBe(50);
+    expect(r.height).toBe(2);
   });
 });
 

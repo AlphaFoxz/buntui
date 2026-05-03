@@ -4,14 +4,15 @@ import {BorderSides} from '../../draw_list/types';
 import type {TuiWidgetRect} from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import type {Focusable} from '../Focusable';
+import {parseColor} from '../../utils/color';
 import type {ButtonWidgetOptions} from './types';
 
 const DEFAULT_BUTTON_OPTIONS: Required<ButtonWidgetOptions> = {
-  rectX: 0,
-  rectY: 0,
-  rectWidth: 10,
-  rectHeight: 3,
-  text: '',
+  x: 0,
+  y: 0,
+  width: 10,
+  height: 3,
+  value: '',
 
   colorFgNormal: 0xFF_FF_FF_FF,
   colorBgNormal: 0x1E_1E_2E_FF,
@@ -37,11 +38,11 @@ const DEFAULT_BUTTON_OPTIONS: Required<ButtonWidgetOptions> = {
 };
 
 export class ButtonWidget extends TuiWidgetEntity implements Focusable {
-  #rectX: number;
-  #rectY: number;
-  #rectWidth: number;
-  #rectHeight: number;
-  #text: string;
+  #x: number;
+  #y: number;
+  #width: number;
+  #height: number;
+  #value: string;
 
   #focused = false;
   #pressed = false;
@@ -71,31 +72,31 @@ export class ButtonWidget extends TuiWidgetEntity implements Focusable {
     super();
     const resolved = {...DEFAULT_BUTTON_OPTIONS, ...options};
 
-    this.#rectX = resolved.rectX;
-    this.#rectY = resolved.rectY;
-    this.#rectWidth = resolved.rectWidth;
-    this.#rectHeight = resolved.rectHeight;
-    this.#text = resolved.text;
+    this.#x = resolved.x;
+    this.#y = resolved.y;
+    this.#width = resolved.width;
+    this.#height = resolved.height;
+    this.#value = resolved.value;
     this.#disabled = resolved.disabled;
 
-    this.#colorFgNormal = resolved.colorFgNormal;
-    this.#colorBgNormal = resolved.colorBgNormal;
-    this.#borderColorNormal = resolved.borderColorNormal;
+    this.#colorFgNormal = parseColor(resolved.colorFgNormal);
+    this.#colorBgNormal = parseColor(resolved.colorBgNormal);
+    this.#borderColorNormal = parseColor(resolved.borderColorNormal);
     this.#borderStyleNormal = resolved.borderStyleNormal;
 
-    this.#colorFgFocused = resolved.colorFgFocused;
-    this.#colorBgFocused = resolved.colorBgFocused;
-    this.#borderColorFocused = resolved.borderColorFocused;
+    this.#colorFgFocused = parseColor(resolved.colorFgFocused);
+    this.#colorBgFocused = parseColor(resolved.colorBgFocused);
+    this.#borderColorFocused = parseColor(resolved.borderColorFocused);
     this.#borderStyleFocused = resolved.borderStyleFocused;
 
-    this.#colorFgPressed = resolved.colorFgPressed;
-    this.#colorBgPressed = resolved.colorBgPressed;
-    this.#borderColorPressed = resolved.borderColorPressed;
+    this.#colorFgPressed = parseColor(resolved.colorFgPressed);
+    this.#colorBgPressed = parseColor(resolved.colorBgPressed);
+    this.#borderColorPressed = parseColor(resolved.borderColorPressed);
     this.#borderStylePressed = resolved.borderStylePressed;
 
-    this.#colorFgDisabled = resolved.colorFgDisabled;
-    this.#colorBgDisabled = resolved.colorBgDisabled;
-    this.#borderColorDisabled = resolved.borderColorDisabled;
+    this.#colorFgDisabled = parseColor(resolved.colorFgDisabled);
+    this.#colorBgDisabled = parseColor(resolved.colorBgDisabled);
+    this.#borderColorDisabled = parseColor(resolved.borderColorDisabled);
     this.#borderStyleDisabled = resolved.borderStyleDisabled;
 
     this.on('mousedown', (data: unknown) => {
@@ -150,16 +151,12 @@ export class ButtonWidget extends TuiWidgetEntity implements Focusable {
     }
   }
 
-  get text(): string {
-    return this.#text;
+  get value(): string {
+    return this.#value;
   }
 
-  setText(text: string): void {
-    this.#text = text;
-  }
-
-  updateText(text: string): void {
-    this.#text = text;
+  updateValue(value: string): void {
+    this.#value = value;
   }
 
   get disabled(): boolean {
@@ -172,61 +169,61 @@ export class ButtonWidget extends TuiWidgetEntity implements Focusable {
 
   override get rect(): TuiWidgetRect {
     return {
-      rectX: this.#rectX,
-      rectY: this.#rectY,
-      rectWidth: this.#rectWidth,
-      rectHeight: this.#rectHeight,
+      x: this.#x,
+      y: this.#y,
+      width: this.#width,
+      height: this.#height,
     };
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {
-    if (rect.rectX !== undefined) {
-      this.#rectX = rect.rectX;
+    if (rect.x !== undefined) {
+      this.#x = rect.x;
     }
 
-    if (rect.rectY !== undefined) {
-      this.#rectY = rect.rectY;
+    if (rect.y !== undefined) {
+      this.#y = rect.y;
     }
 
-    if (rect.rectWidth !== undefined) {
-      this.#rectWidth = rect.rectWidth;
+    if (rect.width !== undefined) {
+      this.#width = rect.width;
     }
 
-    if (rect.rectHeight !== undefined) {
-      this.#rectHeight = rect.rectHeight;
+    if (rect.height !== undefined) {
+      this.#height = rect.height;
     }
   }
 
   override containsPoint(x: number, y: number): boolean {
-    return x >= this.#rectX
-      && x < this.#rectX + this.#rectWidth
-      && y >= this.#rectY
-      && y < this.#rectY + this.#rectHeight;
+    return x >= this.#x
+      && x < this.#x + this.#width
+      && y >= this.#y
+      && y < this.#y + this.#height;
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    if (this.#rectWidth <= 0 || this.#rectHeight <= 0) {
+    if (this.#width <= 0 || this.#height <= 0) {
       return;
     }
 
-    buffer.pushClip(this.#rectX, this.#rectY, this.#rectWidth, this.#rectHeight);
+    buffer.pushClip(this.#x, this.#y, this.#width, this.#height);
 
     const state = this.#resolveVisualState();
 
     buffer.drawRect({
-      x: this.#rectX,
-      y: this.#rectY,
-      width: this.#rectWidth,
-      height: this.#rectHeight,
+      x: this.#x,
+      y: this.#y,
+      width: this.#width,
+      height: this.#height,
       bgRgba: state.bg,
     });
 
-    if (this.#text.length > 0) {
-      const innerWidth = this.#rectWidth - 2;
-      const innerHeight = this.#rectHeight - 2;
-      const textX = this.#rectX + 1 + Math.max(0, Math.floor((innerWidth - this.#text.length) / 2));
-      const textY = this.#rectY + 1 + Math.floor(innerHeight / 2);
-      const visibleText = this.#text.slice(0, Math.max(0, innerWidth));
+    if (this.#value.length > 0) {
+      const innerWidth = this.#width - 2;
+      const innerHeight = this.#height - 2;
+      const textX = this.#x + 1 + Math.max(0, Math.floor((innerWidth - this.#value.length) / 2));
+      const textY = this.#y + 1 + Math.floor(innerHeight / 2);
+      const visibleText = this.#value.slice(0, Math.max(0, innerWidth));
       buffer.drawText({
         x: textX,
         y: textY,
@@ -238,10 +235,10 @@ export class ButtonWidget extends TuiWidgetEntity implements Focusable {
 
     if (state.borderStyle !== 0) {
       buffer.drawBorder({
-        x: this.#rectX,
-        y: this.#rectY,
-        width: this.#rectWidth,
-        height: this.#rectHeight,
+        x: this.#x,
+        y: this.#y,
+        width: this.#width,
+        height: this.#height,
         colorRgba: state.borderColor,
         style: state.borderStyle,
         sides: BorderSides.All,

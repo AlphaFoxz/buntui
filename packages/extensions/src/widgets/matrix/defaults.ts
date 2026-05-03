@@ -8,10 +8,10 @@ export const DEFAULT_MATRIX_COLOR_SCHEME: MatrixColorScheme = {
 };
 
 export const DEFAULT_MATRIX_OPTIONS: MatrixWidgetOptions = {
-  rectX: 0,
-  rectY: 0,
-  rectWidth: 0,
-  rectHeight: 0,
+  x: 0,
+  y: 0,
+  width: 0,
+  height: 0,
   colorScheme: DEFAULT_MATRIX_COLOR_SCHEME,
   speedRange: {min: 1, max: 3},
   minTrailLength: 5,

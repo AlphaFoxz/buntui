@@ -28,13 +28,13 @@ function mouse(options: Partial<MouseEvent> & {x: number; y: number}): MouseEven
   };
 }
 
-function createInput(options?: {value?: string; maxLength?: number; rectWidth?: number; rectX?: number; rectY?: number}) {
+function createInput(options?: {value?: string; maxLength?: number; width?: number; x?: number; y?: number}) {
   return new InputWidget({
     value: options?.value ?? '',
     maxLength: options?.maxLength ?? 0,
-    rectWidth: options?.rectWidth ?? 20,
-    rectX: options?.rectX ?? 5,
-    rectY: options?.rectY ?? 5,
+    width: options?.width ?? 20,
+    x: options?.x ?? 5,
+    y: options?.y ?? 5,
   });
 }
 
@@ -325,23 +325,23 @@ describe('Enter', () => {
   });
 });
 
-describe('setValue', () => {
+describe('updateValue', () => {
   it('replaces value', () => {
     const input = createInput({value: 'hello'});
-    input.setValue('world');
+    input.updateValue('world');
     expect(input.value).toBe('world');
   });
 
   it('clears selection', () => {
     const input = createInput({value: 'hello'});
     input.handleKey(key({key: 'a', ctrlKey: true}));
-    input.setValue('new');
+    input.updateValue('new');
     expect(input.getSelection()).toBeUndefined();
   });
 
   it('clamps cursor to new length', () => {
     const input = createInput({value: 'hello'});
-    input.setValue('ab');
+    input.updateValue('ab');
     input.handleKey(key({key: 'X'}));
     expect(input.value).toBe('abX');
   });
@@ -349,7 +349,7 @@ describe('setValue', () => {
 
 describe('mouse click', () => {
   it('click positions cursor at the clicked column', () => {
-    const input = createInput({value: 'hello', rectX: 5, rectY: 5});
+    const input = createInput({value: 'hello', x: 5, y: 5});
     // innerX = (8 - 1) - 5 - 1 = 1 → char index 1
     input.dispatch('mousedown', mouse({x: 8, y: 6}));
     input.handleKey(key({key: 'X'}));
@@ -365,7 +365,7 @@ describe('mouse click', () => {
   });
 
   it('shift-click extends selection from cursor', () => {
-    const input = createInput({value: 'hello', rectX: 5, rectY: 5});
+    const input = createInput({value: 'hello', x: 5, y: 5});
     // Click at col 1 → cursor at index 1
     input.dispatch('mousedown', mouse({x: 8, y: 6}));
     // Shift-click at col 4 → extend selection from 1 to 4
@@ -404,14 +404,14 @@ describe('focus / blur', () => {
 
 describe('scroll behavior', () => {
   it('handles cursor beyond visible width', () => {
-    const input = createInput({value: 'abcdefghijklmnopqrstuv', rectWidth: 10});
+    const input = createInput({value: 'abcdefghijklmnopqrstuv', width: 10});
     input.handleKey(key({key: 'End'}));
     input.handleKey(key({key: 'X'}));
     expect(input.value).toBe('abcdefghijklmnopqrstuvX');
   });
 
   it('scrolls back when text shrinks', () => {
-    const input = createInput({value: 'abcdefghijklmnopqrstuv', rectWidth: 10});
+    const input = createInput({value: 'abcdefghijklmnopqrstuv', width: 10});
     for (let i = 0; i < 10; i++) {
       input.handleKey(key({key: 'Backspace'}));
     }
@@ -434,7 +434,7 @@ describe('edge cases', () => {
   });
 
   it('containsPoint checks bounds correctly', () => {
-    const input = createInput({rectX: 5, rectY: 5, rectWidth: 20});
+    const input = createInput({x: 5, y: 5, width: 20});
     expect(input.containsPoint(5, 5)).toBe(true);
     expect(input.containsPoint(24, 5)).toBe(true);
     expect(input.containsPoint(25, 5)).toBe(false);
@@ -445,11 +445,11 @@ describe('edge cases', () => {
 
   it('updateRect updates position and size', () => {
     const input = createInput();
-    input.updateRect({rectX: 10, rectY: 20, rectWidth: 30, rectHeight: 5});
+    input.updateRect({x: 10, y: 20, width: 30, height: 5});
     const r = input.rect;
-    expect(r.rectX).toBe(10);
-    expect(r.rectY).toBe(20);
-    expect(r.rectWidth).toBe(30);
-    expect(r.rectHeight).toBe(5);
+    expect(r.x).toBe(10);
+    expect(r.y).toBe(20);
+    expect(r.width).toBe(30);
+    expect(r.height).toBe(5);
   });
 });

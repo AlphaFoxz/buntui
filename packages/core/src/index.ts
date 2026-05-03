@@ -7,8 +7,10 @@ export {
   type BoxWidgetOptions,
 } from './widgets/box/BoxWidget';
 export {createTextWidget, TextWidget} from './widgets/text/TextWidget';
-export type {TextWidgetOptions} from './widgets/text/types';
+export type {TextWidgetOptions, TextOverflow} from './widgets/text/types';
 export {rgbToRgba, withAlpha} from './utils/styles';
+export {parseColor} from './utils/color';
+export type {TuiColor} from './utils/color';
 export {TuiWidgetEntity} from './widgets/TuiWidgetEntity';
 export type {Focusable} from './widgets/Focusable';
 export {TUI_CONTEXT_INSTANCE} from './extern/app/TuiContext';
@@ -21,7 +23,12 @@ export type {
   TuiWidgetText,
   TuiWidgetComponentType,
   TuiWidgetBorderStyle,
+  TuiWidgetSize,
+  TuiWidgetPadding,
+  LayoutDirection,
+  LayoutAlignment,
 } from './widgets/types';
+export {LayoutDirection as LayoutDirectionValue, LayoutAlignment as LayoutAlignmentValue} from './widgets/types';
 export {DrawListBuffer} from './draw_list/DrawListBuffer';
 export {createInputWidget, InputWidget} from './widgets/input/InputWidget';
 export type {InputWidgetOptions} from './widgets/input/types';

@@ -1,32 +1,34 @@
+import type {TuiColor} from '../../utils/color';
+
 export type ButtonWidgetOptions = {
-  rectX?: number;
-  rectY?: number;
-  rectWidth?: number;
-  rectHeight?: number;
-  text?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  value?: string;
 
   // Normal state
-  colorFgNormal?: number;
-  colorBgNormal?: number;
-  borderColorNormal?: number;
+  colorFgNormal?: TuiColor;
+  colorBgNormal?: TuiColor;
+  borderColorNormal?: TuiColor;
   borderStyleNormal?: number;
 
   // Focused state
-  colorFgFocused?: number;
-  colorBgFocused?: number;
-  borderColorFocused?: number;
+  colorFgFocused?: TuiColor;
+  colorBgFocused?: TuiColor;
+  borderColorFocused?: TuiColor;
   borderStyleFocused?: number;
 
   // Pressed state
-  colorFgPressed?: number;
-  colorBgPressed?: number;
-  borderColorPressed?: number;
+  colorFgPressed?: TuiColor;
+  colorBgPressed?: TuiColor;
+  borderColorPressed?: TuiColor;
   borderStylePressed?: number;
 
   // Disabled state
-  colorFgDisabled?: number;
-  colorBgDisabled?: number;
-  borderColorDisabled?: number;
+  colorFgDisabled?: TuiColor;
+  colorBgDisabled?: TuiColor;
+  borderColorDisabled?: TuiColor;
   borderStyleDisabled?: number;
 
   disabled?: boolean;

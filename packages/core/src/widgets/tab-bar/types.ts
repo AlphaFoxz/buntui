@@ -1,28 +1,30 @@
+import type {TuiColor} from '../../utils/color';
+
 export type TabBarWidgetOptions = {
-  rectX?: number;
-  rectY?: number;
-  rectWidth?: number;
-  rectHeight?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
   tabs?: string[];
   value?: number;
   disabled?: boolean;
 
   // Normal (inactive tabs)
-  colorFgNormal?: number;
-  colorBgNormal?: number;
+  colorFgNormal?: TuiColor;
+  colorBgNormal?: TuiColor;
 
   // Active tab (when widget not focused)
-  colorFgActive?: number;
-  colorBgActive?: number;
+  colorFgActive?: TuiColor;
+  colorBgActive?: TuiColor;
 
   // Active tab when widget focused
-  colorFgFocused?: number;
-  colorBgFocused?: number;
+  colorFgFocused?: TuiColor;
+  colorBgFocused?: TuiColor;
 
   // Disabled
-  colorFgDisabled?: number;
-  colorBgDisabled?: number;
+  colorFgDisabled?: TuiColor;
+  colorBgDisabled?: TuiColor;
 
   // Separator between tabs
-  colorFgSeparator?: number;
+  colorFgSeparator?: TuiColor;
 };

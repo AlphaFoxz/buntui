@@ -14,10 +14,10 @@ export function lerpRgba(from: number, to: number, t: number): number {
   const tR = (to >>> 16) & 0xFF;
   const tG = (to >>> 8) & 0xFF;
   const tB = to & 0xFF;
-  const r = Math.round(fR + (tR - fR) * clampT);
-  const g = Math.round(fG + (tG - fG) * clampT);
-  const b = Math.round(fB + (tB - fB) * clampT);
-  const a = Math.round(fA + (tA - fA) * clampT);
+  const r = Math.round(fR + ((tR - fR) * clampT));
+  const g = Math.round(fG + ((tG - fG) * clampT));
+  const b = Math.round(fB + ((tB - fB) * clampT));
+  const a = Math.round(fA + ((tA - fA) * clampT));
   return ((a << 24) | (r << 16) | (g << 8) | b) >>> 0;
 }
 
@@ -30,7 +30,7 @@ export function buildTrailGradient(leadRgba: number, trailRgba: number, steps: n
   for (let i = 0; i < steps; i++) {
     const t = i / Math.max(1, steps - 1);
     const color = lerpRgba(leadRgba, trailRgba, t);
-    const alpha = Math.round(255 * (1 - t * 0.7));
+    const alpha = Math.round(255 * (1 - (t * 0.7)));
     table.push(withAlpha(color, alpha));
   }
 

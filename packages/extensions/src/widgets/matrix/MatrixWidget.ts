@@ -6,10 +6,10 @@ import {type MatrixColumnState, createColumn, tickColumn} from './matrix-column'
 import type {MatrixWidgetOptions} from './types';
 
 export class MatrixWidget extends TuiWidgetEntity {
-  readonly #rectX: number;
-  readonly #rectY: number;
-  #rectWidth: number;
-  #rectHeight: number;
+  readonly #x: number;
+  readonly #y: number;
+  #width: number;
+  #height: number;
 
   readonly #colorScheme: {
     leadRgba: number;
@@ -30,10 +30,10 @@ export class MatrixWidget extends TuiWidgetEntity {
   constructor(options: MatrixWidgetOptions = {}) {
     super();
     const resolved = {...DEFAULT_MATRIX_OPTIONS, ...options};
-    this.#rectX = resolved.rectX ?? 0;
-    this.#rectY = resolved.rectY ?? 0;
-    this.#rectWidth = resolved.rectWidth ?? 0;
-    this.#rectHeight = resolved.rectHeight ?? 0;
+    this.#x = resolved.x ?? 0;
+    this.#y = resolved.y ?? 0;
+    this.#width = resolved.width ?? 0;
+    this.#height = resolved.height ?? 0;
 
     const schemeOverride = resolved.colorScheme ?? {};
     this.#colorScheme = {
@@ -51,33 +51,33 @@ export class MatrixWidget extends TuiWidgetEntity {
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {
-    if (rect.rectWidth !== undefined) {
-      this.#rectWidth = rect.rectWidth;
+    if (rect.width !== undefined) {
+      this.#width = rect.width;
     }
 
-    if (rect.rectHeight !== undefined) {
-      this.#rectHeight = rect.rectHeight;
+    if (rect.height !== undefined) {
+      this.#height = rect.height;
     }
   }
 
   override containsPoint(x: number, y: number): boolean {
-    return x >= this.#rectX
-      && x < this.#rectX + this.#rectWidth
-      && y >= this.#rectY
-      && y < this.#rectY + this.#rectHeight;
+    return x >= this.#x
+      && x < this.#x + this.#width
+      && y >= this.#y
+      && y < this.#y + this.#height;
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    const w = this.#rectWidth;
-    const h = this.#rectHeight;
+    const w = this.#width;
+    const h = this.#height;
     if (w <= 0 || h <= 0) {
       return;
     }
 
     this.#ensureColumns(w, h);
 
-    const absX = this.#rectX;
-    const absY = this.#rectY;
+    const absX = this.#x;
+    const absY = this.#y;
     const charset = this.#charset;
     const maxLength = this.#maxTrailLength;
 
@@ -123,10 +123,10 @@ export class MatrixWidget extends TuiWidgetEntity {
 
   override get rect(): TuiWidgetRect {
     return {
-      rectX: this.#rectX,
-      rectY: this.#rectY,
-      rectWidth: this.#rectWidth,
-      rectHeight: this.#rectHeight,
+      x: this.#x,
+      y: this.#y,
+      width: this.#width,
+      height: this.#height,
     };
   }
 

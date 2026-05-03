@@ -53,11 +53,11 @@ Each widget implements `emitDrawCommands(buf: DrawListBuffer)`:
 
 ```typescript
 override emitDrawCommands(buf: DrawListBuffer): void {
-  const {rectX, rectY, rectWidth, rectHeight} = this.rect;
+  const {x, y, width, height} = this.rect;
   const {colorFg, colorBg} = this.color;
-  buf.pushClip(rectX, rectY, rectWidth, rectHeight);
-  buf.drawRect(rectX, rectY, rectWidth, rectHeight, colorBg);
-  buf.drawText(rectX, rectY, this.text, colorFg, colorBg);
+  buf.pushClip(x, y, width, height);
+  buf.drawRect(x, y, width, height, colorBg);
+  buf.drawText(x, y, this.text, colorFg, colorBg);
   buf.popClip();
 }
 ```

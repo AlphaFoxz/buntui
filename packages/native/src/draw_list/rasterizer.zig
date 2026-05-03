@@ -51,12 +51,12 @@ pub fn processCommand(state: *RasterizerState, cells: []TuiCell, command_type: u
         .PushClip => rasterizePushClip(state, payload),
         .PopClip => state.clip_stack.pop(),
         .SetEntityId => rasterizeSetEntityId(state, payload),
-        .DrawRect => rasterizeDrawRect(state, cells, payload, flags),
+        .DrawRect => rasterizeDrawRect(state, cells, payload, @bitCast(flags)),
         .DrawText => rasterizeDrawText(state, cells, payload),
         .DrawBorder => rasterizeDrawBorder(state, cells, payload),
         .DrawShadow => rasterizeDrawShadow(state, cells, payload),
         .DrawFill => rasterizeDrawFill(state, cells, payload),
-        .DrawChar => rasterizeDrawChar(state, cells, payload, flags),
+        .DrawChar => rasterizeDrawChar(state, cells, payload, @bitCast(flags)),
         .DrawLine => rasterizeDrawLine(state, cells, payload),
         .SetTitle => {}, // Handled after all commands in mod.zig
         .ShowCursor => {}, // Handled after all commands
@@ -146,7 +146,7 @@ fn writeWidePair(
 
 // ============ Drawing Primitives ============
 
-fn rasterizeDrawRect(state: *RasterizerState, cells: []TuiCell, payload: []const u8, flags: u16) void {
+fn rasterizeDrawRect(state: *RasterizerState, cells: []TuiCell, payload: []const u8, flags: cmd.DrawRectFlags) void {
     if (payload.len < 16) return;
     const x = readU16(payload, 0);
     const y = readU16(payload, 2);
@@ -155,7 +155,7 @@ fn rasterizeDrawRect(state: *RasterizerState, cells: []TuiCell, payload: []const
     const bg_rgba = Rgba.fromU32(readU32(payload, 8));
     const fill_char = readU16(payload, 12);
     const font_style = readU16(payload, 14);
-    const is_wide = (flags & 0x01) != 0;
+    const is_wide = flags.wide_char;
 
     const clip = state.clip_stack.current();
     const visible = clipIntersect(clip, x, y, w, h);
@@ -366,7 +366,7 @@ fn rasterizeDrawFill(state: *RasterizerState, cells: []TuiCell, payload: []const
     }
 }
 
-fn rasterizeDrawChar(state: *RasterizerState, cells: []TuiCell, payload: []const u8, flags: u16) void {
+fn rasterizeDrawChar(state: *RasterizerState, cells: []TuiCell, payload: []const u8, flags: cmd.DrawCharFlags) void {
     if (payload.len < 16) return;
     const x = readU16(payload, 0);
     const y = readU16(payload, 2);
@@ -374,7 +374,7 @@ fn rasterizeDrawChar(state: *RasterizerState, cells: []TuiCell, payload: []const
     const bg_rgba = Rgba.fromU32(readU32(payload, 8));
     const char = readU16(payload, 12);
     const font_style = readU16(payload, 14);
-    const is_wide = (flags & 0x01) != 0;
+    const is_wide = flags.wide_char;
 
     const clip = state.clip_stack.current();
     if (!clip.contains(x, y)) return;

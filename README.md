@@ -16,10 +16,10 @@
 ┌─────────────── Zig (Native) ─────────────────────┐
 │                                                  │
 │  Parse Commands ──→ Rasterize ──→ Cell Grid      │
-│  (draw_list/)      (per-cmd)    (TuiFrame)  │    │
-│                                             │    │
-│                                      Diff + ANSI │
-│                                          ───────────► Terminal
+│  (draw_list/)      (per-cmd)    (TuiFrame)       │
+│                                      │           │
+│                                      ▼           │
+│                                 Diff + ANSI ───────────► Terminal
 └──────────────────────────────────────────────────┘
 
 每帧流程: reset buffer → widget tree 生成 commands → FFI 传给 Zig → 光栅化到 cell grid → diff 脏区 → 输出 ANSI

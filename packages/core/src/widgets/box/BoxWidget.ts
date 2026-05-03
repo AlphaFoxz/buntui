@@ -1,19 +1,33 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {BorderSides} from '../../draw_list/types';
-import type {
-  TuiWidgetBorder,
-  TuiWidgetColor,
-  TuiWidgetRect,
-  TuiWidgetShadow,
-  TuiWidgetStyle,
+import {parseColor, type TuiColor} from '../../utils/color';
+import {
+  LayoutAlignment as LayoutAlignmentEnum,
+  type LayoutAlignment,
+  type LayoutDirection,
+  type TuiWidgetBorder,
+  type TuiWidgetColor,
+  type TuiWidgetPadding,
+  type TuiWidgetRect,
+  type TuiWidgetShadow,
+  type TuiWidgetSize,
+  type TuiWidgetStyle,
 } from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 
-export type BoxWidgetOptions = TuiWidgetRect
-  & TuiWidgetColor
+export type BoxWidgetOptions = Omit<TuiWidgetRect & TuiWidgetColor & Partial<TuiWidgetBorder> & Partial<TuiWidgetShadow>, 'colorFg' | 'colorBg' | 'borderColor' | 'shadowColor'>
   & Partial<TuiWidgetStyle>
-  & Partial<TuiWidgetBorder>
-  & Partial<TuiWidgetShadow>;
+  & Partial<TuiWidgetPadding>
+  & {
+    colorFg?: TuiColor;
+    colorBg?: TuiColor;
+    borderColor?: TuiColor;
+    shadowColor?: TuiColor;
+    /** Layout direction for children. Defaults to Vertical (1). */
+    direction?: LayoutDirection;
+    gap?: U16;
+    align?: LayoutAlignment;
+  };
 
 export class BoxWidget extends TuiWidgetEntity {
   readonly #rect: TuiWidgetRect;
@@ -21,25 +35,31 @@ export class BoxWidget extends TuiWidgetEntity {
   readonly #style: TuiWidgetStyle;
   readonly #border: TuiWidgetBorder;
   readonly #shadow: TuiWidgetShadow;
+  readonly #padding: TuiWidgetPadding;
+  #direction: LayoutDirection;
+  #gap: U16;
+  #align: LayoutAlignment;
+  #layoutDirty = false;
+  readonly #ownChildren: TuiWidgetEntity[] = [];
 
   constructor(options: BoxWidgetOptions) {
     super();
     this.#rect = {
-      rectX: options.rectX,
-      rectY: options.rectY,
-      rectWidth: options.rectWidth,
-      rectHeight: options.rectHeight,
+      x: options.x,
+      y: options.y,
+      width: options.width,
+      height: options.height,
     };
     this.#color = {
-      colorFg: options.colorFg,
-      colorBg: options.colorBg,
+      colorFg: parseColor(options.colorFg ?? 0xFF_FF_FF_FF),
+      colorBg: parseColor(options.colorBg ?? 0x00_00_00_FF),
     };
     this.#style = {
       styleZIndex: options.styleZIndex ?? 0,
       styleModifier: options.styleModifier ?? 0,
     };
     this.#border = {
-      borderColor: options.borderColor ?? 0xFF_FF_FF_FF,
+      borderColor: parseColor(options.borderColor ?? 0xFF_FF_FF_FF),
       borderStyle: options.borderStyle ?? 0,
       borderTop: options.borderTop ?? false,
       borderRight: options.borderRight ?? false,
@@ -49,76 +69,226 @@ export class BoxWidget extends TuiWidgetEntity {
     this.#shadow = {
       shadowOffsetX: options.shadowOffsetX ?? 0,
       shadowOffsetY: options.shadowOffsetY ?? 0,
-      shadowColor: options.shadowColor ?? 0,
+      shadowColor: parseColor(options.shadowColor ?? 0),
       shadowCovered: options.shadowCovered ?? false,
     };
+    this.#padding = {
+      paddingTop: options.paddingTop ?? 0,
+      paddingRight: options.paddingRight ?? 0,
+      paddingBottom: options.paddingBottom ?? 0,
+      paddingLeft: options.paddingLeft ?? 0,
+    };
+    this.#direction = options.direction ?? 1;
+    this.#gap = options.gap ?? 0;
+    this.#align = options.align ?? 3;
+    this.#layoutDirty = true;
   }
+
+  // -- Accessors --
 
   override get rect(): TuiWidgetRect {
     return this.#rect;
-  }
-
-  override updateRect(rect: Partial<TuiWidgetRect>) {
-    const oldX = this.#rect.rectX;
-    const oldY = this.#rect.rectY;
-    Object.assign(this.#rect, rect);
-    this.propagatePositionDelta(this.#rect.rectX - oldX, this.#rect.rectY - oldY);
   }
 
   get color(): TuiWidgetColor {
     return this.#color;
   }
 
-  updateColor(color: Partial<TuiWidgetColor>) {
-    Object.assign(this.#color, color);
-  }
-
   get style(): TuiWidgetStyle {
     return this.#style;
-  }
-
-  updateStyle(style: Partial<TuiWidgetStyle>) {
-    Object.assign(this.#style, style);
   }
 
   get border(): TuiWidgetBorder {
     return this.#border;
   }
 
-  updateBorder(border: Partial<TuiWidgetBorder>) {
-    Object.assign(this.#border, border);
-  }
-
   get shadow(): TuiWidgetShadow {
     return this.#shadow;
   }
 
-  updateShadow(shadow: Partial<TuiWidgetShadow>) {
-    Object.assign(this.#shadow, shadow);
+  get padding(): TuiWidgetPadding {
+    return this.#padding;
   }
 
   override get zIndex(): number {
     return this.#style.styleZIndex;
   }
 
-  override containsPoint(x: number, y: number): boolean {
-    const {rectX, rectY, rectWidth, rectHeight} = this.#rect;
-    return x >= rectX && x < rectX + rectWidth && y >= rectY && y < rectY + rectHeight;
+  // -- Update methods --
+
+  override updateRect(rect: Partial<TuiWidgetRect>): void {
+    const oldX = this.#rect.x;
+    const oldY = this.#rect.y;
+    Object.assign(this.#rect, rect);
+    this.#layoutDirty = true;
+
+    this.propagatePositionDelta(this.#rect.x - oldX, this.#rect.y - oldY);
   }
 
+  updateColor(color: Partial<TuiWidgetColor>): void {
+    if (color.colorFg !== undefined) {
+      this.#color.colorFg = parseColor(color.colorFg);
+    }
+
+    if (color.colorBg !== undefined) {
+      this.#color.colorBg = parseColor(color.colorBg);
+    }
+  }
+
+  updateStyle(style: Partial<TuiWidgetStyle>): void {
+    Object.assign(this.#style, style);
+  }
+
+  updateBorder(border: Partial<TuiWidgetBorder>): void {
+    if (border.borderColor !== undefined) {
+      this.#border.borderColor = parseColor(border.borderColor);
+    }
+
+    if (border.borderStyle !== undefined) {
+      this.#border.borderStyle = border.borderStyle;
+    }
+
+    if (border.borderTop !== undefined) {
+      this.#border.borderTop = border.borderTop;
+    }
+
+    if (border.borderRight !== undefined) {
+      this.#border.borderRight = border.borderRight;
+    }
+
+    if (border.borderBottom !== undefined) {
+      this.#border.borderBottom = border.borderBottom;
+    }
+
+    if (border.borderLeft !== undefined) {
+      this.#border.borderLeft = border.borderLeft;
+    }
+  }
+
+  updateShadow(shadow: Partial<TuiWidgetShadow>): void {
+    if (shadow.shadowColor !== undefined) {
+      this.#shadow.shadowColor = parseColor(shadow.shadowColor);
+    }
+
+    if (shadow.shadowOffsetX !== undefined) {
+      this.#shadow.shadowOffsetX = shadow.shadowOffsetX;
+    }
+
+    if (shadow.shadowOffsetY !== undefined) {
+      this.#shadow.shadowOffsetY = shadow.shadowOffsetY;
+    }
+
+    if (shadow.shadowCovered !== undefined) {
+      this.#shadow.shadowCovered = shadow.shadowCovered;
+    }
+  }
+
+  updatePadding(padding: Partial<TuiWidgetPadding>): void {
+    Object.assign(this.#padding, padding);
+    this.#layoutDirty = true;
+  }
+
+  updateDirection(direction: LayoutDirection): void {
+    this.#direction = direction;
+    this.#layoutDirty = true;
+  }
+
+  updateGap(gap: U16): void {
+    this.#gap = gap;
+    this.#layoutDirty = true;
+  }
+
+  updateAlign(align: LayoutAlignment): void {
+    this.#align = align;
+    this.#layoutDirty = true;
+  }
+
+  // -- Child management --
+
+  override addChild(child: TuiWidgetEntity): void {
+    super.addChild(child);
+    this.#ownChildren.push(child);
+    this.#layoutDirty = true;
+  }
+
+  override removeChild(child: TuiWidgetEntity): void {
+    super.removeChild(child);
+    const index = this.#ownChildren.indexOf(child);
+    if (index !== -1) {
+      this.#ownChildren.splice(index, 1);
+    }
+
+    this.#layoutDirty = true;
+  }
+
+  // -- Intrinsic size --
+
+  override intrinsicSize(): TuiWidgetSize | undefined {
+    if (this.#ownChildren.length === 0) {
+      return undefined;
+    }
+
+    let totalMain = 0;
+    let maxCross = 0;
+    for (const child of this.#ownChildren) {
+      const intrinsic = child.intrinsicSize();
+      if (!intrinsic) {
+        return undefined;
+      }
+
+      const childMain = this.#direction === 1 ? intrinsic.height : intrinsic.width;
+      const childCross = this.#direction === 1 ? intrinsic.width : intrinsic.height;
+      totalMain += childMain;
+      if (childCross > maxCross) {
+        maxCross = childCross;
+      }
+    }
+
+    const totalGaps = Math.max(0, this.#ownChildren.length - 1) * this.#gap;
+    totalMain += totalGaps;
+
+    const hBorder = (this.#border.borderLeft ? 1 : 0) + (this.#border.borderRight ? 1 : 0);
+    const vBorder = (this.#border.borderTop ? 1 : 0) + (this.#border.borderBottom ? 1 : 0);
+
+    if (this.#direction === 1) {
+      return {
+        width: maxCross + this.#padding.paddingLeft + this.#padding.paddingRight + hBorder,
+        height: totalMain + this.#padding.paddingTop + this.#padding.paddingBottom + vBorder,
+      };
+    }
+
+    return {
+      width: totalMain + this.#padding.paddingLeft + this.#padding.paddingRight + hBorder,
+      height: maxCross + this.#padding.paddingTop + this.#padding.paddingBottom + vBorder,
+    };
+  }
+
+  // -- Hit testing --
+
+  override containsPoint(x: number, y: number): boolean {
+    const {x: rx, y: ry, width: rw, height: rh} = this.#rect;
+    return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
+  }
+
+  // -- Rendering --
+
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    const {rectX, rectY, rectWidth, rectHeight} = this.#rect;
+    if (this.#layoutDirty) {
+      this.#computeLayout();
+    }
+
+    const {x, y, width, height} = this.#rect;
     const {colorBg} = this.#color;
     const {borderColor, borderStyle, borderTop, borderRight, borderBottom, borderLeft} = this.#border;
 
-    buffer.pushClip(rectX, rectY, rectWidth, rectHeight);
+    buffer.pushClip(x, y, width, height);
 
     // Background fill
     buffer.drawRect({
-      x: rectX,
-      y: rectY,
-      width: rectWidth,
-      height: rectHeight,
+      x: x,
+      y: y,
+      width: width,
+      height: height,
       bgRgba: colorBg,
     });
 
@@ -129,10 +299,10 @@ export class BoxWidget extends TuiWidgetEntity {
         | (borderBottom ? BorderSides.Bottom : 0)
         | (borderLeft ? BorderSides.Left : 0);
       buffer.drawBorder({
-        x: rectX,
-        y: rectY,
-        width: rectWidth,
-        height: rectHeight,
+        x: x,
+        y: y,
+        width: width,
+        height: height,
         colorRgba: borderColor,
         style: borderStyle,
         sides,
@@ -142,13 +312,124 @@ export class BoxWidget extends TuiWidgetEntity {
     buffer.popClip();
     this.renderChildren(buffer);
   }
+
+  // -- Layout engine --
+
+  #resolveChildExtent(child: TuiWidgetEntity, isVertical: boolean): number {
+    const childRect = child.rect;
+    if (isVertical) {
+      return childRect.height > 0
+        ? childRect.height
+        : child.intrinsicSize()?.height ?? 0;
+    }
+
+    return childRect.width > 0
+      ? childRect.width
+      : child.intrinsicSize()?.width ?? 0;
+  }
+
+  #resolveCrossAxis(
+    child: TuiWidgetEntity,
+    crossSize: number,
+    isVertical: boolean,
+  ): {crossPos: number; crossExtent: number} {
+    const childRect = child.rect;
+    let crossExtent: number;
+    if (isVertical) {
+      crossExtent = childRect.width > 0
+        ? childRect.width
+        : child.intrinsicSize()?.width ?? 0;
+    } else {
+      crossExtent = childRect.height > 0
+        ? childRect.height
+        : child.intrinsicSize()?.height ?? 0;
+    }
+
+    let crossPos: number;
+    switch (this.#align) {
+      case LayoutAlignmentEnum.Start: {
+        crossPos = 0;
+        break;
+      }
+
+      case LayoutAlignmentEnum.Center: {
+        crossPos = Math.floor((crossSize - crossExtent) / 2);
+        break;
+      }
+
+      case LayoutAlignmentEnum.End: {
+        crossPos = crossSize - crossExtent;
+        break;
+      }
+
+      case LayoutAlignmentEnum.Stretch: {
+        crossPos = 0;
+        crossExtent = crossSize;
+        break;
+      }
+    }
+
+    return {crossPos, crossExtent};
+  }
+
+  #computeLayout(): void {
+    const direction = this.#direction;
+
+    const children = this.#ownChildren;
+    if (children.length === 0) {
+      this.#layoutDirty = false;
+      return;
+    }
+
+    const {x, y, width, height} = this.#rect;
+    const {paddingTop, paddingLeft} = this.#padding;
+    const borderH = (this.#border.borderLeft ? 1 : 0) + (this.#border.borderRight ? 1 : 0);
+    const borderV = (this.#border.borderTop ? 1 : 0) + (this.#border.borderBottom ? 1 : 0);
+    const hInset = paddingLeft + this.#padding.paddingRight + borderH;
+    const vInset = paddingTop + this.#padding.paddingBottom + borderV;
+
+    const contentX = x + paddingLeft + (this.#border.borderLeft ? 1 : 0);
+    const contentY = y + paddingTop + (this.#border.borderTop ? 1 : 0);
+    const contentWidth = width - hInset;
+    const contentHeight = height - vInset;
+
+    const isVertical = direction === 1;
+    const crossSize = isVertical ? contentWidth : contentHeight;
+    const isStretch = this.#align === LayoutAlignmentEnum.Stretch;
+
+    // Position each child
+    let mainPos = 0;
+    for (const child of children) {
+      const mainExtent = this.#resolveChildExtent(child, isVertical);
+      const {crossPos, crossExtent} = this.#resolveCrossAxis(child, crossSize, isVertical);
+
+      const childRect = isVertical
+        ? {
+          x: contentX + crossPos,
+          y: contentY + mainPos,
+          width: isStretch ? crossSize : crossExtent,
+          height: mainExtent,
+        }
+        : {
+          x: contentX + mainPos,
+          y: contentY + crossPos,
+          width: mainExtent,
+          height: isStretch ? crossSize : crossExtent,
+        };
+
+      child.updateRect(childRect);
+      mainPos += mainExtent + this.#gap;
+    }
+
+    this.#layoutDirty = false;
+  }
 }
 
 export const DEFAULT_BOX_OPTIONS: BoxWidgetOptions = {
-  rectX: 0,
-  rectY: 0,
-  rectWidth: 0,
-  rectHeight: 0,
+  x: 0,
+  y: 0,
+  width: 0,
+  height: 0,
   colorFg: 0xFF_FF_FF_FF,
   colorBg: 0x00_00_00_FF,
 };

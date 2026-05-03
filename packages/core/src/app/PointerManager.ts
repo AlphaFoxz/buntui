@@ -55,8 +55,8 @@ export class PointerManager {
           const newX = Math.max(0, mx - this.#dragOffsetX);
           const newY = Math.max(0, my - this.#dragOffsetY);
           this.#pressTarget.updateRect({
-            rectX: newX,
-            rectY: newY,
+            x: newX,
+            y: newY,
           });
           this.#pressTarget.dispatch('drag', data);
         }
@@ -86,8 +86,8 @@ export class PointerManager {
         this.#pressTarget = scene.hitTest(data);
         if (this.#pressTarget) {
           this.#pressTarget.dispatch('mousedown', data);
-          this.#dragOffsetX = (data.x - 1) - this.#pressTarget.rect.rectX;
-          this.#dragOffsetY = (data.y - 1) - this.#pressTarget.rect.rectY;
+          this.#dragOffsetX = (data.x - 1) - this.#pressTarget.rect.x;
+          this.#dragOffsetY = (data.y - 1) - this.#pressTarget.rect.y;
 
           if (isFocusable(this.#pressTarget)) {
             this.#focusManager.focusWidget(this.#pressTarget);

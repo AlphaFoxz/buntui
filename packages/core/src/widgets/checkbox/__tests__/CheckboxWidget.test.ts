@@ -14,15 +14,15 @@ function key(options: Partial<KeyboardEvent> & {key: string}): KeyboardEvent {
   };
 }
 
-function createCheckbox(options?: {label?: string; checked?: boolean; disabled?: boolean; rectX?: number; rectY?: number; rectWidth?: number; rectHeight?: number}) {
+function createCheckbox(options?: {label?: string; checked?: boolean; disabled?: boolean; x?: number; y?: number; width?: number; height?: number}) {
   return new CheckboxWidget({
     label: options?.label ?? 'Option',
     checked: options?.checked ?? false,
     disabled: options?.disabled ?? false,
-    rectX: options?.rectX ?? 0,
-    rectY: options?.rectY ?? 0,
-    rectWidth: options?.rectWidth ?? 15,
-    rectHeight: options?.rectHeight ?? 1,
+    x: options?.x ?? 0,
+    y: options?.y ?? 0,
+    width: options?.width ?? 15,
+    height: options?.height ?? 1,
   });
 }
 
@@ -34,8 +34,8 @@ describe('construction', () => {
     expect(cb.disabled).toBe(false);
     expect(cb.acceptsFocus).toBe(true);
     const r = cb.rect;
-    expect(r.rectWidth).toBe(10);
-    expect(r.rectHeight).toBe(1);
+    expect(r.width).toBe(10);
+    expect(r.height).toBe(1);
   });
 
   it('initializes with custom options', () => {
@@ -193,7 +193,7 @@ describe('focus / blur', () => {
 
 describe('rect and hit testing', () => {
   it('containsPoint checks bounds correctly', () => {
-    const cb = createCheckbox({rectX: 5, rectY: 3, rectWidth: 15, rectHeight: 1});
+    const cb = createCheckbox({x: 5, y: 3, width: 15, height: 1});
     expect(cb.containsPoint(5, 3)).toBe(true);
     expect(cb.containsPoint(19, 3)).toBe(true);
     expect(cb.containsPoint(20, 3)).toBe(false);
@@ -203,18 +203,18 @@ describe('rect and hit testing', () => {
 
   it('updateRect updates position and size', () => {
     const cb = createCheckbox();
-    cb.updateRect({rectX: 10, rectY: 20, rectWidth: 30, rectHeight: 3});
+    cb.updateRect({x: 10, y: 20, width: 30, height: 3});
     const r = cb.rect;
-    expect(r.rectX).toBe(10);
-    expect(r.rectY).toBe(20);
-    expect(r.rectWidth).toBe(30);
-    expect(r.rectHeight).toBe(3);
+    expect(r.x).toBe(10);
+    expect(r.y).toBe(20);
+    expect(r.width).toBe(30);
+    expect(r.height).toBe(3);
   });
 
   it('updateRect partially updates fields', () => {
-    const cb = createCheckbox({rectX: 5});
-    cb.updateRect({rectX: 15});
-    expect(cb.rect.rectX).toBe(15);
+    const cb = createCheckbox({x: 5});
+    cb.updateRect({x: 15});
+    expect(cb.rect.x).toBe(15);
   });
 });
 

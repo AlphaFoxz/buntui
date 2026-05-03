@@ -20,6 +20,7 @@ const result = await Bun.build({
               reactivityModuleId: '@vue/reactivity',
               widgetModuleMap: {
                 createFrameRateWatcher: '@buntui/extensions',
+                createMatrixWidget: '@buntui/extensions',
               },
             },
           });

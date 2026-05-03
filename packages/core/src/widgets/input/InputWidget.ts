@@ -4,42 +4,9 @@ import {BorderSides, CursorMode} from '../../draw_list/types';
 import type {TuiWidgetRect} from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import type {Focusable} from '../Focusable';
+import {parseColor} from '../../utils/color';
 import type {InputWidgetOptions} from './types';
-
-function charDisplayWidth(char: string): number {
-  const code = char.codePointAt(0)!;
-  if (code < 0x20 || code === 0x7F) {
-    return 0;
-  }
-
-  if ((code >= 0x4E_00 && code <= 0x9F_FF)
-    || (code >= 0x34_00 && code <= 0x4D_BF)
-    || (code >= 0x30_00 && code <= 0x30_3F)
-    || (code >= 0x30_40 && code <= 0x30_9F)
-    || (code >= 0x30_A0 && code <= 0x30_FF)
-    || (code >= 0xAC_00 && code <= 0xD7_AF)
-    || (code >= 0xFF_01 && code <= 0xFF_60)
-    || (code >= 0xF9_00 && code <= 0xFA_FF)
-    || (code >= 0x2E_80 && code <= 0x2F_DF)
-    || (code >= 0x31_00 && code <= 0x31_8F)
-    || (code >= 0x32_00 && code <= 0x33_FF)
-    || (code >= 0xFE_30 && code <= 0xFE_4F)
-    || (code >= 0x26_00 && code <= 0x27_BF)
-    || (code >= 0x1_F3_00 && code <= 0x1_F9_FF)) {
-    return 2;
-  }
-
-  return 1;
-}
-
-function stringDisplayWidth(string_: string): number {
-  let width = 0;
-  for (const char of string_) {
-    width += charDisplayWidth(char);
-  }
-
-  return width;
-}
+import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
 
 function charIndexAtColumn(string_: string, column: number): number {
   let width = 0;
@@ -57,27 +24,11 @@ function charIndexAtColumn(string_: string, column: number): number {
   return index;
 }
 
-function truncateToWidth(string_: string, maxWidth: number): string {
-  let width = 0;
-  let index = 0;
-  for (const char of string_) {
-    const cw = charDisplayWidth(char);
-    if (width + cw > maxWidth) {
-      break;
-    }
-
-    width += cw;
-    index++;
-  }
-
-  return string_.slice(0, index);
-}
-
 const DEFAULT_INPUT_OPTIONS: InputWidgetOptions = {
-  rectX: 0,
-  rectY: 0,
-  rectWidth: 20,
-  rectHeight: 3,
+  x: 0,
+  y: 0,
+  width: 20,
+  height: 3,
   placeholder: '',
   value: '',
   colorFg: 0xFF_FF_FF_FF,
@@ -88,13 +39,14 @@ const DEFAULT_INPUT_OPTIONS: InputWidgetOptions = {
   maxLength: 0,
   selectionBgColor: 0x26_4F_78_FF,
   selectionFgColor: 0xFF_FF_FF_FF,
+  readonly: false,
 };
 
 export class InputWidget extends TuiWidgetEntity implements Focusable {
-  #rectX: number;
-  #rectY: number;
-  #rectWidth: number;
-  #rectHeight: number;
+  #x: number;
+  #y: number;
+  #width: number;
+  #height: number;
 
   readonly #colorFg: number;
   readonly #colorBg: number;
@@ -105,6 +57,8 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
   readonly #placeholder: string;
   readonly #selectionBgColor: number;
   readonly #selectionFgColor: number;
+  readonly #label: string;
+  #isReadonly: boolean;
 
   #value: string;
   #cursorPos = 0;
@@ -115,26 +69,32 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
   constructor(options: InputWidgetOptions = {}) {
     super();
     const resolved = {...DEFAULT_INPUT_OPTIONS, ...options};
-    this.#rectX = resolved.rectX ?? 0;
-    this.#rectY = resolved.rectY ?? 0;
-    this.#rectWidth = resolved.rectWidth ?? 20;
-    this.#rectHeight = resolved.rectHeight ?? 3;
-    this.#colorFg = resolved.colorFg ?? 0xFF_FF_FF_FF;
-    this.#colorBg = resolved.colorBg ?? 0x1E_1E_2E_FF;
-    this.#borderColorUnfocused = resolved.borderColorUnfocused ?? 0x45_47_5A_FF;
-    this.#borderColorFocused = resolved.borderColorFocused ?? 0x89_B4_FA_FF;
+    this.#x = resolved.x ?? 0;
+    this.#y = resolved.y ?? 0;
+    this.#width = resolved.width ?? 20;
+    this.#height = resolved.height ?? 3;
+    this.#colorFg = parseColor(resolved.colorFg ?? 0xFF_FF_FF_FF);
+    this.#colorBg = parseColor(resolved.colorBg ?? 0x1E_1E_2E_FF);
+    this.#borderColorUnfocused = parseColor(resolved.borderColorUnfocused ?? 0x45_47_5A_FF);
+    this.#borderColorFocused = parseColor(resolved.borderColorFocused ?? 0x89_B4_FA_FF);
     this.#borderStyle = resolved.borderStyle ?? 1;
     this.#maxLength = resolved.maxLength ?? 0;
     this.#placeholder = resolved.placeholder ?? '';
-    this.#selectionBgColor = resolved.selectionBgColor ?? 0x26_4F_78_FF;
-    this.#selectionFgColor = resolved.selectionFgColor ?? 0xFF_FF_FF_FF;
+    this.#selectionBgColor = parseColor(resolved.selectionBgColor ?? 0x26_4F_78_FF);
+    this.#selectionFgColor = parseColor(resolved.selectionFgColor ?? 0xFF_FF_FF_FF);
+    this.#label = resolved.label ?? '';
+    this.#isReadonly = resolved.readonly ?? false;
     this.#value = resolved.value ?? '';
     this.#cursorPos = this.#value.length;
 
     this.on('mousedown', (data: unknown) => {
+      if (this.#isReadonly) {
+        return;
+      }
+
       // eslint-disable-next-line
       const mouseData = data as MouseEvent;
-      const innerX = (mouseData.x - 1) - this.#rectX - 1;
+      const innerX = (mouseData.x - 1) - this.#x - 1;
       const textFromScroll = this.#value.slice(this.#scrollOffset);
       const targetPos = Math.max(0, Math.min(this.#value.length, this.#scrollOffset + charIndexAtColumn(textFromScroll, innerX)));
 
@@ -155,7 +115,15 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
     return this.#value;
   }
 
-  setValue(newValue: string): void {
+  get readonly(): boolean {
+    return this.#isReadonly;
+  }
+
+  setReadonly(value: boolean): void {
+    this.#isReadonly = value;
+  }
+
+  updateValue(newValue: string): void {
     this.#value = newValue;
     this.#cursorPos = Math.min(this.#cursorPos, this.#value.length);
     this.#selectionAnchor = undefined;
@@ -163,7 +131,7 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
   }
 
   get acceptsFocus(): boolean {
-    return true;
+    return !this.#isReadonly;
   }
 
   focus(): void {
@@ -178,6 +146,10 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
   }
 
   handleKey(event: KeyboardEvent): void {
+    if (this.#isReadonly) {
+      return;
+    }
+
     if (event.key === undefined) {
       return;
     }
@@ -325,50 +297,50 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {
-    if (rect.rectX !== undefined) {
-      this.#rectX = rect.rectX;
+    if (rect.x !== undefined) {
+      this.#x = rect.x;
     }
 
-    if (rect.rectY !== undefined) {
-      this.#rectY = rect.rectY;
+    if (rect.y !== undefined) {
+      this.#y = rect.y;
     }
 
-    if (rect.rectWidth !== undefined) {
-      this.#rectWidth = rect.rectWidth;
+    if (rect.width !== undefined) {
+      this.#width = rect.width;
     }
 
-    if (rect.rectHeight !== undefined) {
-      this.#rectHeight = rect.rectHeight;
+    if (rect.height !== undefined) {
+      this.#height = rect.height;
     }
   }
 
   override containsPoint(x: number, y: number): boolean {
-    return x >= this.#rectX
-      && x < this.#rectX + this.#rectWidth
-      && y >= this.#rectY
-      && y < this.#rectY + this.#rectHeight;
+    return x >= this.#x
+      && x < this.#x + this.#width
+      && y >= this.#y
+      && y < this.#y + this.#height;
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    if (this.#rectWidth <= 0 || this.#rectHeight <= 0) {
+    if (this.#width <= 0 || this.#height <= 0) {
       return;
     }
 
-    buffer.pushClip(this.#rectX, this.#rectY, this.#rectWidth, this.#rectHeight);
+    buffer.pushClip(this.#x, this.#y, this.#width, this.#height);
 
     // Background
     buffer.drawRect({
-      x: this.#rectX,
-      y: this.#rectY,
-      width: this.#rectWidth,
-      height: this.#rectHeight,
+      x: this.#x,
+      y: this.#y,
+      width: this.#width,
+      height: this.#height,
       bgRgba: this.#colorBg,
     });
 
     // Text content or placeholder
-    const textX = this.#rectX + 1;
-    const textY = this.#rectY + 1;
-    const visibleWidth = this.#rectWidth - 2;
+    const textX = this.#x + 1;
+    const textY = this.#y + 1;
+    const visibleWidth = this.#width - 2;
 
     if (this.#value.length > 0) {
       const range = this.#getSelectionRange();
@@ -448,14 +420,26 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
     if (this.#borderStyle !== 0) {
       const borderColor = this.#focused ? this.#borderColorFocused : this.#borderColorUnfocused;
       buffer.drawBorder({
-        x: this.#rectX,
-        y: this.#rectY,
-        width: this.#rectWidth,
-        height: this.#rectHeight,
+        x: this.#x,
+        y: this.#y,
+        width: this.#width,
+        height: this.#height,
         colorRgba: borderColor,
         style: this.#borderStyle,
         sides: BorderSides.All,
       });
+
+      if (this.#label.length > 0) {
+        const maxLabelWidth = this.#width - 2;
+        const clippedLabel = truncateToWidth(this.#label, maxLabelWidth);
+        buffer.drawText({
+          x: this.#x + 1,
+          y: this.#y,
+          text: clippedLabel,
+          fgRgba: this.#colorFg,
+          bgRgba: this.#colorBg,
+        });
+      }
     }
 
     // Cursor
@@ -472,10 +456,10 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
 
   override get rect(): TuiWidgetRect {
     return {
-      rectX: this.#rectX,
-      rectY: this.#rectY,
-      rectWidth: this.#rectWidth,
-      rectHeight: this.#rectHeight,
+      x: this.#x,
+      y: this.#y,
+      width: this.#width,
+      height: this.#height,
     };
   }
 
@@ -524,7 +508,7 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
   }
 
   #clampScrollOffset(): void {
-    const visibleWidth = this.#rectWidth - 2;
+    const visibleWidth = this.#width - 2;
     if (visibleWidth <= 0) {
       return;
     }

@@ -3,6 +3,7 @@ import {type BunPlugin, type PluginBuilder} from 'bun';
 
 const widgetModuleMap: Record<string, string> = {
   createFrameRateWatcher: '@buntui/extensions',
+  createMatrixWidget: '@buntui/extensions',
 };
 
 function buntuiVuePlugin(): BunPlugin {

@@ -1,25 +1,27 @@
+import type {TuiColor} from '../../utils/color';
+
 export type RadioGroupWidgetOptions = {
-  rectX?: number;
-  rectY?: number;
-  rectWidth?: number;
-  rectHeight?: number;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
   options?: string[];
   value?: number;
   disabled?: boolean;
 
   // Normal state
-  colorFgNormal?: number;
-  colorBgNormal?: number;
+  colorFgNormal?: TuiColor;
+  colorBgNormal?: TuiColor;
 
   // Focused state
-  colorFgFocused?: number;
-  colorBgFocused?: number;
+  colorFgFocused?: TuiColor;
+  colorBgFocused?: TuiColor;
 
   // Disabled state
-  colorFgDisabled?: number;
-  colorBgDisabled?: number;
+  colorFgDisabled?: TuiColor;
+  colorBgDisabled?: TuiColor;
 
   // Selected item highlight
-  colorFgSelected?: number;
-  colorBgSelected?: number;
+  colorFgSelected?: TuiColor;
+  colorBgSelected?: TuiColor;
 };
