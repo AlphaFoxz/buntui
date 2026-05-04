@@ -1,4 +1,10 @@
 <template>
+    <Tabs :options="['test1', 'test2', 'test3']">
+        <Tab value="test1"></Tab>
+        <Tab value="test2"></Tab>
+        <Tab value="test3"></Tab>
+    </Tabs>
+
     <!-- Title bar -->
     <Box :x="0" :y="0" :width="60" :height="1" :colorFg="'rgba(203,166,245,1)'" :colorBg="'rgba(49,50,68,1)'">
         <Text :colorFg="'rgba(203,166,245,1)'" :value="title" />
@@ -427,11 +433,12 @@
         <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" :colorBg="'rgba(49,50,68,1)'" />
     </Box>
 
-    <Matrix></Matrix>
+    <Component></Component>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from '@vue/reactivity'
+// import Component from './Component.vue'
 
 const timeCount = ref(0)
 const show = ref(true)

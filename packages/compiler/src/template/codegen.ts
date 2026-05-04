@@ -145,7 +145,7 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
     }
   }
 
-  lines.push('}');
+  lines.push('}', '', 'export default { setup };');
 
   const code = [...imports, ...lines].join('\n');
   return {code, imports};
