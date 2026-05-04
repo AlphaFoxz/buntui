@@ -92,8 +92,6 @@ export abstract class TuiWidgetEntity implements Mountable {
     }
   }
 
-  abstract emitDrawCommands(buf: DrawListBuffer): void;
-
   /**
    * Report the widget's natural/content size without external constraints.
    * Return undefined if the widget has no intrinsic size (e.g. Box without explicit dimensions).
@@ -102,6 +100,8 @@ export abstract class TuiWidgetEntity implements Mountable {
   intrinsicSize(): TuiWidgetSize | undefined {
     return undefined;
   }
+
+  abstract emitDrawCommands(buf: DrawListBuffer): void;
 
   /**
    * Propagate a position delta to all children.

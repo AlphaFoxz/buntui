@@ -5,8 +5,8 @@ import type {TuiWidgetRect} from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import type {Focusable} from '../Focusable';
 import {parseColor} from '../../utils/color';
-import type {InputWidgetOptions} from './types';
 import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
+import type {InputWidgetOptions} from './types';
 
 function charIndexAtColumn(string_: string, column: number): number {
   let width = 0;
@@ -299,22 +299,20 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
       }
 
       case 'a': {
-        if (event.ctrlKey && !event.altKey && !event.metaKey) {
-          if (this.#value.length > 0) {
-            this.#selectionAnchor = 0;
-            this.#cursorPos = this.#value.length;
-            this.#clampScrollOffset();
-          }
+        if (event.ctrlKey && !event.altKey && !event.metaKey && this.#value.length > 0) {
+          this.#selectionAnchor = 0;
+          this.#cursorPos = this.#value.length;
+          this.#clampScrollOffset();
         }
 
         break;
       }
 
       case 'Escape': {
-        if (this.#selectionAnchor !== undefined) {
-          this.#selectionAnchor = undefined;
-        } else {
+        if (this.#selectionAnchor === undefined) {
           this.blur();
+        } else {
+          this.#selectionAnchor = undefined;
         }
 
         break;
@@ -580,8 +578,10 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
   #posFromMouse(data: MouseEvent): number {
     const innerX = (data.x - 1) - this.#x - 1;
     const textFromScroll = this.#value.slice(this.#scrollOffset);
-    return Math.max(0, Math.min(this.#value.length,
-      this.#scrollOffset + charIndexAtColumn(textFromScroll, innerX)));
+    return Math.max(0, Math.min(
+      this.#value.length,
+      this.#scrollOffset + charIndexAtColumn(textFromScroll, innerX),
+    ));
   }
 }
 

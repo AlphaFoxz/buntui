@@ -23,7 +23,7 @@ export class FrameRateWatcher extends BoxWidget {
       y: (options.y ?? 0) as U16,
       width: (options.width ?? 0) as U16,
       height: (options.height ?? 0) as U16,
-      colorFg: (options.colorFg ?? 0xFF_FF_FF_FF) as U32,
+      colorFg: options.colorFg ?? 0xFF_FF_FF_FF,
       colorBg: 0x00_00_00_00 as U32,
       value: '0 fps',
     });

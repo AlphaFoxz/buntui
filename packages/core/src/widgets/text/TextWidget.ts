@@ -130,10 +130,10 @@ export class TextWidget extends TuiWidgetEntity {
     // Optional background fill
     if (colorBg !== 0x00_00_00_00) {
       buffer.drawRect({
-        x: x,
-        y: y,
-        width: width,
-        height: height,
+        x,
+        y,
+        width,
+        height,
         bgRgba: colorBg,
       });
     }
@@ -149,8 +149,8 @@ export class TextWidget extends TuiWidgetEntity {
         });
       } else {
         buffer.drawText({
-          x: x,
-          y: y,
+          x,
+          y,
           text: this.#value,
           fgRgba: colorFg,
           bgRgba: 0x00_00_00_00,
@@ -173,8 +173,8 @@ export class TextWidget extends TuiWidgetEntity {
     const textWidth = stringDisplayWidth(this.#value);
     if (textWidth <= visibleWidth) {
       buffer.drawText({
-        x: x,
-        y: y,
+        x,
+        y,
         text: this.#value,
         fgRgba,
         bgRgba: 0x00_00_00_00,
@@ -256,7 +256,7 @@ export class TextWidget extends TuiWidgetEntity {
 
     buffer.drawText({
       x: drawX,
-      y: y,
+      y,
       text: visibleText,
       fgRgba,
       bgRgba: 0x00_00_00_00,

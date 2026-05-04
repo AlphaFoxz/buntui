@@ -212,6 +212,7 @@ export class BoxWidget extends TuiWidgetEntity {
   }
 
   override removeChild(child: TuiWidgetEntity): void {
+    // eslint-disable-next-line unicorn/prefer-dom-node-remove
     super.removeChild(child);
     const index = this.#ownChildren.indexOf(child);
     if (index !== -1) {
@@ -285,10 +286,10 @@ export class BoxWidget extends TuiWidgetEntity {
 
     // Background fill
     buffer.drawRect({
-      x: x,
-      y: y,
-      width: width,
-      height: height,
+      x,
+      y,
+      width,
+      height,
       bgRgba: colorBg,
     });
 
@@ -299,10 +300,10 @@ export class BoxWidget extends TuiWidgetEntity {
         | (borderBottom ? BorderSides.Bottom : 0)
         | (borderLeft ? BorderSides.Left : 0);
       buffer.drawBorder({
-        x: x,
-        y: y,
-        width: width,
-        height: height,
+        x,
+        y,
+        width,
+        height,
         colorRgba: borderColor,
         style: borderStyle,
         sides,

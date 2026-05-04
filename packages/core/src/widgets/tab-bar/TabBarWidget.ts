@@ -148,7 +148,6 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
     if (event.key === 'ArrowRight') {
       const newValue = (this.#value + 1) % this.#tabs.length;
       this.#select(newValue);
-      return;
     }
   }
 
@@ -265,11 +264,14 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
         });
       }
 
-      const fg = this.#disabled
-        ? this.#colorFgDisabled
-        : (isActive
-          ? (this.#focused ? this.#colorFgFocused : this.#colorFgActive)
-          : (isHovered ? this.#colorFgFocused : this.#colorFgNormal));
+      let fg: number;
+      if (this.#disabled) {
+        fg = this.#colorFgDisabled;
+      } else if (isActive) {
+        fg = this.#focused ? this.#colorFgFocused : this.#colorFgActive;
+      } else {
+        fg = isHovered ? this.#colorFgFocused : this.#colorFgNormal;
+      }
 
       const text = ` ${label} `;
       const visibleText = text.slice(0, Math.max(0, width));
@@ -308,8 +310,7 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
   #computeTabLayout(): Array<{x: number; width: number; label: string}> {
     const layout: Array<{x: number; width: number; label: string}> = [];
     let currentX = this.#x;
-    for (let i = 0; i < this.#tabs.length; i++) {
-      const label = this.#tabs[i]!;
+    for (const label of this.#tabs) {
       const cellWidth = label.length + 2;
       layout.push({x: currentX, width: cellWidth, label});
       currentX += cellWidth + 1;
@@ -320,8 +321,8 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
 
   #hitTestTab(mouseX: number): number {
     const layout = this.#computeTabLayout();
-    for (let i = 0; i < layout.length; i++) {
-      const {x, width} = layout[i]!;
+    for (const [i, element] of layout.entries()) {
+      const {x, width} = element;
       if (mouseX >= x && mouseX < x + width) {
         return i;
       }
