@@ -26,6 +26,7 @@ const InputState = enum {
     EscReceived,
     CsiReceived,
     Ss3Received,
+    Utf8Sequence,
 };
 
 // Binary payload buffer (240 bytes = slot data area minus header)
@@ -105,6 +106,10 @@ const Parser = struct {
     buffer: [64]u8 = undefined,
     buf_idx: usize = 0,
     pending_esc_modifiers: u8 = 0,
+    // UTF-8 sequence tracking
+    utf8_buffer: [4]u8 = undefined,
+    utf8_expected: u8 = 0,
+    utf8_received: u8 = 0,
 
     pub fn processByte(self: *Parser, byte: u8) void {
         switch (self.state) {
@@ -116,8 +121,8 @@ const Parser = struct {
                     self.buf_idx = 0;
                     self.buffer[self.buf_idx] = byte;
                     self.buf_idx += 1;
-                } else if (byte >= 32) {
-                    // Regular printable character
+                } else if (byte >= 32 and byte < 127) {
+                    // ASCII printable character (1 byte)
                     var char_buf: [4]u8 = undefined;
                     const char_len = std.unicode.utf8Encode(@as(u21, byte), &char_buf) catch 0;
                     emitKeyboardEvent(
@@ -125,6 +130,17 @@ const Parser = struct {
                         byte,
                         char_buf[0..char_len],
                     );
+                } else if (byte >= 128) {
+                    // UTF-8 multi-byte character start
+                    // 110xxxxx (0xC0-0xDF): 2 bytes
+                    // 1110xxxx (0xE0-0xEF): 3 bytes
+                    // 11110xxx (0xF0-0xF7): 4 bytes
+                    const byte_count: u8 = if (byte >= 0xF0) 4 else if (byte >= 0xE0) 3 else if (byte >= 0xC0) 2 else 1;
+
+                    self.utf8_buffer[0] = byte;
+                    self.utf8_expected = byte_count;
+                    self.utf8_received = 1;
+                    self.state = .Utf8Sequence;
                 } else if (byte < 32) {
                     // Control character (Ctrl+A through Ctrl+Z, etc.)
                     var letter_buf = [_]u8{0};
@@ -134,6 +150,40 @@ const Parser = struct {
                         byte,
                         letter_buf[0..],
                     );
+                } else if (byte == 127) {
+                    // DEL key
+                    emitKeyboardEvent(
+                        buildModifiers(false, false, false, false, false),
+                        byte,
+                        "Delete",
+                    );
+                }
+            },
+            .Utf8Sequence => {
+                // Collect UTF-8 continuation bytes (10xxxxxx)
+                if (byte >= 128 and byte < 192) {
+                    self.utf8_buffer[self.utf8_received] = byte;
+                    self.utf8_received += 1;
+
+                    if (self.utf8_received == self.utf8_expected) {
+                        // Complete UTF-8 sequence received
+                        // Decode the UTF-8 sequence to get the code point
+                        const codepoint = std.unicode.utf8Decode(self.utf8_buffer[0..self.utf8_expected]) catch 0xFFFD;
+
+                        // Emit keyboard event with the full UTF-8 sequence
+                        emitKeyboardEvent(
+                            buildModifiers(false, false, false, false, false),
+                            @intCast(codepoint),
+                            self.utf8_buffer[0..self.utf8_expected],
+                        );
+
+                        self.reset();
+                    }
+                } else {
+                    // Invalid UTF-8 continuation byte, treat as error
+                    // Reset and let the byte be processed in normal state
+                    self.reset();
+                    self.processByte(byte);
                 }
             },
             .EscReceived => {
@@ -412,6 +462,8 @@ const Parser = struct {
     fn reset(self: *Parser) void {
         self.state = .Normal;
         self.buf_idx = 0;
+        self.utf8_expected = 0;
+        self.utf8_received = 0;
     }
 };
 
