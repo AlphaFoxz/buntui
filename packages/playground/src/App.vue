@@ -22,5 +22,5 @@ import SwitchDemo from './components/SwitchDemo.vue'
 import TextDemo from './components/TextDemo.vue'
 
 const tabOptions = ref(['Box', 'Button', 'Checkbox', 'Input', 'Radio', 'Switch', 'Text'])
-const currentTab = ref('Box')
+const currentTab = ref(tabOptions.value[0])
 </script>
