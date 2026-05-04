@@ -60,7 +60,7 @@ function getBinaryExt(): string {
 const binaryName = `buntui.${getBinaryExt()}`;
 const dllSearchPaths = [
   path.resolve(import.meta.dir, '..', '..', 'native', 'zig-out', 'bin', binaryName),
-  path.resolve(import.meta.dir, '..', 'buntui.dll'),
+  path.resolve(import.meta.dir, '..', binaryName),
 ];
 
 for (const candidate of dllSearchPaths) {
