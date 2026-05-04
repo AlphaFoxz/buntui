@@ -27,6 +27,7 @@ export type BoxWidgetOptions = Omit<TuiWidgetRect & TuiWidgetColor & Partial<Tui
     direction?: LayoutDirection;
     gap?: U16;
     align?: LayoutAlignment;
+    draggable?: boolean;
   };
 
 export class BoxWidget extends TuiWidgetEntity {
@@ -82,6 +83,10 @@ export class BoxWidget extends TuiWidgetEntity {
     this.#gap = options.gap ?? 0;
     this.#align = options.align ?? 3;
     this.#layoutDirty = true;
+
+    if (options.draggable) {
+      this.setDraggable(true);
+    }
   }
 
   // -- Accessors --

@@ -214,14 +214,6 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
     `const ${varName} = ${node.creator}(${args.join(', ')});`,
   ];
 
-  // Static flag props: call setter immediately (constructor doesn't handle them)
-  for (const prop of node.props) {
-    const setter = FLAG_PROP_MAP[prop.name];
-    if (setter) {
-      lines.push(`${varName}.${setter}(${prop.value === 'true'});`);
-    }
-  }
-
   // Generate reactive effect bindings
   for (const prop of node.dynamicProps) {
     const info = PROP_UPDATE_MAP[prop.name];
@@ -311,7 +303,6 @@ type WidgetInfo = {
   createLine: string;
   updateEffects: string[];
   eventLines: string[];
-  staticFlagLines: string[];
 };
 
 type WidgetTree = {
@@ -345,7 +336,6 @@ function collectWidgetTree(
         createLine: buildWidgetCreation(node),
         updateEffects: buildGuardedUpdateEffects(node, varName),
         eventLines: buildEventLines(node, varName),
-        staticFlagLines: buildStaticFlagLines(node, varName),
       },
       descendants,
       addChildLines,
@@ -409,19 +399,10 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
         effectLines.push(`      ${eventLine}`);
       }
 
-      // Static flag setters for root (draggable, disabled, etc.)
-      for (const flagLine of tree.root.staticFlagLines) {
-        effectLines.push(`      ${flagLine}`);
-      }
-
       // Events for descendants
       for (const d of tree.descendants) {
         for (const eventLine of d.eventLines) {
           effectLines.push(`      ${eventLine}`);
-        }
-
-        for (const flagLine of d.staticFlagLines) {
-          effectLines.push(`      ${flagLine}`);
         }
       }
 
@@ -551,22 +532,6 @@ function buildEventLines(node: TuiWidgetCall, varName: string): string[] {
   const result: string[] = [];
   for (const eventBinding of node.events) {
     result.push(`${varName}.on('${eventBinding.event}', ${eventBinding.handler});`);
-  }
-
-  return result;
-}
-
-function buildStaticFlagLines(node: TuiWidgetCall, varName: string): string[] {
-  if (node.isComponent) {
-    return [];
-  }
-
-  const result: string[] = [];
-  for (const prop of node.props) {
-    const setter = FLAG_PROP_MAP[prop.name];
-    if (setter) {
-      result.push(`${varName}.${setter}(${prop.value === 'true'});`);
-    }
   }
 
   return result;
