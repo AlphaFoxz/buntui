@@ -1,6 +1,6 @@
 <template>
-    <Button :x="1" :y="32" :width="18" :height="3" value="Toggle disabled" @click="handleToggleClick" />
-    <Button :x="21" :y="32" :width="18" :height="3" :disabled="buttonDisabled" :value="buttonLabel" />
+    <Button :x="1" :y="3" :width="18" :height="3" value="Toggle disabled" @click="handleToggleClick" />
+    <Button :x="21" :y="3" :width="18" :height="3" :disabled="buttonDisabled" :value="buttonLabel" />
 </template>
 
 <script setup lang="ts">

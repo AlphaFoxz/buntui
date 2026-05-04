@@ -106,7 +106,7 @@
         :colorBg="'rgba(166,227,161,0.5)'"
         :borderColor="'rgba(166,227,161,1)'"
         :borderStyle="3"
-        :styleZIndex="2"
+        :z-index="2"
     >
         <Text :colorFg="'rgba(30,30,46,1)'" value="zIndex=2 最上层" />
     </Box>
@@ -120,7 +120,7 @@
         :height="5"
         :colorBg="'rgba(137,180,250,0.33)'"
         :borderColor="'rgba(137,180,250,1)'"
-        :styleZIndex="1"
+        :zIndex="1"
     >
         <Text :colorFg="'rgba(30,30,46,1)'" value="zIndex=1 中间层" />
     </Box>
@@ -138,7 +138,7 @@
         :borderRight="false"
         :borderBottom="false"
         :borderLeft="false"
-        :styleZIndex="0"
+        :zIndex="0"
     >
         <Text :colorFg="'rgba(30,30,46,1)'" value="zIndex=0 最底层" />
     </Box>

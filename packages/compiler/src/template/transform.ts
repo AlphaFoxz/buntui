@@ -159,7 +159,7 @@ function transformElement(
 function transformStaticProp(attr: AttributeNode): TuiStaticProp {
   return {
     type: 'TuiStaticProp',
-    name: attr.name,
+    name: camelize(attr.name),
     value: attr.value?.content ?? 'true',
   };
 }
@@ -174,7 +174,7 @@ function resolveArgContent(dir: DirectiveNode): string {
   }
 
   if (dir.arg.type === NodeTypes.SIMPLE_EXPRESSION) {
-    return dir.arg.content;
+    return camelize(dir.arg.content);
   }
 
   return '';
@@ -375,4 +375,8 @@ function processConditionalChain(
   }
 
   return {block, nextIndex: i};
+}
+
+function camelize(value: string): string {
+  return value.replaceAll(/-([a-z])/gv, (_, c: string) => c.toUpperCase());
 }

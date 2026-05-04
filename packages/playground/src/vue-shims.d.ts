@@ -15,7 +15,7 @@ type TuiBoxProps = {
   borderRight?: boolean;
   borderBottom?: boolean;
   borderLeft?: boolean;
-  styleZIndex?: number;
+  zIndex?: number;
   styleModifier?: number;
   shadowOffsetX?: number;
   shadowOffsetY?: number;
@@ -38,7 +38,7 @@ type TuiTextProps = {
   height?: number;
   colorFg?: number;
   colorBg?: number;
-  styleZIndex?: number;
+  zIndex?: number;
   styleModifier?: number;
   text?: string;
   overflow?: 'clip' | 'marquee';
