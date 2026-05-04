@@ -11,7 +11,7 @@
 │                                   DrawListBuffer │
 │                                  (shared memory) │
 └──────────────────────┬───────────────────────────┘
-                       │ FFI: renderDrawList(buf, len)
+                       │ FFI: renderDrawList(ctx, buf, len)
                        ▼
 ┌─────────────── Zig (Native) ─────────────────────┐
 │                                                  │
@@ -33,11 +33,10 @@
   - 提供多种内置widget
   - 用户通过编写 .vue 文件可轻松编排layout
   - 提供@click、@drag、@keydown等事件
-  - 用户在script标签中写的ts代码为node环境的代码、可轻松执行本地命令、访问本地资源
+  - 用户在script标签中写的ts代码为bun环境的代码、可轻松执行本地命令、访问本地资源
 - 将一些操作系统的体验也融入进来
-  - 提供窗口概念、最大化最小化
   - 提供场景概念、切换场景
-- 打包产物为 bun 引擎可直接运行的mjs文件
+  - 提供窗口概念、最大化最小化（计划中）
 
 ## zig 命名规则
 
@@ -87,6 +86,6 @@ type ParseResult<File> = Bolb | object | 'IO错误了所以Result是空，注意
 
 - [ ] 屏保动画
 - [ ] 更好的事件系统
-- [ ] 可拖拽的组件
+- [x] 可拖拽的组件
 - [ ] 自定义热键
-- [ ] 帧率检查
+- [x] 帧率检查

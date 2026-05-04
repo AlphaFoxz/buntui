@@ -272,9 +272,8 @@
     />
 
     <!-- Button widgets -->
-    <Button :x="1" :y="32" :width="18" :height="3" value="Click Me" />
+    <Button :x="1" :y="32" :width="18" :height="3" value="Toggle disabled" @click="handleToggleClick" />
     <Button :x="21" :y="32" :width="18" :height="3" :disabled="buttonDisabled" :value="buttonLabel" />
-    <Button :x="41" :y="32" :width="18" :height="3" value="Toggle Other" @click="handleToggleClick" />
 
     <!-- Checkbox widgets -->
     <Checkbox :x="1" :y="36" :width="28" :height="1" label="Enable notifications" @change="handleCheckChange" />

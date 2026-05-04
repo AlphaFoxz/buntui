@@ -65,6 +65,7 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
   #focused = false;
   #scrollOffset = 0;
   #selectionAnchor: number | undefined;
+  #isSelecting = false;
 
   constructor(options: InputWidgetOptions = {}) {
     super();
@@ -88,26 +89,61 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
     this.#cursorPos = this.#value.length;
 
     this.on('mousedown', (data: unknown) => {
-      if (this.#isReadonly) {
-        return;
-      }
-
       // eslint-disable-next-line
       const mouseData = data as MouseEvent;
-      const innerX = (mouseData.x - 1) - this.#x - 1;
-      const textFromScroll = this.#value.slice(this.#scrollOffset);
-      const targetPos = Math.max(0, Math.min(this.#value.length, this.#scrollOffset + charIndexAtColumn(textFromScroll, innerX)));
+      const targetPos = this.#posFromMouse(mouseData);
 
       if (mouseData.shiftKey) {
         if (this.#selectionAnchor === undefined) {
           this.#selectionAnchor = this.#cursorPos;
         }
       } else {
-        this.#selectionAnchor = undefined;
+        this.#selectionAnchor = targetPos;
       }
 
       this.#cursorPos = targetPos;
+      this.#isSelecting = true;
       this.#clampScrollOffset();
+    });
+
+    this.on('mousemove', (data: unknown) => {
+      if (!this.#isSelecting) {
+        return;
+      }
+
+      // eslint-disable-next-line
+      const mouseData = data as MouseEvent;
+      if (!mouseData.buttons || mouseData.buttons === 0) {
+        return;
+      }
+
+      const mouse0 = mouseData.x - 1;
+      const textX = this.#x + 1;
+      const textEndX = this.#x + this.#width - 1;
+
+      // Auto-scroll backward when dragging left past text area
+      if (mouse0 < textX && this.#scrollOffset > 0) {
+        this.#scrollOffset--;
+        this.#cursorPos = this.#scrollOffset;
+        return;
+      }
+
+      // Auto-scroll forward when dragging right past text area
+      if (mouse0 >= textEndX && this.#cursorPos < this.#value.length) {
+        this.#cursorPos++;
+        this.#clampScrollOffset();
+        return;
+      }
+
+      const targetPos = this.#posFromMouse(mouseData);
+      if (targetPos !== this.#cursorPos) {
+        this.#cursorPos = targetPos;
+        this.#clampScrollOffset();
+      }
+    });
+
+    this.on('mouseup', () => {
+      this.#isSelecting = false;
     });
   }
 
@@ -539,6 +575,13 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
         break;
       }
     }
+  }
+
+  #posFromMouse(data: MouseEvent): number {
+    const innerX = (data.x - 1) - this.#x - 1;
+    const textFromScroll = this.#value.slice(this.#scrollOffset);
+    return Math.max(0, Math.min(this.#value.length,
+      this.#scrollOffset + charIndexAtColumn(textFromScroll, innerX)));
   }
 }
 

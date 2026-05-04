@@ -44,21 +44,25 @@ export class PointerManager {
           this.#hoverTarget.dispatch('mousemove', data);
         }
 
-        if (this.#pressTarget && this.#pressTarget.draggable && data.buttons && data.buttons > 0) {
-          if (!this.#isDragging) {
-            this.#isDragging = true;
-            this.#pressTarget.dispatch('dragstart', data);
-          }
+        if (this.#pressTarget && data.buttons && data.buttons > 0) {
+          if (this.#pressTarget.draggable) {
+            if (!this.#isDragging) {
+              this.#isDragging = true;
+              this.#pressTarget.dispatch('dragstart', data);
+            }
 
-          const mx = data.x - 1;
-          const my = data.y - 1;
-          const newX = Math.max(0, mx - this.#dragOffsetX);
-          const newY = Math.max(0, my - this.#dragOffsetY);
-          this.#pressTarget.updateRect({
-            x: newX,
-            y: newY,
-          });
-          this.#pressTarget.dispatch('drag', data);
+            const mx = data.x - 1;
+            const my = data.y - 1;
+            const newX = Math.max(0, mx - this.#dragOffsetX);
+            const newY = Math.max(0, my - this.#dragOffsetY);
+            this.#pressTarget.updateRect({
+              x: newX,
+              y: newY,
+            });
+            this.#pressTarget.dispatch('drag', data);
+          } else {
+            this.#pressTarget.dispatch('mousemove', data);
+          }
         }
 
         return;
