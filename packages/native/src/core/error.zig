@@ -15,3 +15,8 @@ pub fn osApiError(msg: []const u8) noreturn {
     logger.logErrorFmt("OS API error: {s}", .{msg});
     std.process.exit(103);
 }
+
+pub fn osApiErrorFmt(comptime fmt: []const u8, args: anytype) noreturn {
+    logger.logErrorFmt("OS API error: " ++ fmt, args);
+    std.process.exit(103);
+}

@@ -1,5 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const logger = @import("../core/logger.zig");
+const err = @import("../core/error.zig");
 
 comptime {
     switch (builtin.os.tag) {
@@ -8,62 +10,128 @@ comptime {
     }
 }
 
-// Stub functions for Windows-specific code page handling
-pub fn updateOutputCP2UTF8() void {
-    // POSIX systems don't need code page conversion
+var original_termios: std.posix.termios = undefined;
+var original_termios_saved: bool = false;
+
+pub const STD_HANDLE = enum(u32) {
+    INPUT_HANDLE = std.posix.STDIN_FILENO,
+    OUTPUT_HANDLE = std.posix.STDOUT_FILENO,
+    ERROR_HANDLE = std.posix.STDERR_FILENO,
+};
+
+fn writeRawStdout(seq: []const u8) void {
+    const stdout_handle = std.posix.STDOUT_FILENO;
+    const result = std.os.linux.write(stdout_handle, seq.ptr, seq.len);
+    // Silently ignore errors - if ANSI sequences don't write, it's not critical
+    _ = result;
 }
 
-pub fn restoreOutputCP() void {
-    // POSIX systems don't need code page conversion
+fn enableOutputVtProcessing() void {
+    // POSIX terminals already support ANSI escape sequences by default
+    // No special mode switching needed like on Windows
 }
 
-// Public functions for mode switching
+fn saveOriginalTermios() void {
+    if (!original_termios_saved) {
+        const stdin_handle = std.posix.STDIN_FILENO;
+        original_termios = std.posix.tcgetattr(stdin_handle) catch |e| {
+            err.osApiErrorFmt("Failed to get original terminal attributes: {}", .{e});
+            return;
+        };
+        original_termios_saved = true;
+        logger.logInfo("Original terminal attributes saved");
+    }
+}
+
 pub fn switchMouseInputMode() void {
-    // Mouse input mode is handled by the terminal
-    setAppModePosix(true) catch unreachable;
+    const stdin_handle = std.posix.STDIN_FILENO;
+
+    // Save original termios if not already saved
+    saveOriginalTermios();
+
+    // Get current terminal attributes
+    var termios = std.posix.tcgetattr(stdin_handle) catch |e| {
+        err.osApiErrorFmt("Failed to get terminal attributes: {}", .{e});
+        return;
+    };
+
+    // Disable canonical mode - don't wait for Enter
+    termios.lflag.ICANON = false;
+    // Disable echo
+    termios.lflag.ECHO = false;
+    // Disable signal character processing (Ctrl+C, Ctrl+Z, etc.)
+    termios.lflag.ISIG = false;
+    // Disable input processing
+    termios.iflag.IXON = false; // Disable XON/XOFF flow control
+    termios.iflag.ICRNL = false; // Disable CR to NL conversion
+    termios.iflag.BRKINT = false; // Disable break signal
+    termios.iflag.INPCK = false; // Disable parity checking
+    termios.iflag.ISTRIP = false; // Disable 8th bit stripping
+    // Disable output processing
+    termios.oflag.OPOST = false;
+    // Set character size to 8 bits
+    termios.cflag.CSIZE = .CS8;
+
+    // Set minimum read characters and timeout
+    termios.cc[@intFromEnum(std.posix.V.MIN)] = 0; // Non-blocking read
+    termios.cc[@intFromEnum(std.posix.V.TIME)] = 0; // No timeout
+
+    // Apply settings (take effect immediately)
+    std.posix.tcsetattr(stdin_handle, .NOW, termios) catch |e| {
+        err.osApiErrorFmt("Failed to set terminal attributes: {}", .{e});
+        return;
+    };
+
+    enableOutputVtProcessing();
+    // Enable VT mouse tracking: any-event tracking + SGR extended format
+    writeRawStdout("\x1b[?1003h\x1b[?1006h");
+    logger.logInfo("Terminal switched to mouse mode");
 }
 
 pub fn switchDefaultInputMode() void {
-    setAppModePosix(false) catch unreachable;
-}
-
-fn setAppModePosix(enable: bool) !void {
     const stdin_handle = std.posix.STDIN_FILENO;
 
-    // 获取当前终端属性
-    var termios = try std.posix.tcgetattr(stdin_handle);
+    // Disable VT mouse tracking before restoring terminal mode
+    writeRawStdout("\x1b[?1003l\x1b[?1006l");
 
-    if (enable) {
-        // 禁用规范模式 - 不等待回车
-        termios.lflag.ICANON = false;
-        // 禁用回显
-        termios.lflag.ECHO = false;
-        // 禁用信号字符处理 (Ctrl+C, Ctrl+Z 等)
-        termios.lflag.ISIG = false;
-        // 禁用输入处理
-        termios.iflag.IXON = false; // 禁用 XON/XOFF 流控制
-        termios.iflag.ICRNL = false; // 禁用 CR 转 NL
-        termios.iflag.BRKINT = false; // 禁用 break 信号
-        termios.iflag.INPCK = false; // 禁用奇偶校验
-        termios.iflag.ISTRIP = false; // 禁用第8位剥离
-        // 禁用输出处理
-        termios.oflag.OPOST = false;
-        // 设置字符大小为8位
-        termios.cflag.CSIZE = .CS8;
-
-        // 设置最小读取字符数和超时
-        termios.cc[@intFromEnum(std.posix.V.MIN)] = 0; // 非阻塞读取
-        termios.cc[@intFromEnum(std.posix.V.TIME)] = 0; // 无超时
+    if (original_termios_saved) {
+        // Restore original terminal attributes
+        std.posix.tcsetattr(stdin_handle, .NOW, original_termios) catch |e| {
+            err.osApiErrorFmt("Failed to restore terminal attributes: {}", .{e});
+            return;
+        };
+        logger.logInfo("Terminal switched to default mode");
     } else {
-        // 恢复为正常模式
+        // If we don't have original attributes, set to a safe default
+        var termios = std.posix.tcgetattr(stdin_handle) catch |e| {
+            err.osApiErrorFmt("Failed to get terminal attributes: {}", .{e});
+            return;
+        };
+
+        // Restore to normal mode
         termios.lflag.ICANON = true;
         termios.lflag.ECHO = true;
         termios.lflag.ISIG = true;
         termios.iflag.IXON = true;
         termios.iflag.ICRNL = true;
         termios.oflag.OPOST = true;
-    }
 
-    // 应用设置 (立即生效)
-    try std.posix.tcsetattr(stdin_handle, .NOW, termios);
+        std.posix.tcsetattr(stdin_handle, .NOW, termios) catch |e| {
+            err.osApiErrorFmt("Failed to restore terminal attributes: {}", .{e});
+            return;
+        };
+        logger.logInfo("Terminal switched to default mode (safe defaults)");
+    }
+}
+
+// Stub functions for Windows-specific code page handling
+// POSIX systems use UTF-8 by default, so no conversion needed
+pub fn updateOutputCP2UTF8() void {
+    // POSIX systems don't need code page conversion
+    // They use UTF-8 by default
+}
+
+pub fn restoreOutputCP() void {
+    // POSIX systems don't need code page conversion
+    // They use UTF-8 by default
 }
