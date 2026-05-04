@@ -12,7 +12,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from '@vue/reactivity'
 
 const inputValue = ref('')
 function handleInput(data) {

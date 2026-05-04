@@ -3,6 +3,7 @@
     <SelectButton :x="1" :y="2" :height="1" :options="tabOptions" v-model="currentTab" />
 
     <BoxDemo v-if="currentTab === 'Box'" />
+    <CheckboxDemo v-if="currentTab === 'Checkbox'" />
     <InputDemo v-if="currentTab === 'Input'" />
     <RadioDemo v-if="currentTab === 'Radio'" />
     <SwitchDemo v-if="currentTab === 'Switch'" />
@@ -12,11 +13,12 @@
 <script setup lang="ts">
 import { ref } from '@vue/reactivity'
 import BoxDemo from '../demo/BoxDemo.vue'
+import CheckboxDemo from '../demo/CheckboxDemo.vue'
 import InputDemo from '../demo/InputDemo.vue'
 import RadioDemo from '../demo/RadioDemo.vue'
 import SwitchDemo from '../demo/SwitchDemo.vue'
 import TextDemo from '../demo/TextDemo.vue'
 
-const tabOptions = ref(['Box', 'Input', 'Radio', 'Switch', 'Text'])
+const tabOptions = ref(['Box', 'Checkbox', 'Input', 'Radio', 'Switch', 'Text'])
 const currentTab = ref('Box')
 </script>

@@ -9,7 +9,7 @@ import type {SelectButtonWidgetOptions} from './types';
 const DEFAULT_SELECT_BUTTON_OPTIONS = {
   x: 0,
   y: 0,
-  width: 40,
+  width: 0,
   height: 1,
   options: [] as unknown[],
   value: undefined as unknown,
@@ -175,6 +175,20 @@ export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
     }
   }
 
+  override intrinsicSize(): {width: number; height: number} | undefined {
+    if (this.#options.length === 0) {
+      return {width: 0, height: this.#height};
+    }
+
+    const layout = this.#computeLayout();
+    if (layout.length === 0) {
+      return {width: 0, height: this.#height};
+    }
+
+    const last = layout.at(-1)!;
+    return {width: last.x + last.width - this.#x, height: this.#height};
+  }
+
   get options(): unknown[] {
     return this.#options;
   }
@@ -202,7 +216,7 @@ export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
     return {
       x: this.#x,
       y: this.#y,
-      width: this.#width,
+      width: this.#effectiveWidth(),
       height: this.#height,
     };
   }
@@ -226,24 +240,26 @@ export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
   }
 
   override containsPoint(x: number, y: number): boolean {
+    const w = this.#effectiveWidth();
     return x >= this.#x
-      && x < this.#x + this.#width
+      && x < this.#x + w
       && y >= this.#y
       && y < this.#y + this.#height;
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    if (this.#width <= 0 || this.#height <= 0 || this.#options.length === 0) {
+    const w = this.#effectiveWidth();
+    if (w <= 0 || this.#height <= 0 || this.#options.length === 0) {
       return;
     }
 
-    buffer.pushClip(this.#x, this.#y, this.#width, this.#height);
+    buffer.pushClip(this.#x, this.#y, w, this.#height);
 
     const baseBg = this.#disabled ? this.#colorBgDisabled : this.#colorBgNormal;
     buffer.drawRect({
       x: this.#x,
       y: this.#y,
-      width: this.#width,
+      width: w,
       height: this.#height,
       bgRgba: baseBg,
     });
@@ -317,6 +333,14 @@ export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
     }
 
     super.unmounted();
+  }
+
+  #effectiveWidth(): number {
+    if (this.#width > 0) {
+      return this.#width;
+    }
+
+    return this.intrinsicSize()?.width ?? 0;
   }
 
   #computeLayout(): Array<{x: number; width: number; label: string}> {
