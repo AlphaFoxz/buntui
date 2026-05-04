@@ -7,6 +7,7 @@ type WidgetEventHandler = (data: unknown) => void;
 export abstract class TuiWidgetEntity implements Mountable {
   #refrenceCount = 0;
   #draggable = false;
+  #visible = true;
   readonly #eventHandlers = new Map<string, Set<WidgetEventHandler>>();
   readonly #children: TuiWidgetEntity[] = [];
 
@@ -16,6 +17,10 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   get draggable(): boolean {
     return this.#draggable;
+  }
+
+  get visible(): boolean {
+    return this.#visible;
   }
 
   get zIndex(): number {
@@ -33,6 +38,10 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   setDraggable(value: boolean): void {
     this.#draggable = value;
+  }
+
+  setVisible(value: boolean): void {
+    this.#visible = value;
   }
 
   addChild(child: TuiWidgetEntity): void {
@@ -125,7 +134,9 @@ export abstract class TuiWidgetEntity implements Mountable {
    */
   protected renderChildren(buf: DrawListBuffer): void {
     for (const child of this.#children) {
-      child.emitDrawCommands(buf);
+      if (child.visible) {
+        child.emitDrawCommands(buf);
+      }
     }
   }
 }

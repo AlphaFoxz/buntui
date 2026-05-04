@@ -8,7 +8,7 @@
     <InputDemo v-if="currentTab === 'Input'" />
     <RadioDemo v-if="currentTab === 'Radio'" />
     <SwitchDemo v-if="currentTab === 'Switch'" />
-    <TextDemo v-if="currentTab === 'Text'" />
+    <TextDemo v-show="currentTab === 'Text'" />
 </template>
 
 <script setup lang="ts">

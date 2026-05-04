@@ -65,7 +65,9 @@ export class TuiScene {
 
     const sorted = [...this.#widgets].toSorted((a, b) => a.zIndex - b.zIndex);
     for (const widget of sorted) {
-      widget.emitDrawCommands(buf);
+      if (widget.visible) {
+        widget.emitDrawCommands(buf);
+      }
     }
   }
 
@@ -79,7 +81,7 @@ export class TuiScene {
 
     const sorted = [...this.#widgets].toSorted((a, b) => b.zIndex - a.zIndex);
     for (const widget of sorted) {
-      if (widget.containsPoint(mx, my)) {
+      if (widget.visible && widget.containsPoint(mx, my)) {
         return widget;
       }
     }

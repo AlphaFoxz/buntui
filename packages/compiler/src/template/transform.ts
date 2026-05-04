@@ -226,6 +226,19 @@ function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string)
     return undefined;
   }
 
+  // V-show: toggle visibility without destroying the widget
+  if (dir.name === 'show') {
+    return [{
+      type: 'dynamic',
+      binding: {
+        type: 'TuiDynamicProp',
+        name: 'visible',
+        expression: resolveExpContent(dir),
+        loc: dir.loc,
+      },
+    }];
+  }
+
   // V-model: generates prop binding + event write-back, with per-tag and modifier support
   if (dir.name === 'model') {
     if (!dir.exp) {

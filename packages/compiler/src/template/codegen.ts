@@ -59,6 +59,7 @@ const FLAG_PROP_MAP: Record<string, string> = {
   label: 'setLabel',
   tabs: 'setOptions',
   options: 'setOptions',
+  visible: 'setVisible',
 };
 
 // Props that are boolean flags (bare attrs like `readonly` parse as string "true").
@@ -182,6 +183,22 @@ function generateNode(node: TuiRenderNode, index: number): NodeGenResult | undef
 }
 
 function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
+  const showProp = node.dynamicProps.find(p => p.name === 'visible');
+
+  // Component call with v-show: track mounted widgets via a proxy scene
+  if (node.isComponent && showProp) {
+    const varName = getWidgetVarName(node, index);
+    const lines = [
+      `const ${varName}_w = [];`,
+      `const ${varName} = ${node.creator}.setup({`,
+      `  mount(w) { scene.mount(w); ${varName}_w.push(w); },`,
+      `  unmount(w) { scene.unmount(w); const i = ${varName}_w.indexOf(w); if (i >= 0) ${varName}_w.splice(i, 1); }`,
+      `});`,
+      `effect(() => { const _v = ${wrapConditionExpr(showProp.expression)}; for (const w of ${varName}_w) { w.setVisible(_v); } });`,
+    ];
+    return {lines, nextIndex: index + 1};
+  }
+
   // Component call: ImportName.setup(scene)
   if (node.isComponent) {
     return {
@@ -237,7 +254,10 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
     // Flag props (disabled, checked, etc.): reactive setter calls
     const setter = FLAG_PROP_MAP[prop.name];
     if (setter) {
-      lines.push(`effect(() => { ${varName}.${setter}(unref(${prop.expression})); });`);
+      const expr = prop.name === 'visible'
+        ? wrapConditionExpr(prop.expression)
+        : `unref(${prop.expression})`;
+      lines.push(`effect(() => { ${varName}.${setter}(${expr}); });`);
     }
   }
 
@@ -585,7 +605,10 @@ function buildGuardedUpdateEffects(node: TuiWidgetCall, varName: string): string
 
     const setter = FLAG_PROP_MAP[prop.name];
     if (setter) {
-      effects.push(`effect(() => { if (${varName}) { ${varName}.${setter}(unref(${prop.expression})); } });`);
+      const expr = prop.name === 'visible'
+        ? wrapConditionExpr(prop.expression)
+        : `unref(${prop.expression})`;
+      effects.push(`effect(() => { if (${varName}) { ${varName}.${setter}(${expr}); } });`);
     }
   }
 
