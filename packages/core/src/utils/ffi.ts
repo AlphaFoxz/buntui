@@ -16,6 +16,9 @@ export function fetchDllPath(): string {
   }
 
   const binaryName = `buntui.${suffix}`;
+  const libPrefix = process.platform === 'win32' ? '' : 'lib';
+  const libDir = process.platform === 'win32' ? 'bin' : 'lib';
+  const distName = `${libPrefix}${binaryName}`;
 
   const envPath = process.env.BUNTUI_DLL;
   if (envPath) {
@@ -35,9 +38,15 @@ export function fetchDllPath(): string {
     return dllPath;
   }
 
-  const workspaceNative = path.resolve(import.meta.dir, '..', '..', '..', 'packages', 'native', 'zig-out', 'bin', binaryName);
-  if (fs.existsSync(workspaceNative)) {
-    dllPath = workspaceNative;
+  const workspaceBin = path.resolve(import.meta.dir, '..', '..', '..', 'packages', 'native', 'zig-out', 'bin', binaryName);
+  if (fs.existsSync(workspaceBin)) {
+    dllPath = workspaceBin;
+    return dllPath;
+  }
+
+  const workspaceLib = path.resolve(import.meta.dir, '..', '..', '..', 'packages', 'native', 'zig-out', libDir, distName);
+  if (fs.existsSync(workspaceLib)) {
+    dllPath = workspaceLib;
     return dllPath;
   }
 
