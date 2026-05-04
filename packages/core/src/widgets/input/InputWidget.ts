@@ -27,7 +27,7 @@ function charIndexAtColumn(string_: string, column: number): number {
 const DEFAULT_INPUT_OPTIONS: InputWidgetOptions = {
   x: 0,
   y: 0,
-  width: 20,
+  width: 32,
   height: 3,
   placeholder: '',
   value: '',
@@ -72,7 +72,7 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
     const resolved = {...DEFAULT_INPUT_OPTIONS, ...options};
     this.#x = resolved.x ?? 0;
     this.#y = resolved.y ?? 0;
-    this.#width = resolved.width ?? 20;
+    this.#width = resolved.width ?? 32;
     this.#height = resolved.height ?? 3;
     this.#colorFg = parseColor(resolved.colorFg ?? 0xFF_FF_FF_FF);
     this.#colorBg = parseColor(resolved.colorBg ?? 0x1E_1E_2E_FF);

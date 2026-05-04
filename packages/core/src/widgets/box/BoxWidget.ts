@@ -315,23 +315,19 @@ export class BoxWidget extends TuiWidgetEntity {
       });
     }
 
-    buffer.popClip();
     this.renderChildren(buffer);
+    buffer.popClip();
   }
 
   // -- Layout engine --
 
   #resolveChildExtent(child: TuiWidgetEntity, isVertical: boolean): number {
-    const childRect = child.rect;
+    const intrinsic = child.intrinsicSize();
     if (isVertical) {
-      return childRect.height > 0
-        ? childRect.height
-        : child.intrinsicSize()?.height ?? 0;
+      return intrinsic?.height ?? child.rect.height;
     }
 
-    return childRect.width > 0
-      ? childRect.width
-      : child.intrinsicSize()?.width ?? 0;
+    return intrinsic?.width ?? child.rect.width;
   }
 
   #resolveCrossAxis(
@@ -339,16 +335,12 @@ export class BoxWidget extends TuiWidgetEntity {
     crossSize: number,
     isVertical: boolean,
   ): {crossPos: number; crossExtent: number} {
-    const childRect = child.rect;
+    const intrinsic = child.intrinsicSize();
     let crossExtent: number;
     if (isVertical) {
-      crossExtent = childRect.width > 0
-        ? childRect.width
-        : child.intrinsicSize()?.width ?? 0;
+      crossExtent = intrinsic?.width ?? child.rect.width;
     } else {
-      crossExtent = childRect.height > 0
-        ? childRect.height
-        : child.intrinsicSize()?.height ?? 0;
+      crossExtent = intrinsic?.height ?? child.rect.height;
     }
 
     let crossPos: number;
@@ -434,8 +426,13 @@ export class BoxWidget extends TuiWidgetEntity {
 export const DEFAULT_BOX_OPTIONS: BoxWidgetOptions = {
   x: 0,
   y: 0,
-  width: 0,
-  height: 0,
+  width: 32,
+  height: 3,
+  borderStyle: 1 as U8,
+  borderTop: true,
+  borderRight: true,
+  borderBottom: true,
+  borderLeft: true,
   colorFg: 0xFF_FF_FF_FF,
   colorBg: 0x00_00_00_FF,
 };

@@ -1,23 +1,23 @@
 import type {TuiColor} from '../../utils/color';
 
-export type TabBarWidgetOptions = {
+export type SelectButtonWidgetOptions = {
   x?: number;
   y?: number;
   width?: number;
   height?: number;
-  tabs?: string[];
-  value?: number;
+  options?: unknown[];
+  value?: unknown;
   disabled?: boolean;
 
-  // Normal (inactive tabs)
+  // Normal (inactive options)
   colorFgNormal?: TuiColor;
   colorBgNormal?: TuiColor;
 
-  // Active tab (when widget not focused)
+  // Active option (when widget not focused)
   colorFgActive?: TuiColor;
   colorBgActive?: TuiColor;
 
-  // Active tab when widget focused
+  // Active option when widget focused
   colorFgFocused?: TuiColor;
   colorBgFocused?: TuiColor;
 
@@ -25,6 +25,6 @@ export type TabBarWidgetOptions = {
   colorFgDisabled?: TuiColor;
   colorBgDisabled?: TuiColor;
 
-  // Separator between tabs
+  // Separator between options
   colorFgSeparator?: TuiColor;
 };

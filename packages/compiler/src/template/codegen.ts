@@ -57,12 +57,12 @@ const FLAG_PROP_MAP: Record<string, string> = {
   checked: 'setChecked',
   readonly: 'setReadonly',
   label: 'setLabel',
-  tabs: 'setTabs',
+  tabs: 'setOptions',
   options: 'setOptions',
 };
 
 // Props that are boolean flags (bare attrs like `readonly` parse as string "true").
-// Only these need string→bool conversion. Other FLAG_PROP_MAP entries (label, tabs, options)
+// Only these need string→bool conversion. Other FLAG_PROP_MAP entries (label, options)
 // are string/array props and should be passed as-is.
 const BOOLEAN_FLAGS = new Set(['disabled', 'checked', 'readonly', 'draggable']);
 
@@ -138,14 +138,19 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
   }
 
   // Mount all top-level widgets (conditional blocks handle their own mounting)
+  const mountedWidgetVars: string[] = [];
   for (let childIndex = 0; childIndex < root.children.length; childIndex++) {
     const child = root.children[childIndex]!;
     if (child.type === 'TuiWidgetCall' && !child.isComponent) {
-      lines.push(`  scene.mount(${getWidgetVarName(child, childStartIndices[childIndex]!)});`);
+      const varName = getWidgetVarName(child, childStartIndices[childIndex]!);
+      lines.push(`  scene.mount(${varName});`);
+      mountedWidgetVars.push(varName);
     }
   }
 
-  lines.push('}', '', 'export default { setup };');
+  // Return cleanup function so parent v-if can unmount this component's widgets
+  const cleanupLines = mountedWidgetVars.map(v => `    scene.unmount(${v});`);
+  lines.push('  return () => {', ...cleanupLines, '  };', '}', '', 'export default { setup };');
 
   const code = [...imports, ...lines].join('\n');
   return {code, imports};
@@ -303,6 +308,7 @@ type WidgetInfo = {
   createLine: string;
   updateEffects: string[];
   eventLines: string[];
+  isComponent: boolean;
 };
 
 type WidgetTree = {
@@ -336,12 +342,50 @@ function collectWidgetTree(
         createLine: buildWidgetCreation(node),
         updateEffects: buildGuardedUpdateEffects(node, varName),
         eventLines: buildEventLines(node, varName),
+        isComponent: node.isComponent ?? false,
       },
       descendants,
       addChildLines,
     },
     nextIndex,
   };
+}
+
+const CONDITION_KEYWORDS = new Set([
+  'true',
+  'false',
+  'null',
+  'undefined',
+  'typeof',
+  'void',
+  'in',
+  'of',
+  'instanceof',
+  'new',
+  'delete',
+  'return',
+  'throw',
+]);
+
+function wrapConditionExpr(expr: string): string {
+  return expr.replaceAll(
+    /'[^']*'|"[^"]*"|\b([a-zA-Z_$][\w$]*)\b/gv,
+    (match, ident: string | undefined, offset: number) => {
+      if (ident === undefined) {
+        return match; // String literal
+      }
+
+      if (offset > 0 && expr[offset - 1] === '.') {
+        return match; // Property access
+      }
+
+      if (CONDITION_KEYWORDS.has(ident)) {
+        return match;
+      }
+
+      return `unref(${ident})`;
+    },
+  );
 }
 
 function generateConditional(block: TuiConditionalBlock, index: number): NodeGenResult {
@@ -378,7 +422,7 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
   for (let i = 0; i < branches.length; i++) {
     const {condition} = branches[i]!;
     const keyword = i === 0 ? 'if' : (condition ? 'else if' : 'else');
-    const condPart = condition ? ` (unref(${condition}))` : '';
+    const condPart = condition ? ` (${wrapConditionExpr(condition)})` : '';
 
     effectLines.push(`${keyword}${condPart} {`);
 
@@ -406,7 +450,12 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
         }
       }
 
-      effectLines.push(`      scene.mount(${tree.root.varName});`, '    }');
+      // Components return a cleanup function and mount internally — skip scene.mount
+      if (tree.root.isComponent) {
+        effectLines.push('    }');
+      } else {
+        effectLines.push(`      scene.mount(${tree.root.varName});`, '    }');
+      }
     }
 
     // Unmount other branches' widgets
@@ -416,11 +465,21 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
       }
 
       for (const tree of branchTrees[j]!) {
-        effectLines.push(
-          `    if (${tree.root.varName}) {`,
-          `      scene.unmount(${tree.root.varName});`,
-          `      ${tree.root.varName} = null;`,
-        );
+        // Components: call cleanup function returned by setup()
+        if (tree.root.isComponent) {
+          effectLines.push(
+            `    if (${tree.root.varName}) {`,
+            `      ${tree.root.varName}();`,
+            `      ${tree.root.varName} = null;`,
+          );
+        } else {
+          effectLines.push(
+            `    if (${tree.root.varName}) {`,
+            `      scene.unmount(${tree.root.varName});`,
+            `      ${tree.root.varName} = null;`,
+          );
+        }
+
         for (const d of tree.descendants) {
           effectLines.push(`      ${d.varName} = null;`);
         }
@@ -438,11 +497,20 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
     effectLines.push(' else {');
     for (const trees of branchTrees) {
       for (const tree of trees) {
-        effectLines.push(
-          `    if (${tree.root.varName}) {`,
-          `      scene.unmount(${tree.root.varName});`,
-          `      ${tree.root.varName} = null;`,
-        );
+        if (tree.root.isComponent) {
+          effectLines.push(
+            `    if (${tree.root.varName}) {`,
+            `      ${tree.root.varName}();`,
+            `      ${tree.root.varName} = null;`,
+          );
+        } else {
+          effectLines.push(
+            `    if (${tree.root.varName}) {`,
+            `      scene.unmount(${tree.root.varName});`,
+            `      ${tree.root.varName} = null;`,
+          );
+        }
+
         for (const d of tree.descendants) {
           effectLines.push(`      ${d.varName} = null;`);
         }

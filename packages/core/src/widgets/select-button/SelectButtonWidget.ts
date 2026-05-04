@@ -4,15 +4,15 @@ import type {TuiWidgetRect} from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import type {Focusable} from '../Focusable';
 import {parseColor} from '../../utils/color';
-import type {TabBarWidgetOptions} from './types';
+import type {SelectButtonWidgetOptions} from './types';
 
-const DEFAULT_TAB_BAR_OPTIONS: Required<TabBarWidgetOptions> = {
+const DEFAULT_SELECT_BUTTON_OPTIONS = {
   x: 0,
   y: 0,
   width: 40,
   height: 1,
-  tabs: [],
-  value: 0,
+  options: [] as unknown[],
+  value: undefined as unknown,
   disabled: false,
 
   colorFgNormal: 0x6C_70_86_FF,
@@ -30,13 +30,13 @@ const DEFAULT_TAB_BAR_OPTIONS: Required<TabBarWidgetOptions> = {
   colorFgSeparator: 0x45_47_5A_FF,
 };
 
-export class TabBarWidget extends TuiWidgetEntity implements Focusable {
+export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
   #x: number;
   #y: number;
   #width: number;
   #height: number;
-  #tabs: string[];
-  #value: number;
+  #options: unknown[];
+  #selectedIndex: number;
   #hoveredIndex = -1;
   #focused = false;
   #disabled: boolean;
@@ -51,17 +51,22 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
   readonly #colorBgDisabled: number;
   readonly #colorFgSeparator: number;
 
-  constructor(options: TabBarWidgetOptions = {}) {
+  constructor(options: SelectButtonWidgetOptions = {}) {
     super();
-    const resolved = {...DEFAULT_TAB_BAR_OPTIONS, ...options};
+    const resolved = {...DEFAULT_SELECT_BUTTON_OPTIONS, ...options};
 
     this.#x = resolved.x;
     this.#y = resolved.y;
     this.#width = resolved.width;
     this.#height = resolved.height;
-    this.#tabs = resolved.tabs;
-    this.#value = resolved.value;
+    this.#options = resolved.options;
     this.#disabled = resolved.disabled;
+
+    if (resolved.value === undefined) {
+      this.#selectedIndex = this.#options.length > 0 ? 0 : -1;
+    } else {
+      this.#selectedIndex = this.#options.indexOf(resolved.value);
+    }
 
     this.#colorFgNormal = parseColor(resolved.colorFgNormal);
     this.#colorBgNormal = parseColor(resolved.colorBgNormal);
@@ -80,7 +85,7 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
       const mouseData = data as MouseEvent;
-      const index = this.#hitTestTab(mouseData.x);
+      const index = this.#hitTestOption(mouseData.x);
       if (index >= 0) {
         this.#select(index);
       }
@@ -93,7 +98,7 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
       const mouseData = data as MouseEvent;
-      this.#hoveredIndex = this.#hitTestTab(mouseData.x);
+      this.#hoveredIndex = this.#hitTestOption(mouseData.x);
     });
 
     this.on('mouseover', (data: unknown) => {
@@ -103,7 +108,7 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
       const mouseData = data as MouseEvent;
-      this.#hoveredIndex = this.#hitTestTab(mouseData.x);
+      this.#hoveredIndex = this.#hitTestOption(mouseData.x);
     });
 
     this.on('mouseout', () => {
@@ -135,46 +140,53 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
       return;
     }
 
-    if (this.#tabs.length === 0) {
+    if (this.#options.length === 0 || this.#selectedIndex < 0) {
       return;
     }
 
     if (event.key === 'ArrowLeft') {
-      const newValue = (this.#value - 1 + this.#tabs.length) % this.#tabs.length;
-      this.#select(newValue);
+      const newIdx = (this.#selectedIndex - 1 + this.#options.length) % this.#options.length;
+      this.#select(newIdx);
       return;
     }
 
     if (event.key === 'ArrowRight') {
-      const newValue = (this.#value + 1) % this.#tabs.length;
-      this.#select(newValue);
+      const newIdx = (this.#selectedIndex + 1) % this.#options.length;
+      this.#select(newIdx);
     }
   }
 
-  get value(): number {
-    return this.#value;
+  get value(): unknown {
+    return this.#selectedIndex >= 0 ? this.#options[this.#selectedIndex] : undefined;
   }
 
   get activeLabel(): string {
-    if (this.#value < 0 || this.#value >= this.#tabs.length) {
+    if (this.#selectedIndex < 0 || this.#selectedIndex >= this.#options.length) {
       return '';
     }
 
-    return this.#tabs[this.#value] ?? '';
+    return String(this.#options[this.#selectedIndex]);
   }
 
-  updateValue(index: number): void {
-    this.#value = index;
+  updateValue(value: unknown): void {
+    const idx = this.#options.indexOf(value);
+    if (idx !== -1) {
+      this.#selectedIndex = idx;
+    }
   }
 
-  get tabs(): string[] {
-    return this.#tabs;
+  get options(): unknown[] {
+    return this.#options;
   }
 
-  setTabs(tabs: string[]): void {
-    this.#tabs = tabs;
-    if (this.#value >= tabs.length) {
-      this.#value = Math.max(0, tabs.length - 1);
+  setOptions(options: unknown[]): void {
+    const currentValue = this.#selectedIndex >= 0 ? this.#options[this.#selectedIndex] : undefined;
+    this.#options = options;
+    if (currentValue === undefined) {
+      this.#selectedIndex = options.length > 0 ? 0 : -1;
+    } else {
+      const newIdx = options.indexOf(currentValue);
+      this.#selectedIndex = newIdx === -1 ? (options.length > 0 ? 0 : -1) : newIdx;
     }
   }
 
@@ -221,7 +233,7 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    if (this.#width <= 0 || this.#height <= 0 || this.#tabs.length === 0) {
+    if (this.#width <= 0 || this.#height <= 0 || this.#options.length === 0) {
       return;
     }
 
@@ -236,11 +248,11 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
       bgRgba: baseBg,
     });
 
-    const layout = this.#computeTabLayout();
+    const layout = this.#computeLayout();
 
     for (let i = 0; i < layout.length; i++) {
       const {x, width, label} = layout[i]!;
-      const isActive = i === this.#value;
+      const isActive = i === this.#selectedIndex;
       const isHovered = i === this.#hoveredIndex;
 
       if (isActive) {
@@ -307,10 +319,11 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
     super.unmounted();
   }
 
-  #computeTabLayout(): Array<{x: number; width: number; label: string}> {
+  #computeLayout(): Array<{x: number; width: number; label: string}> {
     const layout: Array<{x: number; width: number; label: string}> = [];
     let currentX = this.#x;
-    for (const label of this.#tabs) {
+    for (const item of this.#options) {
+      const label = String(item);
       const cellWidth = label.length + 2;
       layout.push({x: currentX, width: cellWidth, label});
       currentX += cellWidth + 1;
@@ -319,8 +332,8 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
     return layout;
   }
 
-  #hitTestTab(mouseX: number): number {
-    const layout = this.#computeTabLayout();
+  #hitTestOption(mouseX: number): number {
+    const layout = this.#computeLayout();
     for (const [i, element] of layout.entries()) {
       const {x, width} = element;
       if (mouseX >= x && mouseX < x + width) {
@@ -332,17 +345,17 @@ export class TabBarWidget extends TuiWidgetEntity implements Focusable {
   }
 
   #select(index: number): void {
-    if (index === this.#value) {
+    if (index === this.#selectedIndex) {
       return;
     }
 
-    this.#value = index;
-    this.dispatch('change', {value: this.#value, label: this.#tabs[this.#value] ?? ''});
+    this.#selectedIndex = index;
+    this.dispatch('change', {value: this.#options[this.#selectedIndex], label: String(this.#options[this.#selectedIndex])});
   }
 }
 
-export function createTabBarWidget(options?: Partial<TabBarWidgetOptions>): TabBarWidget {
-  return new TabBarWidget({...DEFAULT_TAB_BAR_OPTIONS, ...options});
+export function createSelectButtonWidget(options?: Partial<SelectButtonWidgetOptions>): SelectButtonWidget {
+  return new SelectButtonWidget({...DEFAULT_SELECT_BUTTON_OPTIONS, ...options});
 }
 
-export default TabBarWidget;
+export default SelectButtonWidget;

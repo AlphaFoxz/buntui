@@ -38,8 +38,8 @@ export {createCheckboxWidget, CheckboxWidget} from './widgets/checkbox/CheckboxW
 export type {CheckboxWidgetOptions} from './widgets/checkbox/types';
 export {createRadioGroupWidget, RadioGroupWidget} from './widgets/radio/RadioGroupWidget';
 export type {RadioGroupWidgetOptions} from './widgets/radio/types';
-export {createTabBarWidget, TabBarWidget} from './widgets/tab-bar/TabBarWidget';
-export type {TabBarWidgetOptions} from './widgets/tab-bar/types';
+export {createSelectButtonWidget, SelectButtonWidget} from './widgets/select-button/SelectButtonWidget';
+export type {SelectButtonWidgetOptions} from './widgets/select-button/types';
 export {createSwitchWidget, SwitchWidget} from './widgets/switch_/SwitchWidget';
 export type {SwitchWidgetOptions} from './widgets/switch_/types';
 export {BorderSides, BorderStyle, CursorMode} from './draw_list/types';

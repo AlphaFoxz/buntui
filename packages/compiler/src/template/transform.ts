@@ -138,12 +138,16 @@ function transformElement(
   const creator = WIDGET_TAG_MAP[tag];
   if (creator) {
     ctx.usedCreators.add(creator);
+  } else {
+    const known = [...Object.keys(WIDGET_TAG_MAP), ...Object.keys(ctx.options?.components ?? {})];
+    // Throw new Error(`Unknown component <${tag}> at line ${node.loc.start.line}:${node.loc.start.column}. Known components: ${known.join(', ')}`);
+    throw new Error(`Unknown component <${tag}> at line ${node.loc.start.line}:${node.loc.start.column}.`);
   }
 
   return {
     type: 'TuiWidgetCall',
     tag,
-    creator: creator ?? tag,
+    creator,
     props,
     dynamicProps,
     events,
@@ -196,7 +200,7 @@ const V_MODEL_TAG_CONFIG: Record<string, {prop: string; event: string; payloadKe
   Checkbox: {prop: 'checked', event: 'change', payloadKey: 'checked'},
   Switch: {prop: 'checked', event: 'change', payloadKey: 'checked'},
   RadioGroup: {prop: 'value', event: 'change', payloadKey: 'value'},
-  TabBar: {prop: 'value', event: 'change', payloadKey: 'value'},
+  SelectButton: {prop: 'value', event: 'change', payloadKey: 'value'},
 };
 
 const V_MODEL_DEFAULT_CONFIG = {prop: 'value', event: 'input', payloadKey: 'value'} as const;

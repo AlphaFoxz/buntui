@@ -125,13 +125,13 @@ type TuiRadioGroupProps = {
   colorBgSelected?: number;
 };
 
-type TuiTabBarProps = {
+type TuiSelectButtonProps = {
   x?: number;
   y?: number;
   width?: number;
   height?: number;
-  tabs?: string[];
-  value?: number;
+  options?: unknown[];
+  value?: unknown;
   disabled?: boolean;
   colorFgNormal?: number;
   colorBgNormal?: number;
@@ -185,7 +185,7 @@ declare global {
       Button: TuiButtonProps;
       Checkbox: TuiCheckboxProps;
       RadioGroup: TuiRadioGroupProps;
-      TabBar: TuiTabBarProps;
+      SelectButton: TuiSelectButtonProps;
       Switch: TuiSwitchProps;
       FrameRateWatcher: TuiFrameRateWatcherProps;
     };

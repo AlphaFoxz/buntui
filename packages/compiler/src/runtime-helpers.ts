@@ -11,7 +11,7 @@ export const RUNTIME_HELPERS = {
   CREATE_BUTTON: 'createButtonWidget',
   CREATE_CHECKBOX: 'createCheckboxWidget',
   CREATE_RADIO_GROUP: 'createRadioGroupWidget',
-  CREATE_TAB_BAR: 'createTabBarWidget',
+  CREATE_SELECT_BUTTON: 'createSelectButtonWidget',
   CREATE_SWITCH: 'createSwitchWidget',
 
   // App & scene
@@ -34,7 +34,7 @@ export const WIDGET_TAG_MAP: Record<string, string> = {
   Button: RUNTIME_HELPERS.CREATE_BUTTON,
   Checkbox: RUNTIME_HELPERS.CREATE_CHECKBOX,
   RadioGroup: RUNTIME_HELPERS.CREATE_RADIO_GROUP,
-  TabBar: RUNTIME_HELPERS.CREATE_TAB_BAR,
+  SelectButton: RUNTIME_HELPERS.CREATE_SELECT_BUTTON,
   Switch: RUNTIME_HELPERS.CREATE_SWITCH,
   Matrix: 'createMatrixWidget',
 } as const;

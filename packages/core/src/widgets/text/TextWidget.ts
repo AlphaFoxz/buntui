@@ -267,8 +267,8 @@ export class TextWidget extends TuiWidgetEntity {
 export const DEFAULT_TEXT_OPTIONS: TextWidgetOptions = {
   x: 0 as U16,
   y: 0 as U16,
-  width: 0 as U16,
-  height: 0 as U16,
+  width: 32 as U16,
+  height: 1 as U16,
   colorFg: 0xFF_FF_FF_FF as U32,
   colorBg: 0x00_00_00_00 as U32,
   value: '',
