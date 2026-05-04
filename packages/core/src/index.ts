@@ -42,5 +42,7 @@ export {createSelectButtonWidget, SelectButtonWidget} from './widgets/select-but
 export type {SelectButtonWidgetOptions} from './widgets/select-button/types';
 export {createSwitchWidget, SwitchWidget} from './widgets/switch_/SwitchWidget';
 export type {SwitchWidgetOptions} from './widgets/switch_/types';
+export {createScrollBoxWidget, ScrollBoxWidget} from './widgets/scroll-box/ScrollBoxWidget';
+export type {ScrollBoxWidgetOptions} from './widgets/scroll-box/types';
 export {BorderSides, BorderStyle, CursorMode} from './draw_list/types';
 export type {KeyboardEvent, MouseEvent} from './events/types';

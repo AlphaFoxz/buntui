@@ -1,5 +1,6 @@
 export {type BoxWidgetOptions, createBox} from './box/BoxWidget';
 export type {Focusable} from './Focusable';
+export {InteractiveWidget} from './InteractiveWidget';
 export {createTextWidget, TextWidget} from './text/TextWidget';
 export type {TextWidgetOptions} from './text/types';
 export {createInputWidget, InputWidget} from './input/InputWidget';
@@ -14,3 +15,5 @@ export {createSelectButtonWidget, SelectButtonWidget} from './select-button/Sele
 export type {SelectButtonWidgetOptions} from './select-button/types';
 export {createSwitchWidget, SwitchWidget} from './switch_/SwitchWidget';
 export type {SwitchWidgetOptions} from './switch_/types';
+export {createScrollBoxWidget, ScrollBoxWidget} from './scroll-box/ScrollBoxWidget';
+export type {ScrollBoxWidgetOptions} from './scroll-box/types';

@@ -28,7 +28,7 @@ The compiler transforms `.vue` SFC files into TUI TypeScript modules:
 The compile entry point (`compiler/src/compile.ts`) orchestrates: parse → transform → codegen.
 
 **SFC template tags** map to widget creators via `WIDGET_TAG_MAP` in `compiler/src/runtime-helpers.ts`:
-`<Box>` → `createBox`, `<Text>` → `createTextWidget`, `<Input>` → `createInputWidget`, `<Button>` → `createButtonWidget`, `<Checkbox>` → `createCheckboxWidget`, `<RadioGroup>` → `createRadioGroupWidget`, `<SelectButton>` → `createSelectButtonWidget`, `<Switch>` → `createSwitchWidget`, `<Matrix>` → `createMatrixWidget`, `<FrameRateWatcher>` → `createFrameRateWatcher`.
+`<Box>` → `createBox`, `<Text>` → `createTextWidget`, `<Input>` → `createInputWidget`, `<Button>` → `createButtonWidget`, `<Checkbox>` → `createCheckboxWidget`, `<RadioGroup>` → `createRadioGroupWidget`, `<SelectButton>` → `createSelectButtonWidget`, `<Switch>` → `createSwitchWidget`, `<ScrollBox>` → `createScrollBoxWidget`, `<Matrix>` → `createMatrixWidget`, `<FrameRateWatcher>` → `createFrameRateWatcher`.
 
 The template AST (`compiler/src/template/ast.ts`) supports `v-if`/`v-else-if`/`v-else` conditionals (`TuiConditionalBlock`), `v-for` list rendering (`TuiListBlock`), static/dynamic props, and event bindings (`@click`, `@key`, etc.).
 

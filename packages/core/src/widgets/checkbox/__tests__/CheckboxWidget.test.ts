@@ -153,12 +153,6 @@ describe('label setter', () => {
     cb.setLabel('New');
     expect(cb.label).toBe('New');
   });
-
-  it('updateText alias updates label', () => {
-    const cb = createCheckbox();
-    cb.updateText('Updated');
-    expect(cb.label).toBe('Updated');
-  });
 });
 
 describe('disabled state', () => {

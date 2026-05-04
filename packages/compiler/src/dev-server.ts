@@ -1,6 +1,11 @@
 import path from 'node:path';
 import process from 'node:process';
-import {watch, readFileSync} from 'node:fs';
+import {
+  watch,
+  readFileSync,
+  readdirSync,
+  unlinkSync,
+} from 'node:fs';
 import {compile, type CompileOptions} from './compile';
 
 export type DevServerOptions = {
@@ -20,7 +25,7 @@ export type DevServerOptions = {
 
 const VUE_IMPORT_RE = /import\s+\w+\s+from\s+['"]([^'"]+\.vue)['"]/gv;
 
-let tempCounter = 0;
+let temporaryCounter = 0;
 
 /**
  * Recursively discover all .vue files in the import chain starting from `entryPath`.
@@ -78,6 +83,25 @@ function replaceImportPath(code: string, original: string, replacement: string):
     .replaceAll(`"${original}"`, `"${normalized}"`);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function, @stylistic/curly-newline -- cleanup callback
+const ignoreCleanupError = (): void => {};
+
+function cleanupStaleTemporaryFiles(dir: string): void {
+  try {
+    for (const entry of readdirSync(dir)) {
+      if (entry.startsWith('_hmr_') && entry.endsWith('.ts')) {
+        try {
+          unlinkSync(path.join(dir, entry));
+        } catch {
+          // File might be locked, skip
+        }
+      }
+    }
+  } catch {
+    // Directory might not exist
+  }
+}
+
 export function createDevServer(options: DevServerOptions): {close: () => void} {
   const {
     file,
@@ -88,84 +112,155 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
     debounceMs = 100,
   } = options;
 
+  // Clean up stale temporary files from previous sessions
+  cleanupStaleTemporaryFiles(path.dirname(file));
+
   let timer: ReturnType<typeof setTimeout> | undefined;
   let extraWatchers: Array<ReturnType<typeof watch>> = [];
 
-  async function reload() {
+  // Persistent state across reloads for incremental compilation
+  const compiledCache = new Map<string, string>(); // ResolvedPath -> compiled code
+  const childTemporaryMap = new Map<string, string>(); // ResolvedPath -> temp file path
+  let firstLoad = true;
+
+  /**
+   * Full reload: compile all files, write all temp files.
+   * Used on first load, root file change, or import graph change.
+   */
+  async function fullReload() {
+    const allVueFiles = discoverVueFiles(file);
+    const baseDir = path.dirname(file);
+
+    // Compile every .vue file
+    compiledCache.clear();
+    for (const vueFile of allVueFiles) {
+      const source = readFileSync(vueFile, 'utf-8');
+      const result = compile(source, {
+        filename: vueFile,
+        ...compileOptions,
+      });
+      compiledCache.set(vueFile, result.code);
+    }
+
+    // Delete old child temp files
+    const oldDeletions: Array<Promise<void>> = [];
+    for (const temporaryPath of childTemporaryMap.values()) {
+      oldDeletions.push(Bun.file(temporaryPath).unlink().catch(ignoreCleanupError));
+    }
+
+    await Promise.all(oldDeletions);
+    childTemporaryMap.clear();
+
+    // Write children to temp files
+    const childFiles = allVueFiles.filter(f => f !== file);
+    const childWrites: Array<Promise<void>> = [];
+    for (const vueFile of childFiles) {
+      let childCode = compiledCache.get(vueFile)!;
+      const childDir = path.dirname(vueFile);
+
+      // Replace transitive .vue imports with already-assigned temp files
+      for (const [resolvedChild, temporaryPath] of childTemporaryMap) {
+        const importPath = findVueImportPath(childCode, resolvedChild, childDir);
+        if (importPath) {
+          childCode = replaceImportPath(childCode, importPath, './' + path.basename(temporaryPath));
+        }
+      }
+
+      const childTemporary = path.join(baseDir, `_hmr_c_${temporaryCounter++}.ts`);
+      childTemporaryMap.set(vueFile, childTemporary);
+      childWrites.push(Bun.write(childTemporary, childCode).then(ignoreCleanupError));
+    }
+
+    await Promise.all(childWrites);
+
+    // Build and import root
+    await writeAndImportRoot(baseDir);
+  }
+
+  /**
+   * Incremental reload: only recompile the changed child file.
+   * Write a new temp file for it; unchanged children keep their temp files (Bun cache hit).
+   */
+  async function incrementalReload(changedFile: string) {
+    const baseDir = path.dirname(file);
+
+    // Recompile only the changed child
+    const source = readFileSync(changedFile, 'utf-8');
+    const result = compile(source, {
+      filename: changedFile,
+      ...compileOptions,
+    });
+    compiledCache.set(changedFile, result.code);
+
+    let childCode = result.code;
+    const childDir = path.dirname(changedFile);
+
+    // Replace transitive .vue imports in the changed child
+    for (const [resolvedChild, temporaryPath] of childTemporaryMap) {
+      if (resolvedChild === changedFile) {
+        continue;
+      }
+
+      const importPath = findVueImportPath(childCode, resolvedChild, childDir);
+      if (importPath) {
+        childCode = replaceImportPath(childCode, importPath, './' + path.basename(temporaryPath));
+      }
+    }
+
+    // Write new temp file for the changed child
+    const oldTemporary = childTemporaryMap.get(changedFile);
+    const newTemporary = path.join(baseDir, `_hmr_c_${temporaryCounter++}.ts`);
+    childTemporaryMap.set(changedFile, newTemporary);
+    await Bun.write(newTemporary, childCode);
+
+    // Delete old temp file
+    if (oldTemporary) {
+      await Bun.file(oldTemporary).unlink().catch(ignoreCleanupError);
+    }
+
+    // Build and import root with updated import paths
+    await writeAndImportRoot(baseDir);
+  }
+
+  /**
+   * Generate root temp file with all .vue imports replaced by child temp paths,
+   * then import it and call onReload.
+   */
+  async function writeAndImportRoot(baseDir: string) {
+    let rootCode = compiledCache.get(file)!;
+    for (const [resolvedChild, temporaryPath] of childTemporaryMap) {
+      const importPath = findVueImportPath(rootCode, resolvedChild, baseDir);
+      if (importPath) {
+        rootCode = replaceImportPath(rootCode, importPath, './' + path.basename(temporaryPath));
+      }
+    }
+
+    const temporaryFile = path.join(baseDir, `_hmr_${temporaryCounter++}.ts`);
+    await Bun.write(temporaryFile, rootCode);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- dynamic import of compiled output
+      const mod = (await import(temporaryFile)) as Record<string, unknown>;
+      if (typeof mod.setup !== 'function') {
+        throw new TypeError('Compiled module has no setup() export');
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- narrowed by typeof check above
+      onReload(mod.setup as (scene: unknown) => void);
+    } finally {
+      await Bun.file(temporaryFile).unlink();
+    }
+  }
+
+  async function reload(changedFile?: string) {
     try {
       onClear();
 
-      const allVueFiles = discoverVueFiles(file);
-      const baseDir = path.dirname(file);
-
-      // Compile every .vue file
-      const compiledMap = new Map<string, string>();
-      for (const vueFile of allVueFiles) {
-        const source = readFileSync(vueFile, 'utf-8');
-        const result = compile(source, {
-          filename: vueFile,
-          ...compileOptions,
-        });
-        compiledMap.set(vueFile, result.code);
-      }
-
-      // Write children to uniquely-named temp files
-      const childTemporaryMap = new Map<string, string>(); // ResolvedPath -> temporaryFilePath
-      const childTemporaryFiles: string[] = [];
-      const childWrites: Array<[string, string, string]> = [];
-
-      const childFiles = allVueFiles.filter(f => f !== file);
-
-      for (const vueFile of childFiles) {
-        let childCode = compiledMap.get(vueFile)!;
-        const childDir = path.dirname(vueFile);
-
-        // Replace transitive .vue imports with already-assigned temp files
-        for (const [resolvedChild, temporaryPath] of childTemporaryMap) {
-          const importPath = findVueImportPath(childCode, resolvedChild, childDir);
-          if (importPath) {
-            childCode = replaceImportPath(childCode, importPath, temporaryPath);
-          }
-        }
-
-        const childTemporary = path.join(baseDir, `_hmr_c_${tempCounter++}.ts`);
-        childTemporaryFiles.push(childTemporary);
-        childTemporaryMap.set(vueFile, childTemporary);
-        childWrites.push([vueFile, childCode, childTemporary]);
-      }
-
-      await Promise.all(childWrites.map(async ([, code, temporaryPath]) => {
-        await Bun.write(temporaryPath, code);
-      }));
-
-      // Build root code with all .vue imports replaced
-      let rootCode = compiledMap.get(file)!;
-      for (const [resolvedChild, temporaryPath] of childTemporaryMap) {
-        const importPath = findVueImportPath(rootCode, resolvedChild, baseDir);
-        if (importPath) {
-          rootCode = replaceImportPath(rootCode, importPath, temporaryPath);
-        }
-      }
-
-      // Write and import root temp file
-      const temporaryFile = path.join(baseDir, `_hmr_${tempCounter++}.ts`);
-      await Bun.write(temporaryFile, rootCode);
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- dynamic import of compiled output
-        const mod = (await import(temporaryFile)) as Record<string, unknown>;
-        if (typeof mod.setup !== 'function') {
-          throw new TypeError('Compiled module has no setup() export');
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- narrowed by typeof check above
-        onReload(mod.setup as (scene: unknown) => void);
-      } finally {
-        await Bun.file(temporaryFile).unlink();
-        await Promise.all(childTemporaryFiles.map(async f => {
-          await Bun.file(f).unlink().catch(() => {
-            // Ignore cleanup errors
-          });
-        }));
+      if (firstLoad || !changedFile || changedFile === file) {
+        // Root file changed or first load — need full recompile
+        firstLoad = false;
+        await fullReload();
+      } else {
+        await incrementalReload(changedFile);
       }
 
       // Refresh watchers for imported .vue files after successful compile
@@ -175,10 +270,10 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
     }
   }
 
-  function scheduleReload() {
+  function scheduleReload(changedFile?: string) {
     clearTimeout(timer);
     timer = setTimeout(() => {
-      void reload();
+      void reload(changedFile);
     }, debounceMs);
   }
 
@@ -198,7 +293,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
 
       // Watch all event types — Windows/VS Code may emit 'rename' instead of 'change'
       const w = watch(f, () => {
-        scheduleReload();
+        scheduleReload(f);
       });
       extraWatchers.push(w);
     }
@@ -206,7 +301,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
 
   // Watch the entry file (all event types for cross-platform compat)
   const mainWatcher = watch(file, () => {
-    scheduleReload();
+    scheduleReload(file);
   });
 
   // Set up child watchers immediately on initial startup
@@ -217,6 +312,14 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
     for (const w of extraWatchers) {
       w.close();
     }
+
+    for (const temporaryPath of childTemporaryMap.values()) {
+      try {
+        unlinkSync(temporaryPath);
+      } catch {
+        // Already deleted
+      }
+    }
   });
 
   return {
@@ -226,6 +329,16 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
       for (const w of extraWatchers) {
         w.close();
       }
+
+      for (const temporaryPath of childTemporaryMap.values()) {
+        try {
+          unlinkSync(temporaryPath);
+        } catch {
+          // Already deleted
+        }
+      }
+
+      childTemporaryMap.clear();
     },
   };
 }

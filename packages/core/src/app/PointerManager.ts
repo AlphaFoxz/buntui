@@ -1,4 +1,4 @@
-import {MouseEvent, TuiEventType} from '../events/types';
+import {MouseEvent, TuiEventType, type WheelEvent} from '../events/types';
 import {EVENT_BUS} from '../events';
 import type {TuiScene} from '../extern/app/TuiScene';
 import type {TuiWidgetEntity} from '../widgets/TuiWidgetEntity';
@@ -12,6 +12,7 @@ export class PointerManager {
   #dragOffsetX = 0;
   #dragOffsetY = 0;
   #mouseHandler: ((data: MouseEvent) => void) | undefined;
+  #wheelHandler: ((data: WheelEvent) => void) | undefined;
   readonly #getScene: () => TuiScene | undefined;
   readonly #focusManager: FocusManager;
 
@@ -126,12 +127,31 @@ export class PointerManager {
     };
 
     EVENT_BUS.on(TuiEventType.MouseEvent, this.#mouseHandler);
+
+    this.#wheelHandler = (data: WheelEvent) => {
+      const scene = this.#getScene();
+      if (!scene) {
+        return;
+      }
+
+      const hitTarget = scene.hitTest(data);
+      if (hitTarget) {
+        hitTarget.dispatch('wheel', data);
+      }
+    };
+
+    EVENT_BUS.on(TuiEventType.WheelEvent, this.#wheelHandler);
   }
 
   stop(): void {
     if (this.#mouseHandler) {
       EVENT_BUS.off(TuiEventType.MouseEvent, this.#mouseHandler);
       this.#mouseHandler = undefined;
+    }
+
+    if (this.#wheelHandler) {
+      EVENT_BUS.off(TuiEventType.WheelEvent, this.#wheelHandler);
+      this.#wheelHandler = undefined;
     }
 
     this.#pressTarget = undefined;

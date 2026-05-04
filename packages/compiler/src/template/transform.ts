@@ -16,6 +16,7 @@ import type {
   TuiEventBinding,
   TuiReactiveEffect,
   TuiConditionalBlock,
+  TuiListBlock,
 } from './ast';
 
 export type TransformOptions = {
@@ -48,6 +49,10 @@ export function transform(root: RootNode, options?: TransformOptions): TuiRender
       const {block, nextIndex} = processConditionalChain(node, root.children, i, ctx);
       children.push(block);
       i = nextIndex;
+    } else if (node.type === NodeTypes.ELEMENT && findDirective(node, 'for')) {
+      const listBlock = processListBlock(node, ctx);
+      children.push(listBlock);
+      i++;
     } else {
       const transformed = transformNode(node, ctx);
       if (transformed) {
@@ -114,9 +119,13 @@ function transformElement(
   // Transform children recursively
   const children: TuiRenderNode[] = [];
   for (const child of node.children) {
-    const transformed = transformNode(child, ctx);
-    if (transformed) {
-      children.push(transformed);
+    if (child.type === NodeTypes.ELEMENT && findDirective(child, 'for')) {
+      children.push(processListBlock(child, ctx));
+    } else {
+      const transformed = transformNode(child, ctx);
+      if (transformed) {
+        children.push(transformed);
+      }
     }
   }
 
@@ -388,6 +397,60 @@ function processConditionalChain(
   }
 
   return {block, nextIndex: i};
+}
+
+/**
+ * Parse v-for expression like "item in items" or "(item, index) in items".
+ */
+function parseForExpression(exp: string): {itemVar: string; indexVar?: string; listExpression: string} {
+  const match = /^\s*(?:\(\s*(\w+)\s*,\s*(\w+)\s*\)|(\w+))\s+in\s+(.+)$/sv.exec(exp);
+  if (!match) {
+    throw new Error(`Invalid v-for expression: "${exp}"`);
+  }
+
+  if (match[1] && match[2]) {
+    return {itemVar: match[1], indexVar: match[2], listExpression: match[4]!.trim()};
+  }
+
+  return {itemVar: match[3]!, listExpression: match[4]!.trim()};
+}
+
+function processListBlock(
+  node: ElementNode,
+  ctx: TransformContext,
+): TuiListBlock {
+  const vForDir = findDirective(node, 'for')!;
+  if (!vForDir.exp?.type || vForDir.exp.type !== NodeTypes.SIMPLE_EXPRESSION) {
+    throw new Error(`v-for requires an expression at ${node.loc.start.line}:${node.loc.start.column}`);
+  }
+
+  const {itemVar, indexVar, listExpression} = parseForExpression(vForDir.exp.content);
+
+  // <template> acts as a fragment — children become the list body directly
+  const isFragment = node.tag === 'template';
+  const body: TuiRenderNode[] = [];
+
+  if (isFragment) {
+    for (const child of node.children) {
+      const transformed = transformNode(child, ctx);
+      if (transformed) {
+        body.push(transformed);
+      }
+    }
+  } else {
+    // Non-template element with v-for: the element itself is the repeated body
+    const transformed = transformElement(node, ctx);
+    body.push(transformed);
+  }
+
+  return {
+    type: 'TuiListBlock',
+    itemVar,
+    indexVar,
+    listExpression,
+    body,
+    loc: node.loc,
+  };
 }
 
 function camelize(value: string): string {

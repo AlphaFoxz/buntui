@@ -160,12 +160,6 @@ describe('label setter', () => {
     sw.setLabel('New');
     expect(sw.label).toBe('New');
   });
-
-  it('updateText alias updates label', () => {
-    const sw = createSwitch();
-    sw.updateText('Updated');
-    expect(sw.label).toBe('Updated');
-  });
 });
 
 describe('disabled state', () => {

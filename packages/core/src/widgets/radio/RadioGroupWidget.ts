@@ -1,8 +1,7 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent, type MouseEvent} from '../../events/types';
 import type {TuiWidgetRect} from '../types';
-import {TuiWidgetEntity} from '../TuiWidgetEntity';
-import type {Focusable} from '../Focusable';
+import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import type {RadioGroupWidgetOptions} from './types';
 
@@ -28,16 +27,11 @@ const DEFAULT_RADIO_OPTIONS: Required<RadioGroupWidgetOptions> = {
   colorBgSelected: 0x31_32_44_FF,
 };
 
-export class RadioGroupWidget extends TuiWidgetEntity implements Focusable {
-  #x: number;
-  #y: number;
-  #width: number;
-  #height: number;
+export class RadioGroupWidget extends InteractiveWidget {
+  readonly #rect: TuiWidgetRect;
   #options: string[];
   #value: number;
   #hoveredIndex = -1;
-  #focused = false;
-  #disabled: boolean;
 
   readonly #colorFgNormal: number;
   readonly #colorBgNormal: number;
@@ -52,13 +46,15 @@ export class RadioGroupWidget extends TuiWidgetEntity implements Focusable {
     super();
     const resolved = {...DEFAULT_RADIO_OPTIONS, ...options};
 
-    this.#x = resolved.x;
-    this.#y = resolved.y;
-    this.#width = resolved.width;
-    this.#height = resolved.height;
+    this.#rect = {
+      x: resolved.x,
+      y: resolved.y,
+      width: resolved.width,
+      height: resolved.height,
+    };
     this.#options = resolved.options;
     this.#value = resolved.value;
-    this.#disabled = resolved.disabled;
+    this.setDisabled(resolved.disabled);
 
     this.#colorFgNormal = parseColor(resolved.colorFgNormal);
     this.#colorBgNormal = parseColor(resolved.colorBgNormal);
@@ -70,13 +66,13 @@ export class RadioGroupWidget extends TuiWidgetEntity implements Focusable {
     this.#colorBgSelected = parseColor(resolved.colorBgSelected);
 
     this.on('mousedown', (data: unknown) => {
-      if (this.#disabled) {
+      if (this.disabled) {
         return;
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
       const mouseData = data as MouseEvent;
-      const innerY = (mouseData.y - 1) - this.#y;
+      const innerY = (mouseData.y - 1) - this.#rect.y;
       if (innerY >= 0 && innerY < this.#options.length) {
         this.#hoveredIndex = innerY;
         this.#select(this.#hoveredIndex);
@@ -84,26 +80,26 @@ export class RadioGroupWidget extends TuiWidgetEntity implements Focusable {
     });
 
     this.on('mouseover', (data: unknown) => {
-      if (this.#disabled) {
+      if (this.disabled) {
         return;
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
       const mouseData = data as MouseEvent;
-      const innerY = (mouseData.y - 1) - this.#y;
+      const innerY = (mouseData.y - 1) - this.#rect.y;
       if (innerY >= 0 && innerY < this.#options.length) {
         this.#hoveredIndex = innerY;
       }
     });
 
     this.on('mousemove', (data: unknown) => {
-      if (this.#disabled) {
+      if (this.disabled) {
         return;
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
       const mouseData = data as MouseEvent;
-      const innerY = (mouseData.y - 1) - this.#y;
+      const innerY = (mouseData.y - 1) - this.#rect.y;
       if (innerY >= 0 && innerY < this.#options.length) {
         this.#hoveredIndex = innerY;
       }
@@ -114,22 +110,8 @@ export class RadioGroupWidget extends TuiWidgetEntity implements Focusable {
     });
   }
 
-  get acceptsFocus(): boolean {
-    return !this.#disabled;
-  }
-
-  focus(): void {
-    this.#focused = true;
-    this.dispatch('focus', undefined);
-  }
-
-  blur(): void {
-    this.#focused = false;
-    this.dispatch('blur', undefined);
-  }
-
   handleKey(event: KeyboardEvent): void {
-    if (this.#disabled) {
+    if (this.disabled) {
       return;
     }
 
@@ -192,72 +174,44 @@ export class RadioGroupWidget extends TuiWidgetEntity implements Focusable {
     }
   }
 
-  get disabled(): boolean {
-    return this.#disabled;
-  }
-
-  setDisabled(value: boolean): void {
-    this.#disabled = value;
-  }
-
   override get rect(): TuiWidgetRect {
-    return {
-      x: this.#x,
-      y: this.#y,
-      width: this.#width,
-      height: this.#height,
-    };
+    return this.#rect;
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {
-    if (rect.x !== undefined) {
-      this.#x = rect.x;
-    }
-
-    if (rect.y !== undefined) {
-      this.#y = rect.y;
-    }
-
-    if (rect.width !== undefined) {
-      this.#width = rect.width;
-    }
-
-    if (rect.height !== undefined) {
-      this.#height = rect.height;
-    }
+    Object.assign(this.#rect, rect);
   }
 
   override containsPoint(x: number, y: number): boolean {
-    return x >= this.#x
-      && x < this.#x + this.#width
-      && y >= this.#y
-      && y < this.#y + this.#height;
+    const {x: rx, y: ry, width: rw, height: rh} = this.#rect;
+    return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    if (this.#width <= 0 || this.#height <= 0) {
+    const {x, y, width, height} = this.#rect;
+    if (width <= 0 || height <= 0) {
       return;
     }
 
-    buffer.pushClip(this.#x, this.#y, this.#width, this.#height);
+    buffer.pushClip(x, y, width, height);
 
-    const baseFg = this.#disabled ? this.#colorFgDisabled : this.#colorFgNormal;
-    const baseBg = this.#disabled ? this.#colorBgDisabled : this.#colorBgNormal;
+    const baseFg = this.disabled ? this.#colorFgDisabled : this.#colorFgNormal;
+    const baseBg = this.disabled ? this.#colorBgDisabled : this.#colorBgNormal;
 
     buffer.drawRect({
-      x: this.#x,
-      y: this.#y,
-      width: this.#width,
-      height: this.#height,
+      x,
+      y,
+      width,
+      height,
       bgRgba: baseBg,
     });
 
-    const visibleCount = Math.min(this.#options.length, this.#height);
+    const visibleCount = Math.min(this.#options.length, height);
     for (let i = 0; i < visibleCount; i++) {
       const option = this.#options[i]!;
       const isSelected = i === this.#value;
       const isHovered = i === this.#hoveredIndex;
-      const y = this.#y + i;
+      const rowY = y + i;
 
       const indicator = isSelected ? '(●)' : '( )';
       const fg = isSelected ? this.#colorFgSelected : (isHovered ? this.#colorFgFocused : baseFg);
@@ -265,21 +219,21 @@ export class RadioGroupWidget extends TuiWidgetEntity implements Focusable {
 
       if (bg !== 0x00_00_00_00) {
         buffer.drawRect({
-          x: this.#x,
-          y,
-          width: this.#width,
+          x,
+          y: rowY,
+          width,
           height: 1,
           bgRgba: bg,
         });
       }
 
-      const maxLabelWidth = this.#width - indicator.length - 1;
+      const maxLabelWidth = width - indicator.length - 1;
       const label = maxLabelWidth > 0 ? option.slice(0, Math.max(0, maxLabelWidth)) : '';
       const text = `${indicator} ${label}`;
 
       buffer.drawText({
-        x: this.#x,
-        y,
+        x,
+        y: rowY,
         text,
         fgRgba: fg,
         bgRgba: 0x00_00_00_00,
@@ -287,14 +241,6 @@ export class RadioGroupWidget extends TuiWidgetEntity implements Focusable {
     }
 
     buffer.popClip();
-  }
-
-  override unmounted(): void {
-    if (this.#focused) {
-      this.blur();
-    }
-
-    super.unmounted();
   }
 
   #select(index: number): void {

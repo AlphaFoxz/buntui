@@ -283,6 +283,12 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
         lines.push(...result.lines, `${varName}.addChild(${childVarName});`);
         nextIndex = result.nextIndex;
       }
+    } else if (child.type === 'TuiListBlock') {
+      const result = generateList(child, nextIndex, varName);
+      if (result) {
+        lines.push(...result.lines);
+        nextIndex = result.nextIndex;
+      }
     } else {
       const result = generateNode(child, nextIndex);
       if (result) {
@@ -628,20 +634,51 @@ function buildEventLines(node: TuiWidgetCall, varName: string): string[] {
   return result;
 }
 
-function generateList(node: TuiListBlock, index: number): NodeGenResult {
+function generateList(node: TuiListBlock, index: number, parentVar?: string): NodeGenResult {
   const lines: string[] = [];
-  const indexExpr = node.indexVar ? `, ${node.indexVar}` : '';
-  lines.push(`for (const [${node.itemVar}${indexExpr}] of ${node.listExpression}.entries()) {`);
+
+  // Numeric range: v-for="i in 20" → Vue iterates 1..N inclusive
+  const isRange = /^\d+$/v.test(node.listExpression.trim());
+  if (isRange) {
+    if (node.indexVar) {
+      // V-for="(item, index) in N" → index = 0..N-1, item = 1..N
+      lines.push(
+        `for (let ${node.indexVar} = 0; ${node.indexVar} < ${node.listExpression}; ${node.indexVar}++) {`,
+        `  const ${node.itemVar} = ${node.indexVar} + 1;`,
+      );
+    } else {
+      lines.push(`for (let ${node.itemVar} = 1; ${node.itemVar} <= ${node.listExpression}; ${node.itemVar}++) {`);
+    }
+  } else if (node.indexVar) {
+    // Array with index: entries() yields [index, value]
+    lines.push(`for (const [${node.indexVar}, ${node.itemVar}] of ${node.listExpression}.entries()) {`);
+  } else {
+    // Array without index
+    lines.push(`for (const ${node.itemVar} of ${node.listExpression}) {`);
+  }
 
   let nextIndex = index;
   for (const child of node.body) {
-    const result = generateNode(child, nextIndex);
-    if (result) {
-      for (const l of result.lines) {
-        lines.push(`  ${l}`);
-      }
+    if (child.type === 'TuiWidgetCall' && !child.isComponent && parentVar) {
+      const childVarName = getWidgetVarName(child, nextIndex);
+      const result = generateNode(child, nextIndex);
+      if (result) {
+        for (const l of result.lines) {
+          lines.push(`  ${l}`);
+        }
 
-      nextIndex = result.nextIndex;
+        lines.push(`  ${parentVar}.addChild(${childVarName});`);
+        nextIndex = result.nextIndex;
+      }
+    } else {
+      const result = generateNode(child, nextIndex);
+      if (result) {
+        for (const l of result.lines) {
+          lines.push(`  ${l}`);
+        }
+
+        nextIndex = result.nextIndex;
+      }
     }
   }
 

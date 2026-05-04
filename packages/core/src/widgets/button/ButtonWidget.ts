@@ -2,10 +2,17 @@ import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent, type MouseEvent} from '../../events/types';
 import {BorderSides} from '../../draw_list/types';
 import type {TuiWidgetRect} from '../types';
-import {TuiWidgetEntity} from '../TuiWidgetEntity';
-import type {Focusable} from '../Focusable';
+import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
+import {type ColorScheme, resolveColorState} from '../color-scheme';
 import type {ButtonWidgetOptions} from './types';
+
+type ButtonColors = {
+  fg: number;
+  bg: number;
+  borderColor: number;
+  borderStyle: number;
+};
 
 const DEFAULT_BUTTON_OPTIONS: Required<ButtonWidgetOptions> = {
   x: 0,
@@ -37,70 +44,56 @@ const DEFAULT_BUTTON_OPTIONS: Required<ButtonWidgetOptions> = {
   disabled: false,
 };
 
-export class ButtonWidget extends TuiWidgetEntity implements Focusable {
-  #x: number;
-  #y: number;
-  #width: number;
-  #height: number;
+export class ButtonWidget extends InteractiveWidget {
+  readonly #rect: TuiWidgetRect;
   #value: string;
 
-  #focused = false;
   #pressed = false;
-  #disabled: boolean;
 
-  readonly #colorFgNormal: number;
-  readonly #colorBgNormal: number;
-  readonly #borderColorNormal: number;
-  readonly #borderStyleNormal: number;
-
-  readonly #colorFgFocused: number;
-  readonly #colorBgFocused: number;
-  readonly #borderColorFocused: number;
-  readonly #borderStyleFocused: number;
-
-  readonly #colorFgPressed: number;
-  readonly #colorBgPressed: number;
-  readonly #borderColorPressed: number;
-  readonly #borderStylePressed: number;
-
-  readonly #colorFgDisabled: number;
-  readonly #colorBgDisabled: number;
-  readonly #borderColorDisabled: number;
-  readonly #borderStyleDisabled: number;
+  readonly #colors: ColorScheme<ButtonColors>;
 
   constructor(options: ButtonWidgetOptions = {}) {
     super();
     const resolved = {...DEFAULT_BUTTON_OPTIONS, ...options};
 
-    this.#x = resolved.x;
-    this.#y = resolved.y;
-    this.#width = resolved.width;
-    this.#height = resolved.height;
+    this.#rect = {
+      x: resolved.x,
+      y: resolved.y,
+      width: resolved.width,
+      height: resolved.height,
+    };
     this.#value = resolved.value;
-    this.#disabled = resolved.disabled;
+    this.setDisabled(resolved.disabled);
 
-    this.#colorFgNormal = parseColor(resolved.colorFgNormal);
-    this.#colorBgNormal = parseColor(resolved.colorBgNormal);
-    this.#borderColorNormal = parseColor(resolved.borderColorNormal);
-    this.#borderStyleNormal = resolved.borderStyleNormal;
-
-    this.#colorFgFocused = parseColor(resolved.colorFgFocused);
-    this.#colorBgFocused = parseColor(resolved.colorBgFocused);
-    this.#borderColorFocused = parseColor(resolved.borderColorFocused);
-    this.#borderStyleFocused = resolved.borderStyleFocused;
-
-    this.#colorFgPressed = parseColor(resolved.colorFgPressed);
-    this.#colorBgPressed = parseColor(resolved.colorBgPressed);
-    this.#borderColorPressed = parseColor(resolved.borderColorPressed);
-    this.#borderStylePressed = resolved.borderStylePressed;
-
-    this.#colorFgDisabled = parseColor(resolved.colorFgDisabled);
-    this.#colorBgDisabled = parseColor(resolved.colorBgDisabled);
-    this.#borderColorDisabled = parseColor(resolved.borderColorDisabled);
-    this.#borderStyleDisabled = resolved.borderStyleDisabled;
+    this.#colors = {
+      normal: {
+        fg: parseColor(resolved.colorFgNormal),
+        bg: parseColor(resolved.colorBgNormal),
+        borderColor: parseColor(resolved.borderColorNormal),
+        borderStyle: resolved.borderStyleNormal,
+      },
+      focused: {
+        fg: parseColor(resolved.colorFgFocused),
+        bg: parseColor(resolved.colorBgFocused),
+        borderColor: parseColor(resolved.borderColorFocused),
+        borderStyle: resolved.borderStyleFocused,
+      },
+      pressed: {
+        fg: parseColor(resolved.colorFgPressed),
+        bg: parseColor(resolved.colorBgPressed),
+        borderColor: parseColor(resolved.borderColorPressed),
+        borderStyle: resolved.borderStylePressed,
+      },
+      disabled: {
+        fg: parseColor(resolved.colorFgDisabled),
+        bg: parseColor(resolved.colorBgDisabled),
+        borderColor: parseColor(resolved.borderColorDisabled),
+        borderStyle: resolved.borderStyleDisabled,
+      },
+    };
 
     this.on('mousedown', (data: unknown) => {
-      if (this.#disabled) {
+      if (this.disabled) {
         return;
       }
 
@@ -111,7 +104,7 @@ export class ButtonWidget extends TuiWidgetEntity implements Focusable {
     });
 
     this.on('mouseup', (data: unknown) => {
-      if (this.#disabled) {
+      if (this.disabled) {
         return;
       }
 
@@ -122,23 +115,13 @@ export class ButtonWidget extends TuiWidgetEntity implements Focusable {
     });
   }
 
-  get acceptsFocus(): boolean {
-    return !this.#disabled;
-  }
-
-  focus(): void {
-    this.#focused = true;
-    this.dispatch('focus', undefined);
-  }
-
-  blur(): void {
-    this.#focused = false;
+  override blur(): void {
     this.#pressed = false;
-    this.dispatch('blur', undefined);
+    super.blur();
   }
 
   handleKey(event: KeyboardEvent): void {
-    if (this.#disabled) {
+    if (this.disabled) {
       return;
     }
 
@@ -159,137 +142,69 @@ export class ButtonWidget extends TuiWidgetEntity implements Focusable {
     this.#value = value;
   }
 
-  get disabled(): boolean {
-    return this.#disabled;
-  }
-
-  setDisabled(value: boolean): void {
-    this.#disabled = value;
-  }
-
   override get rect(): TuiWidgetRect {
-    return {
-      x: this.#x,
-      y: this.#y,
-      width: this.#width,
-      height: this.#height,
-    };
+    return this.#rect;
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {
-    if (rect.x !== undefined) {
-      this.#x = rect.x;
-    }
-
-    if (rect.y !== undefined) {
-      this.#y = rect.y;
-    }
-
-    if (rect.width !== undefined) {
-      this.#width = rect.width;
-    }
-
-    if (rect.height !== undefined) {
-      this.#height = rect.height;
-    }
+    Object.assign(this.#rect, rect);
   }
 
   override containsPoint(x: number, y: number): boolean {
-    return x >= this.#x
-      && x < this.#x + this.#width
-      && y >= this.#y
-      && y < this.#y + this.#height;
+    const {x: rx, y: ry, width: rw, height: rh} = this.#rect;
+    return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    if (this.#width <= 0 || this.#height <= 0) {
+    const {x, y, width, height} = this.#rect;
+    if (width <= 0 || height <= 0) {
       return;
     }
 
-    buffer.pushClip(this.#x, this.#y, this.#width, this.#height);
+    buffer.pushClip(x, y, width, height);
 
-    const state = this.#resolveVisualState();
+    const colors = resolveColorState(this.#colors, {
+      disabled: this.disabled,
+      pressed: this.#pressed,
+      focused: this.focused,
+    });
 
     buffer.drawRect({
-      x: this.#x,
-      y: this.#y,
-      width: this.#width,
-      height: this.#height,
-      bgRgba: state.bg,
+      x,
+      y,
+      width,
+      height,
+      bgRgba: colors.bg,
     });
 
     if (this.#value.length > 0) {
-      const innerWidth = this.#width - 2;
-      const innerHeight = this.#height - 2;
-      const textX = this.#x + 1 + Math.max(0, Math.floor((innerWidth - this.#value.length) / 2));
-      const textY = this.#y + 1 + Math.floor(innerHeight / 2);
+      const innerWidth = width - 2;
+      const innerHeight = height - 2;
+      const textX = x + 1 + Math.max(0, Math.floor((innerWidth - this.#value.length) / 2));
+      const textY = y + 1 + Math.floor(innerHeight / 2);
       const visibleText = this.#value.slice(0, Math.max(0, innerWidth));
       buffer.drawText({
         x: textX,
         y: textY,
         text: visibleText,
-        fgRgba: state.fg,
+        fgRgba: colors.fg,
         bgRgba: 0x00_00_00_00,
       });
     }
 
-    if (state.borderStyle !== 0) {
+    if (colors.borderStyle !== 0) {
       buffer.drawBorder({
-        x: this.#x,
-        y: this.#y,
-        width: this.#width,
-        height: this.#height,
-        colorRgba: state.borderColor,
-        style: state.borderStyle,
+        x,
+        y,
+        width,
+        height,
+        colorRgba: colors.borderColor,
+        style: colors.borderStyle,
         sides: BorderSides.All,
       });
     }
 
     buffer.popClip();
-  }
-
-  override unmounted(): void {
-    if (this.#focused) {
-      this.blur();
-    }
-
-    super.unmounted();
-  }
-
-  #resolveVisualState(): {fg: number; bg: number; borderColor: number; borderStyle: number} {
-    if (this.#disabled) {
-      return {
-        fg: this.#colorFgDisabled,
-        bg: this.#colorBgDisabled,
-        borderColor: this.#borderColorDisabled,
-        borderStyle: this.#borderStyleDisabled,
-      };
-    }
-
-    if (this.#pressed) {
-      return {
-        fg: this.#colorFgPressed,
-        bg: this.#colorBgPressed,
-        borderColor: this.#borderColorPressed,
-        borderStyle: this.#borderStylePressed,
-      };
-    }
-
-    if (this.#focused) {
-      return {
-        fg: this.#colorFgFocused,
-        bg: this.#colorBgFocused,
-        borderColor: this.#borderColorFocused,
-        borderStyle: this.#borderStyleFocused,
-      };
-    }
-
-    return {
-      fg: this.#colorFgNormal,
-      bg: this.#colorBgNormal,
-      borderColor: this.#borderColorNormal,
-      borderStyle: this.#borderStyleNormal,
-    };
   }
 }
 

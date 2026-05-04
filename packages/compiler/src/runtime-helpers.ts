@@ -13,6 +13,7 @@ export const RUNTIME_HELPERS = {
   CREATE_RADIO_GROUP: 'createRadioGroupWidget',
   CREATE_SELECT_BUTTON: 'createSelectButtonWidget',
   CREATE_SWITCH: 'createSwitchWidget',
+  CREATE_SCROLL_BOX: 'createScrollBoxWidget',
 
   // App & scene
   CREATE_APP: 'createApp',
@@ -36,5 +37,6 @@ export const WIDGET_TAG_MAP: Record<string, string> = {
   RadioGroup: RUNTIME_HELPERS.CREATE_RADIO_GROUP,
   SelectButton: RUNTIME_HELPERS.CREATE_SELECT_BUTTON,
   Switch: RUNTIME_HELPERS.CREATE_SWITCH,
+  ScrollBox: RUNTIME_HELPERS.CREATE_SCROLL_BOX,
   Matrix: 'createMatrixWidget',
 } as const;

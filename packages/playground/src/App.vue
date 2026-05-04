@@ -7,6 +7,7 @@
     <CheckboxDemo v-if="currentTab === 'Checkbox'" />
     <InputDemo v-if="currentTab === 'Input'" />
     <RadioDemo v-if="currentTab === 'Radio'" />
+    <ScrollBoxDemo v-if="currentTab === 'ScrollBox'" />
     <SwitchDemo v-if="currentTab === 'Switch'" />
     <TextDemo v-show="currentTab === 'Text'" />
 </template>
@@ -18,9 +19,20 @@ import ButtonDemo from './components/ButtonDemo.vue'
 import CheckboxDemo from './components/CheckboxDemo.vue'
 import InputDemo from './components/InputDemo.vue'
 import RadioDemo from './components/RadioDemo.vue'
+import ScrollBoxDemo from './components/ScrollBoxDemo.vue'
 import SwitchDemo from './components/SwitchDemo.vue'
 import TextDemo from './components/TextDemo.vue'
 
-const tabOptions = ref(['Box', 'Button', 'Checkbox', 'Input', 'Radio', 'Switch', 'Text'])
+const tabOptions = ref([
+    'Box',
+    'Button',
+    'Checkbox',
+    'Input',
+    'Radio',
+    'Switch',
+    'ScrollBox',
+    'Text',
+    // 'Text',
+])
 const currentTab = ref(tabOptions.value[0])
 </script>

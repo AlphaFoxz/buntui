@@ -1,8 +1,7 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent, type MouseEvent} from '../../events/types';
 import type {TuiWidgetRect} from '../types';
-import {TuiWidgetEntity} from '../TuiWidgetEntity';
-import type {Focusable} from '../Focusable';
+import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import type {SelectButtonWidgetOptions} from './types';
 
@@ -30,16 +29,11 @@ const DEFAULT_SELECT_BUTTON_OPTIONS = {
   colorFgSeparator: 0x45_47_5A_FF,
 };
 
-export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
-  #x: number;
-  #y: number;
-  #width: number;
-  #height: number;
+export class SelectButtonWidget extends InteractiveWidget {
+  readonly #rect: TuiWidgetRect;
   #options: unknown[];
   #selectedIndex: number;
   #hoveredIndex = -1;
-  #focused = false;
-  #disabled: boolean;
 
   readonly #colorFgNormal: number;
   readonly #colorBgNormal: number;
@@ -55,12 +49,14 @@ export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
     super();
     const resolved = {...DEFAULT_SELECT_BUTTON_OPTIONS, ...options};
 
-    this.#x = resolved.x;
-    this.#y = resolved.y;
-    this.#width = resolved.width;
-    this.#height = resolved.height;
+    this.#rect = {
+      x: resolved.x,
+      y: resolved.y,
+      width: resolved.width,
+      height: resolved.height,
+    };
     this.#options = resolved.options;
-    this.#disabled = resolved.disabled;
+    this.setDisabled(resolved.disabled);
 
     if (resolved.value === undefined) {
       this.#selectedIndex = this.#options.length > 0 ? 0 : -1;
@@ -79,7 +75,7 @@ export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
     this.#colorFgSeparator = parseColor(resolved.colorFgSeparator);
 
     this.on('mousedown', (data: unknown) => {
-      if (this.#disabled) {
+      if (this.disabled) {
         return;
       }
 
@@ -92,7 +88,7 @@ export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
     });
 
     this.on('mousemove', (data: unknown) => {
-      if (this.#disabled) {
+      if (this.disabled) {
         return;
       }
 
@@ -102,7 +98,7 @@ export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
     });
 
     this.on('mouseover', (data: unknown) => {
-      if (this.#disabled) {
+      if (this.disabled) {
         return;
       }
 
@@ -116,23 +112,13 @@ export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
     });
   }
 
-  get acceptsFocus(): boolean {
-    return !this.#disabled;
-  }
-
-  focus(): void {
-    this.#focused = true;
-    this.dispatch('focus', undefined);
-  }
-
-  blur(): void {
-    this.#focused = false;
+  override blur(): void {
     this.#hoveredIndex = -1;
-    this.dispatch('blur', undefined);
+    super.blur();
   }
 
   handleKey(event: KeyboardEvent): void {
-    if (this.#disabled) {
+    if (this.disabled) {
       return;
     }
 
@@ -177,16 +163,16 @@ export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
 
   override intrinsicSize(): {width: number; height: number} | undefined {
     if (this.#options.length === 0) {
-      return {width: 0, height: this.#height};
+      return {width: 0, height: this.#rect.height};
     }
 
     const layout = this.#computeLayout();
     if (layout.length === 0) {
-      return {width: 0, height: this.#height};
+      return {width: 0, height: this.#rect.height};
     }
 
     const last = layout.at(-1)!;
-    return {width: last.x + last.width - this.#x, height: this.#height};
+    return {width: last.x + last.width - this.#rect.x, height: this.#rect.height};
   }
 
   get options(): unknown[] {
@@ -204,119 +190,98 @@ export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
     }
   }
 
-  get disabled(): boolean {
-    return this.#disabled;
-  }
-
-  setDisabled(value: boolean): void {
-    this.#disabled = value;
-  }
-
   override get rect(): TuiWidgetRect {
     return {
-      x: this.#x,
-      y: this.#y,
+      x: this.#rect.x,
+      y: this.#rect.y,
       width: this.#effectiveWidth(),
-      height: this.#height,
+      height: this.#rect.height,
     };
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {
-    if (rect.x !== undefined) {
-      this.#x = rect.x;
-    }
-
-    if (rect.y !== undefined) {
-      this.#y = rect.y;
-    }
-
-    if (rect.width !== undefined) {
-      this.#width = rect.width;
-    }
-
-    if (rect.height !== undefined) {
-      this.#height = rect.height;
-    }
+    Object.assign(this.#rect, rect);
   }
 
   override containsPoint(x: number, y: number): boolean {
     const w = this.#effectiveWidth();
-    return x >= this.#x
-      && x < this.#x + w
-      && y >= this.#y
-      && y < this.#y + this.#height;
+    return x >= this.#rect.x
+      && x < this.#rect.x + w
+      && y >= this.#rect.y
+      && y < this.#rect.y + this.#rect.height;
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
+    const {x, y, height} = this.#rect;
     const w = this.#effectiveWidth();
-    if (w <= 0 || this.#height <= 0 || this.#options.length === 0) {
+    if (w <= 0 || height <= 0 || this.#options.length === 0) {
       return;
     }
 
-    buffer.pushClip(this.#x, this.#y, w, this.#height);
+    buffer.pushClip(x, y, w, height);
 
-    const baseBg = this.#disabled ? this.#colorBgDisabled : this.#colorBgNormal;
+    const baseBg = this.disabled ? this.#colorBgDisabled : this.#colorBgNormal;
     buffer.drawRect({
-      x: this.#x,
-      y: this.#y,
+      x,
+      y,
       width: w,
-      height: this.#height,
+      height,
       bgRgba: baseBg,
     });
 
     const layout = this.#computeLayout();
 
     for (let i = 0; i < layout.length; i++) {
-      const {x, width, label} = layout[i]!;
+      const {x: itemX, width: itemW, label} = layout[i]!;
       const isActive = i === this.#selectedIndex;
       const isHovered = i === this.#hoveredIndex;
 
       if (isActive) {
-        const bg = this.#disabled
+        const bg = this.disabled
           ? this.#colorBgDisabled
-          : (this.#focused ? this.#colorBgFocused : this.#colorBgActive);
+          : (this.focused ? this.#colorBgFocused : this.#colorBgActive);
         buffer.drawRect({
-          x,
-          y: this.#y,
-          width,
-          height: this.#height,
+          x: itemX,
+          y,
+          width: itemW,
+          height,
           bgRgba: bg,
         });
-      } else if (isHovered && !this.#disabled) {
+      } else if (isHovered && !this.disabled) {
         buffer.drawRect({
-          x,
-          y: this.#y,
-          width,
-          height: this.#height,
+          x: itemX,
+          y,
+          width: itemW,
+          height,
           bgRgba: this.#colorBgFocused,
         });
       }
 
       let fg: number;
-      if (this.#disabled) {
+      if (this.disabled) {
         fg = this.#colorFgDisabled;
       } else if (isActive) {
-        fg = this.#focused ? this.#colorFgFocused : this.#colorFgActive;
+        fg = this.focused ? this.#colorFgFocused : this.#colorFgActive;
       } else {
         fg = isHovered ? this.#colorFgFocused : this.#colorFgNormal;
       }
 
       const text = ` ${label} `;
-      const visibleText = text.slice(0, Math.max(0, width));
+      const visibleText = text.slice(0, Math.max(0, itemW));
       buffer.drawText({
-        x,
-        y: this.#y,
+        x: itemX,
+        y,
         text: visibleText,
         fgRgba: fg,
         bgRgba: 0x00_00_00_00,
       });
 
       if (i < layout.length - 1) {
-        const sepX = x + width;
-        const sepFg = this.#disabled ? this.#colorFgDisabled : this.#colorFgSeparator;
+        const sepX = itemX + itemW;
+        const sepFg = this.disabled ? this.#colorFgDisabled : this.#colorFgSeparator;
         buffer.drawText({
           x: sepX,
-          y: this.#y,
+          y,
           text: '│',
           fgRgba: sepFg,
           bgRgba: 0x00_00_00_00,
@@ -327,17 +292,9 @@ export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
     buffer.popClip();
   }
 
-  override unmounted(): void {
-    if (this.#focused) {
-      this.blur();
-    }
-
-    super.unmounted();
-  }
-
   #effectiveWidth(): number {
-    if (this.#width > 0) {
-      return this.#width;
+    if (this.#rect.width > 0) {
+      return this.#rect.width;
     }
 
     return this.intrinsicSize()?.width ?? 0;
@@ -345,7 +302,7 @@ export class SelectButtonWidget extends TuiWidgetEntity implements Focusable {
 
   #computeLayout(): Array<{x: number; width: number; label: string}> {
     const layout: Array<{x: number; width: number; label: string}> = [];
-    let currentX = this.#x;
+    let currentX = this.#rect.x;
     for (const item of this.#options) {
       const label = String(item);
       const cellWidth = label.length + 2;
