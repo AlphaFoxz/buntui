@@ -134,3 +134,164 @@ pub fn event_bus_stats(out_pending: *u64) void {
     const tail = global_bus.tail.load(.monotonic);
     out_pending.* = head - tail;
 }
+
+// ============ Tests ============
+
+test "EventBus init has zero head and tail" {
+    var bus = EventBus.init();
+    try std.testing.expectEqual(@as(u64, 0), bus.head.load(.monotonic));
+    try std.testing.expectEqual(@as(u64, 0), bus.tail.load(.monotonic));
+    try std.testing.expectEqual(@as(u64, 0), bus.sequence);
+}
+
+test "EventBus emit then poll returns event" {
+    var bus = EventBus.init();
+    const data = "hello";
+    try bus.emit(1, data);
+
+    const slot = bus.poll();
+    try std.testing.expect(slot != null);
+    try std.testing.expectEqual(@as(u32, 1), slot.?.header.event_type);
+    try std.testing.expectEqual(@as(u32, 5), slot.?.header.payload_len);
+    try std.testing.expectEqualStrings("hello", slot.?.data[0..5]);
+}
+
+test "EventBus poll returns null when empty" {
+    var bus = EventBus.init();
+    const slot = bus.poll();
+    try std.testing.expect(slot == null);
+}
+
+test "EventBus commit_read advances tail" {
+    var bus = EventBus.init();
+    try bus.emit(1, "a");
+    _ = bus.poll();
+    bus.commit_read();
+    // After commit, poll should return null (no more events)
+    const slot = bus.poll();
+    try std.testing.expect(slot == null);
+}
+
+test "EventBus FIFO order" {
+    var bus = EventBus.init();
+    try bus.emit(1, "first");
+    try bus.emit(2, "sec");
+
+    const s1 = bus.poll();
+    try std.testing.expect(s1 != null);
+    try std.testing.expectEqual(@as(u32, 1), s1.?.header.event_type);
+    try std.testing.expectEqualStrings("first", s1.?.data[0..5]);
+
+    bus.commit_read();
+
+    const s2 = bus.poll();
+    try std.testing.expect(s2 != null);
+    try std.testing.expectEqual(@as(u32, 2), s2.?.header.event_type);
+    try std.testing.expectEqualStrings("sec", s2.?.data[0..3]);
+
+    bus.commit_read();
+}
+
+test "EventBus sequence increments per emit" {
+    var bus = EventBus.init();
+    try bus.emit(1, "a");
+    try bus.emit(2, "b");
+
+    const s1 = bus.poll();
+    try std.testing.expectEqual(@as(u64, 0), s1.?.header.sequence);
+
+    bus.commit_read();
+
+    const s2 = bus.poll();
+    try std.testing.expectEqual(@as(u64, 1), s2.?.header.sequence);
+
+    bus.commit_read();
+}
+
+test "EventBus reject oversized payload" {
+    var bus = EventBus.init();
+    const big_data = [_]u8{0} ** (SLOT_SIZE - @sizeOf(EventHeader) + 1);
+    const result = bus.emit(1, &big_data);
+    try std.testing.expectError(error.EventTooLarge, result);
+}
+
+test "EventBus emit at max payload size succeeds" {
+    var bus = EventBus.init();
+    const max_data = [_]u8{0xAB} ** (SLOT_SIZE - @sizeOf(EventHeader));
+    try bus.emit(1, &max_data);
+
+    const slot = bus.poll();
+    try std.testing.expect(slot != null);
+    try std.testing.expectEqual(@as(u32, SLOT_SIZE - @sizeOf(EventHeader)), slot.?.header.payload_len);
+    try std.testing.expectEqual(@as(u8, 0xAB), slot.?.data[0]);
+}
+
+test "EventBus EventType enum values match TS TuiEventType" {
+    try std.testing.expectEqual(@as(u16, 1), @intFromEnum(EventType.KeyboardEvent));
+    try std.testing.expectEqual(@as(u16, 2), @intFromEnum(EventType.MouseEvent));
+    try std.testing.expectEqual(@as(u16, 3), @intFromEnum(EventType.WheelEvent));
+    try std.testing.expectEqual(@as(u16, 4), @intFromEnum(EventType.TermResizeEvent));
+}
+
+test "EventSlot header size is 16 bytes" {
+    try std.testing.expectEqual(@as(usize, 16), @sizeOf(EventHeader));
+}
+
+test "EventSlot total size is 256 bytes" {
+    try std.testing.expectEqual(@as(usize, 256), @sizeOf(EventSlot));
+}
+
+test "event_bus_setup initializes global bus" {
+    // Reset state first
+    initialized = false;
+    event_bus_setup();
+    try std.testing.expect(initialized);
+
+    // Second setup is idempotent
+    event_bus_setup();
+    try std.testing.expect(initialized);
+}
+
+test "event_bus_emit returns -1 when not initialized" {
+    initialized = false;
+    const result = event_bus_emit(1, "x", 1);
+    try std.testing.expectEqual(@as(c_int, -1), result);
+}
+
+test "event_bus_poll returns null when not initialized" {
+    initialized = false;
+    const result = event_bus_poll();
+    try std.testing.expect(result == null);
+}
+
+test "event_bus_commit is no-op when not initialized" {
+    initialized = false;
+    event_bus_commit();
+    // Should not crash
+}
+
+test "event_bus_stats returns 0 when not initialized" {
+    initialized = false;
+    var pending: u64 = 999;
+    event_bus_stats(&pending);
+    try std.testing.expectEqual(@as(u64, 0), pending);
+}
+
+test "event_bus full FFI round-trip" {
+    event_bus_setup();
+
+    const data = "test";
+    const rc = event_bus_emit_bytes(2, data);
+    try std.testing.expectEqual(@as(c_int, 0), rc);
+
+    const slot = event_bus_poll();
+    try std.testing.expect(slot != null);
+    try std.testing.expectEqual(@as(u32, 2), slot.?.header.event_type);
+    try std.testing.expectEqualStrings("test", slot.?.data[0..4]);
+
+    event_bus_commit();
+
+    var pending: u64 = 99;
+    event_bus_stats(&pending);
+    try std.testing.expectEqual(@as(u64, 0), pending);
+}

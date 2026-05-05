@@ -1,0 +1,227 @@
+import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {TuiWidgetRect} from '../types';
+import {InteractiveWidget} from '../InteractiveWidget';
+import {parseColor} from '../../utils/color';
+import {type ColorScheme, resolveColorState} from '../color-scheme';
+import type {ProgressBarWidgetOptions} from './types';
+
+type ProgressBarColors = {
+  track: number;
+  fill: number;
+  text: number;
+};
+
+const DEFAULT_PROGRESSBAR_OPTIONS: Required<ProgressBarWidgetOptions> = {
+  x: 0,
+  y: 0,
+  width: 30,
+  height: 1,
+  value: 0,
+  min: 0,
+  max: 100,
+  label: '',
+  showPercentage: true,
+  disabled: false,
+
+  colorTrackNormal: 0x31_32_44_FF,
+  colorFillNormal: 0x89_B4_FA_FF,
+  colorTextNormal: 0xFF_FF_FF_FF,
+
+  colorTrackFocused: 0x45_47_5A_FF,
+  colorFillFocused: 0xB4_BE_FE_FF,
+  colorTextFocused: 0xFF_FF_FF_FF,
+
+  colorTrackDisabled: 0x1E_1E_2E_FF,
+  colorFillDisabled: 0x58_5B_70_FF,
+  colorTextDisabled: 0x6C_70_86_FF,
+};
+
+export class ProgressBarWidget extends InteractiveWidget {
+  readonly #rect: TuiWidgetRect;
+  #value: number;
+  #min: number;
+  #max: number;
+  #label: string;
+  #showPercentage: boolean;
+
+  readonly #colors: ColorScheme<ProgressBarColors>;
+
+  constructor(options: ProgressBarWidgetOptions = {}) {
+    super();
+    const resolved = {...DEFAULT_PROGRESSBAR_OPTIONS, ...options};
+
+    this.#rect = {
+      x: resolved.x,
+      y: resolved.y,
+      width: resolved.width,
+      height: resolved.height,
+    };
+    this.#min = resolved.min;
+    this.#max = resolved.max;
+    this.#value = this.#clamp(resolved.value);
+    this.#label = resolved.label;
+    this.#showPercentage = resolved.showPercentage;
+    this.setDisabled(resolved.disabled);
+
+    this.#colors = {
+      normal: {
+        track: parseColor(resolved.colorTrackNormal),
+        fill: parseColor(resolved.colorFillNormal),
+        text: parseColor(resolved.colorTextNormal),
+      },
+      focused: {
+        track: parseColor(resolved.colorTrackFocused),
+        fill: parseColor(resolved.colorFillFocused),
+        text: parseColor(resolved.colorTextFocused),
+      },
+      disabled: {
+        track: parseColor(resolved.colorTrackDisabled),
+        fill: parseColor(resolved.colorFillDisabled),
+        text: parseColor(resolved.colorTextDisabled),
+      },
+    };
+  }
+
+  get value(): number {
+    return this.#value;
+  }
+
+  get min(): number {
+    return this.#min;
+  }
+
+  get max(): number {
+    return this.#max;
+  }
+
+  get label(): string {
+    return this.#label;
+  }
+
+  get showPercentage(): boolean {
+    return this.#showPercentage;
+  }
+
+  override get rect(): TuiWidgetRect {
+    return this.#rect;
+  }
+
+  override updateRect(rect: Partial<TuiWidgetRect>): void {
+    Object.assign(this.#rect, rect);
+  }
+
+  override containsPoint(x: number, y: number): boolean {
+    const {x: rx, y: ry, width: rw, height: rh} = this.#rect;
+    return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
+  }
+
+  updateValue(value: number): void {
+    this.#value = this.#clamp(value);
+  }
+
+  setRange(min: number, max: number): void {
+    this.#min = min;
+    this.#max = max;
+    this.#value = this.#clamp(this.#value);
+  }
+
+  setLabel(text: string): void {
+    this.#label = text;
+  }
+
+  updateShowPercentage(value: boolean): void {
+    this.#showPercentage = value;
+  }
+
+  handleKey(): void {}
+
+  override emitDrawCommands(buffer: DrawListBuffer): void {
+    const {x, y, width, height} = this.#rect;
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+
+    buffer.pushClip(x, y, width, height);
+
+    const colors = resolveColorState(this.#colors, {
+      disabled: this.disabled,
+      focused: this.focused,
+    });
+
+    const textY = y + Math.floor(height / 2);
+
+    let barX = x;
+    let barWidth = width;
+
+    if (this.#label.length > 0) {
+      const maxLabelWidth = width - 4;
+      if (maxLabelWidth > 0) {
+        const visibleLabel = this.#label.slice(0, Math.max(0, maxLabelWidth));
+        buffer.drawText({
+          x,
+          y: textY,
+          text: visibleLabel,
+          fgRgba: colors.text,
+          bgRgba: 0x00_00_00_00,
+        });
+        barX = x + visibleLabel.length + 1;
+        barWidth = width - visibleLabel.length - 1;
+      }
+    }
+
+    if (barWidth > 0) {
+      buffer.drawRect({
+        x: barX,
+        y,
+        width: barWidth,
+        height,
+        bgRgba: colors.track,
+      });
+
+      const ratio = this.#getRatio();
+      const fillWidth = Math.round(ratio * barWidth);
+      if (fillWidth > 0) {
+        buffer.drawRect({
+          x: barX,
+          y,
+          width: fillWidth,
+          height,
+          bgRgba: colors.fill,
+        });
+      }
+
+      if (this.#showPercentage && barWidth >= 4) {
+        const percentageText = `${Math.round(ratio * 100)}%`;
+        const textX = barX + Math.floor((barWidth - percentageText.length) / 2);
+        buffer.drawText({
+          x: textX,
+          y: textY,
+          text: percentageText,
+          fgRgba: colors.text,
+          bgRgba: 0x00_00_00_00,
+        });
+      }
+    }
+
+    buffer.popClip();
+  }
+
+  #clamp(value: number): number {
+    return Math.min(this.#max, Math.max(this.#min, value));
+  }
+
+  #getRatio(): number {
+    const range = this.#max - this.#min;
+    if (range === 0) {
+      return this.#value >= this.#max ? 1 : 0;
+    }
+
+    return Math.max(0, Math.min(1, (this.#value - this.#min) / range));
+  }
+}
+
+export function createProgressBarWidget(options?: Partial<ProgressBarWidgetOptions>): ProgressBarWidget {
+  return new ProgressBarWidget({...DEFAULT_PROGRESSBAR_OPTIONS, ...options});
+}
+
+export default ProgressBarWidget;

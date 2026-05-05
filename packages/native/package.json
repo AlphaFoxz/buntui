@@ -2,7 +2,8 @@
     "name": "@buntui/native",
     "version": "0.0.0-alpha",
     "scripts": {
-        "build": "zig build"
+        "build": "zig build",
+        "zig-test": "zig build test"
     },
     "dependencies": {}
 }

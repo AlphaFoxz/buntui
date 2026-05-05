@@ -14,6 +14,7 @@ export const RUNTIME_HELPERS = {
   CREATE_SELECT_BUTTON: 'createSelectButtonWidget',
   CREATE_SWITCH: 'createSwitchWidget',
   CREATE_SCROLL_BOX: 'createScrollBoxWidget',
+  CREATE_PROGRESS_BAR: 'createProgressBarWidget',
 
   // App & scene
   CREATE_APP: 'createApp',
@@ -38,5 +39,6 @@ export const WIDGET_TAG_MAP: Record<string, string> = {
   SelectButton: RUNTIME_HELPERS.CREATE_SELECT_BUTTON,
   Switch: RUNTIME_HELPERS.CREATE_SWITCH,
   ScrollBox: RUNTIME_HELPERS.CREATE_SCROLL_BOX,
+  ProgressBar: RUNTIME_HELPERS.CREATE_PROGRESS_BAR,
   Matrix: 'createMatrixWidget',
 } as const;

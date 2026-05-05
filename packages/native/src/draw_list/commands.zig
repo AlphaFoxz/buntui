@@ -1,3 +1,4 @@
+const std = @import("std");
 const TuiScale = @import("../core/typedef.zig").TuiScale;
 
 // ============ Buffer Header ============
@@ -160,3 +161,104 @@ pub const DrawCharFlags = packed struct(u16) {
 pub const DrawTextFlags = packed struct(u16) {
     _reserved: u16 = 0,
 };
+
+// ============ Tests ============
+
+test "BUFFER_HEADER_SIZE and CMD_HEADER_SIZE" {
+    try std.testing.expectEqual(@as(usize, 8), BUFFER_HEADER_SIZE);
+    try std.testing.expectEqual(@as(usize, 8), CMD_HEADER_SIZE);
+}
+
+test "BUFFER_MAGIC is TB little-endian" {
+    try std.testing.expectEqual(@as(u16, 0x5442), BUFFER_MAGIC);
+}
+
+test "BUFFER_VERSION" {
+    try std.testing.expectEqual(@as(u8, 1), BUFFER_VERSION);
+}
+
+test "CmdHeader size is 8 bytes" {
+    try std.testing.expectEqual(@as(usize, 8), @sizeOf(CmdHeader));
+}
+
+test "DrawCmd enum values match TS types.ts" {
+    try std.testing.expectEqual(@as(u16, 0x0001), @intFromEnum(DrawCmd.SetBackground));
+    try std.testing.expectEqual(@as(u16, 0x0002), @intFromEnum(DrawCmd.SetCursor));
+    try std.testing.expectEqual(@as(u16, 0x0003), @intFromEnum(DrawCmd.PushClip));
+    try std.testing.expectEqual(@as(u16, 0x0004), @intFromEnum(DrawCmd.PopClip));
+    try std.testing.expectEqual(@as(u16, 0x0005), @intFromEnum(DrawCmd.SetEntityId));
+    try std.testing.expectEqual(@as(u16, 0x0010), @intFromEnum(DrawCmd.DrawRect));
+    try std.testing.expectEqual(@as(u16, 0x0011), @intFromEnum(DrawCmd.DrawText));
+    try std.testing.expectEqual(@as(u16, 0x0012), @intFromEnum(DrawCmd.DrawBorder));
+    try std.testing.expectEqual(@as(u16, 0x0013), @intFromEnum(DrawCmd.DrawShadow));
+    try std.testing.expectEqual(@as(u16, 0x0014), @intFromEnum(DrawCmd.DrawFill));
+    try std.testing.expectEqual(@as(u16, 0x0015), @intFromEnum(DrawCmd.DrawChar));
+    try std.testing.expectEqual(@as(u16, 0x0016), @intFromEnum(DrawCmd.DrawLine));
+    try std.testing.expectEqual(@as(u16, 0x0020), @intFromEnum(DrawCmd.SetTitle));
+    try std.testing.expectEqual(@as(u16, 0x0021), @intFromEnum(DrawCmd.ShowCursor));
+    try std.testing.expectEqual(@as(u16, 0x0022), @intFromEnum(DrawCmd.HideCursor));
+    try std.testing.expectEqual(@as(u16, 0x0023), @intFromEnum(DrawCmd.SetCursorMode));
+    try std.testing.expectEqual(@as(u16, 0x0030), @intFromEnum(DrawCmd.BeginSync));
+    try std.testing.expectEqual(@as(u16, 0x0031), @intFromEnum(DrawCmd.EndSync));
+}
+
+test "SetBackgroundPayload size" {
+    try std.testing.expectEqual(@as(usize, 4), @sizeOf(SetBackgroundPayload));
+}
+
+test "SetCursorPayload size" {
+    try std.testing.expectEqual(@as(usize, 4), @sizeOf(SetCursorPayload));
+}
+
+test "PushClipPayload size" {
+    try std.testing.expectEqual(@as(usize, 8), @sizeOf(PushClipPayload));
+}
+
+test "SetEntityIdPayload size" {
+    try std.testing.expectEqual(@as(usize, 8), @sizeOf(SetEntityIdPayload));
+}
+
+test "DrawRectPayload size" {
+    // u16*4 + u32 + u16 + u16 = 8 + 4 + 2 + 2 = 16
+    try std.testing.expectEqual(@as(usize, 16), @sizeOf(DrawRectPayload));
+}
+
+test "DrawTextFixedPayload size" {
+    // u16*2 + u32*2 + u16*2 = 4 + 8 + 4 = 16
+    try std.testing.expectEqual(@as(usize, 16), @sizeOf(DrawTextFixedPayload));
+}
+
+test "DrawBorderPayload size" {
+    // u16*4 + u32 + u8 + u8 + u16 = 8 + 4 + 1 + 1 + 2 = 16
+    try std.testing.expectEqual(@as(usize, 16), @sizeOf(DrawBorderPayload));
+}
+
+test "DrawShadowPayload size" {
+    // u16*6 + u32 = 12 + 4 = 16
+    try std.testing.expectEqual(@as(usize, 16), @sizeOf(DrawShadowPayload));
+}
+
+test "DrawCharPayload size" {
+    // u16*2 + u32*2 + u16*2 = 4 + 8 + 4 = 16
+    try std.testing.expectEqual(@as(usize, 16), @sizeOf(DrawCharPayload));
+}
+
+test "DrawLinePayload size" {
+    // u16*2 + u16*2 + u32 + u8 + 3 = 4 + 4 + 4 + 4 = 16
+    try std.testing.expectEqual(@as(usize, 16), @sizeOf(DrawLinePayload));
+}
+
+test "SetCursorModePayload size" {
+    try std.testing.expectEqual(@as(usize, 1), @sizeOf(SetCursorModePayload));
+}
+
+test "DrawRectFlags default" {
+    const flags = DrawRectFlags{};
+    try std.testing.expectEqual(false, flags.wide_char);
+}
+
+test "DrawRectFlags wide_char set" {
+    var flags = DrawRectFlags{};
+    flags.wide_char = true;
+    try std.testing.expectEqual(true, flags.wide_char);
+}

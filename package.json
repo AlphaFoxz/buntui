@@ -5,7 +5,10 @@
     "scripts": {
         "dev": "bun run --cwd ./packages/playground dev",
         "build": "bun run sync && bun run ./scripts/build.ts",
-        "sync": "bun run ./scripts/sync-version.ts"
+        "sync": "bun run ./scripts/sync-version.ts",
+        "test": "bun test && bun run --cwd ./packages/native zig-test",
+        "test:ts": "bun test",
+        "test:zig": "bun run --cwd ./packages/native zig-test"
     },
     "devDependencies": {
         "@types/bun": "^1.3.13",
