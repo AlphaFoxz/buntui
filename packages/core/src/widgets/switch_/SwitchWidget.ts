@@ -4,6 +4,7 @@ import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
+import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {SwitchWidgetOptions} from './types';
 
 type SwitchColors = {
@@ -59,12 +60,16 @@ export class SwitchWidget extends InteractiveWidget {
   constructor(options: SwitchWidgetOptions = {}) {
     super();
     const resolved = {...DEFAULT_SWITCH_OPTIONS, ...options};
+    const spec = extractPercentSpec(resolved.x, resolved.y, resolved.width, resolved.height);
+    if (spec) {
+      this.setPercentSpec(spec);
+    }
 
     this.#rect = {
-      x: resolved.x,
-      y: resolved.y,
-      width: resolved.width,
-      height: resolved.height,
+      x: isPercent(resolved.x) ? 0 : resolved.x,
+      y: isPercent(resolved.y) ? 0 : resolved.y,
+      width: isPercent(resolved.width) ? 0 : resolved.width,
+      height: isPercent(resolved.height) ? 0 : resolved.height,
     };
     this.#label = resolved.label;
     this.#checked = resolved.checked;

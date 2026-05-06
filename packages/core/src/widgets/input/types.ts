@@ -1,10 +1,11 @@
 import type {TuiColor} from '../../utils/color';
+import type {TuiSizeValue} from '../types';
 
 export type InputWidgetOptions = {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: TuiSizeValue;
+  y?: TuiSizeValue;
+  width?: TuiSizeValue;
+  height?: TuiSizeValue;
   colorFg?: TuiColor;
   colorBg?: TuiColor;
   placeholder?: string;

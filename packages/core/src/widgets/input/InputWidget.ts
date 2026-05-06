@@ -6,6 +6,7 @@ import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import type {Focusable} from '../Focusable';
 import {parseColor} from '../../utils/color';
 import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
+import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {InputWidgetOptions} from './types';
 
 function charIndexAtColumn(string_: string, column: number): number {
@@ -70,10 +71,15 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
   constructor(options: InputWidgetOptions = {}) {
     super();
     const resolved = {...DEFAULT_INPUT_OPTIONS, ...options};
-    this.#x = resolved.x ?? 0;
-    this.#y = resolved.y ?? 0;
-    this.#width = resolved.width ?? 32;
-    this.#height = resolved.height ?? 3;
+    const spec = extractPercentSpec(resolved.x, resolved.y, resolved.width, resolved.height);
+    if (spec) {
+      this.setPercentSpec(spec);
+    }
+
+    this.#x = isPercent(resolved.x) ? 0 : (resolved.x ?? 0);
+    this.#y = isPercent(resolved.y) ? 0 : (resolved.y ?? 0);
+    this.#width = isPercent(resolved.width) ? 0 : (resolved.width ?? 32);
+    this.#height = isPercent(resolved.height) ? 0 : (resolved.height ?? 3);
     this.#colorFg = parseColor(resolved.colorFg ?? 0xFF_FF_FF_FF);
     this.#colorBg = parseColor(resolved.colorBg ?? 0x1E_1E_2E_FF);
     this.#borderColorUnfocused = parseColor(resolved.borderColorUnfocused ?? 0x45_47_5A_FF);

@@ -147,6 +147,7 @@
         draggable
         :x="1"
         :y="19"
+        width="48%"
         :height="7"
         :direction="1"
         :gap="1"
@@ -163,6 +164,7 @@
         draggable
         :x="34"
         :y="19"
+        width="48%"
         :height="7"
         :direction="1"
         :gap="1"
@@ -179,6 +181,7 @@
         draggable
         :x="1"
         :y="27"
+        width="48%"
         :height="7"
         :direction="1"
         :gap="1"
@@ -195,6 +198,7 @@
         draggable
         :x="34"
         :y="27"
+        width="48%"
         :height="7"
         :direction="1"
         :gap="1"

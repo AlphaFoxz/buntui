@@ -1,10 +1,11 @@
 import type {TuiColor} from '../../utils/color';
+import type {TuiSizeValue} from '../types';
 
 export type ProgressBarWidgetOptions = {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: TuiSizeValue;
+  y?: TuiSizeValue;
+  width?: TuiSizeValue;
+  height?: TuiSizeValue;
   value?: number;
   min?: number;
   max?: number;

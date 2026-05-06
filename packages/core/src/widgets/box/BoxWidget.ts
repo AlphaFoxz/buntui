@@ -1,10 +1,12 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {BorderSides} from '../../draw_list/types';
 import {parseColor, type TuiColor} from '../../utils/color';
+import {extractPercentSpec, isPercent} from '../../utils/percent';
 import {
   LayoutAlignment as LayoutAlignmentEnum,
   type LayoutAlignment,
   type LayoutDirection,
+  type TuiSizeValue,
   type TuiWidgetBorder,
   type TuiWidgetColor,
   type TuiWidgetPadding,
@@ -15,10 +17,14 @@ import {
 } from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 
-export type BoxWidgetOptions = Omit<TuiWidgetRect & TuiWidgetColor & Partial<TuiWidgetBorder> & Partial<TuiWidgetShadow>, 'colorFg' | 'colorBg' | 'borderColor' | 'shadowColor'>
+export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & Partial<TuiWidgetShadow>, 'colorFg' | 'colorBg' | 'borderColor' | 'shadowColor'>
   & Partial<TuiWidgetStyle>
   & Partial<TuiWidgetPadding>
   & {
+    x?: TuiSizeValue;
+    y?: TuiSizeValue;
+    width?: TuiSizeValue;
+    height?: TuiSizeValue;
     colorFg?: TuiColor;
     colorBg?: TuiColor;
     borderColor?: TuiColor;
@@ -45,11 +51,16 @@ export class BoxWidget extends TuiWidgetEntity {
 
   constructor(options: BoxWidgetOptions) {
     super();
+    const spec = extractPercentSpec(options.x, options.y, options.width, options.height);
+    if (spec) {
+      this.setPercentSpec(spec);
+    }
+
     this.#rect = {
-      x: options.x,
-      y: options.y,
-      width: options.width,
-      height: options.height,
+      x: isPercent(options.x) ? 0 : (options.x ?? 0),
+      y: isPercent(options.y) ? 0 : (options.y ?? 0),
+      width: isPercent(options.width) ? 0 : (options.width ?? 32),
+      height: isPercent(options.height) ? 0 : (options.height ?? 3),
     };
     this.#color = {
       colorFg: parseColor(options.colorFg ?? 0xFF_FF_FF_FF),
@@ -398,6 +409,10 @@ export class BoxWidget extends TuiWidgetEntity {
     // Position each child
     let mainPos = 0;
     for (const child of children) {
+      if (child.hasPercentLayout) {
+        child.resolveLayout(contentWidth, contentHeight);
+      }
+
       const mainExtent = this.#resolveChildExtent(child, isVertical);
       const {crossPos, crossExtent} = this.#resolveCrossAxis(child, crossSize, isVertical);
 
@@ -424,10 +439,10 @@ export class BoxWidget extends TuiWidgetEntity {
 }
 
 export const DEFAULT_BOX_OPTIONS: BoxWidgetOptions = {
-  x: 0,
-  y: 0,
-  width: 32,
-  height: 3,
+  x: 0 as U16,
+  y: 0 as U16,
+  width: 32 as U16,
+  height: 3 as U16,
   borderStyle: 1 as U8,
   borderTop: true,
   borderRight: true,

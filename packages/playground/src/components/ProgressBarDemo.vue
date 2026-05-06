@@ -1,11 +1,11 @@
 <template>
-    <ProgressBar :x="1" :y="3" :width="40" :height="1" :value="downloadProgress" label="Download" />
-    <ProgressBar :x="1" :y="5" :width="40" :height="1" :value="cpuUsage" label="CPU" />
-    <ProgressBar :x="1" :y="7" :width="40" :height="1" :value="memoryUsage" label="Memory" />
-    <ProgressBar :x="1" :y="9" :width="40" :height="1" :value="diskUsage" label="Disk" />
-    <ProgressBar :x="1" :y="11" :width="40" :height="2" :value="health" label="Health" />
-    <ProgressBar :x="1" :y="14" :width="40" :height="1" :value="50" :disabled="true" label="Disabled" />
-    <ProgressBar :x="1" :y="16" :width="40" :height="1" :value="100" :showPercentage="false" label="No %" />
+    <ProgressBar :x="1" :y="3" width="95%" :height="1" :value="downloadProgress" label="Download" />
+    <ProgressBar :x="1" :y="5" width="95%" :height="1" :value="cpuUsage" label="CPU" />
+    <ProgressBar :x="1" :y="7" width="95%" :height="1" :value="memoryUsage" label="Memory" />
+    <ProgressBar :x="1" :y="9" width="95%" :height="1" :value="diskUsage" label="Disk" />
+    <ProgressBar :x="1" :y="11" width="95%" :height="2" :value="health" label="Health" />
+    <ProgressBar :x="1" :y="14" width="95%" :height="1" :value="50" :disabled="true" label="Disabled" />
+    <ProgressBar :x="1" :y="16" width="95%" :height="1" :value="100" :showPercentage="false" label="No %" />
 </template>
 
 <script setup lang="ts">

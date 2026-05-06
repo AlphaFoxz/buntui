@@ -4,6 +4,7 @@ import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import type {MouseEvent} from '../../events/types';
 import {type TuiWidgetEntity} from '../../widgets/TuiWidgetEntity';
 import {type TuiSceneOptions} from './types';
+import {TUI_CONTEXT_INSTANCE} from './TuiContext';
 
 export class TuiScene {
   readonly #id: bigint;
@@ -59,6 +60,15 @@ export class TuiScene {
   }
 
   emitDrawCommands(buf: DrawListBuffer): void {
+    // Resolve root widgets with percentage layouts against terminal dimensions
+    const termCols = TUI_CONTEXT_INSTANCE.cols;
+    const termRows = TUI_CONTEXT_INSTANCE.rows;
+    for (const widget of this.#widgets) {
+      if (widget.hasPercentLayout) {
+        widget.resolveLayout(termCols, termRows);
+      }
+    }
+
     buf.setBackground(this.#bgRgba);
     buf.setSynchronizedUpdate(true);
     buf.hideCursor();

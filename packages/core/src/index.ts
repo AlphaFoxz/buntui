@@ -25,6 +25,9 @@ export type {
   TuiWidgetBorderStyle,
   TuiWidgetSize,
   TuiWidgetPadding,
+  TuiPercent,
+  TuiSizeValue,
+  TuiWidgetPercentSpec,
   LayoutDirection,
   LayoutAlignment,
 } from './widgets/types';

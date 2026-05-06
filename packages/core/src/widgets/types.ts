@@ -169,3 +169,12 @@ export const LayoutAlignment = {
   Stretch: 3,
 } as const;
 export type LayoutAlignment = Enum<typeof LayoutAlignment>;
+
+export type TuiPercent = `${number}%`;
+export type TuiSizeValue = U16 | TuiPercent;
+export type TuiWidgetPercentSpec = {
+  x?: TuiPercent;
+  y?: TuiPercent;
+  width?: TuiPercent;
+  height?: TuiPercent;
+};

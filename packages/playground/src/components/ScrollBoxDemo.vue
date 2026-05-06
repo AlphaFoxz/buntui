@@ -1,5 +1,5 @@
 <template>
-    <ScrollBox :x="1" :y="3" :width="28" :height="9" :colorBg="'rgba(0,0,0,0)'">
+    <ScrollBox :x="1" :y="3" width="95%" :height="9" :colorBg="'rgba(0,0,0,0)'">
         <template v-for="(item, index) in 20">
             <Text
                 :x="1"

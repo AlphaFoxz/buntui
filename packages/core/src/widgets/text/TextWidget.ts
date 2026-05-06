@@ -1,7 +1,9 @@
 import {stringDisplayWidth, truncateToWidth, charDisplayWidth} from '../../utils/string-width';
 import {parseColor, type TuiColor} from '../../utils/color';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {
+  TuiSizeValue,
   TuiWidgetColor,
   TuiWidgetRect,
   TuiWidgetSize,
@@ -11,9 +13,13 @@ import type {
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import type {TextOverflow} from './types';
 
-export type TextWidgetOptions = Omit<TuiWidgetRect & TuiWidgetColor & TuiWidgetText, 'colorFg' | 'colorBg'>
+export type TextWidgetOptions = Omit<TuiWidgetColor & TuiWidgetText, 'colorFg' | 'colorBg'>
   & Partial<TuiWidgetStyle>
   & {
+    x?: TuiSizeValue;
+    y?: TuiSizeValue;
+    width?: TuiSizeValue;
+    height?: TuiSizeValue;
     colorFg?: TuiColor;
     colorBg?: TuiColor;
     overflow?: TextOverflow;
@@ -38,11 +44,16 @@ export class TextWidget extends TuiWidgetEntity {
 
   constructor(options: TextWidgetOptions) {
     super();
+    const spec = extractPercentSpec(options.x, options.y, options.width, options.height);
+    if (spec) {
+      this.setPercentSpec(spec);
+    }
+
     this.#rect = {
-      x: options.x,
-      y: options.y,
-      width: options.width,
-      height: options.height,
+      x: isPercent(options.x) ? 0 : (options.x ?? 0),
+      y: isPercent(options.y) ? 0 : (options.y ?? 0),
+      width: isPercent(options.width) ? 0 : (options.width ?? 32),
+      height: isPercent(options.height) ? 0 : (options.height ?? 1),
     };
     this.#color = {
       colorFg: parseColor(options.colorFg ?? 0xFF_FF_FF_FF),
@@ -265,10 +276,10 @@ export class TextWidget extends TuiWidgetEntity {
 }
 
 export const DEFAULT_TEXT_OPTIONS: TextWidgetOptions = {
-  x: 0 as U16,
-  y: 0 as U16,
-  width: 32 as U16,
-  height: 1 as U16,
+  x: 0,
+  y: 0,
+  width: 32,
+  height: 1,
   colorFg: 0xFF_FF_FF_FF as U32,
   colorBg: 0x00_00_00_00 as U32,
   value: '',

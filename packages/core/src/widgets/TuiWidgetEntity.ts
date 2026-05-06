@@ -1,6 +1,11 @@
+import {resolvePercent} from '../utils/percent';
 import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import type {Mountable} from '../extern/types';
-import type {TuiWidgetRect, TuiWidgetSize} from './types';
+import type {
+  TuiWidgetPercentSpec,
+  TuiWidgetRect,
+  TuiWidgetSize,
+} from './types';
 
 type WidgetEventHandler = (data: unknown) => void;
 
@@ -10,6 +15,43 @@ export abstract class TuiWidgetEntity implements Mountable {
   #visible = true;
   readonly #eventHandlers = new Map<string, Set<WidgetEventHandler>>();
   readonly #children: TuiWidgetEntity[] = [];
+  #percentSpec: TuiWidgetPercentSpec | undefined = undefined;
+
+  get hasPercentLayout(): boolean {
+    return this.#percentSpec !== undefined;
+  }
+
+  setPercentSpec(spec: TuiWidgetPercentSpec): void {
+    this.#percentSpec = spec;
+  }
+
+  resolveLayout(parentWidth: number, parentHeight: number): void {
+    if (!this.#percentSpec) {
+      return;
+    }
+
+    const updates: Partial<TuiWidgetRect> = {};
+    const spec = this.#percentSpec;
+    if (spec.x !== undefined) {
+      updates.x = resolvePercent(spec.x, parentWidth) as U16;
+    }
+
+    if (spec.y !== undefined) {
+      updates.y = resolvePercent(spec.y, parentHeight) as U16;
+    }
+
+    if (spec.width !== undefined) {
+      updates.width = resolvePercent(spec.width, parentWidth) as U16;
+    }
+
+    if (spec.height !== undefined) {
+      updates.height = resolvePercent(spec.height, parentHeight) as U16;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      this.updateRect(updates);
+    }
+  }
 
   get refrenceCount() {
     return this.#refrenceCount;
