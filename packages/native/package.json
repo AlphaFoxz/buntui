@@ -3,7 +3,7 @@
     "version": "0.0.0-alpha",
     "scripts": {
         "build": "zig build",
-        "zig-test": "zig build test"
+        "zig-test": "zig test src/tests.zig -lc"
     },
     "dependencies": {}
 }

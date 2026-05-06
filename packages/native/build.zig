@@ -28,10 +28,9 @@ pub fn build(b: *std.Build) void {
         .optimize = optimizeOpt,
     });
     test_module.linkSystemLibrary("c", .{});
-    const unit_tests = b.addTest(.{
+    const run_unit_tests = b.addTest(.{
         .root_module = test_module,
     });
-    const run_unit_tests = b.addRunArtifact(unit_tests);
 
     const test_step = b.step("test", "Run all unit tests");
     test_step.dependOn(&run_unit_tests.step);
