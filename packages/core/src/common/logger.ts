@@ -51,6 +51,7 @@ class LoggerImpl {
   #logLevel: number = LOG_LEVEL_INFO;
   readonly #taskQueue: Array<() => Promise<void>> = [];
   #running = false;
+  #immediateId: ReturnType<typeof setImmediate> | undefined;
   async init(options: LoggerOptions) {
     this.#logFileDir = options.logFileDir;
     const {logLevel} = options;
@@ -103,17 +104,23 @@ class LoggerImpl {
 
         await Promise.all(tasks);
       } finally {
-        setImmediate(() => {
+        this.#immediateId = setImmediate(() => {
           void consume();
         });
       }
     };
 
-    void consume();
+    this.#immediateId = setImmediate(() => {
+      void consume();
+    });
   }
 
   deinit() {
     this.#running = false;
+    if (this.#immediateId !== undefined) {
+      clearImmediate(this.#immediateId);
+      this.#immediateId = undefined;
+    }
   }
 
   logDebug(content: string) {

@@ -34,6 +34,7 @@ class EventBusImpl {
 
   stop(): void {
     this.#backend?.stopEvents();
+    this.#backend = undefined;
   }
 
   readonly #handleEvent: TuiBackendEventHandler = (eventType: number, event: TuiEvent) => {

@@ -93,7 +93,7 @@ export class TuiApp {
     this.#focusManager.blurWidget();
   }
 
-  stop() {
+  dispose() {
     this.#renderLoop.stop();
     this.#pointerManager.stop();
     this.#focusManager.stop();
@@ -103,6 +103,10 @@ export class TuiApp {
     this.#backend.stopApp();
     EVENT_BUS.stop();
     LOGGER.deinit();
+  }
+
+  stop() {
+    this.dispose();
     process.exit(0);
   }
 
@@ -168,7 +172,8 @@ function onUnexceptExit(error: unknown) {
   LOGGER.logError(errorString);
   setTimeout(() => {
     if (appInstance) {
-      appInstance.stop();
+      appInstance.dispose();
+      process.exit(1);
     }
   });
 }

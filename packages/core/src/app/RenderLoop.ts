@@ -8,6 +8,7 @@ export class RenderLoop {
   readonly #getScene: () => TuiScene | undefined;
   readonly #backend: TuiBackend;
   #running = false;
+  #timerId: ReturnType<typeof setTimeout> | undefined;
 
   constructor(getScene: () => TuiScene | undefined, backend: TuiBackend) {
     this.#getScene = getScene;
@@ -29,13 +30,17 @@ export class RenderLoop {
         this.#backend.renderDrawList(TUI_CONTEXT_INSTANCE, this.#drawList);
       }
 
-      setTimeout(tick, 5);
+      this.#timerId = setTimeout(tick, 5);
     };
 
-    setTimeout(tick, 0);
+    this.#timerId = setTimeout(tick, 0);
   }
 
   stop(): void {
     this.#running = false;
+    if (this.#timerId !== undefined) {
+      clearTimeout(this.#timerId);
+      this.#timerId = undefined;
+    }
   }
 }
