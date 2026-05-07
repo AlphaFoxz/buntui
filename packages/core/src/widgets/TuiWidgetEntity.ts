@@ -1,11 +1,31 @@
 import {resolvePercent} from '../utils/percent';
 import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import type {Mountable} from '../extern/types';
+import type {MouseEvent, WheelEvent} from '../events/types';
 import type {
   TuiWidgetPercentSpec,
   TuiWidgetRect,
   TuiWidgetSize,
 } from './types';
+
+export type TuiWidgetEventData = {
+  click: MouseEvent;
+  mousedown: MouseEvent;
+  mouseup: MouseEvent;
+  mouseover: MouseEvent;
+  mouseout: MouseEvent;
+  mousemove: MouseEvent;
+  contextmenu: MouseEvent;
+  dragstart: MouseEvent;
+  drag: MouseEvent;
+  dragend: MouseEvent;
+  wheel: WheelEvent;
+  focus: undefined;
+  blur: undefined;
+  input: {value: string};
+  submit: {value: string};
+  change: {checked: boolean} | {value: number; label: string} | {value: string; label: string};
+};
 
 type WidgetEventHandler = (data: unknown) => void;
 
@@ -101,6 +121,7 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   updateRect(_rect: Partial<TuiWidgetRect>): void {
     // Default no-op — subclasses override with actual implementation
+    void _rect;
   }
 
   containsPoint(x: number, y: number): boolean {
@@ -109,6 +130,8 @@ export abstract class TuiWidgetEntity implements Mountable {
     return false;
   }
 
+  on<E extends keyof TuiWidgetEventData>(event: E, handler: (data: TuiWidgetEventData[E]) => void): void;
+  on(event: string, handler: WidgetEventHandler): void;
   on(event: string, handler: WidgetEventHandler): void {
     let handlers = this.#eventHandlers.get(event);
     if (!handlers) {
@@ -119,10 +142,14 @@ export abstract class TuiWidgetEntity implements Mountable {
     handlers.add(handler);
   }
 
+  off<E extends keyof TuiWidgetEventData>(event: E, handler: (data: TuiWidgetEventData[E]) => void): void;
+  off(event: string, handler: WidgetEventHandler): void;
   off(event: string, handler: WidgetEventHandler): void {
     this.#eventHandlers.get(event)?.delete(handler);
   }
 
+  dispatch<E extends keyof TuiWidgetEventData>(eventType: E, data: TuiWidgetEventData[E]): void;
+  dispatch(eventType: string, data: unknown): void;
   dispatch(eventType: string, data: unknown): void {
     const handlers = this.#eventHandlers.get(eventType);
     if (handlers) {

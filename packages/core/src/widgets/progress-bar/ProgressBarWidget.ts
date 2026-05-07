@@ -138,7 +138,9 @@ export class ProgressBarWidget extends InteractiveWidget {
     this.#showPercentage = value;
   }
 
-  handleKey(): void {}
+  handleKey(): void {
+    // No-op
+  }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
     const {x, y, width, height} = this.#rect;

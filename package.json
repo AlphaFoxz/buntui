@@ -3,8 +3,9 @@
     "version": "0.0.0-alpha",
     "private": true,
     "scripts": {
-        "dev": "bun run --cwd ./packages/playground dev",
         "build": "bun run sync && bun run ./scripts/build.ts",
+        "check": "bunx xo --fix --config ./xo.config.ts",
+        "dev": "bun run --cwd ./packages/playground dev",
         "sync": "bun run ./scripts/sync-version.ts",
         "test": "bun test:zig && bun test:ts --coverage",
         "test:ts": "bun test",

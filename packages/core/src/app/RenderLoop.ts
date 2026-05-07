@@ -1,14 +1,17 @@
 import {DrawListBuffer} from '../draw_list/DrawListBuffer';
-import app, {TUI_CONTEXT_INSTANCE} from '../extern/app';
+import {TUI_CONTEXT_INSTANCE} from '../extern/app/TuiContext';
 import type {TuiScene} from '../extern/app/TuiScene';
+import type {TuiBackend} from './TuiBackend';
 
 export class RenderLoop {
   readonly #drawList = new DrawListBuffer();
   readonly #getScene: () => TuiScene | undefined;
+  readonly #backend: TuiBackend;
   #running = false;
 
-  constructor(getScene: () => TuiScene | undefined) {
+  constructor(getScene: () => TuiScene | undefined, backend: TuiBackend) {
     this.#getScene = getScene;
+    this.#backend = backend;
   }
 
   start(): void {
@@ -23,7 +26,7 @@ export class RenderLoop {
         this.#drawList.reset();
         scene.emitDrawCommands(this.#drawList);
         this.#drawList.finish();
-        app.renderDrawList(TUI_CONTEXT_INSTANCE, this.#drawList);
+        this.#backend.renderDrawList(TUI_CONTEXT_INSTANCE, this.#drawList);
       }
 
       setTimeout(tick, 5);

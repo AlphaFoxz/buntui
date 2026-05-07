@@ -51,4 +51,6 @@ export {createProgressBarWidget, ProgressBarWidget} from './widgets/progress-bar
 export type {ProgressBarWidgetOptions} from './widgets/progress-bar/types';
 export {BorderSides, BorderStyle, CursorMode} from './draw_list/types';
 export type {KeyboardEvent, MouseEvent} from './events/types';
-export {isPercent, resolvePercent, extractPercentSpec, resolveSizeValue} from './utils/percent';
+export {
+  isPercent, resolvePercent, extractPercentSpec, resolveSizeValue,
+} from './utils/percent';

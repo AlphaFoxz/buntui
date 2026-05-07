@@ -1,7 +1,10 @@
-import type {TuiAppOptions} from '../extern/app/types';
+import {type TuiAppOptions} from '../extern/app/types';
+import {type TuiBackend} from './TuiBackend';
 import TuiApp from './TuiApp';
 
-export function createApp(options?: Partial<TuiAppOptions>) {
+export type CreateAppOptions = Partial<TuiAppOptions> & {backend?: TuiBackend};
+
+export function createApp(options?: CreateAppOptions) {
   return new TuiApp(options);
 }
 

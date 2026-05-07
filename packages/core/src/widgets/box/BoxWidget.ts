@@ -348,11 +348,7 @@ export class BoxWidget extends TuiWidgetEntity {
   ): {crossPos: number; crossExtent: number} {
     const intrinsic = child.intrinsicSize();
     let crossExtent: number;
-    if (isVertical) {
-      crossExtent = intrinsic?.width ?? child.rect.width;
-    } else {
-      crossExtent = intrinsic?.height ?? child.rect.height;
-    }
+    crossExtent = isVertical ? intrinsic?.width ?? child.rect.width : intrinsic?.height ?? child.rect.height;
 
     let crossPos: number;
     switch (this.#align) {

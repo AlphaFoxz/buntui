@@ -2,7 +2,7 @@
 import path from 'node:path';
 import process from 'node:process';
 import {TuiEventType} from '../events/types';
-import app, {TUI_CONTEXT_INSTANCE} from '../extern/app';
+import {TUI_CONTEXT_INSTANCE} from '../extern/app/TuiContext';
 import {type LogLevel, type TuiAppOptions, type TuiSceneOptions} from '../extern/app/types';
 import {LOGGER} from '../common/logger';
 import {EVENT_BUS} from '../events';
@@ -10,22 +10,26 @@ import TuiScene from '../extern/app/TuiScene';
 import {FocusManager} from './FocusManager';
 import {PointerManager} from './PointerManager';
 import {RenderLoop} from './RenderLoop';
+import {type TuiBackend} from './TuiBackend';
+import {NativeBackend} from './NativeBackend';
 
 export class TuiApp {
   readonly #debugMode: boolean;
+  readonly #backend: TuiBackend;
   #scenes: TuiScene[] = [];
   #currentScene: TuiScene | undefined = undefined;
   readonly #focusManager = new FocusManager();
   readonly #pointerManager: PointerManager;
   readonly #renderLoop: RenderLoop;
 
-  constructor(options?: Partial<TuiAppOptions>) {
+  constructor(options?: Partial<TuiAppOptions> & {backend?: TuiBackend}) {
+    this.#backend = options?.backend ?? new NativeBackend();
     const logLevel: LogLevel = options?.logLevel ?? 'info';
     const logFileDir = options?.logFilePath ?? path.dirname(Bun.main);
     const backendLogName = options?.backendLogName ?? 'buntui-backend.log';
     const frontendLogName = options?.frontendLogName ?? 'buntui-frontend.log';
     const clearLog = options?.clearLog ?? false;
-    app.setupLogger(logFileDir, backendLogName, logLevel, clearLog);
+    this.#backend.setupLogger(logFileDir, backendLogName, logLevel, clearLog);
     this.#debugMode = options?.debugMode ?? false;
     void LOGGER.init({
       logFileDir,
@@ -37,7 +41,7 @@ export class TuiApp {
 
     const getScene = () => this.#currentScene;
     this.#pointerManager = new PointerManager(getScene, this.#focusManager);
-    this.#renderLoop = new RenderLoop(getScene);
+    this.#renderLoop = new RenderLoop(getScene, this.#backend);
     setAppInstance(this);
   }
 
@@ -62,16 +66,17 @@ export class TuiApp {
       }
     });
 
+    EVENT_BUS.attach(this.#backend);
     EVENT_BUS.on(TuiEventType.TermResizeEvent, () => {
-      app.detectTermSize(TUI_CONTEXT_INSTANCE);
+      this.#backend.detectTermSize(TUI_CONTEXT_INSTANCE);
       LOGGER.logInfo(`Terminal resized: ${TUI_CONTEXT_INSTANCE.rows}x${TUI_CONTEXT_INSTANCE.cols}`);
     });
 
     this.#pointerManager.start();
 
-    app.startApp();
+    this.#backend.startApp();
     EVENT_BUS.start();
-    app.detectTermSize(TUI_CONTEXT_INSTANCE);
+    this.#backend.detectTermSize(TUI_CONTEXT_INSTANCE);
     LOGGER.logInfo(`TUI_CONTEXT_INSTANCE.scale: ${TUI_CONTEXT_INSTANCE.rows} ${TUI_CONTEXT_INSTANCE.cols}`);
     this.#renderLoop.start();
   }
@@ -95,7 +100,7 @@ export class TuiApp {
 
     setAppInstance(undefined);
     this.#currentScene?.destroy();
-    app.stopApp();
+    this.#backend.stopApp();
     EVENT_BUS.stop();
     LOGGER.deinit();
     process.exit(0);

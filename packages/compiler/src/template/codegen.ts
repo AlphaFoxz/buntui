@@ -205,7 +205,7 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
       `const ${varName} = ${node.creator}.setup({`,
       `  mount(w) { scene.mount(w); ${varName}_w.push(w); },`,
       `  unmount(w) { scene.unmount(w); const i = ${varName}_w.indexOf(w); if (i >= 0) ${varName}_w.splice(i, 1); }`,
-      `});`,
+      '});',
       `effect(() => { const _v = ${wrapConditionExpr(showProp.expression)}; for (const w of ${varName}_w) { w.setVisible(_v); } });`,
     ];
     return {lines, nextIndex: index + 1};

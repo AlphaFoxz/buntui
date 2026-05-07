@@ -148,7 +148,7 @@ function transformElement(
   if (creator) {
     ctx.usedCreators.add(creator);
   } else {
-    const known = [...Object.keys(WIDGET_TAG_MAP), ...Object.keys(ctx.options?.components ?? {})];
+    // Const known = [...Object.keys(WIDGET_TAG_MAP), ...Object.keys(ctx.options?.components ?? {})];
     // Throw new Error(`Unknown component <${tag}> at line ${node.loc.start.line}:${node.loc.start.column}. Known components: ${known.join(', ')}`);
     throw new Error(`Unknown component <${tag}> at line ${node.loc.start.line}:${node.loc.start.column}.`);
   }

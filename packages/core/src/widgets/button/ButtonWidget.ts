@@ -1,5 +1,5 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
-import {type KeyboardEvent, type MouseEvent} from '../../events/types';
+import {type KeyboardEvent} from '../../events/types';
 import {BorderSides} from '../../draw_list/types';
 import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
@@ -97,25 +97,19 @@ export class ButtonWidget extends InteractiveWidget {
       },
     };
 
-    this.on('mousedown', (data: unknown) => {
+    this.on('mousedown', () => {
       if (this.disabled) {
         return;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-      const mouseData = data as MouseEvent;
-      void mouseData;
       this.#pressed = true;
     });
 
-    this.on('mouseup', (data: unknown) => {
+    this.on('mouseup', () => {
       if (this.disabled) {
         return;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-      const mouseData = data as MouseEvent;
-      void mouseData;
       this.#pressed = false;
     });
   }

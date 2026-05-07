@@ -1,5 +1,5 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
-import {type KeyboardEvent, type MouseEvent} from '../../events/types';
+import {type KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
@@ -79,36 +79,30 @@ export class SelectButtonWidget extends InteractiveWidget {
     this.#colorBgDisabled = parseColor(resolved.colorBgDisabled);
     this.#colorFgSeparator = parseColor(resolved.colorFgSeparator);
 
-    this.on('mousedown', (data: unknown) => {
+    this.on('mousedown', mouseData => {
       if (this.disabled) {
         return;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-      const mouseData = data as MouseEvent;
       const index = this.#hitTestOption(mouseData.x);
       if (index >= 0) {
         this.#select(index);
       }
     });
 
-    this.on('mousemove', (data: unknown) => {
+    this.on('mousemove', mouseData => {
       if (this.disabled) {
         return;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-      const mouseData = data as MouseEvent;
       this.#hoveredIndex = this.#hitTestOption(mouseData.x);
     });
 
-    this.on('mouseover', (data: unknown) => {
+    this.on('mouseover', mouseData => {
       if (this.disabled) {
         return;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-      const mouseData = data as MouseEvent;
       this.#hoveredIndex = this.#hitTestOption(mouseData.x);
     });
 

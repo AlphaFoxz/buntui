@@ -1,5 +1,5 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
-import {type KeyboardEvent, type MouseEvent} from '../../events/types';
+import {type KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
@@ -70,13 +70,11 @@ export class RadioGroupWidget extends InteractiveWidget {
     this.#colorFgSelected = parseColor(resolved.colorFgSelected);
     this.#colorBgSelected = parseColor(resolved.colorBgSelected);
 
-    this.on('mousedown', (data: unknown) => {
+    this.on('mousedown', mouseData => {
       if (this.disabled) {
         return;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-      const mouseData = data as MouseEvent;
       const innerY = (mouseData.y - 1) - this.#rect.y;
       if (innerY >= 0 && innerY < this.#options.length) {
         this.#hoveredIndex = innerY;
@@ -84,26 +82,22 @@ export class RadioGroupWidget extends InteractiveWidget {
       }
     });
 
-    this.on('mouseover', (data: unknown) => {
+    this.on('mouseover', mouseData => {
       if (this.disabled) {
         return;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-      const mouseData = data as MouseEvent;
       const innerY = (mouseData.y - 1) - this.#rect.y;
       if (innerY >= 0 && innerY < this.#options.length) {
         this.#hoveredIndex = innerY;
       }
     });
 
-    this.on('mousemove', (data: unknown) => {
+    this.on('mousemove', mouseData => {
       if (this.disabled) {
         return;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-      const mouseData = data as MouseEvent;
       const innerY = (mouseData.y - 1) - this.#rect.y;
       if (innerY >= 0 && innerY < this.#options.length) {
         this.#hoveredIndex = innerY;

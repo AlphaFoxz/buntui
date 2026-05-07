@@ -82,15 +82,6 @@ class LoggerImpl {
       fs.mkdirSync(this.#logFileDir);
     }
 
-    const backendLogPath = path.resolve(
-      this.#logFileDir,
-      options.backendLogName || 'buntui.log',
-    );
-    // TODO zig should do this
-    if (!fs.existsSync(backendLogPath)) {
-      fs.writeFileSync(backendLogPath, '');
-    }
-
     if (!fs.existsSync(this.#logFile) && clearLog) {
       fs.writeFileSync(this.#logFile, '');
     }

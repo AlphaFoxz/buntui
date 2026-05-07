@@ -94,9 +94,7 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
     this.#value = resolved.value ?? '';
     this.#cursorPos = this.#value.length;
 
-    this.on('mousedown', (data: unknown) => {
-      // eslint-disable-next-line
-      const mouseData = data as MouseEvent;
+    this.on('mousedown', mouseData => {
       const targetPos = this.#posFromMouse(mouseData);
 
       if (mouseData.shiftKey) {
@@ -112,13 +110,11 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
       this.#clampScrollOffset();
     });
 
-    this.on('mousemove', (data: unknown) => {
+    this.on('mousemove', mouseData => {
       if (!this.#isSelecting) {
         return;
       }
 
-      // eslint-disable-next-line
-      const mouseData = data as MouseEvent;
       if (!mouseData.buttons || mouseData.buttons === 0) {
         return;
       }
@@ -196,131 +192,49 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
       return;
     }
 
-    // Printable character
     if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
-      if (this.#maxLength === 0 || this.#value.length < this.#maxLength || this.#getSelectionRange() !== undefined) {
-        this.#deleteSelection();
-        if (this.#maxLength === 0 || this.#value.length < this.#maxLength) {
-          this.#value = this.#value.slice(0, this.#cursorPos) + event.key + this.#value.slice(this.#cursorPos);
-          this.#cursorPos++;
-        }
-
-        this.#clampScrollOffset();
-        this.dispatch('input', {value: this.#value});
-      }
-
+      this.#handleCharInput(event.key);
       return;
     }
 
     switch (event.key) {
       case 'Backspace': {
-        if (this.#deleteSelection()) {
-          break;
-        }
-
-        if (this.#cursorPos > 0) {
-          this.#value = this.#value.slice(0, this.#cursorPos - 1) + this.#value.slice(this.#cursorPos);
-          this.#cursorPos--;
-          this.#clampScrollOffset();
-          this.dispatch('input', {value: this.#value});
-        }
-
+        this.#handleBackspace();
         break;
       }
 
       case 'Delete': {
-        if (this.#deleteSelection()) {
-          break;
-        }
-
-        if (this.#cursorPos < this.#value.length) {
-          this.#value = this.#value.slice(0, this.#cursorPos) + this.#value.slice(this.#cursorPos + 1);
-          this.#clampScrollOffset();
-          this.dispatch('input', {value: this.#value});
-        }
-
+        this.#handleDelete();
         break;
       }
 
       case 'ArrowLeft': {
-        if (event.shiftKey) {
-          if (this.#selectionAnchor === undefined) {
-            this.#selectionAnchor = this.#cursorPos;
-          }
-        } else {
-          this.#selectionAnchor = undefined;
-        }
-
-        if (this.#cursorPos > 0) {
-          this.#cursorPos--;
-          this.#clampScrollOffset();
-        }
-
+        this.#handleArrowLeft(event);
         break;
       }
 
       case 'ArrowRight': {
-        if (event.shiftKey) {
-          if (this.#selectionAnchor === undefined) {
-            this.#selectionAnchor = this.#cursorPos;
-          }
-        } else {
-          this.#selectionAnchor = undefined;
-        }
-
-        if (this.#cursorPos < this.#value.length) {
-          this.#cursorPos++;
-          this.#clampScrollOffset();
-        }
-
+        this.#handleArrowRight(event);
         break;
       }
 
       case 'Home': {
-        if (event.shiftKey) {
-          if (this.#selectionAnchor === undefined) {
-            this.#selectionAnchor = this.#cursorPos;
-          }
-        } else {
-          this.#selectionAnchor = undefined;
-        }
-
-        this.#cursorPos = 0;
-        this.#scrollOffset = 0;
+        this.#handleHome(event);
         break;
       }
 
       case 'End': {
-        if (event.shiftKey) {
-          if (this.#selectionAnchor === undefined) {
-            this.#selectionAnchor = this.#cursorPos;
-          }
-        } else {
-          this.#selectionAnchor = undefined;
-        }
-
-        this.#cursorPos = this.#value.length;
-        this.#clampScrollOffset();
+        this.#handleEnd(event);
         break;
       }
 
       case 'a': {
-        if (event.ctrlKey && !event.altKey && !event.metaKey && this.#value.length > 0) {
-          this.#selectionAnchor = 0;
-          this.#cursorPos = this.#value.length;
-          this.#clampScrollOffset();
-        }
-
+        this.#handleSelectAll(event);
         break;
       }
 
       case 'Escape': {
-        if (this.#selectionAnchor === undefined) {
-          this.blur();
-        } else {
-          this.#selectionAnchor = undefined;
-        }
-
+        this.#handleEscape();
         break;
       }
 
@@ -588,6 +502,98 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
       this.#value.length,
       this.#scrollOffset + charIndexAtColumn(textFromScroll, innerX),
     ));
+  }
+
+  #handleCharInput(key: string): void {
+    if (this.#maxLength === 0 || this.#value.length < this.#maxLength || this.#getSelectionRange() !== undefined) {
+      this.#deleteSelection();
+      if (this.#maxLength === 0 || this.#value.length < this.#maxLength) {
+        this.#value = this.#value.slice(0, this.#cursorPos) + key + this.#value.slice(this.#cursorPos);
+        this.#cursorPos++;
+      }
+
+      this.#clampScrollOffset();
+      this.dispatch('input', {value: this.#value});
+    }
+  }
+
+  #handleBackspace(): void {
+    if (this.#deleteSelection()) {
+      return;
+    }
+
+    if (this.#cursorPos > 0) {
+      this.#value = this.#value.slice(0, this.#cursorPos - 1) + this.#value.slice(this.#cursorPos);
+      this.#cursorPos--;
+      this.#clampScrollOffset();
+      this.dispatch('input', {value: this.#value});
+    }
+  }
+
+  #handleDelete(): void {
+    if (this.#deleteSelection()) {
+      return;
+    }
+
+    if (this.#cursorPos < this.#value.length) {
+      this.#value = this.#value.slice(0, this.#cursorPos) + this.#value.slice(this.#cursorPos + 1);
+      this.#clampScrollOffset();
+      this.dispatch('input', {value: this.#value});
+    }
+  }
+
+  #updateSelectionForMovement(event: KeyboardEvent): void {
+    if (event.shiftKey) {
+      if (this.#selectionAnchor === undefined) {
+        this.#selectionAnchor = this.#cursorPos;
+      }
+    } else {
+      this.#selectionAnchor = undefined;
+    }
+  }
+
+  #handleArrowLeft(event: KeyboardEvent): void {
+    this.#updateSelectionForMovement(event);
+    if (this.#cursorPos > 0) {
+      this.#cursorPos--;
+      this.#clampScrollOffset();
+    }
+  }
+
+  #handleArrowRight(event: KeyboardEvent): void {
+    this.#updateSelectionForMovement(event);
+    if (this.#cursorPos < this.#value.length) {
+      this.#cursorPos++;
+      this.#clampScrollOffset();
+    }
+  }
+
+  #handleHome(event: KeyboardEvent): void {
+    this.#updateSelectionForMovement(event);
+    this.#cursorPos = 0;
+    this.#scrollOffset = 0;
+  }
+
+  #handleEnd(event: KeyboardEvent): void {
+    this.#updateSelectionForMovement(event);
+    this.#cursorPos = this.#value.length;
+    this.#clampScrollOffset();
+  }
+
+  #handleSelectAll(event: KeyboardEvent): void {
+    if (event.ctrlKey && !event.altKey && !event.metaKey && this.#value.length > 0) {
+      this.#selectionAnchor = 0;
+      this.#cursorPos = this.#value.length;
+      this.#clampScrollOffset();
+    }
+  }
+
+  #handleEscape(): void {
+    if (this.#selectionAnchor === undefined) {
+      this.blur();
+    } else {
+      this.#selectionAnchor = undefined;
+    }
   }
 }
 

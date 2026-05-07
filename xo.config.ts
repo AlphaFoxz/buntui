@@ -7,6 +7,7 @@ const expose: FlatXoConfig = [
   {
     ignores: [
       '**/*.test.ts',
+      '**/*.vue',
       '**/dist/**',
       'designs/**',
       'scripts/**',
@@ -77,6 +78,8 @@ const expose: FlatXoConfig = [
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-unused-private-class-members': 'warn',
       'unicorn/require-module-specifiers': 'off',
+      'complexity': ['error', {max: 35}],
+      'max-params': ['error', {max: 6}],
     },
   },
 ];
