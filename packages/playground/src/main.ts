@@ -1,6 +1,5 @@
 import {createApp} from '@buntui/core';
 import {setup} from './App.vue';
-// Import {setup} from './AppMatrix.vue';
 
 export function run() {
   const app = createApp({logLevel: 'debug', clearLog: true, debugMode: true});

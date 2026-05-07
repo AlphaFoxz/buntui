@@ -126,19 +126,28 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
     }
   }
 
-  // Widget declarations
+  // Widget declarations — split into declarative (non-component) and deferred
+  // (conditional/component) so that non-component widgets are created and
+  // mounted BEFORE any v-if/v-show effects run. This ensures correct z-order:
+  // later template nodes render on top of earlier ones.
   let widgetIndex = 0;
   const childStartIndices: number[] = [];
+  const declarativeLines: string[] = [];
+  const deferredLines: string[] = [];
   for (const child of root.children) {
     childStartIndices.push(widgetIndex);
     const generated = generateNode(child, widgetIndex);
     if (generated) {
-      lines.push(...generated.lines.map(l => `  ${l}`));
+      const isDeclarative = child.type === 'TuiWidgetCall' && !child.isComponent;
+      (isDeclarative ? declarativeLines : deferredLines).push(...generated.lines.map(l => `  ${l}`));
       widgetIndex = generated.nextIndex;
     }
   }
 
-  // Mount all top-level widgets (conditional blocks handle their own mounting)
+  // Emit non-component widget declarations first
+  lines.push(...declarativeLines);
+
+  // Mount all top-level non-component widgets (before conditional/component effects run)
   const mountedWidgetVars: string[] = [];
   for (let childIndex = 0; childIndex < root.children.length; childIndex++) {
     const child = root.children[childIndex]!;
@@ -148,6 +157,9 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
       mountedWidgetVars.push(varName);
     }
   }
+
+  // Emit conditional blocks and component setups after non-component widgets are mounted
+  lines.push(...deferredLines);
 
   // Return cleanup function so parent v-if can unmount this component's widgets
   const cleanupLines = mountedWidgetVars.map(v => `    scene.unmount(${v});`);

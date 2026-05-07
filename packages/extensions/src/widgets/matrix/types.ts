@@ -1,4 +1,4 @@
-import type {TuiWidgetRect} from '@buntui/core';
+import type {TuiSizeValue} from '@buntui/core';
 
 export type MatrixColorScheme = {
   /** RGBA color for the bright lead character (default: bright green) */
@@ -16,7 +16,11 @@ export type MatrixSpeedRange = {
   max: number;
 };
 
-export type MatrixWidgetOptions = Partial<TuiWidgetRect> & {
+export type MatrixWidgetOptions = {
+  x?: TuiSizeValue;
+  y?: TuiSizeValue;
+  width?: TuiSizeValue;
+  height?: TuiSizeValue;
   /** Color scheme overrides. Partially applied over defaults. */
   colorScheme?: Partial<MatrixColorScheme>;
   /** Speed range for column falls (default: {min:1, max:3}) */

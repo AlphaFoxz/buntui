@@ -1,4 +1,6 @@
-import {type DrawListBuffer, type TuiWidgetRect, TuiWidgetEntity} from '@buntui/core';
+import {
+  type DrawListBuffer, type TuiWidgetRect, TuiWidgetEntity, extractPercentSpec, isPercent,
+} from '@buntui/core';
 import {buildTrailGradient} from '../../utils/color';
 import {MATRIX_CHARSET} from './charset';
 import {DEFAULT_MATRIX_COLOR_SCHEME, DEFAULT_MATRIX_OPTIONS} from './defaults';
@@ -26,14 +28,21 @@ export class MatrixWidget extends TuiWidgetEntity {
   #columns: MatrixColumnState[] = [];
   #gradientLut: number[] = [];
   #initialized = false;
+  #lastTick = 0;
+  readonly #tickInterval: number;
 
   constructor(options: MatrixWidgetOptions = {}) {
     super();
     const resolved = {...DEFAULT_MATRIX_OPTIONS, ...options};
-    this.#x = resolved.x ?? 0;
-    this.#y = resolved.y ?? 0;
-    this.#width = resolved.width ?? 0;
-    this.#height = resolved.height ?? 0;
+    const spec = extractPercentSpec(resolved.x, resolved.y, resolved.width, resolved.height);
+    if (spec) {
+      this.setPercentSpec(spec);
+    }
+
+    this.#x = isPercent(resolved.x) ? 0 : (typeof resolved.x === 'number' ? resolved.x : 0);
+    this.#y = isPercent(resolved.y) ? 0 : (typeof resolved.y === 'number' ? resolved.y : 0);
+    this.#width = isPercent(resolved.width) ? 0 : (typeof resolved.width === 'number' ? resolved.width : 0);
+    this.#height = isPercent(resolved.height) ? 0 : (typeof resolved.height === 'number' ? resolved.height : 0);
 
     const schemeOverride = resolved.colorScheme ?? {};
     this.#colorScheme = {
@@ -46,6 +55,7 @@ export class MatrixWidget extends TuiWidgetEntity {
     this.#maxTrailLength = resolved.maxTrailLength ?? 20;
     this.#density = resolved.density ?? 0.8;
     this.#charset = resolved.charset ?? MATRIX_CHARSET;
+    this.#tickInterval = 16;
 
     this.#rebuildGradient();
   }
@@ -76,6 +86,12 @@ export class MatrixWidget extends TuiWidgetEntity {
 
     this.#ensureColumns(w, h);
 
+    const now = Date.now();
+    const shouldTick = now - this.#lastTick >= this.#tickInterval;
+    if (shouldTick) {
+      this.#lastTick = now;
+    }
+
     const absX = this.#x;
     const absY = this.#y;
     const charset = this.#charset;
@@ -85,7 +101,9 @@ export class MatrixWidget extends TuiWidgetEntity {
 
     for (let col = 0; col < this.#columns.length; col++) {
       const column = this.#columns[col]!;
-      tickColumn(column, h, this.#speedRange, this.#minTrailLength, this.#maxTrailLength, this.#density);
+      if (shouldTick) {
+        tickColumn(column, h, this.#speedRange, this.#minTrailLength, this.#maxTrailLength, this.#density);
+      }
 
       if (!column.active) {
         continue;

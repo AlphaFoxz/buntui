@@ -89,7 +89,9 @@ export class TuiScene {
     const mx = rawEvent.x - 1;
     const my = rawEvent.y - 1;
 
-    const sorted = [...this.#widgets].toSorted((a, b) => b.zIndex - a.zIndex);
+    // Reverse before sorting so equal-zIndex widgets are checked in reverse
+    // mount order (last-mounted = rendered on top = checked first).
+    const sorted = [...this.#widgets].toReversed().toSorted((a, b) => b.zIndex - a.zIndex);
     for (const widget of sorted) {
       if (widget.visible && widget.containsPoint(mx, my)) {
         return widget;

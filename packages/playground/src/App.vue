@@ -1,4 +1,6 @@
 <template>
+    <Matrix width="100%" height="100%" />
+
     <Text :x="1" :y="1" :colorFg="'rgba(108,112,134,1)'" value="buntui 组件示例 | 按 Q 退出" />
     <SelectButton :x="1" :y="2" :height="1" :options="tabOptions" v-model="currentTab" />
 

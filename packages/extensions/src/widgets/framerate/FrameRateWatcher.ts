@@ -3,6 +3,7 @@ import {
   DEFAULT_BOX_OPTIONS,
   TextWidget,
   TUI_CONTEXT_INSTANCE,
+  isPercent,
   type BoxWidgetOptions,
 } from '@buntui/core';
 
@@ -19,10 +20,10 @@ export class FrameRateWatcher extends BoxWidget {
       ...options,
     });
     this.#label = new TextWidget({
-      x: (options.x ?? 0) as U16,
-      y: (options.y ?? 0) as U16,
-      width: (options.width ?? 0) as U16,
-      height: (options.height ?? 0) as U16,
+      x: isPercent(options.x) ? 0 : (options.x ?? 0),
+      y: isPercent(options.y) ? 0 : (options.y ?? 0),
+      width: isPercent(options.width) ? 0 : (options.width ?? 0),
+      height: isPercent(options.height) ? 0 : (options.height ?? 0),
       colorFg: options.colorFg ?? 0xFF_FF_FF_FF,
       colorBg: 0x00_00_00_00 as U32,
       value: '0 fps',
