@@ -38,6 +38,6 @@ const tabOptions = ref([
     'ScrollBox',
     'Text',
     // 'Text',
-])
+] as const)
 const currentTab = ref(tabOptions.value[0])
 </script>

@@ -8,10 +8,10 @@
         "build": "bun build --target=bun --production ./src/index.ts --outfile ./dist/index.bun.mjs --external @vue/compiler-sfc --external @vue/compiler-core --external @vue/shared --external @vue/reactivity --external @buntui/core && tsc --project ./tsconfig.json"
     },
     "dependencies": {
-        "@vue/compiler-core": "^3.5.33",
-        "@vue/compiler-sfc": "^3.5.33",
-        "@vue/reactivity": "^3.5.33",
-        "@vue/shared": "^3.5.33",
+        "@vue/compiler-core": "^3.5.34",
+        "@vue/compiler-sfc": "^3.5.34",
+        "@vue/reactivity": "^3.5.34",
+        "@vue/shared": "^3.5.34",
         "@buntui/core": "workspace:*"
     },
     "devDependencies": {

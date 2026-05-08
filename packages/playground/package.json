@@ -6,7 +6,7 @@
         "build": "bun run ./scripts/build.ts --name=main.bunjs"
     },
     "dependencies": {
-        "@vue/reactivity": "^3.5.33",
+        "@vue/reactivity": "^3.5.34",
         "@buntui/compiler": "workspace:*",
         "@buntui/core": "workspace:*",
         "@buntui/extensions": "workspace:*"
@@ -14,6 +14,6 @@
     "devDependencies": {
         "@buntui/native": "workspace:*",
         "@types/bun": "^1.3.13",
-        "vue-tsc": "^3.2.7"
+        "vue-tsc": "^3.2.8"
     }
 }

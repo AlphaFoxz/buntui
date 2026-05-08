@@ -162,7 +162,7 @@
 
     <Box
         draggable
-        :x="34"
+        x="50%"
         :y="19"
         width="48%"
         :height="7"
@@ -196,7 +196,7 @@
 
     <Box
         draggable
-        :x="34"
+        x="50%"
         :y="27"
         width="48%"
         :height="7"

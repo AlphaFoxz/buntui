@@ -7,8 +7,8 @@
         "check": "bunx xo --fix --config ./xo.config.ts",
         "dev": "bun run --cwd ./packages/playground dev",
         "sync": "bun run ./scripts/sync-version.ts",
-        "test": "bun test:zig && bun test --coverage",
-        "test:ts": "bun test",
+        "test": "bun test:zig && bun test:ts",
+        "test:ts": "bun test --coverage --parallel",
         "test:zig": "bun run --cwd ./packages/native zig-test"
     },
     "devDependencies": {

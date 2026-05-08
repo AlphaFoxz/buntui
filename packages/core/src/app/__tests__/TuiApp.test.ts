@@ -157,6 +157,8 @@ describe('TuiApp lifecycle', () => {
     expect(startIdx).toBeGreaterThanOrEqual(0);
     expect(eventsIdx).toBeGreaterThan(startIdx);
     expect(detectIdx).toBeGreaterThan(startIdx);
+
+    app.dispose();
   });
 
   it('start calls startEvents after startApp', () => {
@@ -167,6 +169,8 @@ describe('TuiApp lifecycle', () => {
     expect(backend.calls).toContain('startApp');
     expect(backend.calls).toContain('startEvents');
     expect(backend.calls.indexOf('startEvents')).toBeGreaterThan(backend.calls.indexOf('startApp'));
+
+    app.dispose();
   });
 
   it('start calls detectTermSize', () => {
@@ -176,6 +180,8 @@ describe('TuiApp lifecycle', () => {
 
     const detectCalls = backend.calls.filter(c => c === 'detectTermSize').length;
     expect(detectCalls).toBeGreaterThanOrEqual(1);
+
+    app.dispose();
   });
 
   it('dispose calls stopApp and stopEvents', () => {
