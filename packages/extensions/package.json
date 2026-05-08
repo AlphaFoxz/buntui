@@ -15,6 +15,10 @@
         "./framerate": {
             "types": "./dist/framerate.d.ts",
             "default": "./dist/framerate.js"
+        },
+        "./snake": {
+            "types": "./dist/snake.d.ts",
+            "default": "./dist/snake.js"
         }
     },
     "sideEffects": false,

@@ -2,5 +2,6 @@
 //   import {Matrix} from '@buntui/extensions/matrix'
 export * from './matrix';
 export * from './framerate';
+export * from './snake';
 
 export {EXTENSION_REGISTRY} from './registry';
