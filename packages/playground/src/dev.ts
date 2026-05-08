@@ -1,21 +1,18 @@
 import path from 'node:path';
-import {createDevServer, type DevServerOptions} from '@buntui/compiler';
+import {createDevServer, CORE_REGISTRY, type DevServerOptions} from '@buntui/compiler';
 import {run} from './main';
 
 const {scene} = run();
 
-const VUE_FILE = path.join(import.meta.dir, 'App.vue');
+const VUE_FILE = path.join(import.meta.dir, 'Demo.vue');
 
 createDevServer({
   file: VUE_FILE,
   compileOptions: {
+    registry: CORE_REGISTRY,
     codegen: {
       coreModuleId: '@buntui/core',
       reactivityModuleId: '@vue/reactivity',
-      widgetModuleMap: {
-        createFrameRateWatcher: '@buntui/extensions',
-        createMatrixWidget: '@buntui/extensions',
-      },
     },
   },
   onClear() {

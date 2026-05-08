@@ -113,5 +113,7 @@ export type TuiRenderRoot = {
   effects: TuiReactiveEffect[];
   /** All widget creators used (for import generation) */
   usedCreators: Set<string>;
+  /** Creator → module mapping (filled during transform from registry) */
+  usedModules: Map<string, string>;
 };
 

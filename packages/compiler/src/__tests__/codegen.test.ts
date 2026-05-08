@@ -19,8 +19,9 @@ function makeRoot(
   children: TuiRenderRoot['children'] = [],
   effects: TuiReactiveEffect[] = [],
   usedCreators: Set<string> = new Set(),
+  usedModules: Map<string, string> = new Map(),
 ): TuiRenderRoot {
-  return {type: 'TuiRenderRoot', children, effects, usedCreators};
+  return {type: 'TuiRenderRoot', children, effects, usedCreators, usedModules};
 }
 
 function makeWidget(overrides: Partial<TuiWidgetCall> = {}): TuiWidgetCall {
@@ -65,9 +66,10 @@ describe('codegen', () => {
       expect(result.imports.some(i => i.includes('custom-core'))).toBe(true);
     });
 
-    it('uses widgetModuleMap for custom creator source', () => {
-      const root = makeRoot([], [], new Set(['createMatrixWidget']));
-      const result = gen(root, {widgetModuleMap: {createMatrixWidget: '@buntui/extensions'}});
+    it('uses usedModules from registry for import source', () => {
+      const usedModules = new Map([['createMatrixWidget', '@buntui/extensions']]);
+      const root = makeRoot([], [], new Set(['createMatrixWidget']), usedModules);
+      const result = gen(root);
       expect(result.imports.some(i => i.includes('@buntui/extensions') && i.includes('createMatrixWidget'))).toBe(true);
     });
 

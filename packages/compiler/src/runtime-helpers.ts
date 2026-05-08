@@ -6,7 +6,6 @@ export const RUNTIME_HELPERS = {
   // Widget creation
   CREATE_BOX: 'createBox',
   CREATE_TEXT: 'createTextWidget',
-  CREATE_FRAME_RATE_WATCHER: 'createFrameRateWatcher',
   CREATE_INPUT: 'createInputWidget',
   CREATE_BUTTON: 'createButtonWidget',
   CREATE_CHECKBOX: 'createCheckboxWidget',
@@ -26,19 +25,26 @@ export const RUNTIME_HELPERS = {
 } as const;
 
 /**
- * Map of PascalCase template tag names to their core package widget creators.
+ * Component registry entry: maps a template tag to its creator function and module source.
  */
-export const WIDGET_TAG_MAP: Record<string, string> = {
-  Box: RUNTIME_HELPERS.CREATE_BOX,
-  Text: RUNTIME_HELPERS.CREATE_TEXT,
-  FrameRateWatcher: RUNTIME_HELPERS.CREATE_FRAME_RATE_WATCHER,
-  Input: RUNTIME_HELPERS.CREATE_INPUT,
-  Button: RUNTIME_HELPERS.CREATE_BUTTON,
-  Checkbox: RUNTIME_HELPERS.CREATE_CHECKBOX,
-  RadioGroup: RUNTIME_HELPERS.CREATE_RADIO_GROUP,
-  SelectButton: RUNTIME_HELPERS.CREATE_SELECT_BUTTON,
-  Switch: RUNTIME_HELPERS.CREATE_SWITCH,
-  ScrollBox: RUNTIME_HELPERS.CREATE_SCROLL_BOX,
-  ProgressBar: RUNTIME_HELPERS.CREATE_PROGRESS_BAR,
-  Matrix: 'createMatrixWidget',
-} as const;
+export type TuiComponentRegistry = Record<string, {
+  creator: string;
+  module: string;
+}>;
+
+/**
+ * Built-in registry for core widgets. Extensions and custom widgets
+ * must be merged by the user at compile time for tree-shaking.
+ */
+export const CORE_REGISTRY: TuiComponentRegistry = {
+  Box: {creator: RUNTIME_HELPERS.CREATE_BOX, module: '@buntui/core'},
+  Text: {creator: RUNTIME_HELPERS.CREATE_TEXT, module: '@buntui/core'},
+  Input: {creator: RUNTIME_HELPERS.CREATE_INPUT, module: '@buntui/core'},
+  Button: {creator: RUNTIME_HELPERS.CREATE_BUTTON, module: '@buntui/core'},
+  Checkbox: {creator: RUNTIME_HELPERS.CREATE_CHECKBOX, module: '@buntui/core'},
+  RadioGroup: {creator: RUNTIME_HELPERS.CREATE_RADIO_GROUP, module: '@buntui/core'},
+  SelectButton: {creator: RUNTIME_HELPERS.CREATE_SELECT_BUTTON, module: '@buntui/core'},
+  Switch: {creator: RUNTIME_HELPERS.CREATE_SWITCH, module: '@buntui/core'},
+  ScrollBox: {creator: RUNTIME_HELPERS.CREATE_SCROLL_BOX, module: '@buntui/core'},
+  ProgressBar: {creator: RUNTIME_HELPERS.CREATE_PROGRESS_BAR, module: '@buntui/core'},
+};

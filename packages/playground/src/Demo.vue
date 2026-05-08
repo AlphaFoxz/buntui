@@ -1,7 +1,6 @@
 <template>
     <Matrix width="100%" height="100%" />
 
-    <Text :x="1" :y="1" :colorFg="'rgba(108,112,134,1)'" value="buntui 组件示例 | 按 Q 退出" />
     <SelectButton :x="1" :y="2" :height="1" :options="tabOptions" v-model="currentTab" />
 
     <BoxDemo v-if="currentTab === 'Box'" />
@@ -17,6 +16,7 @@
 
 <script setup lang="ts">
 import { ref } from '@vue/reactivity'
+import Matrix from '@buntui/extensions/matrix'
 import BoxDemo from './components/BoxDemo.vue'
 import ButtonDemo from './components/ButtonDemo.vue'
 import CheckboxDemo from './components/CheckboxDemo.vue'
@@ -39,5 +39,5 @@ const tabOptions = ref([
     'Text',
     // 'Text',
 ])
-const currentTab = ref(tabOptions.value[0])
+const currentTab = ref(tabOptions.value[0]!)
 </script>

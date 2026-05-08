@@ -1,10 +1,6 @@
-export type {
-  MatrixWidgetOptions,
-  MatrixColorScheme,
-  MatrixSpeedRange,
-} from './widgets/matrix/types';
+// Barrel re-exports — for deep-import tree-shaking, import from sub-paths:
+//   import {Matrix} from '@buntui/extensions/matrix'
+export * from './matrix';
+export * from './framerate';
 
-export {MatrixWidget, createMatrixWidget} from './widgets/matrix/MatrixWidget';
-
-export {FrameRateWatcher, createFrameRateWatcher} from './widgets/framerate/FrameRateWatcher';
-export type {FrameRateWatcherOptions} from './widgets/framerate/FrameRateWatcher';
+export {EXTENSION_REGISTRY} from './registry';

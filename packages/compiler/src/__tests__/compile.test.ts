@@ -265,6 +265,54 @@ describe('compile', () => {
     });
   });
 
+  describe('widget tag-named imports', () => {
+    it('uses PascalCase import as creator when not in registry', () => {
+      const registry = {
+        Box: {creator: 'createBox', module: '@buntui/core'},
+      };
+      const result = compile(
+        '<template><Box/><Matrix width="100%"/></template>'
+        + '<script setup>import {Matrix} from "@buntui/extensions/matrix";</script>',
+        {registry},
+      );
+      // Matrix not in registry → resolved via widget import
+      expect(result.code).toContain('Matrix({');
+      // No codegen-generated import for Matrix — script import provides it
+      expect(result.imports.some(i => i.includes('createMatrixWidget'))).toBe(false);
+      // Box is in registry → gets a codegen import
+      expect(result.imports.some(i => i.includes('createBox'))).toBe(true);
+    });
+
+    it('supports aliased imports', () => {
+      const result = compile(
+        '<template><Matrix/></template>'
+        + '<script setup>import {Matrix as Rain} from "@buntui/extensions/matrix";</script>',
+      );
+      expect(result.code).toContain('Rain()');
+      expect(result.imports.some(i => i.includes('createMatrixWidget'))).toBe(false);
+    });
+
+    it('registry tags take precedence over imports', () => {
+      const registry = {
+        Box: {creator: 'createBox', module: '@buntui/core'},
+      };
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>import {Box} from "other-module";</script>',
+        {registry},
+      );
+      // Box IS in registry → registry wins, ignores the import
+      expect(result.imports.some(i => i.includes('createBox') && i.includes('@buntui/core'))).toBe(true);
+    });
+
+    it('throws on unknown tag without import', () => {
+      expect(() => compile(
+        '<template><Matrix/></template>'
+        + '<script setup>import {ref} from "@vue/reactivity";</script>',
+      )).toThrow('Unknown component');
+    });
+  });
+
   describe('edge cases: multiple .vue component imports', () => {
     it('detects multiple component imports', () => {
       const result = compile(

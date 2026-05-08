@@ -74,8 +74,6 @@ export type CodegenOptions = {
   reactivityModuleId?: string;
   /** Script body lines to embed inside setup() */
   scriptBody?: string[];
-  /** Override import source for specific widget creators (creator name → module ID) */
-  widgetModuleMap?: Record<string, string>;
 };
 
 export type CodegenResult = {
@@ -99,7 +97,10 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
   if (root.usedCreators.size > 0) {
     const moduleGroups = new Map<string, string[]>();
     for (const creator of root.usedCreators) {
-      const mod = options?.widgetModuleMap?.[creator] ?? core;
+      const registeredMod = root.usedModules.get(creator);
+      const mod = registeredMod === '@buntui/core' && core !== '@buntui/core'
+        ? core
+        : (registeredMod ?? core);
       const group = moduleGroups.get(mod) ?? [];
       group.push(creator);
       moduleGroups.set(mod, group);

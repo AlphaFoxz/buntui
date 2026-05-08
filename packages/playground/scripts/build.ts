@@ -1,7 +1,7 @@
 import process from 'node:process';
 import path from 'node:path';
 import fs from 'node:fs';
-import {compile} from '@buntui/compiler';
+import {compile, CORE_REGISTRY} from '@buntui/compiler';
 
 const result = await Bun.build({
   entrypoints: ['src/main.ts'],
@@ -15,13 +15,10 @@ const result = await Bun.build({
           const source = await Bun.file(args.path).text();
           const compiled = compile(source, {
             filename: args.path,
+            registry: CORE_REGISTRY,
             codegen: {
               coreModuleId: '@buntui/core',
               reactivityModuleId: '@vue/reactivity',
-              widgetModuleMap: {
-                createFrameRateWatcher: '@buntui/extensions',
-                createMatrixWidget: '@buntui/extensions',
-              },
             },
           });
           return {contents: compiled.code, loader: 'ts'};

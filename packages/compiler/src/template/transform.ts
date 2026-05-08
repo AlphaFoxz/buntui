@@ -6,7 +6,7 @@ import {
   type AttributeNode,
   NodeTypes,
 } from '@vue/compiler-core';
-import {WIDGET_TAG_MAP} from '../runtime-helpers';
+import {type TuiComponentRegistry, CORE_REGISTRY} from '../runtime-helpers';
 import type {
   TuiRenderRoot,
   TuiRenderNode,
@@ -20,14 +20,21 @@ import type {
 } from './ast';
 
 export type TransformOptions = {
-  /** Known component names (in addition to WIDGET_TAG_MAP) */
+  /** Component registry: tag name → {creator, module}. Defaults to CORE_REGISTRY. */
+  registry?: TuiComponentRegistry;
+  /** .vue component imports detected from <script setup> (tag → identifier) */
   components?: Record<string, string>;
+  /** Widget tag-named imports detected from <script setup> (tag → local identifier) */
+  widgetImports?: Record<string, string>;
 };
 
 type TransformContext = {
   usedCreators: Set<string>;
+  usedModules: Map<string, string>;
   effects: TuiReactiveEffect[];
-  options?: TransformOptions;
+  registry: TuiComponentRegistry;
+  components: Record<string, string>;
+  widgetImports: Record<string, string>;
 };
 
 /**
@@ -36,8 +43,11 @@ type TransformContext = {
 export function transform(root: RootNode, options?: TransformOptions): TuiRenderRoot {
   const ctx: TransformContext = {
     usedCreators: new Set<string>(),
+    usedModules: new Map<string, string>(),
     effects: [],
-    options,
+    registry: options?.registry ?? CORE_REGISTRY,
+    components: options?.components ?? {},
+    widgetImports: options?.widgetImports ?? {},
   };
   const children: TuiRenderNode[] = [];
 
@@ -68,6 +78,7 @@ export function transform(root: RootNode, options?: TransformOptions): TuiRender
     children,
     effects: ctx.effects,
     usedCreators: ctx.usedCreators,
+    usedModules: ctx.usedModules,
   };
 }
 
@@ -90,7 +101,6 @@ function transformElement(
   ctx: TransformContext,
 ): TuiWidgetCall {
   const {tag} = node;
-  const componentImport = ctx.options?.components?.[tag];
 
   const widgetId = `${tag.toLowerCase()}${widgetCounter++}`;
   const props: TuiStaticProp[] = [];
@@ -129,7 +139,8 @@ function transformElement(
     }
   }
 
-  // User component import takes priority over built-in widget map
+  // User .vue component import takes priority
+  const componentImport = ctx.components[tag];
   if (componentImport) {
     return {
       type: 'TuiWidgetCall',
@@ -144,19 +155,35 @@ function transformElement(
     };
   }
 
-  const creator = WIDGET_TAG_MAP[tag];
-  if (creator) {
-    ctx.usedCreators.add(creator);
+  // Explicit widget import (e.g. import {Matrix} from '@buntui/extensions')
+  // Uses the local identifier as creator — no codegen import needed
+  const widgetImport = ctx.widgetImports[tag];
+  if (widgetImport) {
+    return {
+      type: 'TuiWidgetCall',
+      tag,
+      creator: widgetImport,
+      props,
+      dynamicProps,
+      events,
+      children,
+      loc: node.loc,
+    };
+  }
+
+  // Registry lookup (core + extensions + custom)
+  const entry = ctx.registry[tag];
+  if (entry) {
+    ctx.usedCreators.add(entry.creator);
+    ctx.usedModules.set(entry.creator, entry.module);
   } else {
-    // Const known = [...Object.keys(WIDGET_TAG_MAP), ...Object.keys(ctx.options?.components ?? {})];
-    // Throw new Error(`Unknown component <${tag}> at line ${node.loc.start.line}:${node.loc.start.column}. Known components: ${known.join(', ')}`);
     throw new Error(`Unknown component <${tag}> at line ${node.loc.start.line}:${node.loc.start.column}.`);
   }
 
   return {
     type: 'TuiWidgetCall',
     tag,
-    creator,
+    creator: entry.creator,
     props,
     dynamicProps,
     events,

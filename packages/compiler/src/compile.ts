@@ -3,12 +3,15 @@ import type {SFCDescriptor} from '@vue/compiler-sfc';
 import {parse} from './parse';
 import {transform, type TransformOptions} from './template/transform';
 import {generate, type CodegenOptions} from './template/codegen';
+import {type TuiComponentRegistry, CORE_REGISTRY} from './runtime-helpers';
 
 export type CompileOptions = {
   /** SFC parse options */
   filename?: string;
-  /** Transform options */
-  transform?: TransformOptions;
+  /** Component registry (tag → {creator, module}). Defaults to CORE_REGISTRY. */
+  registry?: TuiComponentRegistry;
+  /** Transform options (overrides registry/components if both provided) */
+  transform?: Omit<TransformOptions, 'registry' | 'components'>;
   /** Codegen options */
   codegen?: CodegenOptions;
 };
@@ -50,9 +53,16 @@ export function compile(source: string, options?: CompileOptions): CompileResult
     ?? '';
   const {scriptImports, scriptBody} = splitScript(scriptContent);
   const componentMap = extractComponentImports(scriptImports);
+  const registry = options?.registry ?? CORE_REGISTRY;
+  const widgetImportMap = extractWidgetImports(scriptImports, registry);
 
   // 2. Transform template to TUI render tree
-  const renderRoot = transform(templateAst, {...options?.transform, components: componentMap});
+  const renderRoot = transform(templateAst, {
+    ...options?.transform,
+    registry,
+    components: componentMap,
+    widgetImports: widgetImportMap,
+  });
 
   // 4. Codegen (single pass, with script body if present)
   const codegenResult = generate(renderRoot, {
@@ -92,6 +102,56 @@ function splitScript(content: string): {scriptImports: string[]; scriptBody: str
   }
 
   return {scriptImports, scriptBody};
+}
+
+/**
+ * Detect default and named imports that could be widget creators.
+ * Any PascalCase import NOT covered by the core registry and NOT from
+ * a .vue file is treated as a potential widget import.
+ *
+ * Default import: `import Matrix from '@buntui/extensions/matrix'`
+ * Named import:   `import {Matrix} from '@buntui/extensions/matrix'`
+ */
+function extractWidgetImports(scriptImports: string[], registry: TuiComponentRegistry): Record<string, string> {
+  const registryTags = new Set(Object.keys(registry));
+  const widgetImports: Record<string, string> = {};
+  const vueImportRe = /\.vue['"]$/v;
+  const namedImportRe = /import\s*\{([^\}]+)\}\s*from\s*['"]([^'"]+)['"]/v;
+  const defaultImportRe = /import\s+(\w+)\s+from\s*['"]([^'"]+)['"]/v;
+
+  for (const line of scriptImports) {
+    if (vueImportRe.test(line)) {
+      continue;
+    }
+
+    // Default import: import Matrix from '...'
+    const defaultMatch = defaultImportRe.exec(line);
+    if (defaultMatch?.[1] && !line.includes('{')) {
+      const name = defaultMatch[1];
+      if (!registryTags.has(name) && /^[A-Z]/v.test(name)) {
+        widgetImports[name] = name;
+      }
+
+      continue;
+    }
+
+    // Named import: import {Matrix} from '...'
+    const namedMatch = namedImportRe.exec(line);
+    if (!namedMatch) {
+      continue;
+    }
+
+    for (const spec of namedMatch[1]!.split(',')) {
+      const parts = spec.trim().split(/\s+as\s+/v);
+      const importName = parts[0]!.trim();
+      const localName = (parts[1] ?? parts[0])!.trim();
+      if (!registryTags.has(importName) && /^[A-Z]/v.test(importName)) {
+        widgetImports[importName] = localName;
+      }
+    }
+  }
+
+  return widgetImports;
 }
 
 /**

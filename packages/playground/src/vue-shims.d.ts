@@ -40,7 +40,7 @@ type TuiTextProps = {
   colorBg?: TuiColor;
   zIndex?: number;
   styleModifier?: number;
-  text?: string;
+  value?: string;
   overflow?: 'clip' | 'marquee';
   scrollSpeed?: number;
   scrollPauseMs?: number;
@@ -55,6 +55,7 @@ type TuiInputProps = {
   colorBg?: TuiColor;
   placeholder?: string;
   value?: string;
+  modelValue?: string;
   label?: string;
   borderColorUnfocused?: TuiColor;
   borderColorFocused?: TuiColor;
@@ -96,6 +97,7 @@ type TuiCheckboxProps = {
   height?: TuiSizeValue;
   label?: string;
   checked?: boolean;
+  modelValue?: boolean;
   disabled?: boolean;
   colorFgNormal?: TuiColor;
   colorBgNormal?: TuiColor;
@@ -114,6 +116,7 @@ type TuiRadioGroupProps = {
   height?: TuiSizeValue;
   options?: readonly string[];
   value?: number;
+  modelValue?: number;
   disabled?: boolean;
   colorFgNormal?: TuiColor;
   colorBgNormal?: TuiColor;
@@ -131,7 +134,8 @@ type TuiSelectButtonProps = {
   width?: TuiSizeValue;
   height?: TuiSizeValue;
   options: string[];
-  value?: unknown;
+  value?: string;
+  modelValue?: string;
   disabled?: boolean;
   colorFgNormal?: TuiColor;
   colorBgNormal?: TuiColor;
@@ -151,6 +155,7 @@ type TuiSwitchProps = {
   height?: TuiSizeValue;
   label?: string;
   checked?: boolean;
+  modelValue?: boolean;
   disabled?: boolean;
   colorFgNormal?: TuiColor;
   colorBgNormal?: TuiColor;
@@ -197,8 +202,6 @@ type TuiProgressBarProps = {
   styleModifier?: number;
 };
 
-type TuiFrameRateWatcherProps = TuiBoxProps;
-
 // ---- Event Types (payload types are global, defined in tui-types.d.ts) ----
 
 // DefineComponent expects emits in function form (ObjectEmitsOptions).
@@ -225,23 +228,28 @@ type TuiInteractiveEmits = TuiBaseEmits & {
 
 type TuiCheckboxEmits = TuiInteractiveEmits & {
   change: (data: TuiCheckboxChangeEvent) => void;
+  'update:modelValue': (value: boolean) => void;
 };
 
 type TuiSwitchEmits = TuiInteractiveEmits & {
   change: (data: TuiSwitchChangeEvent) => void;
+  'update:modelValue': (value: boolean) => void;
 };
 
 type TuiInputEmits = TuiInteractiveEmits & {
   input: (data: TuiInputEvent) => void;
   submit: (data: TuiSubmitEvent) => void;
+  'update:modelValue': (value: string) => void;
 };
 
 type TuiRadioGroupEmits = TuiInteractiveEmits & {
   change: (data: TuiRadioGroupChangeEvent) => void;
+  'update:modelValue': (value: number) => void;
 };
 
 type TuiSelectButtonEmits = TuiInteractiveEmits & {
   change: (data: TuiSelectButtonChangeEvent) => void;
+  'update:modelValue': (value: string) => void;
 };
 
 // ---- Component Type ----
@@ -264,7 +272,6 @@ declare module 'vue' {
     Switch: TuiComponent<TuiSwitchProps, TuiSwitchEmits>;
     ScrollBox: TuiComponent<TuiScrollBoxProps, TuiInteractiveEmits>;
     ProgressBar: TuiComponent<TuiProgressBarProps, TuiBaseEmits>;
-    FrameRateWatcher: TuiComponent<TuiFrameRateWatcherProps, TuiBaseEmits>;
   };
 }
 
