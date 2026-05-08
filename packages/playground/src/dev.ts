@@ -1,10 +1,10 @@
 import path from 'node:path';
 import {createDevServer, CORE_REGISTRY, type DevServerOptions} from '@buntui/compiler';
-import {run} from './main';
+import {ENTRY, run} from './main';
 
 const {scene} = run();
 
-const VUE_FILE = path.join(import.meta.dir, 'Demo.vue');
+const VUE_FILE = path.join(import.meta.dir, ENTRY);
 
 createDevServer({
   file: VUE_FILE,

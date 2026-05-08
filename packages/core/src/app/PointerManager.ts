@@ -154,6 +154,11 @@ export class PointerManager {
       this.#wheelHandler = undefined;
     }
 
+    this.resetState();
+  }
+
+  /** Clear hover/drag state — called on scene switch to avoid stale references. */
+  resetState(): void {
     this.#pressTarget = undefined;
     this.#hoverTarget = undefined;
     this.#isDragging = false;

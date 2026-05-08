@@ -124,7 +124,7 @@ export class TuiApp {
     setGlobalTheme(theme);
   }
 
-  createScene<T extends TuiSFCModule>(module: T, options?: Partial<TuiSceneOptions>) {
+  createScene<T extends TuiSFCModule>(module: T, options?: Partial<TuiSceneOptions>): TuiScene {
     const scene = new TuiScene(options);
 
     const module_ = module as Record<string, unknown>;
@@ -137,17 +137,12 @@ export class TuiApp {
       }
     }
 
-    if (scene.visible) {
-      if (this.#currentScene) {
-        for (const s of this.#scenes) {
-          s.setVisible(false);
-        }
-      }
+    this.#scenes.push(scene);
 
-      this.#currentScene = scene;
+    if (scene.visible) {
+      this.activateScene(scene);
     }
 
-    this.#scenes.push(scene);
     return scene;
   }
 
@@ -166,20 +161,47 @@ export class TuiApp {
 
     target.destroy();
     this.#scenes = this.#scenes.filter(s => s.id !== id);
-    const leastScene = this.#scenes.at(-1);
-    this.#currentScene = leastScene;
-    leastScene?.setVisible(true);
+
+    if (this.#currentScene === target) {
+      this.#currentScene = undefined;
+      this.#focusManager.blurWidget();
+      this.#pointerManager.resetState();
+      const fallback = this.#scenes.at(-1);
+      if (fallback) {
+        this.activateScene(fallback);
+      }
+    }
   }
 
   switchScene(scene: TuiScene) {
-    const id = this.#scenes.find(s => s.id === scene.id)?.id;
-    if (!id) {
+    if (!this.#scenes.some(s => s.id === scene.id)) {
       return;
     }
 
-    for (const s of this.#scenes) {
-      s.setVisible(s.id === id);
+    this.activateScene(scene);
+  }
+
+  /**
+   * Activate a scene: deactivate the current one first (blur focus,
+   * reset pointer state), then make the new scene visible and emit lifecycle.
+   */
+  activateScene(scene: TuiScene) {
+    if (this.#currentScene === scene) {
+      return;
     }
+
+    // Deactivate old scene
+    if (this.#currentScene) {
+      this.#currentScene.setVisible(false);
+      this.#focusManager.blurWidget();
+      this.#pointerManager.resetState();
+      this.#currentScene.emitLifecycle('exit');
+    }
+
+    // Activate new scene
+    this.#currentScene = scene;
+    scene.setVisible(true);
+    scene.emitLifecycle('enter');
   }
 }
 

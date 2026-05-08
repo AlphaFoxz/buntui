@@ -12,7 +12,7 @@ This project uses **Bun exclusively** as its runtime, package manager, and build
 
 - **packages/native/** (`@buntui/native`) — Zig rendering engine, event handling, terminal control (compiled to shared library)
 - **packages/core/** (`@buntui/core`) — TypeScript runtime framework with widget system, focus/pointer management, and Vue reactivity
-- **packages/extensions/** (`@buntui/extensions`) — Extension widgets (MatrixWidget, FrameRateWatcher)
+- **packages/extensions/** (`@buntui/extensions`) — Extension widgets with sub-path exports for tree-shaking (e.g., `import Matrix from '@buntui/extensions/matrix'`)
 - **packages/buntui/** (`@buntui/buntui`) — Umbrella package re-exporting `@buntui/core` + `@buntui/extensions`
 - **packages/compiler/** (`@buntui/compiler`) — SFC compiler using Vue compiler-core for template/script compilation, plus dev server with HMR
 - **packages/playground/** (`@buntui/playground`) — Demo application (`bun run dev`)
@@ -27,14 +27,27 @@ The compiler transforms `.vue` SFC files into TUI TypeScript modules:
 
 The compile entry point (`compiler/src/compile.ts`) orchestrates: parse → transform → codegen.
 
-**SFC template tags** map to widget creators via `WIDGET_TAG_MAP` in `compiler/src/runtime-helpers.ts`:
-`<Box>` → `createBox`, `<Text>` → `createTextWidget`, `<Input>` → `createInputWidget`, `<Button>` → `createButtonWidget`, `<Checkbox>` → `createCheckboxWidget`, `<RadioGroup>` → `createRadioGroupWidget`, `<SelectButton>` → `createSelectButtonWidget`, `<Switch>` → `createSwitchWidget`, `<ScrollBox>` → `createScrollBoxWidget`, `<Matrix>` → `createMatrixWidget`, `<FrameRateWatcher>` → `createFrameRateWatcher`.
+**SFC template tags** are resolved by the compiler in `compiler/src/compile.ts` with a two-tier strategy:
+
+- **Core widgets** — resolved via `CORE_REGISTRY` in `compiler/src/runtime-helpers.ts`. Tags like `<Box>`, `<Text>`, `<Input>`, `<Button>`, `<Checkbox>`, `<RadioGroup>`, `<SelectButton>`, `<Switch>`, `<ScrollBox>`, `<ProgressBar>` map to creator functions from `@buntui/core`. The codegen auto-generates the import.
+- **Extension/custom widgets** — resolved via explicit default imports in `<script setup>`. Any PascalCase default import not in the registry is treated as a widget creator. This enables tree-shaking: unused extensions are never bundled.
+
+```vue
+<script setup>
+import Matrix from '@buntui/extensions/matrix'
+</script>
+<template>
+  <Matrix width="100%" height="100%" />
+</template>
+```
+
+Without the import, `<Matrix>` throws `Unknown component` at compile time.
 
 The template AST (`compiler/src/template/ast.ts`) supports `v-if`/`v-else-if`/`v-else` conditionals (`TuiConditionalBlock`), `v-for` list rendering (`TuiListBlock`), static/dynamic props, and event bindings (`@click`, `@key`, etc.).
 
 ### Dev Server / HMR
 
-`createDevServer()` (`compiler/src/dev-server.ts`) watches a `.vue` file for changes, recompiles on change, writes a temporary `_hmr_*.ts` file, dynamically imports it, and calls the module's `setup()` export. Used in playground via `--preload ./src/vue-plugin.ts` which registers a Bun plugin that compiles `.vue` files on load.
+`createDevServer()` (`compiler/src/dev-server.ts`) watches a `.vue` file for changes, recompiles on change, writes a temporary `_hmr_*.ts` file, dynamically imports it, and calls the module's `setup()` export. Used in playground via `--preload ./src/vue-plugin.ts` which registers a Bun plugin that compiles `.vue` files on load. Both the dev server and vue-plugin use `CORE_REGISTRY` only — extension widgets must be explicitly imported in `<script setup>`.
 
 ## Development Commands
 
@@ -44,7 +57,7 @@ bun run --cwd ./packages/native build            # zig build only
 bun run --cwd ./packages/core build              # Sync native binary + build TS
 bun run --cwd ./packages/compiler build          # Build SFC compiler
 bun run --cwd ./packages/playground build        # Sync native binary + build TS
-bun run dev                                      # Run playground demo (bun --preload ./src/vue-plugin.ts src/dev.ts)
+bun run dev                                      # Run playground demo (bun --preload ./src/vue-plugin.ts src/dev.ts), watches Demo.vue for HMR
 bun run --cwd ./packages/core test               # Run all core tests
 bun test packages/core/src/some/__tests__/file.test.ts  # Run a single test
 bun run sync                                     # Propagate root version to all packages
@@ -131,6 +144,28 @@ The project defines a custom `Bool` type in `core/typedef.zig` as `enum(u8) { Fa
 When new Win32 functions are needed, declare them directly as `extern "kernel32"` (matching the existing pattern for `ReadConsoleInputW` and `WaitForSingleObject` in `windows_listener.zig`).
 
 ## Coding Conventions
+
+### Extension Package Structure
+
+`@buntui/extensions` uses sub-path exports for tree-shaking. Each widget has its own entry point with a default export (the creator function) and named exports (class, types):
+
+```json
+// package.json exports
+{
+  ".": "./dist/index.js",
+  "./matrix": "./dist/matrix.js",
+  "./framerate": "./dist/framerate.js"
+}
+```
+
+```ts
+// src/matrix.ts — sub-path entry
+export {MatrixWidget, createMatrixWidget} from './widgets/matrix/MatrixWidget';
+export type {MatrixWidgetOptions} from './widgets/matrix/types';
+export {createMatrixWidget as default} from './widgets/matrix/MatrixWidget';
+```
+
+Usage in SFC: `import Matrix from '@buntui/extensions/matrix'`. The barrel `index.ts` re-exports everything for convenience but is not recommended for production builds.
 
 ### Zig Naming Rules
 

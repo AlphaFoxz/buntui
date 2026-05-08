@@ -23,7 +23,7 @@ export class RenderLoop {
       }
 
       const scene = this.#getScene();
-      if (scene) {
+      if (scene?.visible) {
         this.#drawList.reset();
         scene.emitDrawCommands(this.#drawList);
         this.#drawList.finish();
