@@ -1,6 +1,7 @@
 import {stringDisplayWidth, truncateToWidth, charDisplayWidth} from '../../utils/string-width';
 import {parseColor, type TuiColor} from '../../utils/color';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import {getTheme} from '../../theme/provider';
 import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {
   TuiSizeValue,
@@ -55,8 +56,9 @@ export class TextWidget extends TuiWidgetEntity {
       width: isPercent(options.width) ? 0 : (options.width ?? 32),
       height: isPercent(options.height) ? 0 : (options.height ?? 1),
     };
+    const theme = getTheme();
     this.#color = {
-      colorFg: parseColor(options.colorFg ?? 0xFF_FF_FF_FF),
+      colorFg: parseColor(options.colorFg ?? theme.colors.text),
       colorBg: parseColor(options.colorBg ?? 0x00_00_00_00),
     };
     this.#style = {
@@ -122,8 +124,8 @@ export class TextWidget extends TuiWidgetEntity {
 
   override intrinsicSize(): TuiWidgetSize | undefined {
     return {
-      width: stringDisplayWidth(this.#value) as U16,
-      height: 1 as U16,
+      width: stringDisplayWidth(this.#value),
+      height: 1,
     };
   }
 
@@ -280,8 +282,8 @@ export const DEFAULT_TEXT_OPTIONS: TextWidgetOptions = {
   y: 0,
   width: 32,
   height: 1,
-  colorFg: 0xFF_FF_FF_FF as U32,
-  colorBg: 0x00_00_00_00 as U32,
+  colorFg: 0xFF_FF_FF_FF,
+  colorBg: 0x00_00_00_00,
   value: '',
 };
 

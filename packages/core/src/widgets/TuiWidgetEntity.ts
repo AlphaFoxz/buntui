@@ -53,19 +53,19 @@ export abstract class TuiWidgetEntity implements Mountable {
     const updates: Partial<TuiWidgetRect> = {};
     const spec = this.#percentSpec;
     if (spec.x !== undefined) {
-      updates.x = resolvePercent(spec.x, parentWidth) as U16;
+      updates.x = resolvePercent(spec.x, parentWidth);
     }
 
     if (spec.y !== undefined) {
-      updates.y = resolvePercent(spec.y, parentHeight) as U16;
+      updates.y = resolvePercent(spec.y, parentHeight);
     }
 
     if (spec.width !== undefined) {
-      updates.width = resolvePercent(spec.width, parentWidth) as U16;
+      updates.width = resolvePercent(spec.width, parentWidth);
     }
 
     if (spec.height !== undefined) {
-      updates.height = resolvePercent(spec.height, parentHeight) as U16;
+      updates.height = resolvePercent(spec.height, parentHeight);
     }
 
     if (Object.keys(updates).length > 0) {

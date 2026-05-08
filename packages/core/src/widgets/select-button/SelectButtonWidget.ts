@@ -3,32 +3,36 @@ import {type KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
+import {getTheme} from '../../theme/provider';
 import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {SelectButtonWidgetOptions} from './types';
 
-const DEFAULT_SELECT_BUTTON_OPTIONS = {
-  x: 0,
-  y: 0,
-  width: 0,
-  height: 1,
-  options: [] as unknown[],
-  value: undefined as unknown,
-  disabled: false,
+function getDefaultSelectButtonOptions() {
+  const theme = getTheme();
+  return {
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 1,
+    options: [] as unknown[],
+    value: undefined as unknown,
+    disabled: false,
 
-  colorFgNormal: 0x6C_70_86_FF,
-  colorBgNormal: 0x1E_1E_2E_FF,
+    colorFgNormal: theme.colors.textMuted,
+    colorBgNormal: theme.colors.surface,
 
-  colorFgActive: 0xFF_FF_FF_FF,
-  colorBgActive: 0x31_32_44_FF,
+    colorFgActive: theme.colors.text,
+    colorBgActive: theme.colors.surfaceFocused,
 
-  colorFgFocused: 0x89_B4_FA_FF,
-  colorBgFocused: 0x45_47_5A_FF,
+    colorFgFocused: theme.colors.accent,
+    colorBgFocused: theme.colors.surfaceHover,
 
-  colorFgDisabled: 0x6C_70_86_FF,
-  colorBgDisabled: 0x18_18_25_FF,
+    colorFgDisabled: theme.colors.textMuted,
+    colorBgDisabled: theme.colors.surfaceDisabled,
 
-  colorFgSeparator: 0x45_47_5A_FF,
-};
+    colorFgSeparator: theme.colors.border,
+  };
+}
 
 export class SelectButtonWidget extends InteractiveWidget {
   readonly #rect: TuiWidgetRect;
@@ -48,7 +52,7 @@ export class SelectButtonWidget extends InteractiveWidget {
 
   constructor(options: SelectButtonWidgetOptions = {}) {
     super();
-    const resolved = {...DEFAULT_SELECT_BUTTON_OPTIONS, ...options};
+    const resolved = {...getDefaultSelectButtonOptions(), ...options};
     const spec = extractPercentSpec(resolved.x, resolved.y, resolved.width, resolved.height);
     if (spec) {
       this.setPercentSpec(spec);
@@ -335,7 +339,7 @@ export class SelectButtonWidget extends InteractiveWidget {
 }
 
 export function createSelectButtonWidget(options?: Partial<SelectButtonWidgetOptions>): SelectButtonWidget {
-  return new SelectButtonWidget({...DEFAULT_SELECT_BUTTON_OPTIONS, ...options});
+  return new SelectButtonWidget({...getDefaultSelectButtonOptions(), ...options});
 }
 
 export default SelectButtonWidget;

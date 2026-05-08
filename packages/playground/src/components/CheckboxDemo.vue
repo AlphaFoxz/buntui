@@ -18,10 +18,10 @@
 import { ref } from '@vue/reactivity'
 
 const darkMode = ref(false)
-function handleCheckChange(data) {
+function handleCheckChange(data: TuiCheckboxChangeEvent) {
     void data
 }
-function handleDarkModeChange(data) {
+function handleDarkModeChange(data: TuiCheckboxChangeEvent) {
     darkMode.value = data.checked
 }
 </script>

@@ -15,12 +15,12 @@
 import { ref } from '@vue/reactivity'
 
 const inputValue = ref('')
-function handleInput(data) {
+function handleInput(data: TuiInputEvent) {
     // Intentionally empty — console.log would corrupt the TUI display
     void data
 }
 
-function handleSubmit(data) {
+function handleSubmit(data: TuiSubmitEvent) {
     // Intentionally empty — console.log would corrupt the TUI display
     void data
 }

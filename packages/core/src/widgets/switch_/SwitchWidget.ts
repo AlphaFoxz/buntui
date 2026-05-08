@@ -4,6 +4,7 @@ import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
+import {getTheme} from '../../theme/provider';
 import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {SwitchWidgetOptions} from './types';
 
@@ -15,39 +16,42 @@ type SwitchColors = {
   dim: number;
 };
 
-const DEFAULT_SWITCH_OPTIONS: Required<SwitchWidgetOptions> = {
-  x: 0,
-  y: 0,
-  width: 12,
-  height: 1,
-  label: '',
-  checked: false,
-  disabled: false,
+function getDefaultSwitchOptions(): Required<SwitchWidgetOptions> {
+  const theme = getTheme();
+  return {
+    x: 0,
+    y: 0,
+    width: 12,
+    height: 1,
+    label: '',
+    checked: false,
+    disabled: false,
 
-  colorFgNormal: 0xFF_FF_FF_FF,
-  colorBgNormal: 0x1E_1E_2E_FF,
-  colorCrossNormal: 0xF3_8B_A8_FF,
-  colorCheckNormal: 0xA6_E3_A1_FF,
-  colorDimNormal: 0x6C_70_86_FF,
+    colorFgNormal: theme.colors.text,
+    colorBgNormal: theme.colors.surface,
+    colorCrossNormal: theme.colors.switchCross,
+    colorCheckNormal: theme.colors.switchCheck,
+    colorDimNormal: theme.colors.switchDim,
 
-  colorFgHovered: 0xFF_FF_FF_FF,
-  colorBgHovered: 0x45_47_5A_FF,
-  colorCrossHovered: 0xF3_8B_A8_FF,
-  colorCheckHovered: 0xA6_E3_A1_FF,
-  colorDimHovered: 0x89_B4_FA_FF,
+    colorFgHovered: theme.colors.text,
+    colorBgHovered: theme.colors.surfaceHover,
+    colorCrossHovered: theme.colors.switchCross,
+    colorCheckHovered: theme.colors.switchCheck,
+    colorDimHovered: theme.colors.borderFocused,
 
-  colorFgFocused: 0xFF_FF_FF_FF,
-  colorBgFocused: 0x1E_1E_2E_FF,
-  colorCrossFocused: 0xF3_8B_A8_FF,
-  colorCheckFocused: 0xA6_E3_A1_FF,
-  colorDimFocused: 0x6C_70_86_FF,
+    colorFgFocused: theme.colors.text,
+    colorBgFocused: theme.colors.surface,
+    colorCrossFocused: theme.colors.switchCross,
+    colorCheckFocused: theme.colors.switchCheck,
+    colorDimFocused: theme.colors.switchDim,
 
-  colorFgDisabled: 0x6C_70_86_FF,
-  colorBgDisabled: 0x1E_1E_2E_FF,
-  colorCrossDisabled: 0x45_47_5A_FF,
-  colorCheckDisabled: 0x45_47_5A_FF,
-  colorDimDisabled: 0x31_32_44_FF,
-};
+    colorFgDisabled: theme.colors.textMuted,
+    colorBgDisabled: theme.colors.surface,
+    colorCrossDisabled: theme.colors.border,
+    colorCheckDisabled: theme.colors.border,
+    colorDimDisabled: theme.colors.surfaceFocused,
+  };
+}
 
 export class SwitchWidget extends InteractiveWidget {
   readonly #rect: TuiWidgetRect;
@@ -59,7 +63,7 @@ export class SwitchWidget extends InteractiveWidget {
 
   constructor(options: SwitchWidgetOptions = {}) {
     super();
-    const resolved = {...DEFAULT_SWITCH_OPTIONS, ...options};
+    const resolved = {...getDefaultSwitchOptions(), ...options};
     const spec = extractPercentSpec(resolved.x, resolved.y, resolved.width, resolved.height);
     if (spec) {
       this.setPercentSpec(spec);
@@ -242,7 +246,7 @@ export class SwitchWidget extends InteractiveWidget {
 }
 
 export function createSwitchWidget(options?: Partial<SwitchWidgetOptions>): SwitchWidget {
-  return new SwitchWidget({...DEFAULT_SWITCH_OPTIONS, ...options});
+  return new SwitchWidget({...getDefaultSwitchOptions(), ...options});
 }
 
 export default SwitchWidget;

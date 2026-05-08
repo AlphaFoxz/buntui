@@ -3,6 +3,7 @@ import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
+import {getTheme} from '../../theme/provider';
 import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {ProgressBarWidgetOptions} from './types';
 
@@ -12,30 +13,33 @@ type ProgressBarColors = {
   text: number;
 };
 
-const DEFAULT_PROGRESSBAR_OPTIONS: Required<ProgressBarWidgetOptions> = {
-  x: 0,
-  y: 0,
-  width: 30,
-  height: 1,
-  value: 0,
-  min: 0,
-  max: 100,
-  label: '',
-  showPercentage: true,
-  disabled: false,
+function getDefaultProgressBarOptions(): Required<ProgressBarWidgetOptions> {
+  const theme = getTheme();
+  return {
+    x: 0,
+    y: 0,
+    width: 30,
+    height: 1,
+    value: 0,
+    min: 0,
+    max: 100,
+    label: '',
+    showPercentage: true,
+    disabled: false,
 
-  colorTrackNormal: 0x31_32_44_FF,
-  colorFillNormal: 0x89_B4_FA_FF,
-  colorTextNormal: 0xFF_FF_FF_FF,
+    colorTrackNormal: theme.colors.progressTrack,
+    colorFillNormal: theme.colors.progressFill,
+    colorTextNormal: theme.colors.text,
 
-  colorTrackFocused: 0x45_47_5A_FF,
-  colorFillFocused: 0xB4_BE_FE_FF,
-  colorTextFocused: 0xFF_FF_FF_FF,
+    colorTrackFocused: theme.colors.surfaceHover,
+    colorFillFocused: theme.colors.accentHover,
+    colorTextFocused: theme.colors.text,
 
-  colorTrackDisabled: 0x1E_1E_2E_FF,
-  colorFillDisabled: 0x58_5B_70_FF,
-  colorTextDisabled: 0x6C_70_86_FF,
-};
+    colorTrackDisabled: theme.colors.surface,
+    colorFillDisabled: theme.colors.border,
+    colorTextDisabled: theme.colors.textMuted,
+  };
+}
 
 export class ProgressBarWidget extends InteractiveWidget {
   readonly #rect: TuiWidgetRect;
@@ -49,7 +53,7 @@ export class ProgressBarWidget extends InteractiveWidget {
 
   constructor(options: ProgressBarWidgetOptions = {}) {
     super();
-    const resolved = {...DEFAULT_PROGRESSBAR_OPTIONS, ...options};
+    const resolved = {...getDefaultProgressBarOptions(), ...options};
     const spec = extractPercentSpec(resolved.x, resolved.y, resolved.width, resolved.height);
     if (spec) {
       this.setPercentSpec(spec);
@@ -228,7 +232,7 @@ export class ProgressBarWidget extends InteractiveWidget {
 }
 
 export function createProgressBarWidget(options?: Partial<ProgressBarWidgetOptions>): ProgressBarWidget {
-  return new ProgressBarWidget({...DEFAULT_PROGRESSBAR_OPTIONS, ...options});
+  return new ProgressBarWidget({...getDefaultProgressBarOptions(), ...options});
 }
 
 export default ProgressBarWidget;

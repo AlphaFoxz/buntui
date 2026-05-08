@@ -1,6 +1,7 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
 import {parseColor} from '../../utils/color';
+import {getTheme} from '../../theme/provider';
 import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {Focusable} from '../Focusable';
 import type {TuiWidgetRect, TuiWidgetSize} from '../types';
@@ -62,8 +63,9 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
     this.#gap = options.gap ?? 0;
     this.#scrollSpeed = options.scrollSpeed ?? 3;
     this.#alwaysShowScrollbar = options.alwaysShowScrollbar ?? false;
-    this.#scrollbarColor = parseColor(options.scrollbarColor ?? 0x58_5B_70_FF);
-    this.#scrollbarTrackColor = parseColor(options.scrollbarTrackColor ?? 0x31_32_44_FF);
+    const theme = getTheme();
+    this.#scrollbarColor = parseColor(options.scrollbarColor ?? theme.colors.scrollbar);
+    this.#scrollbarTrackColor = parseColor(options.scrollbarTrackColor ?? theme.colors.scrollbarTrack);
 
     this.on('wheel', data => {
       this.scrollBy(data.wheelDeltaY * this.#scrollSpeed);

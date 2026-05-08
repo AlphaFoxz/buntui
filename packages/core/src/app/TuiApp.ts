@@ -7,11 +7,20 @@ import {type LogLevel, type TuiAppOptions, type TuiSceneOptions} from '../extern
 import {LOGGER} from '../common/logger';
 import {EVENT_BUS} from '../events';
 import TuiScene from '../extern/app/TuiScene';
+import {setTheme as setGlobalTheme} from '../theme/provider';
+import type {TuiTheme} from '../theme/types';
 import {FocusManager} from './FocusManager';
 import {PointerManager} from './PointerManager';
 import {RenderLoop} from './RenderLoop';
 import {type TuiBackend} from './TuiBackend';
 import {NativeBackend} from './NativeBackend';
+
+/**
+ * Structural type for compiled SFC modules.
+ * Uses `Record<string, unknown>` so it accepts Volar's `DefineComponent`
+ * without core depending on vue.
+ */
+export type TuiSFCModule = Record<string, unknown>;
 
 export class TuiApp {
   readonly #debugMode: boolean;
@@ -21,6 +30,7 @@ export class TuiApp {
   readonly #focusManager = new FocusManager();
   readonly #pointerManager: PointerManager;
   readonly #renderLoop: RenderLoop;
+  readonly #cleanups = new Map<bigint, () => void>();
 
   constructor(options?: Partial<TuiAppOptions> & {backend?: TuiBackend}) {
     this.#backend = options?.backend ?? new NativeBackend();
@@ -110,8 +120,23 @@ export class TuiApp {
     process.exit(0);
   }
 
-  createScene(options?: Partial<TuiSceneOptions>) {
+  setTheme(theme: TuiTheme): void {
+    setGlobalTheme(theme);
+  }
+
+  createScene<T extends TuiSFCModule>(module: T, options?: Partial<TuiSceneOptions>) {
     const scene = new TuiScene(options);
+
+    const module_ = module as Record<string, unknown>;
+    if (typeof module_.setup === 'function') {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      const setup = module_.setup as (scene: TuiScene) => (() => void) | void;
+      const cleanup = setup(scene);
+      if (cleanup) {
+        this.#cleanups.set(scene.id, cleanup);
+      }
+    }
+
     if (scene.visible) {
       if (this.#currentScene) {
         for (const s of this.#scenes) {
@@ -131,6 +156,12 @@ export class TuiApp {
     const target = this.#scenes.find(s => s.id === id);
     if (!target) {
       return;
+    }
+
+    const cleanup = this.#cleanups.get(id);
+    if (cleanup) {
+      cleanup();
+      this.#cleanups.delete(id);
     }
 
     target.destroy();

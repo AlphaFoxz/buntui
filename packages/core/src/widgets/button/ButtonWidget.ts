@@ -5,6 +5,7 @@ import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
+import {getTheme} from '../../theme/provider';
 import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {ButtonWidgetOptions} from './types';
 
@@ -15,35 +16,38 @@ type ButtonColors = {
   borderStyle: number;
 };
 
-const DEFAULT_BUTTON_OPTIONS: Required<ButtonWidgetOptions> = {
-  x: 0,
-  y: 0,
-  width: 10,
-  height: 3,
-  value: '',
+function getDefaultButtonOptions(): Required<ButtonWidgetOptions> {
+  const theme = getTheme();
+  return {
+    x: 0,
+    y: 0,
+    width: 10,
+    height: 3,
+    value: '',
 
-  colorFgNormal: 0xFF_FF_FF_FF,
-  colorBgNormal: 0x1E_1E_2E_FF,
-  borderColorNormal: 0x45_47_5A_FF,
-  borderStyleNormal: 1,
+    colorFgNormal: theme.colors.text,
+    colorBgNormal: theme.colors.surface,
+    borderColorNormal: theme.colors.border,
+    borderStyleNormal: theme.borderStyle.normal,
 
-  colorFgFocused: 0xFF_FF_FF_FF,
-  colorBgFocused: 0x31_32_44_FF,
-  borderColorFocused: 0x89_B4_FA_FF,
-  borderStyleFocused: 1,
+    colorFgFocused: theme.colors.text,
+    colorBgFocused: theme.colors.surfaceFocused,
+    borderColorFocused: theme.colors.borderFocused,
+    borderStyleFocused: theme.borderStyle.focused,
 
-  colorFgPressed: 0xFF_FF_FF_FF,
-  colorBgPressed: 0x45_47_5A_FF,
-  borderColorPressed: 0x89_B4_FA_FF,
-  borderStylePressed: 4,
+    colorFgPressed: theme.colors.text,
+    colorBgPressed: theme.colors.surfacePressed,
+    borderColorPressed: theme.colors.borderFocused,
+    borderStylePressed: theme.borderStyle.pressed,
 
-  colorFgDisabled: 0x6C_70_86_FF,
-  colorBgDisabled: 0x18_18_25_FF,
-  borderColorDisabled: 0x31_32_44_FF,
-  borderStyleDisabled: 5,
+    colorFgDisabled: theme.colors.textMuted,
+    colorBgDisabled: theme.colors.surfaceDisabled,
+    borderColorDisabled: theme.colors.surfaceFocused,
+    borderStyleDisabled: theme.borderStyle.disabled,
 
-  disabled: false,
-};
+    disabled: false,
+  };
+}
 
 export class ButtonWidget extends InteractiveWidget {
   readonly #rect: TuiWidgetRect;
@@ -55,7 +59,7 @@ export class ButtonWidget extends InteractiveWidget {
 
   constructor(options: ButtonWidgetOptions = {}) {
     super();
-    const resolved = {...DEFAULT_BUTTON_OPTIONS, ...options};
+    const resolved = {...getDefaultButtonOptions(), ...options};
     const spec = extractPercentSpec(resolved.x, resolved.y, resolved.width, resolved.height);
     if (spec) {
       this.setPercentSpec(spec);
@@ -208,7 +212,7 @@ export class ButtonWidget extends InteractiveWidget {
 }
 
 export function createButtonWidget(options?: Partial<ButtonWidgetOptions>): ButtonWidget {
-  return new ButtonWidget({...DEFAULT_BUTTON_OPTIONS, ...options});
+  return new ButtonWidget({...getDefaultButtonOptions(), ...options});
 }
 
 export default ButtonWidget;

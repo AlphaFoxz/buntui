@@ -23,12 +23,12 @@
 import { ref } from '@vue/reactivity'
 
 const selectedColor = ref(-1)
-function handleColorChange(data) {
+function handleColorChange(data: TuiRadioGroupChangeEvent) {
     selectedColor.value = data.value
 }
 
 const selectedSize = ref(1)
-function handleSizeChange(data) {
+function handleSizeChange(data: TuiRadioGroupChangeEvent) {
     selectedSize.value = data.value
 }
 </script>

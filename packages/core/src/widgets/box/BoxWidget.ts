@@ -1,6 +1,7 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {BorderSides} from '../../draw_list/types';
 import {parseColor, type TuiColor} from '../../utils/color';
+import {getTheme} from '../../theme/provider';
 import {extractPercentSpec, isPercent} from '../../utils/percent';
 import {
   LayoutAlignment as LayoutAlignmentEnum,
@@ -434,22 +435,26 @@ export class BoxWidget extends TuiWidgetEntity {
   }
 }
 
-export const DEFAULT_BOX_OPTIONS: BoxWidgetOptions = {
-  x: 0 as U16,
-  y: 0 as U16,
-  width: 32 as U16,
-  height: 3 as U16,
-  borderStyle: 1 as U8,
-  borderTop: true,
-  borderRight: true,
-  borderBottom: true,
-  borderLeft: true,
-  colorFg: 0xFF_FF_FF_FF,
-  colorBg: 0x00_00_00_FF,
-};
+export function getDefaultBoxOptions(): BoxWidgetOptions {
+  const theme = getTheme();
+  return {
+    x: 0,
+    y: 0,
+    width: 32,
+    height: 3,
+    borderStyle: 1,
+    borderTop: true,
+    borderRight: true,
+    borderBottom: true,
+    borderLeft: true,
+    colorFg: theme.colors.text,
+    colorBg: theme.colors.background,
+    borderColor: theme.colors.border,
+  };
+}
 
 export function createBox(options: Partial<BoxWidgetOptions> = {}): BoxWidget {
-  return new BoxWidget({...DEFAULT_BOX_OPTIONS, ...options});
+  return new BoxWidget({...getDefaultBoxOptions(), ...options});
 }
 
 export default BoxWidget;

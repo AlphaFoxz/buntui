@@ -3,7 +3,6 @@ export * as widgets from './widgets';
 export {
   createBox,
   BoxWidget,
-  DEFAULT_BOX_OPTIONS,
   type BoxWidgetOptions,
 } from './widgets/box/BoxWidget';
 export {createTextWidget, TextWidget} from './widgets/text/TextWidget';
@@ -54,3 +53,7 @@ export type {KeyboardEvent, MouseEvent} from './events/types';
 export {
   isPercent, resolvePercent, extractPercentSpec, resolveSizeValue,
 } from './utils/percent';
+export {defineTheme, catppuccinMocha} from './theme/themes';
+export type {TuiTheme, TuiThemeColors, TuiThemeBorderStyle} from './theme/types';
+export {getTheme, setTheme} from './theme/provider';
+export {useTheme} from './theme/use-theme';

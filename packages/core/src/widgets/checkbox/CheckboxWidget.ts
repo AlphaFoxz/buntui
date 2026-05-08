@@ -4,6 +4,7 @@ import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
+import {getTheme} from '../../theme/provider';
 import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {CheckboxWidgetOptions} from './types';
 
@@ -12,27 +13,30 @@ type CheckboxColors = {
   bg: number;
 };
 
-const DEFAULT_CHECKBOX_OPTIONS: Required<CheckboxWidgetOptions> = {
-  x: 0,
-  y: 0,
-  width: 10,
-  height: 1,
-  label: '',
-  checked: false,
-  disabled: false,
+function getDefaultCheckboxOptions(): Required<CheckboxWidgetOptions> {
+  const theme = getTheme();
+  return {
+    x: 0,
+    y: 0,
+    width: 10,
+    height: 1,
+    label: '',
+    checked: false,
+    disabled: false,
 
-  colorFgNormal: 0xFF_FF_FF_FF,
-  colorBgNormal: 0x1E_1E_2E_FF,
+    colorFgNormal: theme.colors.text,
+    colorBgNormal: theme.colors.surface,
 
-  colorFgHovered: 0xFF_FF_FF_FF,
-  colorBgHovered: 0x45_47_5A_FF,
+    colorFgHovered: theme.colors.text,
+    colorBgHovered: theme.colors.surfaceHover,
 
-  colorFgFocused: 0xFF_FF_FF_FF,
-  colorBgFocused: 0x31_32_44_FF,
+    colorFgFocused: theme.colors.text,
+    colorBgFocused: theme.colors.surfaceFocused,
 
-  colorFgDisabled: 0x6C_70_86_FF,
-  colorBgDisabled: 0x18_18_25_FF,
-};
+    colorFgDisabled: theme.colors.textMuted,
+    colorBgDisabled: theme.colors.surfaceDisabled,
+  };
+}
 
 export class CheckboxWidget extends InteractiveWidget {
   readonly #rect: TuiWidgetRect;
@@ -44,7 +48,7 @@ export class CheckboxWidget extends InteractiveWidget {
 
   constructor(options: CheckboxWidgetOptions = {}) {
     super();
-    const resolved = {...DEFAULT_CHECKBOX_OPTIONS, ...options};
+    const resolved = {...getDefaultCheckboxOptions(), ...options};
     const spec = extractPercentSpec(resolved.x, resolved.y, resolved.width, resolved.height);
     if (spec) {
       this.setPercentSpec(spec);
@@ -200,7 +204,7 @@ export class CheckboxWidget extends InteractiveWidget {
 }
 
 export function createCheckboxWidget(options?: Partial<CheckboxWidgetOptions>): CheckboxWidget {
-  return new CheckboxWidget({...DEFAULT_CHECKBOX_OPTIONS, ...options});
+  return new CheckboxWidget({...getDefaultCheckboxOptions(), ...options});
 }
 
 export default CheckboxWidget;

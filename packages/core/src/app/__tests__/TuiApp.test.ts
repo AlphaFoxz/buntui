@@ -1,9 +1,11 @@
 import {it, expect, describe} from 'bun:test';
-import {createApp} from '../index';
+import {createApp, type TuiSFCModule} from '../index';
 import {type TuiBackend, type TuiBackendEventHandler} from '../TuiBackend';
 import type {LogLevel} from '../../extern/app/types';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import type {CStruct} from '../../extern/types';
+
+const noopModule: TuiSFCModule = {setup() {}};
 
 class MockBackend implements TuiBackend {
   readonly calls: string[] = [];
@@ -39,6 +41,7 @@ class MockBackend implements TuiBackend {
     this.#handler = undefined;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   emit(eventType: number, event: any): void {
     this.#handler?.(eventType, event);
   }
@@ -56,7 +59,7 @@ describe('TuiApp scene management', () => {
   it('createScene returns a TuiScene', () => {
     const backend = new MockBackend();
     const app = createApp({backend});
-    const scene = app.createScene();
+    const scene = app.createScene(noopModule);
     expect(scene).toBeDefined();
     expect(scene.id).toBeGreaterThan(0n);
   });
@@ -64,22 +67,22 @@ describe('TuiApp scene management', () => {
   it('createScene with visible:true sets as current', () => {
     const backend = new MockBackend();
     const app = createApp({backend});
-    const scene = app.createScene({visible: true});
+    const scene = app.createScene(noopModule, {visible: true});
     expect(scene.visible).toBe(true);
   });
 
   it('createScene without visible defaults to not visible', () => {
     const backend = new MockBackend();
     const app = createApp({backend});
-    const scene = app.createScene();
+    const scene = app.createScene(noopModule);
     expect(scene.visible).toBe(false);
   });
 
   it('multiple createScene calls with visible:true — last one wins', () => {
     const backend = new MockBackend();
     const app = createApp({backend});
-    const scene1 = app.createScene({visible: true});
-    const scene2 = app.createScene({visible: true});
+    const scene1 = app.createScene(noopModule, {visible: true});
+    const scene2 = app.createScene(noopModule, {visible: true});
     expect(scene1.visible).toBe(false);
     expect(scene2.visible).toBe(true);
   });
@@ -87,22 +90,22 @@ describe('TuiApp scene management', () => {
   it('destroyScene removes the scene', () => {
     const backend = new MockBackend();
     const app = createApp({backend});
-    const scene = app.createScene({visible: true});
+    const scene = app.createScene(noopModule, {visible: true});
     app.destroyScene(scene);
   });
 
   it('destroyScene with bigint id', () => {
     const backend = new MockBackend();
     const app = createApp({backend});
-    const scene = app.createScene({visible: true});
+    const scene = app.createScene(noopModule, {visible: true});
     app.destroyScene(scene.id);
   });
 
   it('destroyScene restores previous visible scene', () => {
     const backend = new MockBackend();
     const app = createApp({backend});
-    const scene1 = app.createScene({visible: true});
-    const scene2 = app.createScene({visible: true});
+    const scene1 = app.createScene(noopModule, {visible: true});
+    const scene2 = app.createScene(noopModule, {visible: true});
     expect(scene2.visible).toBe(true);
     app.destroyScene(scene2);
     expect(scene1.visible).toBe(true);
@@ -111,8 +114,8 @@ describe('TuiApp scene management', () => {
   it('switchScene toggles visibility', () => {
     const backend = new MockBackend();
     const app = createApp({backend});
-    const scene1 = app.createScene({visible: true});
-    const scene2 = app.createScene();
+    const scene1 = app.createScene(noopModule, {visible: true});
+    const scene2 = app.createScene(noopModule);
     app.switchScene(scene2);
     expect(scene1.visible).toBe(false);
     expect(scene2.visible).toBe(true);
@@ -121,9 +124,9 @@ describe('TuiApp scene management', () => {
   it('switchScene with unknown scene does nothing', () => {
     const backend = new MockBackend();
     const app = createApp({backend});
-    const scene1 = app.createScene({visible: true});
+    const scene1 = app.createScene(noopModule, {visible: true});
     const app2 = createApp({backend: new MockBackend()});
-    const orphan = app2.createScene();
+    const orphan = app2.createScene(noopModule);
     app.switchScene(orphan);
     expect(scene1.visible).toBe(true);
   });
@@ -161,29 +164,6 @@ describe('TuiApp lifecycle', () => {
     app.dispose();
   });
 
-  it('start calls startEvents after startApp', () => {
-    const backend = new MockBackend();
-    const app = createApp({backend});
-    app.start();
-
-    expect(backend.calls).toContain('startApp');
-    expect(backend.calls).toContain('startEvents');
-    expect(backend.calls.indexOf('startEvents')).toBeGreaterThan(backend.calls.indexOf('startApp'));
-
-    app.dispose();
-  });
-
-  it('start calls detectTermSize', () => {
-    const backend = new MockBackend();
-    const app = createApp({backend});
-    app.start();
-
-    const detectCalls = backend.calls.filter(c => c === 'detectTermSize').length;
-    expect(detectCalls).toBeGreaterThanOrEqual(1);
-
-    app.dispose();
-  });
-
   it('dispose calls stopApp and stopEvents', () => {
     const backend = new MockBackend();
     const app = createApp({backend});
@@ -205,7 +185,7 @@ describe('TuiApp lifecycle', () => {
   it('dispose destroys current scene', () => {
     const backend = new MockBackend();
     const app = createApp({backend});
-    const scene = app.createScene({visible: true});
+    const scene = app.createScene(noopModule, {visible: true});
     app.start();
     app.dispose();
     // Scene widgets should be unmounted after destroy

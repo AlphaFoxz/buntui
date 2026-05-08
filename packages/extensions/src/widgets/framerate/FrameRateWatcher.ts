@@ -1,8 +1,8 @@
 import {
   BoxWidget,
-  DEFAULT_BOX_OPTIONS,
   TextWidget,
   TUI_CONTEXT_INSTANCE,
+  getTheme,
   isPercent,
   type BoxWidgetOptions,
 } from '@buntui/core';
@@ -16,16 +16,27 @@ export class FrameRateWatcher extends BoxWidget {
 
   constructor(options: Partial<BoxWidgetOptions> = {}) {
     super({
-      ...DEFAULT_BOX_OPTIONS,
-      ...options,
+      x: options.x ?? 0,
+      y: options.y ?? 0,
+      width: options.width ?? 32,
+      height: options.height ?? 3,
+      borderStyle: options.borderStyle ?? 1,
+      borderTop: options.borderTop ?? true,
+      borderRight: options.borderRight ?? true,
+      borderBottom: options.borderBottom ?? true,
+      borderLeft: options.borderLeft ?? true,
+      colorFg: options.colorFg,
+      colorBg: options.colorBg,
+      borderColor: options.borderColor,
+      shadowColor: options.shadowColor,
     });
     this.#label = new TextWidget({
       x: isPercent(options.x) ? 0 : (options.x ?? 0),
       y: isPercent(options.y) ? 0 : (options.y ?? 0),
       width: isPercent(options.width) ? 0 : (options.width ?? 0),
       height: isPercent(options.height) ? 0 : (options.height ?? 0),
-      colorFg: options.colorFg ?? 0xFF_FF_FF_FF,
-      colorBg: 0x00_00_00_00 as U32,
+      colorFg: options.colorFg ?? getTheme().colors.text,
+      colorBg: 0x00_00_00_00,
       value: '0 fps',
     });
     this.addChild(this.#label);

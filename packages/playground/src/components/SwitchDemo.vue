@@ -18,13 +18,13 @@ import { ref } from '@vue/reactivity'
 
 const autoUpdate = ref(true)
 const wifiEnabled = ref(false)
-function handleSwitchChange(data: { checked: boolean }) {
+function handleSwitchChange(data: TuiSwitchChangeEvent) {
     void data
 }
-function handleAutoUpdateChange(data: { checked: boolean }) {
+function handleAutoUpdateChange(data: TuiSwitchChangeEvent) {
     autoUpdate.value = data.checked
 }
-function handleWifiChange(data: { checked: boolean }) {
+function handleWifiChange(data: TuiSwitchChangeEvent) {
     wifiEnabled.value = data.checked
 }
 </script>

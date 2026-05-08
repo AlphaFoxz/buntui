@@ -1,15 +1,15 @@
-declare module '*.vue' {
-  export function setup(scene: unknown): void;
-}
+import type {DefineComponent} from 'vue';
+
+// ---- Prop Types ----
 
 type TuiBoxProps = {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  colorFg?: number;
-  colorBg?: number;
-  borderColor?: number;
+  x?: TuiSizeValue;
+  y?: TuiSizeValue;
+  width?: TuiSizeValue;
+  height?: TuiSizeValue;
+  colorFg?: TuiColor;
+  colorBg?: TuiColor;
+  borderColor?: TuiColor;
   borderStyle?: number;
   borderTop?: boolean;
   borderRight?: boolean;
@@ -19,7 +19,7 @@ type TuiBoxProps = {
   styleModifier?: number;
   shadowOffsetX?: number;
   shadowOffsetY?: number;
-  shadowColor?: number;
+  shadowColor?: TuiColor;
   shadowCovered?: boolean;
   draggable?: boolean;
   direction?: number;
@@ -32,12 +32,12 @@ type TuiBoxProps = {
 };
 
 type TuiTextProps = {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  colorFg?: number;
-  colorBg?: number;
+  x?: TuiSizeValue;
+  y?: TuiSizeValue;
+  width?: TuiSizeValue;
+  height?: TuiSizeValue;
+  colorFg?: TuiColor;
+  colorBg?: TuiColor;
   zIndex?: number;
   styleModifier?: number;
   text?: string;
@@ -47,147 +47,225 @@ type TuiTextProps = {
 };
 
 type TuiInputProps = {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  colorFg?: number;
-  colorBg?: number;
+  x?: TuiSizeValue;
+  y?: TuiSizeValue;
+  width?: TuiSizeValue;
+  height?: TuiSizeValue;
+  colorFg?: TuiColor;
+  colorBg?: TuiColor;
   placeholder?: string;
   value?: string;
   label?: string;
-  borderColorUnfocused?: number;
-  borderColorFocused?: number;
+  borderColorUnfocused?: TuiColor;
+  borderColorFocused?: TuiColor;
   borderStyle?: number;
   maxLength?: number;
-  selectionBgColor?: number;
-  selectionFgColor?: number;
+  selectionBgColor?: TuiColor;
+  selectionFgColor?: TuiColor;
 };
 
 type TuiButtonProps = {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: TuiSizeValue;
+  y?: TuiSizeValue;
+  width?: TuiSizeValue;
+  height?: TuiSizeValue;
   text?: string;
   disabled?: boolean;
-  colorFgNormal?: number;
-  colorBgNormal?: number;
-  borderColorNormal?: number;
+  colorFgNormal?: TuiColor;
+  colorBgNormal?: TuiColor;
+  borderColorNormal?: TuiColor;
   borderStyleNormal?: number;
-  colorFgFocused?: number;
-  colorBgFocused?: number;
-  borderColorFocused?: number;
+  colorFgFocused?: TuiColor;
+  colorBgFocused?: TuiColor;
+  borderColorFocused?: TuiColor;
   borderStyleFocused?: number;
-  colorFgPressed?: number;
-  colorBgPressed?: number;
-  borderColorPressed?: number;
+  colorFgPressed?: TuiColor;
+  colorBgPressed?: TuiColor;
+  borderColorPressed?: TuiColor;
   borderStylePressed?: number;
-  colorFgDisabled?: number;
-  colorBgDisabled?: number;
-  borderColorDisabled?: number;
+  colorFgDisabled?: TuiColor;
+  colorBgDisabled?: TuiColor;
+  borderColorDisabled?: TuiColor;
   borderStyleDisabled?: number;
 };
 
 type TuiCheckboxProps = {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: TuiSizeValue;
+  y?: TuiSizeValue;
+  width?: TuiSizeValue;
+  height?: TuiSizeValue;
   label?: string;
   checked?: boolean;
   disabled?: boolean;
-  colorFgNormal?: number;
-  colorBgNormal?: number;
-  colorFgHovered?: number;
-  colorBgHovered?: number;
-  colorFgFocused?: number;
-  colorBgFocused?: number;
-  colorFgDisabled?: number;
-  colorBgDisabled?: number;
+  colorFgNormal?: TuiColor;
+  colorBgNormal?: TuiColor;
+  colorFgHovered?: TuiColor;
+  colorBgHovered?: TuiColor;
+  colorFgFocused?: TuiColor;
+  colorBgFocused?: TuiColor;
+  colorFgDisabled?: TuiColor;
+  colorBgDisabled?: TuiColor;
 };
 
 type TuiRadioGroupProps = {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  options?: string[];
+  x?: TuiSizeValue;
+  y?: TuiSizeValue;
+  width?: TuiSizeValue;
+  height?: TuiSizeValue;
+  options?: readonly string[];
   value?: number;
   disabled?: boolean;
-  colorFgNormal?: number;
-  colorBgNormal?: number;
-  colorFgFocused?: number;
-  colorBgFocused?: number;
-  colorFgDisabled?: number;
-  colorBgDisabled?: number;
-  colorFgSelected?: number;
-  colorBgSelected?: number;
+  colorFgNormal?: TuiColor;
+  colorBgNormal?: TuiColor;
+  colorFgFocused?: TuiColor;
+  colorBgFocused?: TuiColor;
+  colorFgDisabled?: TuiColor;
+  colorBgDisabled?: TuiColor;
+  colorFgSelected?: TuiColor;
+  colorBgSelected?: TuiColor;
 };
 
 type TuiSelectButtonProps = {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  options?: unknown[];
+  x?: TuiSizeValue;
+  y?: TuiSizeValue;
+  width?: TuiSizeValue;
+  height?: TuiSizeValue;
+  options: string[];
   value?: unknown;
   disabled?: boolean;
-  colorFgNormal?: number;
-  colorBgNormal?: number;
-  colorFgActive?: number;
-  colorBgActive?: number;
-  colorFgFocused?: number;
-  colorBgFocused?: number;
-  colorFgDisabled?: number;
-  colorBgDisabled?: number;
-  colorFgSeparator?: number;
+  colorFgNormal?: TuiColor;
+  colorBgNormal?: TuiColor;
+  colorFgActive?: TuiColor;
+  colorBgActive?: TuiColor;
+  colorFgFocused?: TuiColor;
+  colorBgFocused?: TuiColor;
+  colorFgDisabled?: TuiColor;
+  colorBgDisabled?: TuiColor;
+  colorFgSeparator?: TuiColor;
 };
 
 type TuiSwitchProps = {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
+  x?: TuiSizeValue;
+  y?: TuiSizeValue;
+  width?: TuiSizeValue;
+  height?: TuiSizeValue;
   label?: string;
   checked?: boolean;
   disabled?: boolean;
-  colorFgNormal?: number;
-  colorBgNormal?: number;
-  colorCrossNormal?: number;
-  colorCheckNormal?: number;
-  colorDimNormal?: number;
-  colorFgHovered?: number;
-  colorBgHovered?: number;
-  colorCrossHovered?: number;
-  colorCheckHovered?: number;
-  colorDimHovered?: number;
-  colorFgFocused?: number;
-  colorBgFocused?: number;
-  colorCrossFocused?: number;
-  colorCheckFocused?: number;
-  colorDimFocused?: number;
-  colorFgDisabled?: number;
-  colorBgDisabled?: number;
-  colorCrossDisabled?: number;
-  colorCheckDisabled?: number;
-  colorDimDisabled?: number;
+  colorFgNormal?: TuiColor;
+  colorBgNormal?: TuiColor;
+  colorCrossNormal?: TuiColor;
+  colorCheckNormal?: TuiColor;
+  colorDimNormal?: TuiColor;
+  colorFgHovered?: TuiColor;
+  colorBgHovered?: TuiColor;
+  colorCrossHovered?: TuiColor;
+  colorCheckHovered?: TuiColor;
+  colorDimHovered?: TuiColor;
+  colorFgFocused?: TuiColor;
+  colorBgFocused?: TuiColor;
+  colorCrossFocused?: TuiColor;
+  colorCheckFocused?: TuiColor;
+  colorDimFocused?: TuiColor;
+  colorFgDisabled?: TuiColor;
+  colorBgDisabled?: TuiColor;
+  colorCrossDisabled?: TuiColor;
+  colorCheckDisabled?: TuiColor;
+  colorDimDisabled?: TuiColor;
+};
+
+type TuiScrollBoxProps = {
+  x?: TuiSizeValue;
+  y?: TuiSizeValue;
+  width?: TuiSizeValue;
+  height?: TuiSizeValue;
+  colorFg?: TuiColor;
+  colorBg?: TuiColor;
+  scrollX?: number;
+  scrollY?: number;
+};
+
+type TuiProgressBarProps = {
+  x?: TuiSizeValue;
+  y?: TuiSizeValue;
+  width?: TuiSizeValue;
+  height?: TuiSizeValue;
+  value?: number;
+  max?: number;
+  colorFg?: TuiColor;
+  colorBg?: TuiColor;
+  styleModifier?: number;
 };
 
 type TuiFrameRateWatcherProps = TuiBoxProps;
 
-declare global {
-  namespace JSX {
-    type IntrinsicElements = {
-      Box: TuiBoxProps;
-      Text: TuiTextProps;
-      Input: TuiInputProps;
-      Button: TuiButtonProps;
-      Checkbox: TuiCheckboxProps;
-      RadioGroup: TuiRadioGroupProps;
-      SelectButton: TuiSelectButtonProps;
-      Switch: TuiSwitchProps;
-      FrameRateWatcher: TuiFrameRateWatcherProps;
-    };
-  }
+// ---- Event Types (payload types are global, defined in tui-types.d.ts) ----
+
+// DefineComponent expects emits in function form (ObjectEmitsOptions).
+// See @vue/runtime-core: ObjectEmitsOptions = Record<string, ((...args: any[]) => any) | null>
+
+type TuiBaseEmits = {
+  click: (data: TuiPointerEvent) => void;
+  mousedown: (data: TuiPointerEvent) => void;
+  mouseup: (data: TuiPointerEvent) => void;
+  mouseover: (data: TuiPointerEvent) => void;
+  mouseout: (data: TuiPointerEvent) => void;
+  mousemove: (data: TuiPointerEvent) => void;
+  contextmenu: (data: TuiPointerEvent) => void;
+  dragstart: (data: TuiPointerEvent) => void;
+  drag: (data: TuiPointerEvent) => void;
+  dragend: (data: TuiPointerEvent) => void;
+  wheel: (data: TuiWheelEvent) => void;
+};
+
+type TuiInteractiveEmits = TuiBaseEmits & {
+  focus: () => void;
+  blur: () => void;
+};
+
+type TuiCheckboxEmits = TuiInteractiveEmits & {
+  change: (data: TuiCheckboxChangeEvent) => void;
+};
+
+type TuiSwitchEmits = TuiInteractiveEmits & {
+  change: (data: TuiSwitchChangeEvent) => void;
+};
+
+type TuiInputEmits = TuiInteractiveEmits & {
+  input: (data: TuiInputEvent) => void;
+  submit: (data: TuiSubmitEvent) => void;
+};
+
+type TuiRadioGroupEmits = TuiInteractiveEmits & {
+  change: (data: TuiRadioGroupChangeEvent) => void;
+};
+
+type TuiSelectButtonEmits = TuiInteractiveEmits & {
+  change: (data: TuiSelectButtonChangeEvent) => void;
+};
+
+// ---- Component Type ----
+// Use Vue's DefineComponent for proper Volar emit resolution.
+// DefineComponent has 17 generic params; we only fill Props and Emits (8th).
+type _Empty = Record<string, never>;
+type TuiComponent<P, E extends Record<string, ((...args: any[]) => any) | null>>
+  = DefineComponent<P, _Empty, _Empty, _Empty, _Empty, _Empty, _Empty, E>;
+
+// ---- Global Component Registration (for Volar) ----
+declare module 'vue' {
+  export type GlobalComponents = {
+    Box: TuiComponent<TuiBoxProps, TuiBaseEmits>;
+    Text: TuiComponent<TuiTextProps, TuiBaseEmits>;
+    Input: TuiComponent<TuiInputProps, TuiInputEmits>;
+    Button: TuiComponent<TuiButtonProps, TuiInteractiveEmits>;
+    Checkbox: TuiComponent<TuiCheckboxProps, TuiCheckboxEmits>;
+    RadioGroup: TuiComponent<TuiRadioGroupProps, TuiRadioGroupEmits>;
+    SelectButton: TuiComponent<TuiSelectButtonProps, TuiSelectButtonEmits>;
+    Switch: TuiComponent<TuiSwitchProps, TuiSwitchEmits>;
+    ScrollBox: TuiComponent<TuiScrollBoxProps, TuiInteractiveEmits>;
+    ProgressBar: TuiComponent<TuiProgressBarProps, TuiBaseEmits>;
+    FrameRateWatcher: TuiComponent<TuiFrameRateWatcherProps, TuiBaseEmits>;
+  };
 }
+
+export {};

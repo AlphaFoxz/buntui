@@ -9,3 +9,4 @@ export function createApp(options?: CreateAppOptions) {
 }
 
 export {default as TuiApp} from './TuiApp';
+export type {TuiSFCModule} from './TuiApp';

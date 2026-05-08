@@ -3,6 +3,7 @@ import {rgbToRgba} from '../../utils/styles';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import type {MouseEvent} from '../../events/types';
 import {type TuiWidgetEntity} from '../../widgets/TuiWidgetEntity';
+import {getTheme} from '../../theme/provider';
 import {type TuiSceneOptions} from './types';
 import {TUI_CONTEXT_INSTANCE} from './TuiContext';
 
@@ -15,7 +16,7 @@ export class TuiScene {
   constructor(options?: Partial<TuiSceneOptions>) {
     this.#id = genId();
     this.#visible = options?.visible ?? false;
-    this.#bgRgba = rgbToRgba(options?.bgHexRgb ?? '#000000');
+    this.#bgRgba = rgbToRgba(options?.bgHexRgb ?? getTheme().colors.background);
   }
 
   mount(widget: TuiWidgetEntity) {
@@ -48,7 +49,7 @@ export class TuiScene {
   ): void {
     this.#bgRgba = typeof color === 'number' && g !== undefined && b !== undefined
       ? rgbToRgba(color, g, b)
-      : rgbToRgba(color as string | number | {r: number; g: number; b: number});
+      : rgbToRgba(color);
   }
 
   get visible() {

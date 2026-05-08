@@ -27,7 +27,7 @@ export function parseColor(color: TuiColor): U32 {
     if (m8?.[1] && m8[2]) {
       const rgb = Number.parseInt(m8[1], 16);
       const a = Number.parseInt(m8[2], 16);
-      return ((rgb << 8) | a) >>> 0 as U32;
+      return ((rgb << 8) | a) >>> 0;
     }
 
     const m4 = RE_HEX4.exec(css);
@@ -36,7 +36,7 @@ export function parseColor(color: TuiColor): U32 {
       const g = expandNibble(m4[2]);
       const b = expandNibble(m4[3]);
       const a = expandNibble(m4[4]);
-      return (((r << 24) | (g << 16) | (b << 8) | a) >>> 0) as U32;
+      return (((r << 24) | (g << 16) | (b << 8) | a) >>> 0);
     }
   }
 
@@ -46,5 +46,5 @@ export function parseColor(color: TuiColor): U32 {
     throw new Error(`Invalid color: ${color}`);
   }
 
-  return ((n << 8) | 0xFF) >>> 0 as U32;
+  return ((n << 8) | 0xFF) >>> 0;
 }

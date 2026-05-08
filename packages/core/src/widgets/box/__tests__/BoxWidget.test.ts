@@ -1,5 +1,5 @@
 import {it, expect, describe} from 'bun:test';
-import {BoxWidget, createBox, DEFAULT_BOX_OPTIONS} from '../BoxWidget';
+import {BoxWidget, createBox} from '../BoxWidget';
 import {TextWidget} from '../../text/TextWidget';
 import {LayoutDirection, LayoutAlignment} from '../../types';
 
@@ -51,16 +51,17 @@ describe('construction', () => {
     expect(box.draggable).toBe(true);
   });
 
-  it('DEFAULT_BOX_OPTIONS has expected values', () => {
-    expect(DEFAULT_BOX_OPTIONS.x).toBe(0);
-    expect(DEFAULT_BOX_OPTIONS.y).toBe(0);
-    expect(DEFAULT_BOX_OPTIONS.width).toBe(32);
-    expect(DEFAULT_BOX_OPTIONS.height).toBe(3);
+  it('getDefaultBoxOptions has expected values', () => {
+    const box = createBox();
+    expect(box.rect.x).toBe(0);
+    expect(box.rect.y).toBe(0);
+    expect(box.rect.width).toBe(32);
+    expect(box.rect.height).toBe(3);
   });
 });
 
 describe('createBox factory', () => {
-  it('creates box with DEFAULT_BOX_OPTIONS', () => {
+  it('creates box with default options', () => {
     const box = createBox();
     expect(box.rect.width).toBe(32);
     expect(box.rect.height).toBe(3);

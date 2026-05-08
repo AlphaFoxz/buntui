@@ -3,30 +3,34 @@ import {type KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
+import {getTheme} from '../../theme/provider';
 import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {RadioGroupWidgetOptions} from './types';
 
-const DEFAULT_RADIO_OPTIONS: Required<RadioGroupWidgetOptions> = {
-  x: 0,
-  y: 0,
-  width: 20,
-  height: 3,
-  options: [],
-  value: -1,
-  disabled: false,
+function getDefaultRadioOptions(): Required<RadioGroupWidgetOptions> {
+  const theme = getTheme();
+  return {
+    x: 0,
+    y: 0,
+    width: 20,
+    height: 3,
+    options: [],
+    value: -1,
+    disabled: false,
 
-  colorFgNormal: 0xFF_FF_FF_FF,
-  colorBgNormal: 0x1E_1E_2E_FF,
+    colorFgNormal: theme.colors.text,
+    colorBgNormal: theme.colors.surface,
 
-  colorFgFocused: 0xFF_FF_FF_FF,
-  colorBgFocused: 0x45_47_5A_FF,
+    colorFgFocused: theme.colors.text,
+    colorBgFocused: theme.colors.surfaceHover,
 
-  colorFgDisabled: 0x6C_70_86_FF,
-  colorBgDisabled: 0x18_18_25_FF,
+    colorFgDisabled: theme.colors.textMuted,
+    colorBgDisabled: theme.colors.surfaceDisabled,
 
-  colorFgSelected: 0x89_B4_FA_FF,
-  colorBgSelected: 0x31_32_44_FF,
-};
+    colorFgSelected: theme.colors.accent,
+    colorBgSelected: theme.colors.surfaceFocused,
+  };
+}
 
 export class RadioGroupWidget extends InteractiveWidget {
   readonly #rect: TuiWidgetRect;
@@ -45,7 +49,7 @@ export class RadioGroupWidget extends InteractiveWidget {
 
   constructor(options: RadioGroupWidgetOptions = {}) {
     super();
-    const resolved = {...DEFAULT_RADIO_OPTIONS, ...options};
+    const resolved = {...getDefaultRadioOptions(), ...options};
     const spec = extractPercentSpec(resolved.x, resolved.y, resolved.width, resolved.height);
     if (spec) {
       this.setPercentSpec(spec);
@@ -249,7 +253,7 @@ export class RadioGroupWidget extends InteractiveWidget {
 }
 
 export function createRadioGroupWidget(options?: Partial<RadioGroupWidgetOptions>): RadioGroupWidget {
-  return new RadioGroupWidget({...DEFAULT_RADIO_OPTIONS, ...options});
+  return new RadioGroupWidget({...getDefaultRadioOptions(), ...options});
 }
 
 export default RadioGroupWidget;

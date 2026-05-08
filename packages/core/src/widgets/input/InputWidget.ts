@@ -6,6 +6,7 @@ import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import type {Focusable} from '../Focusable';
 import {parseColor} from '../../utils/color';
 import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
+import {getTheme} from '../../theme/provider';
 import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {InputWidgetOptions} from './types';
 
@@ -25,23 +26,26 @@ function charIndexAtColumn(string_: string, column: number): number {
   return index;
 }
 
-const DEFAULT_INPUT_OPTIONS: InputWidgetOptions = {
-  x: 0,
-  y: 0,
-  width: 32,
-  height: 3,
-  placeholder: '',
-  value: '',
-  colorFg: 0xFF_FF_FF_FF,
-  colorBg: 0x1E_1E_2E_FF,
-  borderColorUnfocused: 0x45_47_5A_FF,
-  borderColorFocused: 0x89_B4_FA_FF,
-  borderStyle: 1,
-  maxLength: 0,
-  selectionBgColor: 0x26_4F_78_FF,
-  selectionFgColor: 0xFF_FF_FF_FF,
-  readonly: false,
-};
+function getDefaultInputOptions(): InputWidgetOptions {
+  const theme = getTheme();
+  return {
+    x: 0,
+    y: 0,
+    width: 32,
+    height: 3,
+    placeholder: '',
+    value: '',
+    colorFg: theme.colors.text,
+    colorBg: theme.colors.surface,
+    borderColorUnfocused: theme.colors.border,
+    borderColorFocused: theme.colors.borderFocused,
+    borderStyle: theme.borderStyle.normal,
+    maxLength: 0,
+    selectionBgColor: theme.colors.selectionBg,
+    selectionFgColor: theme.colors.selectionFg,
+    readonly: false,
+  };
+}
 
 export class InputWidget extends TuiWidgetEntity implements Focusable {
   #x: number;
@@ -70,7 +74,7 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
 
   constructor(options: InputWidgetOptions = {}) {
     super();
-    const resolved = {...DEFAULT_INPUT_OPTIONS, ...options};
+    const resolved = {...getDefaultInputOptions(), ...options};
     const spec = extractPercentSpec(resolved.x, resolved.y, resolved.width, resolved.height);
     if (spec) {
       this.setPercentSpec(spec);
@@ -598,7 +602,7 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
 }
 
 export function createInputWidget(options?: Partial<InputWidgetOptions>): InputWidget {
-  return new InputWidget({...DEFAULT_INPUT_OPTIONS, ...options});
+  return new InputWidget({...getDefaultInputOptions(), ...options});
 }
 
 export default InputWidget;
