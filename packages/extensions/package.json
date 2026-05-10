@@ -19,6 +19,10 @@
         "./snake": {
             "types": "./dist/snake.d.ts",
             "default": "./dist/snake.js"
+        },
+        "./videoplayer": {
+            "types": "./dist/videoplayer.d.ts",
+            "default": "./dist/videoplayer.js"
         }
     },
     "sideEffects": false,

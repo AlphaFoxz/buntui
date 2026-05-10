@@ -68,7 +68,10 @@ export class TuiApp {
       });
     }
 
-    this.#focusManager.start(data => {
+    this.#focusManager.start();
+
+    // Global 'q' to quit — independent of focus state
+    EVENT_BUS.on(TuiEventType.KeyboardEvent, data => {
       if (data.key === 'q' || data.key === 'Q') {
         setTimeout(() => {
           this.stop();

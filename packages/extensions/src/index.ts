@@ -3,5 +3,6 @@
 export * from './matrix';
 export * from './framerate';
 export * from './snake';
+export * from './videoplayer';
 
 export {EXTENSION_REGISTRY} from './registry';
