@@ -2,6 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import process from 'node:process';
 import {type Pointer, CString, suffix} from 'bun:ffi';
+import {getBinaryPath as getNativeBinaryPath} from '@buntui/native';
 import type {DataType} from '../extern/types';
 
 let dllPath: string | undefined;
@@ -23,6 +24,12 @@ export function fetchDllPath(): string {
   const envPath = process.env.BUNTUI_DLL;
   if (envPath) {
     dllPath = path.resolve(envPath);
+    return dllPath;
+  }
+
+  const nativePath = getNativeBinaryPath();
+  if (fs.existsSync(nativePath)) {
+    dllPath = nativePath;
     return dllPath;
   }
 

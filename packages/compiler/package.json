@@ -1,6 +1,6 @@
 {
     "name": "@buntui/compiler",
-    "version": "0.0.0-alpha",
+    "version": "0.0.0-alpha.0",
     "main": "dist/index.bun.mjs",
     "types": "dist/index.d.ts",
     "scripts": {

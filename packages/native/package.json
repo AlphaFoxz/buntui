@@ -1,8 +1,15 @@
 {
     "name": "@buntui/native",
-    "version": "0.0.0-alpha",
+    "version": "0.0.0-alpha.0",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "files": [
+        "binaries/",
+        "src/index.ts"
+    ],
     "scripts": {
-        "build": "zig build",
+        "build": "zig build && bun run ./scripts/copy-binary.ts",
         "zig-test": "zig test src/tests.zig -lc"
     },
     "dependencies": {}

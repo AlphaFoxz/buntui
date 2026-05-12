@@ -58,6 +58,7 @@ const binaryName = `buntui.${getBinaryExt()}`;
 const libPrefix = process.platform === 'win32' ? '' : 'lib';
 const distName = `${libPrefix}${binaryName}`;
 const dllSearchPaths = [
+  path.resolve(import.meta.dir, '..', '..', 'native', 'binaries', `${process.platform}-${process.arch}`, binaryName),
   path.resolve(import.meta.dir, '..', '..', 'native', 'zig-out', 'bin', binaryName),
   path.resolve(import.meta.dir, '..', '..', 'native', 'zig-out', 'lib', distName),
   path.resolve(import.meta.dir, '..', binaryName),

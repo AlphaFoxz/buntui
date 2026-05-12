@@ -1,30 +1,41 @@
 import {cp} from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
+import fs from 'node:fs';
 import {suffix} from 'bun:ffi';
 
 const appName = 'buntui';
+const platformKey = `${process.platform}-${process.arch}`;
+const binaryName = `${appName}.${suffix}`;
 
 const rootDir = path.resolve(import.meta.dir, '..', '..');
-const libPrefix = process.platform === 'win32' ? '' : 'lib';
-const libDir = process.platform === 'win32' ? 'bin' : 'lib';
+const nativeBinary = path.join(rootDir, 'native', 'binaries', platformKey, binaryName);
+
 const tasks: Array<{from: string; to: string}> = [
   {
-    from: `/native/zig-out/${libDir}/${libPrefix}${appName}.${suffix}`,
-    to: `/core/src/utils/${appName}.${suffix}`,
+    from: nativeBinary,
+    to: path.join(rootDir, 'core', 'src', 'utils', binaryName),
   },
 ];
 
 if (process.platform === 'win32') {
-  tasks.push({
-    from: `/native/zig-out/bin/${appName}.pdb`,
-    to: `/core/src/utils/${appName}.pdb`,
-  });
+  const pdbName = `${appName}.pdb`;
+  const pdbSource = path.join(rootDir, 'native', 'binaries', platformKey, pdbName);
+  if (fs.existsSync(pdbSource)) {
+    tasks.push({
+      from: pdbSource,
+      to: path.join(rootDir, 'core', 'src', 'utils', pdbName),
+    });
+  }
 }
 
 const queue: Array<Promise<void>> = [];
 for (const task of tasks) {
-  queue.push(cp(`${rootDir}${task.from}`, `${rootDir}${task.to}`, {recursive: true}));
+  if (fs.existsSync(task.from)) {
+    queue.push(cp(task.from, task.to, {recursive: true}));
+  } else {
+    console.warn(`Warning: ${task.from} not found, run native build first`);
+  }
 }
 
 await Promise.all(queue);
