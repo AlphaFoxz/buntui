@@ -5,9 +5,14 @@
         ".": "./src/index.ts"
     },
     "files": [
-        "binaries/",
         "src/index.ts"
     ],
+    "optionalDependencies": {
+        "@buntui/native-win32-x64": "workspace:*",
+        "@buntui/native-linux-x64": "workspace:*",
+        "@buntui/native-darwin-x64": "workspace:*",
+        "@buntui/native-darwin-arm64": "workspace:*"
+    },
     "scripts": {
         "build": "zig build && bun run ./scripts/copy-binary.ts",
         "zig-test": "zig test src/tests.zig -lc"

@@ -9,18 +9,18 @@ const platformKey = `${process.platform}-${process.arch}`;
 const binaryName = `${appName}.${suffix}`;
 
 const rootDir = path.resolve(import.meta.dir, '..', '..');
-const nativeBinary = path.join(rootDir, 'native', 'binaries', platformKey, binaryName);
+const platformBinary = path.join(rootDir, 'native-platforms', platformKey, binaryName);
 
 const tasks: Array<{from: string; to: string}> = [
   {
-    from: nativeBinary,
+    from: platformBinary,
     to: path.join(rootDir, 'core', 'src', 'utils', binaryName),
   },
 ];
 
 if (process.platform === 'win32') {
   const pdbName = `${appName}.pdb`;
-  const pdbSource = path.join(rootDir, 'native', 'binaries', platformKey, pdbName);
+  const pdbSource = path.join(rootDir, 'native-platforms', platformKey, pdbName);
   if (fs.existsSync(pdbSource)) {
     tasks.push({
       from: pdbSource,

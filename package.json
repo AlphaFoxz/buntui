@@ -21,6 +21,7 @@
         "typescript": "^5.9.3"
     },
     "workspaces": [
-        "packages/*"
+        "packages/*",
+        "packages/native-platforms/*"
     ]
 }

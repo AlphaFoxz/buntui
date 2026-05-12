@@ -2,7 +2,7 @@ name: Build Native Library
 
 on:
     push:
-        branches: [main]
+        branches: []
         paths:
             - 'packages/native/src/**'
             - 'packages/native/build.zig'
@@ -50,10 +50,10 @@ jobs:
               working-directory: packages/native
               run: zig build -Dtarget=${{ matrix.zig-target }} -Drelease=true
 
-            - name: Copy to binaries directory
+            - name: Copy to platform package
               working-directory: packages/native
               run: |
-                  dest="binaries/${{ matrix.platform-key }}"
+                  dest="../native-platforms/${{ matrix.platform-key }}"
                   mkdir -p "$dest"
                   cp "zig-out/${{ matrix.lib-dir }}/${{ matrix.lib-prefix }}buntui.${{ matrix.binary-ext }}" "$dest/buntui.${{ matrix.binary-ext }}"
                   if [ -f "zig-out/bin/buntui.pdb" ]; then
@@ -63,5 +63,5 @@ jobs:
             - uses: actions/upload-artifact@v4
               with:
                   name: native-${{ matrix.platform-key }}
-                  path: packages/native/binaries/${{ matrix.platform-key }}/
+                  path: packages/native-platforms/${{ matrix.platform-key }}/
                   if-no-files-found: error

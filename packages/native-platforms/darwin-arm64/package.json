@@ -1,0 +1,17 @@
+{
+    "name": "@buntui/native-darwin-arm64",
+    "version": "0.0.0-alpha.0",
+    "os": [
+        "darwin"
+    ],
+    "cpu": [
+        "arm64"
+    ],
+    "exports": {
+        ".": "./index.ts"
+    },
+    "files": [
+        "buntui.dylib",
+        "index.ts"
+    ]
+}

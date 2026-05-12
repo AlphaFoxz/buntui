@@ -1,0 +1,17 @@
+{
+    "name": "@buntui/native-win32-x64",
+    "version": "0.0.0-alpha.0",
+    "os": [
+        "win32"
+    ],
+    "cpu": [
+        "x64"
+    ],
+    "exports": {
+        ".": "./index.ts"
+    },
+    "files": [
+        "buntui.dll",
+        "index.ts"
+    ]
+}

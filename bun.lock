@@ -75,6 +75,28 @@
     "packages/native": {
       "name": "@buntui/native",
       "version": "0.0.0-alpha.0",
+      "optionalDependencies": {
+        "@buntui/native-darwin-arm64": "workspace:*",
+        "@buntui/native-darwin-x64": "workspace:*",
+        "@buntui/native-linux-x64": "workspace:*",
+        "@buntui/native-win32-x64": "workspace:*",
+      },
+    },
+    "packages/native-platforms/darwin-arm64": {
+      "name": "@buntui/native-darwin-arm64",
+      "version": "0.0.0-alpha.0",
+    },
+    "packages/native-platforms/darwin-x64": {
+      "name": "@buntui/native-darwin-x64",
+      "version": "0.0.0-alpha.0",
+    },
+    "packages/native-platforms/linux-x64": {
+      "name": "@buntui/native-linux-x64",
+      "version": "0.0.0-alpha.0",
+    },
+    "packages/native-platforms/win32-x64": {
+      "name": "@buntui/native-win32-x64",
+      "version": "0.0.0-alpha.0",
     },
     "packages/playground": {
       "name": "@buntui/playground",
@@ -133,6 +155,14 @@
     "@buntui/extensions": ["@buntui/extensions@workspace:packages/extensions"],
 
     "@buntui/native": ["@buntui/native@workspace:packages/native"],
+
+    "@buntui/native-darwin-arm64": ["@buntui/native-darwin-arm64@workspace:packages/native-platforms/darwin-arm64"],
+
+    "@buntui/native-darwin-x64": ["@buntui/native-darwin-x64@workspace:packages/native-platforms/darwin-x64"],
+
+    "@buntui/native-linux-x64": ["@buntui/native-linux-x64@workspace:packages/native-platforms/linux-x64"],
+
+    "@buntui/native-win32-x64": ["@buntui/native-win32-x64@workspace:packages/native-platforms/win32-x64"],
 
     "@buntui/playground": ["@buntui/playground@workspace:packages/playground"],
 
