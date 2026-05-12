@@ -45,7 +45,7 @@ jobs:
 
             - name: Build
               working-directory: packages/native
-              run: zig build -Dtarget=${{ matrix.zig-target }} -Doptimize=ReleaseSmall
+              run: zig build -Dtarget=${{ matrix.zig-target }} -Drelease=true
 
             - name: Copy to binaries directory
               working-directory: packages/native
