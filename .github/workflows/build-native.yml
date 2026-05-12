@@ -1,0 +1,64 @@
+name: Build Native Library
+
+on:
+    push:
+        branches: [main]
+        paths:
+            - 'packages/native/src/**'
+            - 'packages/native/build.zig'
+            - 'packages/native/build.zig.zon'
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                include:
+                    - zig-target: x86_64-windows-gnu
+                      platform-key: win32-x64
+                      lib-dir: bin
+                      lib-prefix: ''
+                      binary-ext: dll
+                    - zig-target: x86_64-linux-gnu
+                      platform-key: linux-x64
+                      lib-dir: lib
+                      lib-prefix: lib
+                      binary-ext: so
+                    - zig-target: aarch64-macos
+                      platform-key: darwin-arm64
+                      lib-dir: lib
+                      lib-prefix: lib
+                      binary-ext: dylib
+                    - zig-target: x86_64-macos
+                      platform-key: darwin-x64
+                      lib-dir: lib
+                      lib-prefix: lib
+                      binary-ext: dylib
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: mlugg/setup-zig@v2
+              with:
+                  version: '0.16.0'
+
+            - name: Build
+              working-directory: packages/native
+              run: zig build -Dtarget=${{ matrix.zig-target }} -Doptimize=ReleaseSmall
+
+            - name: Copy to binaries directory
+              working-directory: packages/native
+              run: |
+                  dest="binaries/${{ matrix.platform-key }}"
+                  mkdir -p "$dest"
+                  cp "zig-out/${{ matrix.lib-dir }}/${{ matrix.lib-prefix }}buntui.${{ matrix.binary-ext }}" "$dest/buntui.${{ matrix.binary-ext }}"
+                  if [ -f "zig-out/bin/buntui.pdb" ]; then
+                    cp zig-out/bin/buntui.pdb "$dest/buntui.pdb"
+                  fi
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: native-${{ matrix.platform-key }}
+                  path: packages/native/binaries/${{ matrix.platform-key }}/
+                  if-no-files-found: error
