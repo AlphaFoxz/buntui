@@ -1,0 +1,10 @@
+{
+    "name": "{{name}}",
+    "version": "0.0.1",
+    "scripts": {
+        "dev": "bun run index.ts"
+    },
+    "dependencies": {
+        "buntui": "^0.0.0-alpha.0"
+    }
+}

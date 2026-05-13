@@ -18,6 +18,8 @@ import {
 } from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 
+export type BorderShorthand = boolean | string | number;
+
 export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & Partial<TuiWidgetShadow>, 'colorFg' | 'colorBg' | 'borderColor' | 'shadowColor'>
   & Partial<TuiWidgetStyle>
   & Partial<TuiWidgetPadding>
@@ -30,12 +32,123 @@ export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & 
     colorBg?: TuiColor;
     borderColor?: TuiColor;
     shadowColor?: TuiColor;
+    /** Border shorthand: true/false, "1 0", "1 0 1 0", etc. Expanded before individual sides. */
+    border?: BorderShorthand;
     /** Layout direction for children. Defaults to Vertical (1). */
     direction?: LayoutDirection;
     gap?: U16;
     align?: LayoutAlignment;
     draggable?: boolean;
   };
+
+/**
+ * Expand a border shorthand value into individual side booleans.
+ * Accepts: boolean, number, or CSS-like string ("true", "1", "1 0", "1 0 1 0", etc.)
+ */
+type BorderSides = {borderTop: boolean; borderRight: boolean; borderBottom: boolean; borderLeft: boolean};
+
+function expandBorderShorthand(value: BorderShorthand): BorderSides {
+  if (typeof value === 'boolean') {
+    return {
+      borderTop: value,
+      borderRight: value,
+      borderBottom: value,
+      borderLeft: value,
+    };
+  }
+
+  if (typeof value === 'number') {
+    const v = value !== 0;
+    return {
+      borderTop: v,
+      borderRight: v,
+      borderBottom: v,
+      borderLeft: v,
+    };
+  }
+
+  if (value === 'true' || value === '1') {
+    return {
+      borderTop: true,
+      borderRight: true,
+      borderBottom: true,
+      borderLeft: true,
+    };
+  }
+
+  if (value === 'false' || value === '0' || value === '') {
+    return {
+      borderTop: false,
+      borderRight: false,
+      borderBottom: false,
+      borderLeft: false,
+    };
+  }
+
+  const parts = value.split(/\s+/v);
+  let top: boolean;
+  let right: boolean;
+  let bottom: boolean;
+  let left: boolean;
+
+  switch (parts.length) {
+    case 1: {
+      const v = parts[0] !== '0';
+      top = v;
+      right = v;
+      bottom = v;
+      left = v;
+      break;
+    }
+
+    case 2: {
+      const v = parts[0]! !== '0';
+      const h = parts[1]! !== '0';
+      top = v;
+      bottom = v;
+      right = h;
+      left = h;
+      break;
+    }
+
+    case 3: {
+      top = parts[0]! !== '0';
+      right = parts[1]! !== '0';
+      bottom = parts[2]! !== '0';
+      left = right;
+      break;
+    }
+
+    default: {
+      top = parts[0]! !== '0';
+      right = parts[1]! !== '0';
+      bottom = parts[2]! !== '0';
+      left = parts[3]! !== '0';
+      break;
+    }
+  }
+
+  return {
+    borderTop: top,
+    borderRight: right,
+    borderBottom: bottom,
+    borderLeft: left,
+  };
+}
+
+function initBorder(options: BoxWidgetOptions): TuiWidgetBorder {
+  const expansion = options.border === undefined
+    ? undefined
+    : expandBorderShorthand(options.border);
+  return {
+    borderColor: parseColor(options.borderColor ?? 0xFF_FF_FF_FF),
+    borderStyle: options.borderStyle ?? 0,
+    borderTop: options.borderTop ?? expansion?.borderTop ?? false,
+    borderRight: options.borderRight ?? expansion?.borderRight ?? false,
+    borderBottom: options.borderBottom ?? expansion?.borderBottom ?? false,
+    borderLeft: options.borderLeft ?? expansion?.borderLeft ?? false,
+  };
+}
 
 export class BoxWidget extends TuiWidgetEntity {
   readonly #rect: TuiWidgetRect;
@@ -71,14 +184,7 @@ export class BoxWidget extends TuiWidgetEntity {
       styleZIndex: options.styleZIndex ?? 0,
       styleModifier: options.styleModifier ?? 0,
     };
-    this.#border = {
-      borderColor: parseColor(options.borderColor ?? 0xFF_FF_FF_FF),
-      borderStyle: options.borderStyle ?? 0,
-      borderTop: options.borderTop ?? false,
-      borderRight: options.borderRight ?? false,
-      borderBottom: options.borderBottom ?? false,
-      borderLeft: options.borderLeft ?? false,
-    };
+    this.#border = initBorder(options);
     this.#shadow = {
       shadowOffsetX: options.shadowOffsetX ?? 0,
       shadowOffsetY: options.shadowOffsetY ?? 0,
@@ -156,13 +262,21 @@ export class BoxWidget extends TuiWidgetEntity {
     Object.assign(this.#style, style);
   }
 
-  updateBorder(border: Partial<TuiWidgetBorder>): void {
+  updateBorder(border: Partial<TuiWidgetBorder> & {border?: BorderShorthand}): void {
     if (border.borderColor !== undefined) {
       this.#border.borderColor = parseColor(border.borderColor);
     }
 
     if (border.borderStyle !== undefined) {
       this.#border.borderStyle = border.borderStyle;
+    }
+
+    if (border.border !== undefined) {
+      const {borderTop, borderRight, borderBottom, borderLeft} = expandBorderShorthand(border.border);
+      this.#border.borderTop = borderTop;
+      this.#border.borderRight = borderRight;
+      this.#border.borderBottom = borderBottom;
+      this.#border.borderLeft = borderLeft;
     }
 
     if (border.borderTop !== undefined) {
@@ -442,11 +556,8 @@ export function getDefaultBoxOptions(): BoxWidgetOptions {
     y: 0,
     width: 32,
     height: 3,
+    border: true,
     borderStyle: 1,
-    borderTop: true,
-    borderRight: true,
-    borderBottom: true,
-    borderLeft: true,
     colorFg: theme.colors.text,
     colorBg: theme.colors.background,
     borderColor: theme.colors.border,

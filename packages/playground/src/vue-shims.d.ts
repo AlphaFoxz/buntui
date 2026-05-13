@@ -2,6 +2,9 @@ import type {DefineComponent} from 'vue';
 
 // ---- Prop Types ----
 
+type TuiBorderStyle = number | 'none' | 'solid' | 'double' | 'rounded' | 'bold' | 'dashed' | 'dotted' | 'outsetbold' | 'outsetdouble';
+type TuiBorderSides = boolean | 'true' | 'false' | `${number}` | `${number} ${number}` | `${number} ${number} ${number}` | `${number} ${number} ${number} ${number}`;
+
 type TuiBoxProps = {
   x?: TuiSizeValue;
   y?: TuiSizeValue;
@@ -9,8 +12,9 @@ type TuiBoxProps = {
   height?: TuiSizeValue;
   colorFg?: TuiColor;
   colorBg?: TuiColor;
+  border?: TuiBorderSides;
   borderColor?: TuiColor;
-  borderStyle?: number;
+  borderStyle?: TuiBorderStyle;
   borderTop?: boolean;
   borderRight?: boolean;
   borderBottom?: boolean;
@@ -59,10 +63,11 @@ type TuiInputProps = {
   label?: string;
   borderColorUnfocused?: TuiColor;
   borderColorFocused?: TuiColor;
-  borderStyle?: number;
+  borderStyle?: TuiBorderStyle;
   maxLength?: number;
   selectionBgColor?: TuiColor;
   selectionFgColor?: TuiColor;
+  readonly?: boolean;
 };
 
 type TuiButtonProps = {
@@ -70,7 +75,7 @@ type TuiButtonProps = {
   y?: TuiSizeValue;
   width?: TuiSizeValue;
   height?: TuiSizeValue;
-  text?: string;
+  value?: string;
   disabled?: boolean;
   colorFgNormal?: TuiColor;
   colorBgNormal?: TuiColor;
@@ -133,9 +138,9 @@ type TuiSelectButtonProps = {
   y?: TuiSizeValue;
   width?: TuiSizeValue;
   height?: TuiSizeValue;
-  options: string[];
-  value?: string;
-  modelValue?: string;
+  options?: unknown[];
+  value?: unknown;
+  modelValue?: unknown;
   disabled?: boolean;
   colorFgNormal?: TuiColor;
   colorBgNormal?: TuiColor;
@@ -186,8 +191,25 @@ type TuiScrollBoxProps = {
   height?: TuiSizeValue;
   colorFg?: TuiColor;
   colorBg?: TuiColor;
-  scrollX?: number;
-  scrollY?: number;
+  borderColor?: TuiColor;
+  borderStyle?: TuiBorderStyle;
+  borderTop?: boolean;
+  borderRight?: boolean;
+  borderBottom?: boolean;
+  borderLeft?: boolean;
+  shadowColor?: TuiColor;
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
+  shadowCovered?: boolean;
+  paddingTop?: number;
+  paddingRight?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
+  gap?: number;
+  scrollSpeed?: number;
+  alwaysShowScrollbar?: boolean;
+  scrollbarColor?: TuiColor;
+  scrollbarTrackColor?: TuiColor;
 };
 
 type TuiProgressBarProps = {
@@ -196,10 +218,20 @@ type TuiProgressBarProps = {
   width?: TuiSizeValue;
   height?: TuiSizeValue;
   value?: number;
+  min?: number;
   max?: number;
-  colorFg?: TuiColor;
-  colorBg?: TuiColor;
-  styleModifier?: number;
+  label?: string;
+  showPercentage?: boolean;
+  disabled?: boolean;
+  colorTrackNormal?: TuiColor;
+  colorFillNormal?: TuiColor;
+  colorTextNormal?: TuiColor;
+  colorTrackFocused?: TuiColor;
+  colorFillFocused?: TuiColor;
+  colorTextFocused?: TuiColor;
+  colorTrackDisabled?: TuiColor;
+  colorFillDisabled?: TuiColor;
+  colorTextDisabled?: TuiColor;
 };
 
 // ---- Event Types (payload types are global, defined in tui-types.d.ts) ----

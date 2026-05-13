@@ -10,7 +10,7 @@
         :colorFg="'rgba(197,207,224,1)'"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(137,180,250,0.5)'"
-        :borderStyle="1"
+        borderStyle="solid"
     >
         <Text :colorFg="'rgba(197,207,224,1)'" :value="text1" />
     </Box>
@@ -25,11 +25,7 @@
         :colorFg="'rgba(197,207,224,1)'"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(166,227,161,1)'"
-        :borderStyle="3"
-        :borderTop="true"
-        :borderRight="true"
-        :borderBottom="true"
-        :borderLeft="true"
+        borderStyle="rounded"
     >
         <Text :colorFg="'rgba(197,207,224,1)'" :value="text2" />
     </Box>
@@ -43,11 +39,7 @@
         :colorFg="'rgba(197,207,224,1)'"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(250,179,135,1)'"
-        :borderStyle="2"
-        :borderTop="true"
-        :borderRight="true"
-        :borderBottom="true"
-        :borderLeft="true"
+        borderStyle="double"
     >
         <Text :colorFg="'rgba(197,207,224,1)'" :value="text3" />
     </Box>
@@ -61,7 +53,7 @@
         :colorFg="'rgba(197,207,224,1)'"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(243,139,168,1)'"
-        :borderStyle="4"
+        borderStyle="bold"
     >
         <Text :colorFg="'rgba(197,207,224,1)'" :value="text4" />
     </Box>
@@ -74,7 +66,7 @@
         :height="3"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(180,190,254,1)'"
-        :borderStyle="5"
+        borderStyle="dashed"
     >
         <Text :colorFg="'rgba(180,190,254,1)'" value="虚线 Dashed" />
     </Box>
@@ -87,13 +79,13 @@
         :height="3"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(245,194,231,1)'"
-        :borderStyle="7"
+        borderStyle="outsetbold"
     >
         <Text :colorFg="'rgba(245,194,231,1)'" value="浮雕 Outset" />
     </Box>
 
     <!-- OutsetDouble border -->
-    <Box :x="43" :y="9" :width="20" :colorBg="'rgba(30,30,46,1)'" :borderColor="'rgba(148,226,213,1)'" :borderStyle="8">
+    <Box :x="43" :y="9" :width="20" :colorBg="'rgba(30,30,46,1)'" :borderColor="'rgba(148,226,213,1)'" borderStyle="outsetdouble">
         <Text :colorFg="'rgba(148,226,213,1)'" value="双浮雕 Outset²" />
     </Box>
 
@@ -105,7 +97,7 @@
         :height="5"
         :colorBg="'rgba(166,227,161,0.5)'"
         :borderColor="'rgba(166,227,161,1)'"
-        :borderStyle="3"
+        borderStyle="rounded"
         :z-index="2"
     >
         <Text :colorFg="'rgba(30,30,46,1)'" value="zIndex=2 最上层" />
@@ -134,10 +126,7 @@
         :height="5"
         :colorBg="'rgba(243,139,168,1)'"
         :borderColor="'rgba(243,139,168,1)'"
-        :borderTop="false"
-        :borderRight="false"
-        :borderBottom="false"
-        :borderLeft="false"
+        border="0"
         :zIndex="0"
     >
         <Text :colorFg="'rgba(30,30,46,1)'" value="zIndex=0 最底层" />

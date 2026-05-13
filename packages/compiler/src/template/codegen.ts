@@ -24,6 +24,7 @@ const PROP_UPDATE_MAP: Record<string, {method: string; field: string}> = {
   zIndex: {method: 'updateStyle', field: 'styleZIndex'},
   styleModifier: {method: 'updateStyle', field: 'styleModifier'},
   // Border — updateBorder({borderColor: val})
+  border: {method: 'updateBorder', field: 'border'},
   borderColor: {method: 'updateBorder', field: 'borderColor'},
   borderStyle: {method: 'updateBorder', field: 'borderStyle'},
   borderTop: {method: 'updateBorder', field: 'borderTop'},

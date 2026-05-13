@@ -1,0 +1,17 @@
+{
+    "name": "create-buntui",
+    "version": "0.0.0-alpha.0",
+    "bin": {
+        "create-buntui": "./src/index.ts"
+    },
+    "files": [
+        "src/",
+        "templates/"
+    ],
+    "scripts": {
+        "build": "echo 'No build step required'"
+    },
+    "dependencies": {
+        "@buntui/core": "workspace:*"
+    }
+}
