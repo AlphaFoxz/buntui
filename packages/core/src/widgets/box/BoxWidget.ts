@@ -45,9 +45,9 @@ export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & 
  * Expand a border shorthand value into individual side booleans.
  * Accepts: boolean, number, or CSS-like string ("true", "1", "1 0", "1 0 1 0", etc.)
  */
-type BorderSides = {borderTop: boolean; borderRight: boolean; borderBottom: boolean; borderLeft: boolean};
+type Border = {borderTop: boolean; borderRight: boolean; borderBottom: boolean; borderLeft: boolean};
 
-function expandBorderShorthand(value: BorderShorthand): BorderSides {
+function expandBorderShorthand(value: BorderShorthand): Border {
   if (typeof value === 'boolean') {
     return {
       borderTop: value,
