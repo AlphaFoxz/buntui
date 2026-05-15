@@ -27,9 +27,6 @@ export type TuiThemeColors = {
   progressFill: TuiColor;
   progressTrack: TuiColor;
 
-  switchCross: TuiColor;
-  switchCheck: TuiColor;
-  switchDim: TuiColor;
 };
 
 export type TuiThemeBorderStyle = {

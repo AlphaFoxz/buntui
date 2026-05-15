@@ -44,7 +44,7 @@ export class LoggerWidget extends TuiWidgetEntity {
     this.#panelWidth = options.panelWidth ?? 40;
     this.#panelHeight = options.panelHeight ?? 15;
     const colorBg = parseColor(options.colorBg ?? 0x1E_1E_2E_CC);
-    const label = options.label ?? 'LOG';
+    const label = options.label ?? '◉';
 
     // Floating toggle button
     this.#toggleBtn = new BoxWidget({

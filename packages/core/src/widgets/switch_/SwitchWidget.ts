@@ -16,6 +16,11 @@ type SwitchColors = {
   dim: number;
 };
 
+// Catppuccin Mocha palette — widget-specific defaults
+const SWITCH_CROSS = 0xF3_8B_A8_FF;
+const SWITCH_CHECK = 0xA6_E3_A1_FF;
+const SWITCH_DIM = 0x6C_70_86_FF;
+
 function getDefaultSwitchOptions(): Required<SwitchWidgetOptions> {
   const theme = getTheme();
   return {
@@ -29,21 +34,21 @@ function getDefaultSwitchOptions(): Required<SwitchWidgetOptions> {
 
     colorFgNormal: theme.colors.text,
     colorBgNormal: theme.colors.surface,
-    colorCrossNormal: theme.colors.switchCross,
-    colorCheckNormal: theme.colors.switchCheck,
-    colorDimNormal: theme.colors.switchDim,
+    colorCrossNormal: SWITCH_CROSS,
+    colorCheckNormal: SWITCH_CHECK,
+    colorDimNormal: SWITCH_DIM,
 
     colorFgHovered: theme.colors.text,
     colorBgHovered: theme.colors.surfaceHover,
-    colorCrossHovered: theme.colors.switchCross,
-    colorCheckHovered: theme.colors.switchCheck,
+    colorCrossHovered: SWITCH_CROSS,
+    colorCheckHovered: SWITCH_CHECK,
     colorDimHovered: theme.colors.borderFocused,
 
     colorFgFocused: theme.colors.text,
     colorBgFocused: theme.colors.surface,
-    colorCrossFocused: theme.colors.switchCross,
-    colorCheckFocused: theme.colors.switchCheck,
-    colorDimFocused: theme.colors.switchDim,
+    colorCrossFocused: SWITCH_CROSS,
+    colorCheckFocused: SWITCH_CHECK,
+    colorDimFocused: SWITCH_DIM,
 
     colorFgDisabled: theme.colors.textMuted,
     colorBgDisabled: theme.colors.surface,
