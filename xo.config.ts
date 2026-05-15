@@ -11,6 +11,7 @@ const expose: FlatXoConfig = [
       '**/dist/**',
       'designs/**',
       'scripts/**',
+      'packages/create-buntui/templates/**',
       'xo.config.ts'
     ],
   },
