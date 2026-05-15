@@ -1,18 +1,17 @@
 import {it, expect, describe} from 'bun:test';
 import {BoxWidget, createBox} from '../BoxWidget';
 import {TextWidget} from '../../text/TextWidget';
-import {LayoutDirection, LayoutAlignment} from '../../types';
 
-function createBoxWith(options?: {x?: number; y?: number; width?: number; height?: number; borderStyle?: number; direction?: number; gap?: number; align?: number; draggable?: boolean}) {
+function createBoxWith(options?: {x?: number; y?: number; width?: number; height?: number; borderStyle?: string; direction?: string; gap?: number; align?: string; draggable?: boolean}) {
   return new BoxWidget({
     x: options?.x ?? 0,
     y: options?.y ?? 0,
     width: options?.width ?? 20,
     height: options?.height ?? 10,
-    borderStyle: options?.borderStyle as U8 ?? 0 as U8,
-    direction: options?.direction as LayoutDirection ?? undefined,
+    borderStyle: (options?.borderStyle ?? 'none') as 'solid',
+    direction: options?.direction as 'vertical' ?? undefined,
     gap: options?.gap as U16 ?? undefined,
-    align: options?.align as LayoutAlignment ?? undefined,
+    align: options?.align as 'start' ?? undefined,
     draggable: options?.draggable,
     colorFg: 0xFF_FF_FF_FF,
     colorBg: 0x00_00_00_FF,
@@ -143,7 +142,7 @@ describe('update methods', () => {
 
   it('updateBorder changes border properties', () => {
     const box = createBoxWith();
-    box.updateBorder({borderStyle: 1 as U8, borderTop: true, borderBottom: true});
+    box.updateBorder({borderStyle: 'solid', borderTop: true, borderBottom: true});
     expect(box.border.borderStyle).toBe(1);
     expect(box.border.borderTop).toBe(true);
     expect(box.border.borderBottom).toBe(true);
@@ -167,7 +166,7 @@ describe('update methods', () => {
 
   it('updateDirection changes direction', () => {
     const box = createBoxWith();
-    box.updateDirection(LayoutDirection.Horizontal as LayoutDirection);
+    box.updateDirection('horizontal');
   });
 
   it('updateGap changes gap', () => {
@@ -177,7 +176,7 @@ describe('update methods', () => {
 
   it('updateAlign changes alignment', () => {
     const box = createBoxWith();
-    box.updateAlign(LayoutAlignment.Center as LayoutAlignment);
+    box.updateAlign('center');
   });
 });
 
@@ -264,7 +263,7 @@ describe('intrinsicSize', () => {
 
   it('includes borders in intrinsic size', () => {
     const box = createBoxWith();
-    box.updateBorder({borderStyle: 1 as U8, borderTop: true, borderBottom: true, borderLeft: true, borderRight: true});
+    box.updateBorder({borderStyle: 'solid', borderTop: true, borderBottom: true, borderLeft: true, borderRight: true});
     box.addChild(createChild('ab', 2, 1));
     const size = box.intrinsicSize();
     expect(size!.width).toBe(4); // child(2) + left(1) + right(1)

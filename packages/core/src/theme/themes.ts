@@ -37,10 +37,10 @@ const catppuccinMochaColors: TuiThemeColors = {
 };
 
 const catppuccinMochaBorderStyle: TuiThemeBorderStyle = {
-  normal: 1,
-  focused: 1,
-  pressed: 4,
-  disabled: 5,
+  normal: 'solid',
+  focused: 'solid',
+  pressed: 'bold',
+  disabled: 'dashed',
 };
 
 export const catppuccinMocha: TuiTheme = defineTheme({

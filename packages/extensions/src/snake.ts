@@ -1,9 +1,9 @@
 export type {
-	SnakeWidgetOptions,
-	SnakeDirection,
-	SnakeGameState,
-	SnakePoint,
-	SnakeColorScheme,
+  SnakeWidgetOptions,
+  SnakeDirection,
+  SnakeGameState,
+  SnakePoint,
+  SnakeColorScheme,
 } from './widgets/snake/types';
 
 export {SnakeWidget, createSnakeWidget} from './widgets/snake/SnakeWidget';

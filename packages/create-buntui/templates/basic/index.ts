@@ -22,7 +22,7 @@ const box = createBox({
   height: '60%',
   colorBg: 0x24_28_3B,
   borderColor: 0x7A_A2_F7,
-  borderStyle: 1,
+  borderStyle: 'solid',
 });
 
 scene.mount(box);

@@ -1,5 +1,5 @@
 import type {TuiColor} from '../../utils/color';
-import type {TuiSizeValue} from '../types';
+import type {TuiSizeValue, TuiBorderStyleName} from '../types';
 
 export type ScrollBoxWidgetOptions = {
   x?: TuiSizeValue;
@@ -11,7 +11,7 @@ export type ScrollBoxWidgetOptions = {
   colorFg?: TuiColor;
   colorBg?: TuiColor;
   borderColor?: TuiColor;
-  borderStyle?: number;
+  borderStyle?: TuiBorderStyleName;
   borderTop?: boolean;
   borderRight?: boolean;
   borderBottom?: boolean;

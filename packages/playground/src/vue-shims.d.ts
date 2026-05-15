@@ -2,7 +2,9 @@ import type {DefineComponent} from 'vue';
 
 // ---- Prop Types ----
 
-type TuiBorderStyle = number | 'none' | 'solid' | 'double' | 'rounded' | 'bold' | 'dashed' | 'dotted' | 'outsetbold' | 'outsetdouble';
+type TuiBorderStyle = 'none' | 'solid' | 'double' | 'rounded' | 'bold' | 'dashed' | 'dotted' | 'outsetbold' | 'outsetdouble';
+type TuiLayoutDirection = 'horizontal' | 'vertical';
+type TuiLayoutAlignment = 'start' | 'center' | 'end' | 'stretch';
 type TuiBorderSides = boolean | 'true' | 'false' | `${number}` | `${number} ${number}` | `${number} ${number} ${number}` | `${number} ${number} ${number} ${number}`;
 
 type TuiBoxProps = {
@@ -26,9 +28,9 @@ type TuiBoxProps = {
   shadowColor?: TuiColor;
   shadowCovered?: boolean;
   draggable?: boolean;
-  direction?: number;
+  direction?: TuiLayoutDirection;
   gap?: number;
-  align?: number;
+  align?: TuiLayoutAlignment;
   paddingTop?: number;
   paddingRight?: number;
   paddingBottom?: number;
@@ -80,19 +82,19 @@ type TuiButtonProps = {
   colorFgNormal?: TuiColor;
   colorBgNormal?: TuiColor;
   borderColorNormal?: TuiColor;
-  borderStyleNormal?: number;
+  borderStyleNormal?: TuiBorderStyle;
   colorFgFocused?: TuiColor;
   colorBgFocused?: TuiColor;
   borderColorFocused?: TuiColor;
-  borderStyleFocused?: number;
+  borderStyleFocused?: TuiBorderStyle;
   colorFgPressed?: TuiColor;
   colorBgPressed?: TuiColor;
   borderColorPressed?: TuiColor;
-  borderStylePressed?: number;
+  borderStylePressed?: TuiBorderStyle;
   colorFgDisabled?: TuiColor;
   colorBgDisabled?: TuiColor;
   borderColorDisabled?: TuiColor;
-  borderStyleDisabled?: number;
+  borderStyleDisabled?: TuiBorderStyle;
 };
 
 type TuiCheckboxProps = {

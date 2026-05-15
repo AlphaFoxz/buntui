@@ -33,6 +33,7 @@ export abstract class TuiWidgetEntity implements Mountable {
   #refrenceCount = 0;
   #draggable = false;
   #visible = true;
+  #parent: TuiWidgetEntity | null = null;
   readonly #eventHandlers = new Map<string, Set<WidgetEventHandler>>();
   readonly #children: TuiWidgetEntity[] = [];
   #percentSpec: TuiWidgetPercentSpec | undefined = undefined;
@@ -85,6 +86,26 @@ export abstract class TuiWidgetEntity implements Mountable {
     return this.#visible;
   }
 
+  get children(): readonly TuiWidgetEntity[] {
+    return this.#children;
+  }
+
+  get parent(): TuiWidgetEntity | null {
+    return this.#parent;
+  }
+
+  /**
+   * Walk up the ancestor chain and return the nearest widget matching the predicate.
+   * Checks self first, then parent, then grandparent, etc.
+   */
+  closest(predicate: (widget: TuiWidgetEntity) => boolean): TuiWidgetEntity | undefined {
+    if (predicate(this)) {
+      return this;
+    }
+
+    return this.#parent?.closest(predicate);
+  }
+
   get zIndex(): number {
     return 0;
   }
@@ -108,6 +129,7 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   addChild(child: TuiWidgetEntity): void {
     this.#children.push(child);
+    child.#parent = this;
     child.mounted();
   }
 
@@ -115,6 +137,7 @@ export abstract class TuiWidgetEntity implements Mountable {
     const index = this.#children.indexOf(child);
     if (index !== -1) {
       this.#children.splice(index, 1);
+      child.#parent = null;
       child.unmounted();
     }
   }
@@ -157,6 +180,8 @@ export abstract class TuiWidgetEntity implements Mountable {
         handler(data);
       }
     }
+
+    this.#parent?.dispatch(eventType, data);
   }
 
   mounted() {

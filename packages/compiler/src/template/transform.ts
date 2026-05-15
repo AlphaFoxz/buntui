@@ -196,32 +196,7 @@ function transformStaticProp(attr: AttributeNode): TuiStaticProp[] {
   const name = camelize(attr.name);
   const value = attr.value?.content ?? 'true';
 
-  if (name === 'borderStyle') {
-    return [{type: 'TuiStaticProp', name, value: mapBorderStyle(value)}];
-  }
-
   return [{type: 'TuiStaticProp', name, value}];
-}
-
-const BORDER_STYLE_NAMES: Record<string, string> = {
-  none: '0',
-  solid: '1',
-  double: '2',
-  rounded: '3',
-  bold: '4',
-  dashed: '5',
-  dotted: '6',
-  outsetbold: '7',
-  outsetdouble: '8',
-};
-
-function mapBorderStyle(value: string): string {
-  const lower = value.toLowerCase();
-  if (lower in BORDER_STYLE_NAMES) {
-    return BORDER_STYLE_NAMES[lower]!;
-  }
-
-  return value;
 }
 
 type DirectiveResult

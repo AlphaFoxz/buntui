@@ -30,7 +30,7 @@ function createScrollBox(options?: {
     y: options?.y ?? 0,
     width: options?.width ?? 20,
     height: options?.height ?? 10,
-    borderStyle: 1 as U8,
+    borderStyle: 'solid',
     borderTop: true,
     borderRight: true,
     borderBottom: true,

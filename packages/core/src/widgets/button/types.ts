@@ -1,5 +1,5 @@
 import type {TuiColor} from '../../utils/color';
-import type {TuiSizeValue} from '../types';
+import type {TuiSizeValue, TuiBorderStyleName} from '../types';
 
 export type ButtonWidgetOptions = {
   x?: TuiSizeValue;
@@ -12,25 +12,25 @@ export type ButtonWidgetOptions = {
   colorFgNormal?: TuiColor;
   colorBgNormal?: TuiColor;
   borderColorNormal?: TuiColor;
-  borderStyleNormal?: number;
+  borderStyleNormal?: TuiBorderStyleName;
 
   // Focused state
   colorFgFocused?: TuiColor;
   colorBgFocused?: TuiColor;
   borderColorFocused?: TuiColor;
-  borderStyleFocused?: number;
+  borderStyleFocused?: TuiBorderStyleName;
 
   // Pressed state
   colorFgPressed?: TuiColor;
   colorBgPressed?: TuiColor;
   borderColorPressed?: TuiColor;
-  borderStylePressed?: number;
+  borderStylePressed?: TuiBorderStyleName;
 
   // Disabled state
   colorFgDisabled?: TuiColor;
   colorBgDisabled?: TuiColor;
   borderColorDisabled?: TuiColor;
-  borderStyleDisabled?: number;
+  borderStyleDisabled?: TuiBorderStyleName;
 
   disabled?: boolean;
 };

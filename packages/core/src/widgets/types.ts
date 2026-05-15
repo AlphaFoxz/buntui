@@ -108,6 +108,28 @@ export const TuiWidgetBorderStyle = {
 } as const;
 export type TuiWidgetBorderStyle = Enum<typeof TuiWidgetBorderStyle>;
 
+export type TuiBorderStyleName = 'none' | 'solid' | 'double' | 'rounded' | 'bold' | 'dashed' | 'dotted' | 'outsetbold' | 'outsetdouble';
+
+const BORDER_STYLE_MAP: Record<TuiBorderStyleName, U8> = {
+  none: 0,
+  solid: 1,
+  double: 2,
+  rounded: 3,
+  bold: 4,
+  dashed: 5,
+  dotted: 6,
+  outsetbold: 7,
+  outsetdouble: 8,
+};
+
+export function resolveBorderStyle(value: TuiBorderStyleName | U8): U8 {
+  if (typeof value === 'string') {
+    return BORDER_STYLE_MAP[value] ?? 0;
+  }
+
+  return value;
+}
+
 /**
  * @summary 96 bits = 12 bytes
  * @example
@@ -162,6 +184,21 @@ export const LayoutDirection = {
 } as const;
 export type LayoutDirection = Enum<typeof LayoutDirection>;
 
+export type LayoutDirectionName = 'horizontal' | 'vertical';
+
+const LAYOUT_DIRECTION_MAP: Record<LayoutDirectionName, LayoutDirection> = {
+  horizontal: 0,
+  vertical: 1,
+};
+
+export function resolveLayoutDirection(value: LayoutDirectionName | LayoutDirection): LayoutDirection {
+  if (typeof value === 'string') {
+    return LAYOUT_DIRECTION_MAP[value] ?? 1;
+  }
+
+  return value;
+}
+
 export const LayoutAlignment = {
   Start: 0,
   Center: 1,
@@ -169,6 +206,23 @@ export const LayoutAlignment = {
   Stretch: 3,
 } as const;
 export type LayoutAlignment = Enum<typeof LayoutAlignment>;
+
+export type LayoutAlignmentName = 'start' | 'center' | 'end' | 'stretch';
+
+const LAYOUT_ALIGNMENT_MAP: Record<LayoutAlignmentName, LayoutAlignment> = {
+  start: 0,
+  center: 1,
+  end: 2,
+  stretch: 3,
+};
+
+export function resolveLayoutAlignment(value: LayoutAlignmentName | LayoutAlignment): LayoutAlignment {
+  if (typeof value === 'string') {
+    return LAYOUT_ALIGNMENT_MAP[value] ?? 3;
+  }
+
+  return value;
+}
 
 export type TuiPercent = `${number}%`;
 export type TuiSizeValue = U16 | TuiPercent;

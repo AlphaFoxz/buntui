@@ -36,17 +36,15 @@ export function setupUI(app: TuiApp, defaultName?: string): void {
   }));
 
   // Container box
-  scene.mount(createBox({
+  const box = createBox({
     x: '25%',
     y: '20%',
     width: '50%',
     height: 12,
     colorBg: SURFACE,
     borderColor: ACCENT,
-    borderStyle: 1,
-  }));
-
-  // Input
+    borderStyle: 'solid',
+  });
   const input = createInputWidget({
     x: '0%',
     y: '22%',
@@ -55,11 +53,12 @@ export function setupUI(app: TuiApp, defaultName?: string): void {
     colorBg: BG,
     borderColorUnfocused: TEXT_DIM,
     borderColorFocused: ACCENT,
-    borderStyle: 1,
+    borderStyle: 'solid',
     placeholder: 'Type something...',
     label: 'Project name',
   });
-  scene.mount(input);
+  box.addChild(input);
+  scene.mount(box);
 
   // Create button
   const createBtn = createButtonWidget({
@@ -71,15 +70,15 @@ export function setupUI(app: TuiApp, defaultName?: string): void {
     colorFgNormal: BG,
     colorBgNormal: ACCENT,
     borderColorNormal: ACCENT,
-    borderStyleNormal: 1,
+    borderStyleNormal: 'solid',
     colorFgFocused: BG,
     colorBgFocused: 'rgb(157, 122, 247)',
     borderColorFocused: 'rgb(157, 122, 247)',
-    borderStyleFocused: 1,
+    borderStyleFocused: 'solid',
     colorFgPressed: BG,
     colorBgPressed: 'rgb(91, 110, 181)',
     borderColorPressed: 'rgb(91, 110, 181)',
-    borderStylePressed: 1,
+    borderStylePressed: 'solid',
   });
 
   // Cancel button
@@ -92,15 +91,15 @@ export function setupUI(app: TuiApp, defaultName?: string): void {
     colorFgNormal: TEXT_DIM,
     colorBgNormal: SURFACE,
     borderColorNormal: TEXT_DIM,
-    borderStyleNormal: 1,
+    borderStyleNormal: 'solid',
     colorFgFocused: TEXT,
     colorBgFocused: 'rgb(59, 66, 91)',
     borderColorFocused: TEXT,
-    borderStyleFocused: 1,
+    borderStyleFocused: 'solid',
     colorFgPressed: TEXT_DIM,
     colorBgPressed: 'rgb(42, 48, 69)',
     borderColorPressed: 'rgb(42, 48, 69)',
-    borderStylePressed: 1,
+    borderStylePressed: 'solid',
   });
 
   // Status text

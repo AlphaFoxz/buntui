@@ -22,6 +22,7 @@ export type {
   TuiWidgetText,
   TuiWidgetComponentType,
   TuiWidgetBorderStyle,
+  TuiBorderStyleName,
   TuiWidgetSize,
   TuiWidgetPadding,
   TuiPercent,
@@ -29,6 +30,8 @@ export type {
   TuiWidgetPercentSpec,
   LayoutDirection,
   LayoutAlignment,
+  LayoutDirectionName,
+  LayoutAlignmentName,
 } from './widgets/types';
 export {LayoutDirection as LayoutDirectionValue, LayoutAlignment as LayoutAlignmentValue} from './widgets/types';
 export {DrawListBuffer} from './draw_list/DrawListBuffer';

@@ -7,6 +7,7 @@ import type {FocusManager} from './FocusManager';
 
 export class PointerManager {
   #pressTarget: TuiWidgetEntity | undefined;
+  #dragTarget: TuiWidgetEntity | undefined;
   #hoverTarget: TuiWidgetEntity | undefined;
   #isDragging = false;
   #dragOffsetX = 0;
@@ -30,7 +31,6 @@ export class PointerManager {
 
       // Mouse move (button not set, buttons may indicate held state)
       if (data.button === undefined) {
-        // Mouseover / mouseout / mousemove tracking
         const hitTarget = scene.hitTest(data);
         if (hitTarget !== this.#hoverTarget) {
           if (this.#hoverTarget) {
@@ -46,21 +46,22 @@ export class PointerManager {
         }
 
         if (this.#pressTarget && data.buttons && data.buttons > 0) {
-          if (this.#pressTarget.draggable) {
+          const dragTarget = this.#dragTarget;
+          if (dragTarget) {
             if (!this.#isDragging) {
               this.#isDragging = true;
-              this.#pressTarget.dispatch('dragstart', data);
+              dragTarget.dispatch('dragstart', data);
             }
 
             const mx = data.x - 1;
             const my = data.y - 1;
             const newX = Math.max(0, mx - this.#dragOffsetX);
             const newY = Math.max(0, my - this.#dragOffsetY);
-            this.#pressTarget.updateRect({
+            dragTarget.updateRect({
               x: newX,
               y: newY,
             });
-            this.#pressTarget.dispatch('drag', data);
+            dragTarget.dispatch('drag', data);
           } else {
             this.#pressTarget.dispatch('mousemove', data);
           }
@@ -88,18 +89,27 @@ export class PointerManager {
       // Left / middle button from here on
       // Press
       if (!data.isRelease) {
-        this.#pressTarget = scene.hitTest(data);
-        if (this.#pressTarget) {
-          this.#pressTarget.dispatch('mousedown', data);
-          this.#dragOffsetX = (data.x - 1) - this.#pressTarget.rect.x;
-          this.#dragOffsetY = (data.y - 1) - this.#pressTarget.rect.y;
+        const hitTarget = scene.hitTest(data);
+        this.#pressTarget = hitTarget;
+        if (hitTarget) {
+          hitTarget.dispatch('mousedown', data);
 
-          if (isFocusable(this.#pressTarget)) {
-            this.#focusManager.focusWidget(this.#pressTarget);
+          // Find nearest draggable ancestor for drag operations
+          this.#dragTarget = hitTarget.closest(w => w.draggable);
+          if (this.#dragTarget) {
+            this.#dragOffsetX = (data.x - 1) - this.#dragTarget.rect.x;
+            this.#dragOffsetY = (data.y - 1) - this.#dragTarget.rect.y;
+          }
+
+          // Find nearest focusable ancestor
+          const focusTarget = hitTarget.closest(w => isFocusable(w));
+          if (focusTarget && isFocusable(focusTarget)) {
+            this.#focusManager.focusWidget(focusTarget);
           } else {
             this.#focusManager.blurWidget();
           }
         } else {
+          this.#dragTarget = undefined;
           this.#focusManager.blurWidget();
         }
 
@@ -108,8 +118,9 @@ export class PointerManager {
 
       // Release
       if (this.#isDragging) {
-        this.#pressTarget?.dispatch('dragend', data);
+        this.#dragTarget?.dispatch('dragend', data);
         this.#isDragging = false;
+        this.#dragTarget = undefined;
         this.#pressTarget = undefined;
         return;
       }
@@ -123,6 +134,7 @@ export class PointerManager {
         }
 
         this.#pressTarget = undefined;
+        this.#dragTarget = undefined;
       }
     };
 
@@ -160,6 +172,7 @@ export class PointerManager {
   /** Clear hover/drag state — called on scene switch to avoid stale references. */
   resetState(): void {
     this.#pressTarget = undefined;
+    this.#dragTarget = undefined;
     this.#hoverTarget = undefined;
     this.#isDragging = false;
   }

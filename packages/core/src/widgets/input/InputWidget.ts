@@ -1,7 +1,7 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent, type MouseEvent} from '../../events/types';
 import {BorderSides, CursorMode} from '../../draw_list/types';
-import type {TuiWidgetRect} from '../types';
+import {resolveBorderStyle, type TuiWidgetRect} from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import type {Focusable} from '../Focusable';
 import {parseColor} from '../../utils/color';
@@ -88,7 +88,7 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
     this.#colorBg = parseColor(resolved.colorBg ?? 0x1E_1E_2E_FF);
     this.#borderColorUnfocused = parseColor(resolved.borderColorUnfocused ?? 0x45_47_5A_FF);
     this.#borderColorFocused = parseColor(resolved.borderColorFocused ?? 0x89_B4_FA_FF);
-    this.#borderStyle = resolved.borderStyle ?? 1;
+    this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
     this.#maxLength = resolved.maxLength ?? 0;
     this.#placeholder = resolved.placeholder ?? '';
     this.#selectionBgColor = parseColor(resolved.selectionBgColor ?? 0x26_4F_78_FF);

@@ -5,8 +5,14 @@ import {getTheme} from '../../theme/provider';
 import {extractPercentSpec, isPercent} from '../../utils/percent';
 import {
   LayoutAlignment as LayoutAlignmentEnum,
+  resolveBorderStyle,
+  resolveLayoutDirection,
+  resolveLayoutAlignment,
   type LayoutAlignment,
+  type LayoutAlignmentName,
+  type TuiBorderStyleName,
   type LayoutDirection,
+  type LayoutDirectionName,
   type TuiSizeValue,
   type TuiWidgetBorder,
   type TuiWidgetColor,
@@ -20,7 +26,7 @@ import {TuiWidgetEntity} from '../TuiWidgetEntity';
 
 export type BorderShorthand = boolean | string | number;
 
-export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & Partial<TuiWidgetShadow>, 'colorFg' | 'colorBg' | 'borderColor' | 'shadowColor'>
+export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & Partial<TuiWidgetShadow>, 'colorFg' | 'colorBg' | 'borderColor' | 'shadowColor' | 'borderStyle'>
   & Partial<TuiWidgetStyle>
   & Partial<TuiWidgetPadding>
   & {
@@ -34,10 +40,11 @@ export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & 
     shadowColor?: TuiColor;
     /** Border shorthand: true/false, "1 0", "1 0 1 0", etc. Expanded before individual sides. */
     border?: BorderShorthand;
-    /** Layout direction for children. Defaults to Vertical (1). */
-    direction?: LayoutDirection;
+    borderStyle?: TuiBorderStyleName;
+    /** Layout direction for children. Defaults to 'vertical'. */
+    direction?: LayoutDirectionName;
     gap?: U16;
-    align?: LayoutAlignment;
+    align?: LayoutAlignmentName;
     draggable?: boolean;
   };
 
@@ -142,7 +149,7 @@ function initBorder(options: BoxWidgetOptions): TuiWidgetBorder {
     : expandBorderShorthand(options.border);
   return {
     borderColor: parseColor(options.borderColor ?? 0xFF_FF_FF_FF),
-    borderStyle: options.borderStyle ?? 0,
+    borderStyle: resolveBorderStyle(options.borderStyle ?? 'none'),
     borderTop: options.borderTop ?? expansion?.borderTop ?? false,
     borderRight: options.borderRight ?? expansion?.borderRight ?? false,
     borderBottom: options.borderBottom ?? expansion?.borderBottom ?? false,
@@ -197,9 +204,9 @@ export class BoxWidget extends TuiWidgetEntity {
       paddingBottom: options.paddingBottom ?? 0,
       paddingLeft: options.paddingLeft ?? 0,
     };
-    this.#direction = options.direction ?? 1;
+    this.#direction = resolveLayoutDirection(options.direction ?? 'vertical');
     this.#gap = options.gap ?? 0;
-    this.#align = options.align ?? 3;
+    this.#align = resolveLayoutAlignment(options.align ?? 'stretch');
     this.#layoutDirty = true;
 
     if (options.draggable) {
@@ -262,13 +269,13 @@ export class BoxWidget extends TuiWidgetEntity {
     Object.assign(this.#style, style);
   }
 
-  updateBorder(border: Partial<TuiWidgetBorder> & {border?: BorderShorthand}): void {
+  updateBorder(border: Omit<Partial<TuiWidgetBorder>, 'borderStyle'> & {border?: BorderShorthand; borderStyle?: TuiBorderStyleName}): void {
     if (border.borderColor !== undefined) {
       this.#border.borderColor = parseColor(border.borderColor);
     }
 
     if (border.borderStyle !== undefined) {
-      this.#border.borderStyle = border.borderStyle;
+      this.#border.borderStyle = resolveBorderStyle(border.borderStyle);
     }
 
     if (border.border !== undefined) {
@@ -319,8 +326,8 @@ export class BoxWidget extends TuiWidgetEntity {
     this.#layoutDirty = true;
   }
 
-  updateDirection(direction: LayoutDirection): void {
-    this.#direction = direction;
+  updateDirection(direction: LayoutDirectionName): void {
+    this.#direction = resolveLayoutDirection(direction);
     this.#layoutDirty = true;
   }
 
@@ -329,8 +336,8 @@ export class BoxWidget extends TuiWidgetEntity {
     this.#layoutDirty = true;
   }
 
-  updateAlign(align: LayoutAlignment): void {
-    this.#align = align;
+  updateAlign(align: LayoutAlignmentName): void {
+    this.#align = resolveLayoutAlignment(align);
     this.#layoutDirty = true;
   }
 
@@ -557,7 +564,7 @@ export function getDefaultBoxOptions(): BoxWidgetOptions {
     width: 32,
     height: 3,
     border: true,
-    borderStyle: 1,
+    borderStyle: 'solid',
     colorFg: theme.colors.text,
     colorBg: theme.colors.background,
     borderColor: theme.colors.border,

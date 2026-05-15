@@ -1,7 +1,7 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
 import {BorderSides} from '../../draw_list/types';
-import type {TuiWidgetRect} from '../types';
+import {resolveBorderStyle, type TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
@@ -79,25 +79,25 @@ export class ButtonWidget extends InteractiveWidget {
         fg: parseColor(resolved.colorFgNormal),
         bg: parseColor(resolved.colorBgNormal),
         borderColor: parseColor(resolved.borderColorNormal),
-        borderStyle: resolved.borderStyleNormal,
+        borderStyle: resolveBorderStyle(resolved.borderStyleNormal),
       },
       focused: {
         fg: parseColor(resolved.colorFgFocused),
         bg: parseColor(resolved.colorBgFocused),
         borderColor: parseColor(resolved.borderColorFocused),
-        borderStyle: resolved.borderStyleFocused,
+        borderStyle: resolveBorderStyle(resolved.borderStyleFocused),
       },
       pressed: {
         fg: parseColor(resolved.colorFgPressed),
         bg: parseColor(resolved.colorBgPressed),
         borderColor: parseColor(resolved.borderColorPressed),
-        borderStyle: resolved.borderStylePressed,
+        borderStyle: resolveBorderStyle(resolved.borderStylePressed),
       },
       disabled: {
         fg: parseColor(resolved.colorFgDisabled),
         bg: parseColor(resolved.colorBgDisabled),
         borderColor: parseColor(resolved.borderColorDisabled),
-        borderStyle: resolved.borderStyleDisabled,
+        borderStyle: resolveBorderStyle(resolved.borderStyleDisabled),
       },
     };
 

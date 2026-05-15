@@ -20,7 +20,7 @@ export class FrameRateWatcher extends BoxWidget {
       y: options.y ?? 0,
       width: options.width ?? 32,
       height: options.height ?? 3,
-      borderStyle: options.borderStyle ?? 1,
+      borderStyle: options.borderStyle ?? 'solid',
       borderTop: options.borderTop ?? true,
       borderRight: options.borderRight ?? true,
       borderBottom: options.borderBottom ?? true,

@@ -1,5 +1,5 @@
 import type {TuiColor} from '../../utils/color';
-import type {TuiSizeValue} from '../types';
+import type {TuiSizeValue, TuiBorderStyleName} from '../types';
 
 export type InputWidgetOptions = {
   x?: TuiSizeValue;
@@ -12,7 +12,7 @@ export type InputWidgetOptions = {
   value?: string;
   borderColorUnfocused?: TuiColor;
   borderColorFocused?: TuiColor;
-  borderStyle?: number;
+  borderStyle?: TuiBorderStyleName;
   maxLength?: number;
   selectionBgColor?: TuiColor;
   selectionFgColor?: TuiColor;

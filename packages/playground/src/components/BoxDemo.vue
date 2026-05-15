@@ -85,7 +85,14 @@
     </Box>
 
     <!-- OutsetDouble border -->
-    <Box :x="43" :y="9" :width="20" :colorBg="'rgba(30,30,46,1)'" :borderColor="'rgba(148,226,213,1)'" borderStyle="outsetdouble">
+    <Box
+        :x="43"
+        :y="9"
+        :width="20"
+        :colorBg="'rgba(30,30,46,1)'"
+        :borderColor="'rgba(148,226,213,1)'"
+        borderStyle="outsetdouble"
+    >
         <Text :colorFg="'rgba(148,226,213,1)'" value="双浮雕 Outset²" />
     </Box>
 
@@ -126,7 +133,7 @@
         :height="5"
         :colorBg="'rgba(243,139,168,1)'"
         :borderColor="'rgba(243,139,168,1)'"
-        border="0"
+        border="1 0"
         :zIndex="0"
     >
         <Text :colorFg="'rgba(30,30,46,1)'" value="zIndex=0 最底层" />
@@ -138,9 +145,9 @@
         :y="19"
         width="48%"
         :height="7"
-        :direction="1"
+        :direction="'vertical'"
         :gap="1"
-        :align="0"
+        :align="'start'"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(137,180,250,1)'"
     >
@@ -155,9 +162,9 @@
         :y="19"
         width="48%"
         :height="7"
-        :direction="1"
+        :direction="'vertical'"
         :gap="1"
-        :align="1"
+        :align="'center'"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(250,179,135,1)'"
     >
@@ -172,9 +179,9 @@
         :y="27"
         width="48%"
         :height="7"
-        :direction="1"
+        :direction="'vertical'"
         :gap="1"
-        :align="2"
+        :align="'end'"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(166,227,161,1)'"
     >
@@ -189,9 +196,9 @@
         :y="27"
         width="48%"
         :height="7"
-        :direction="1"
+        :direction="'vertical'"
         :gap="1"
-        :align="3"
+        :align="'stretch'"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(245,194,231,1)'"
     >

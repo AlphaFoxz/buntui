@@ -413,7 +413,7 @@ const DEFAULT_SCROLL_BOX_OPTIONS: ScrollBoxWidgetOptions = {
   height: 10,
   colorBg: 0x00_00_00_FF,
   borderColor: 0xFF_FF_FF_FF,
-  borderStyle: 1,
+  borderStyle: 'solid',
   borderTop: true,
   borderRight: true,
   borderBottom: true,

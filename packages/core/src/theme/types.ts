@@ -1,4 +1,5 @@
 import type {TuiColor} from '../utils/color';
+import type {TuiBorderStyleName} from '../widgets/types';
 
 export type TuiThemeColors = {
   background: TuiColor;
@@ -32,10 +33,10 @@ export type TuiThemeColors = {
 };
 
 export type TuiThemeBorderStyle = {
-  readonly normal: number;
-  readonly focused: number;
-  readonly pressed: number;
-  readonly disabled: number;
+  readonly normal: TuiBorderStyleName;
+  readonly focused: TuiBorderStyleName;
+  readonly pressed: TuiBorderStyleName;
+  readonly disabled: TuiBorderStyleName;
 };
 
 export type TuiTheme = {
