@@ -95,7 +95,7 @@ export class TuiScene {
     const sorted = [...this.#widgets].toReversed().toSorted((a, b) => b.zIndex - a.zIndex);
     for (const widget of sorted) {
       if (widget.visible && widget.containsPoint(mx, my)) {
-        return widget;
+        return this.#deepHitTest(widget, mx, my);
       }
     }
 
@@ -157,6 +157,20 @@ export class TuiScene {
   #getSortedWidgets(): TuiWidgetEntity[] {
     this.#sortedCache ??= [...this.#widgets].toSorted((a, b) => a.zIndex - b.zIndex);
     return this.#sortedCache;
+  }
+
+  #deepHitTest(widget: TuiWidgetEntity, x: number, y: number): TuiWidgetEntity {
+    const {children} = widget;
+    if (children.length > 0) {
+      const sorted = [...children].toReversed().toSorted((a, b) => b.zIndex - a.zIndex);
+      for (const child of sorted) {
+        if (child.visible && child.containsPoint(x, y)) {
+          return this.#deepHitTest(child, x, y);
+        }
+      }
+    }
+
+    return widget;
   }
 }
 

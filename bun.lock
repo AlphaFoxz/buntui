@@ -67,10 +67,6 @@
       },
       "dependencies": {
         "@buntui/core": "workspace:*",
-        "@vue/reactivity": "^3.5.34",
-      },
-      "devDependencies": {
-        "@buntui/compiler": "workspace:*",
       },
     },
     "packages/extensions": {
