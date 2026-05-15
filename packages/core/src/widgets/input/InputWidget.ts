@@ -272,13 +272,6 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
     }
   }
 
-  override containsPoint(x: number, y: number): boolean {
-    return x >= this.#x
-      && x < this.#x + this.#width
-      && y >= this.#y
-      && y < this.#y + this.#height;
-  }
-
   override emitDrawCommands(buffer: DrawListBuffer): void {
     if (this.#width <= 0 || this.#height <= 0) {
       return;

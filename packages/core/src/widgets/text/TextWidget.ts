@@ -105,11 +105,6 @@ export class TextWidget extends TuiWidgetEntity {
     return this.#style.styleZIndex;
   }
 
-  override containsPoint(x: number, y: number): boolean {
-    const {x: rx, y: ry, width: rw, height: rh} = this.#rect;
-    return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
-  }
-
   get value() {
     return this.#value;
   }

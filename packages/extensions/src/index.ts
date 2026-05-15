@@ -4,5 +4,6 @@ export * from './matrix';
 export * from './framerate';
 export * from './snake';
 export * from './videoplayer';
+export * from './logger';
 
 export {EXTENSION_REGISTRY} from './registry';

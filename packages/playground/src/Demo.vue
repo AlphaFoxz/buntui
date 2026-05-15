@@ -12,11 +12,15 @@
     <ProgressBarDemo v-if="currentTab === 'ProgressBar'" />
     <SwitchDemo v-if="currentTab === 'Switch'" />
     <TextDemo v-show="currentTab === 'Text'" />
+
+    <Logger hijack />
 </template>
 
 <script setup lang="ts">
 import { ref } from '@vue/reactivity'
+import Logger from '@buntui/extensions/logger'
 import Matrix from '@buntui/extensions/matrix'
+
 import BoxDemo from './components/BoxDemo.vue'
 import ButtonDemo from './components/ButtonDemo.vue'
 import CheckboxDemo from './components/CheckboxDemo.vue'
@@ -40,4 +44,8 @@ const tabOptions = ref([
     // 'Text',
 ])
 const currentTab = ref(tabOptions.value[0]!)
+
+setTimeout(() => {
+    console.log('你好')
+}, 1000)
 </script>

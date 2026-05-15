@@ -61,12 +61,13 @@ const FLAG_PROP_MAP: Record<string, string> = {
   tabs: 'setOptions',
   options: 'setOptions',
   visible: 'setVisible',
+  hijack: 'hijackConsole',
 };
 
 // Props that are boolean flags (bare attrs like `readonly` parse as string "true").
 // Only these need string→bool conversion. Other FLAG_PROP_MAP entries (label, options)
 // are string/array props and should be passed as-is.
-const BOOLEAN_FLAGS = new Set(['disabled', 'checked', 'readonly', 'draggable']);
+const BOOLEAN_FLAGS = new Set(['disabled', 'checked', 'readonly', 'draggable', 'hijack']);
 
 export type CodegenOptions = {
   /** Module ID for the core package import */

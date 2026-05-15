@@ -119,11 +119,6 @@ export class ProgressBarWidget extends InteractiveWidget {
     Object.assign(this.#rect, rect);
   }
 
-  override containsPoint(x: number, y: number): boolean {
-    const {x: rx, y: ry, width: rw, height: rh} = this.#rect;
-    return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
-  }
-
   updateValue(value: number): void {
     this.#value = this.#clamp(value);
   }

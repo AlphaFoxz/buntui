@@ -218,7 +218,20 @@ describe('intrinsicSize', () => {
 });
 
 describe('containsPoint', () => {
-  it('returns false by default', () => {
+  it('checks rect bounds by default', () => {
+    const widget = new (class extends TuiWidgetEntity {
+      override get rect() {
+        return {x: 5, y: 3, width: 10, height: 5};
+      }
+      override emitDrawCommands() {}
+    })();
+    expect(widget.containsPoint(5, 3)).toBe(true);
+    expect(widget.containsPoint(14, 7)).toBe(true);
+    expect(widget.containsPoint(15, 3)).toBe(false);
+    expect(widget.containsPoint(4, 3)).toBe(false);
+  });
+
+  it('returns false for zero-size rect', () => {
     const widget = new (class extends TuiWidgetEntity {
       override emitDrawCommands() {}
     })();

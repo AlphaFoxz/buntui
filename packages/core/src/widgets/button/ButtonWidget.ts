@@ -153,11 +153,6 @@ export class ButtonWidget extends InteractiveWidget {
     Object.assign(this.#rect, rect);
   }
 
-  override containsPoint(x: number, y: number): boolean {
-    const {x: rx, y: ry, width: rw, height: rh} = this.#rect;
-    return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
-  }
-
   override emitDrawCommands(buffer: DrawListBuffer): void {
     const {x, y, width, height} = this.#rect;
     if (width <= 0 || height <= 0) {

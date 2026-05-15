@@ -148,9 +148,8 @@ export abstract class TuiWidgetEntity implements Mountable {
   }
 
   containsPoint(x: number, y: number): boolean {
-    void x;
-    void y;
-    return false;
+    const {x: rx, y: ry, width: rw, height: rh} = this.rect;
+    return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
   }
 
   on<E extends keyof TuiWidgetEventData>(event: E, handler: (data: TuiWidgetEventData[E]) => void): void;
