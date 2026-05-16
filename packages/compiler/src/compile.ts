@@ -1,42 +1,35 @@
 import {baseParse, type RootNode} from '@vue/compiler-core';
-import type {SFCDescriptor} from '@vue/compiler-sfc';
+import {type SFCDescriptor, type SFCScriptBlock, compileScript} from '@vue/compiler-sfc';
 import {parse} from './parse';
 import {transform, type TransformOptions} from './template/transform';
-import {generate, type CodegenOptions} from './template/codegen';
+import {generate, type CodegenOptions, type CodegenResult} from './template/codegen';
 import {type TuiComponentRegistry, CORE_REGISTRY} from './runtime-helpers';
 
 export type CompileOptions = {
-  /** SFC parse options */
   filename?: string;
-  /** Component registry (tag → {creator, module}). Defaults to CORE_REGISTRY. */
   registry?: TuiComponentRegistry;
-  /** Transform options (overrides registry/components if both provided) */
   transform?: Omit<TransformOptions, 'registry' | 'components'>;
-  /** Codegen options */
   codegen?: CodegenOptions;
 };
 
 export type CompileResult = {
-  /** Generated TypeScript module code */
   code: string;
-  /** Imports used by the generated code */
   imports: string[];
-  /** Template AST (if template block exists) */
   templateAst?: RootNode;
-  /** Descriptors for each SFC block */
   descriptor: SFCDescriptor;
 };
 
-/**
- * Compile a Vue SFC source into a TUI TypeScript module.
- *
- * Pipeline: parse → transform → codegen
- */
-export function compile(source: string, options?: CompileOptions): CompileResult {
-  // 1. Parse SFC
-  const descriptor = parse(source, {filename: options?.filename});
+type ScriptAnalysis = {
+  scriptImports: string[];
+  scriptBody: string[];
+  componentMap: Record<string, string>;
+  widgetImportMap: Record<string, string>;
+};
 
-  // 2. Transform template to TUI render tree (once)
+export function compile(source: string, options?: CompileOptions): CompileResult {
+  const filename = options?.filename ?? 'anonymous.tui.vue';
+  const descriptor = parse(source, {filename});
+
   if (!descriptor.template) {
     return {
       code: '// No template block found',
@@ -47,55 +40,73 @@ export function compile(source: string, options?: CompileOptions): CompileResult
 
   const templateAst = baseParse(descriptor.template.content);
 
-  // 3. Split script imports from body (before transform, so we know component imports)
-  const scriptContent = descriptor.scriptSetup?.content
-    ?? descriptor.script?.content
-    ?? '';
-  const {scriptImports, scriptBody} = splitScript(scriptContent);
-  const componentMap = extractComponentImports(scriptImports);
   const registry = options?.registry ?? CORE_REGISTRY;
-  const widgetImportMap = extractWidgetImports(scriptImports, registry);
+  const analysis = analyzeScript(descriptor, filename, registry);
 
-  // 2. Transform template to TUI render tree
   const renderRoot = transform(templateAst, {
     ...options?.transform,
     registry,
-    components: componentMap,
-    widgetImports: widgetImportMap,
+    components: analysis.componentMap,
+    widgetImports: analysis.widgetImportMap,
   });
 
-  // 4. Codegen (single pass, with script body if present)
   const codegenResult = generate(renderRoot, {
     ...options?.codegen,
-    scriptBody: scriptBody.length > 0 ? scriptBody : undefined,
+    scriptBody: analysis.scriptBody.length > 0 ? analysis.scriptBody : undefined,
   });
 
-  // 5. Combine: deduplicate imports, then code
-  const allImports = [...codegenResult.imports, ...scriptImports];
-  const code = [
-    ...allImports,
-    '',
-    ...codegenResult.code.split('\n').filter(l => !l.startsWith('import ')),
-  ].join('\n');
+  return assembleOutput(codegenResult, analysis.scriptImports, descriptor, templateAst);
+}
 
+function analyzeScript(
+  descriptor: SFCDescriptor,
+  filename: string,
+  registry: TuiComponentRegistry,
+): ScriptAnalysis {
+  const content = descriptor.scriptSetup?.content
+    ?? descriptor.script?.content
+    ?? '';
+
+  if (!content) {
+    return {
+      scriptImports: [], scriptBody: [], componentMap: {}, widgetImportMap: {},
+    };
+  }
+
+  const {scriptImports, scriptBody} = splitScript(content);
+
+  if (!descriptor.scriptSetup) {
+    return {
+      scriptImports, scriptBody, componentMap: {}, widgetImportMap: {},
+    };
+  }
+
+  const {componentMap, widgetImportMap} = analyzeImportsFromAst(descriptor, filename, registry);
   return {
-    code,
-    imports: allImports,
-    templateAst,
-    descriptor,
+    scriptImports, scriptBody, componentMap, widgetImportMap,
   };
 }
 
 function splitScript(content: string): {scriptImports: string[]; scriptBody: string[]} {
-  if (!content) {
-    return {scriptImports: [], scriptBody: []};
-  }
-
   const scriptImports: string[] = [];
   const scriptBody: string[] = [];
+  let inMultilineImport = false;
+
   for (const line of content.split('\n')) {
+    if (inMultilineImport) {
+      scriptImports.push(line);
+      if (line.includes('}')) {
+        inMultilineImport = false;
+      }
+
+      continue;
+    }
+
     if (line.trimStart().startsWith('import ')) {
       scriptImports.push(line);
+      if (line.includes('{') && !line.includes('}')) {
+        inMultilineImport = true;
+      }
     } else {
       scriptBody.push(line);
     }
@@ -104,71 +115,68 @@ function splitScript(content: string): {scriptImports: string[]; scriptBody: str
   return {scriptImports, scriptBody};
 }
 
-/**
- * Detect default and named imports that could be widget creators.
- * Any PascalCase import NOT covered by the core registry and NOT from
- * a .vue file is treated as a potential widget import.
- *
- * Default import: `import Matrix from '@buntui/extensions/matrix'`
- * Named import:   `import {Matrix} from '@buntui/extensions/matrix'`
- */
-function extractWidgetImports(scriptImports: string[], registry: TuiComponentRegistry): Record<string, string> {
+function analyzeImportsFromAst(
+  descriptor: SFCDescriptor,
+  filename: string,
+  registry: TuiComponentRegistry,
+): {componentMap: Record<string, string>; widgetImportMap: Record<string, string>} {
   const registryTags = new Set(Object.keys(registry));
-  const widgetImports: Record<string, string> = {};
-  const vueImportRe = /\.vue['"]$/v;
-  const namedImportRe = /import\s*\{([^\}]+)\}\s*from\s*['"]([^'"]+)['"]/v;
-  const defaultImportRe = /import\s+(\w+)\s+from\s*['"]([^'"]+)['"]/v;
+  const componentMap: Record<string, string> = {};
+  const widgetImportMap: Record<string, string> = {};
 
-  for (const line of scriptImports) {
-    if (vueImportRe.test(line)) {
+  let compiled: SFCScriptBlock;
+  try {
+    compiled = compileScript(descriptor, {id: filename});
+  } catch {
+    return {componentMap, widgetImportMap};
+  }
+
+  if (!compiled.imports) {
+    return {componentMap, widgetImportMap};
+  }
+
+  for (const [, info] of Object.entries(compiled.imports)) {
+    if (info.isType) {
       continue;
     }
 
-    // Default import: import Matrix from '...'
-    const defaultMatch = defaultImportRe.exec(line);
-    if (defaultMatch?.[1] && !line.includes('{')) {
-      const name = defaultMatch[1];
-      if (!registryTags.has(name) && /^[A-Z]/v.test(name)) {
-        widgetImports[name] = name;
-      }
+    const templateTag = info.imported === 'default' ? info.local : info.imported;
+    const creatorName = info.local;
 
+    if (info.source.endsWith('.vue')) {
+      componentMap[templateTag] = creatorName;
       continue;
     }
 
-    // Named import: import {Matrix} from '...'
-    const namedMatch = namedImportRe.exec(line);
-    if (!namedMatch) {
-      continue;
-    }
-
-    for (const spec of namedMatch[1]!.split(',')) {
-      const parts = spec.trim().split(/\s+as\s+/v);
-      const importName = parts[0]!.trim();
-      const localName = (parts[1] ?? parts[0])!.trim();
-      if (!registryTags.has(importName) && /^[A-Z]/v.test(importName)) {
-        widgetImports[importName] = localName;
-      }
+    if (!registryTags.has(templateTag) && /^[A-Z]/v.test(templateTag)) {
+      widgetImportMap[templateTag] = creatorName;
     }
   }
 
-  return widgetImports;
+  return {componentMap, widgetImportMap};
 }
 
-/**
- * Extract default import identifiers from `.vue` import statements.
- * e.g. `import Matrix from './AppMatrix.vue'` → `{Matrix: 'Matrix'}`
- */
-function extractComponentImports(scriptImports: string[]): Record<string, string> {
-  const components: Record<string, string> = {};
-  const defaultImportRe = /import\s+(\w+)\s+from\s+['"][^'"]+\.vue['"]/v;
-  for (const line of scriptImports) {
-    const match = defaultImportRe.exec(line);
-    if (match?.[1]) {
-      components[match[1]] = match[1];
-    }
-  }
+function assembleOutput(
+  codegenResult: CodegenResult,
+  scriptImports: string[],
+  descriptor: SFCDescriptor,
+  templateAst: RootNode,
+): CompileResult {
+  const codegenImportSet = new Set(codegenResult.imports);
+  const extraScriptImports = scriptImports.filter(i => !codegenImportSet.has(i));
+  const allImports = [...codegenResult.imports, ...extraScriptImports];
 
-  return components;
+  const code = [
+    ...allImports,
+    codegenResult.body,
+  ].join('\n');
+
+  return {
+    code,
+    imports: allImports,
+    templateAst,
+    descriptor,
+  };
 }
 
 export {type SFCDescriptor} from '@vue/compiler-sfc';

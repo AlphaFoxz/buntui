@@ -35,6 +35,7 @@ type TransformContext = {
   registry: TuiComponentRegistry;
   components: Record<string, string>;
   widgetImports: Record<string, string>;
+  widgetCounter: number;
 };
 
 /**
@@ -48,6 +49,7 @@ export function transform(root: RootNode, options?: TransformOptions): TuiRender
     registry: options?.registry ?? CORE_REGISTRY,
     components: options?.components ?? {},
     widgetImports: options?.widgetImports ?? {},
+    widgetCounter: 0,
   };
   const children: TuiRenderNode[] = [];
 
@@ -94,15 +96,13 @@ function transformNode(
   return transformElement(node, ctx);
 }
 
-let widgetCounter = 0;
-
 function transformElement(
   node: ElementNode,
   ctx: TransformContext,
 ): TuiWidgetCall {
   const {tag} = node;
 
-  const widgetId = `${tag.toLowerCase()}${widgetCounter++}`;
+  const widgetId = `${tag.toLowerCase()}${ctx.widgetCounter++}`;
   const props: TuiStaticProp[] = [];
   const dynamicProps: TuiDynamicProp[] = [];
   const events: TuiEventBinding[] = [];
@@ -128,14 +128,24 @@ function transformElement(
 
   // Transform children recursively
   const children: TuiRenderNode[] = [];
-  for (const child of node.children) {
-    if (child.type === NodeTypes.ELEMENT && findDirective(child, 'for')) {
+  let ci = 0;
+  const childNodes = node.children as readonly TemplateChildNode[];
+  while (ci < childNodes.length) {
+    const child = childNodes[ci]!;
+    if (child.type === NodeTypes.ELEMENT && findDirective(child, 'if')) {
+      const {block, nextIndex} = processConditionalChain(child, childNodes, ci, ctx);
+      children.push(block);
+      ci = nextIndex;
+    } else if (child.type === NodeTypes.ELEMENT && findDirective(child, 'for')) {
       children.push(processListBlock(child, ctx));
+      ci++;
     } else {
       const transformed = transformNode(child, ctx);
       if (transformed) {
         children.push(transformed);
       }
+
+      ci++;
     }
   }
 
@@ -457,10 +467,24 @@ function processListBlock(
   const body: TuiRenderNode[] = [];
 
   if (isFragment) {
-    for (const child of node.children) {
-      const transformed = transformNode(child, ctx);
-      if (transformed) {
-        body.push(transformed);
+    let i = 0;
+    const children = node.children as readonly TemplateChildNode[];
+    while (i < children.length) {
+      const child = children[i]!;
+      if (child.type === NodeTypes.ELEMENT && findDirective(child, 'if')) {
+        const {block, nextIndex} = processConditionalChain(child, children, i, ctx);
+        body.push(block);
+        i = nextIndex;
+      } else if (child.type === NodeTypes.ELEMENT && findDirective(child, 'for')) {
+        body.push(processListBlock(child, ctx));
+        i++;
+      } else {
+        const transformed = transformNode(child, ctx);
+        if (transformed) {
+          body.push(transformed);
+        }
+
+        i++;
       }
     }
   } else {

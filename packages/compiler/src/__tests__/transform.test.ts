@@ -306,7 +306,7 @@ describe('transform', () => {
   });
 
   describe('edge cases: v-if inside v-for template fragment', () => {
-    it('does NOT process v-if inside v-for template body — element becomes plain widget', () => {
+    it('processes v-if inside v-for template body as conditional block', () => {
       const root = parseTemplate(
         '<template v-for="item in items"><Box v-if="item.active"/></template>',
       );
@@ -314,7 +314,7 @@ describe('transform', () => {
       const list = asList(root.children[0]!);
       expect(list.type).toBe('TuiListBlock');
       expect(list.itemVar).toBe('item');
-      expect(list.body[0]!.type).toBe('TuiWidgetCall');
+      expect(list.body[0]!.type).toBe('TuiConditionalBlock');
     });
   });
 });

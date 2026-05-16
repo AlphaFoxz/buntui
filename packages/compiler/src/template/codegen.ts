@@ -79,7 +79,10 @@ export type CodegenOptions = {
 };
 
 export type CodegenResult = {
+  /** Full generated code (imports + body, for backward compat) */
   code: string;
+  /** Body lines only (no import statements) */
+  body: string;
   /** Runtime imports needed by the generated code */
   imports: string[];
 };
@@ -168,8 +171,9 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
   const cleanupLines = mountedWidgetVars.map(v => `    scene.unmount(${v});`);
   lines.push('  return () => {', ...cleanupLines, '  };', '}', '', 'export default { setup };');
 
-  const code = [...imports, ...lines].join('\n');
-  return {code, imports};
+  const body = lines.join('\n');
+  const code = [...imports, body].join('\n');
+  return {code, body, imports};
 }
 
 type NodeGenResult = {
@@ -590,11 +594,12 @@ function buildWidgetCreation(node: TuiWidgetCall): string {
 
   const props: string[] = [];
   for (const prop of node.props) {
-    if (FLAG_PROP_MAP[prop.name]) {
-      continue;
+    const isFlag = BOOLEAN_FLAGS.has(prop.name);
+    if (isFlag) {
+      props.push(`${prop.name}: ${prop.value === 'true'}`);
+    } else {
+      props.push(`${prop.name}: ${JSON.stringify(prop.value)}`);
     }
-
-    props.push(`${prop.name}: ${JSON.stringify(prop.value)}`);
   }
 
   for (const prop of node.dynamicProps) {
@@ -716,7 +721,19 @@ function hasDynamicBindings(root: TuiRenderRoot): boolean {
     }
 
     if (node.type === 'TuiConditionalBlock') {
-      return node.consequent.some(n => checkNode(n));
+      if (node.consequent.some(n => checkNode(n))) {
+        return true;
+      }
+
+      if (node.alternate) {
+        if (Array.isArray(node.alternate)) {
+          return node.alternate.some(n => checkNode(n));
+        }
+
+        return checkNode(node.alternate);
+      }
+
+      return false;
     }
 
     if (node.type === 'TuiListBlock') {

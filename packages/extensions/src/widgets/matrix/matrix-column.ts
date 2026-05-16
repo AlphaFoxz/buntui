@@ -9,6 +9,14 @@ export type MatrixColumnState = {
   chars: number[];
 };
 
+export type MatrixColumnConfig = {
+  maxY: number;
+  speedRange: MatrixSpeedRange;
+  minTrail: number;
+  maxTrail: number;
+  charset: number[];
+};
+
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -17,7 +25,8 @@ function randomChar(charset: number[]): number {
   return charset[Math.floor(Math.random() * charset.length)]!;
 }
 
-export function createColumn(maxY: number, speedRange: MatrixSpeedRange, minTrail: number, maxTrail: number, charset: number[]): MatrixColumnState {
+export function createColumn(config: MatrixColumnConfig): MatrixColumnState {
+  const {maxTrail, speedRange, minTrail, charset} = config;
   const speed = randomInt(speedRange.min, speedRange.max);
   const trailLength = randomInt(minTrail, maxTrail);
   return {
@@ -30,20 +39,13 @@ export function createColumn(maxY: number, speedRange: MatrixSpeedRange, minTrai
   };
 }
 
-export function tickColumn(
-  col: MatrixColumnState,
-  maxY: number,
-  speedRange: MatrixSpeedRange,
-  minTrail: number,
-  maxTrail: number,
-  density: number,
-  charset: number[],
-): void {
+export function tickColumn(col: MatrixColumnState, density: number, config: MatrixColumnConfig): void {
+  const {charset} = config;
   if (!col.active) {
     col.cooldown--;
     if (col.cooldown <= 0) {
       if (Math.random() < density) {
-        const restarted = createColumn(maxY, speedRange, minTrail, maxTrail, charset);
+        const restarted = createColumn(config);
         col.headY = restarted.headY;
         col.trailLength = restarted.trailLength;
         col.speed = restarted.speed;
@@ -64,7 +66,7 @@ export function tickColumn(
   col.chars.length = col.trailLength;
   col.headY += col.speed;
 
-  if (col.headY - col.trailLength > maxY) {
+  if (col.headY - col.trailLength > config.maxY) {
     col.active = false;
     col.cooldown = randomInt(1, 30);
   }

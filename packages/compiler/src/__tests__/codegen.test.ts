@@ -275,8 +275,8 @@ describe('codegen', () => {
 
   // --- Potential issue / edge case tests ---
 
-  describe('edge cases: FLAG_PROP_MAP inconsistency', () => {
-    it('top-level widgets pass visible as string "true" (not in BOOLEAN_FLAGS)', () => {
+  describe('edge cases: FLAG_PROP_MAP consistency', () => {
+    it('top-level widgets serialize visible as string "true"', () => {
       const widget = makeWidget({
         props: [
           {type: 'TuiStaticProp', name: 'visible', value: 'true'},
@@ -285,12 +285,11 @@ describe('codegen', () => {
       });
       const root = makeRoot([widget], [], new Set(['createBox']));
       const result = gen(root);
-      // visible is in FLAG_PROP_MAP but NOT in BOOLEAN_FLAGS → stringified as "true"
       expect(result.code).toContain('visible: "true"');
       expect(result.code).toContain('x: "1"');
     });
 
-    it('conditional branch widgets skip ALL FLAG_PROP_MAP props in creation', () => {
+    it('conditional branch widgets include ALL props (including FLAG_PROP_MAP) in creation', () => {
       const widget = makeWidget({
         props: [
           {type: 'TuiStaticProp', name: 'visible', value: 'true'},
@@ -305,10 +304,7 @@ describe('codegen', () => {
       };
       const root = makeRoot([block], [], new Set(['createBox']));
       const result = gen(root);
-      // buildWidgetCreation skips ALL FLAG_PROP_MAP entries — only x appears in creation
-      expect(result.code).toContain('createBox({ x: "1" })');
-      // visible is NOT in the creation call inside conditional (different from top-level!)
-      expect(result.code).not.toContain('visible: "true"');
+      expect(result.code).toContain('createBox({ visible: "true", x: "1" })');
     });
   });
 

@@ -4,7 +4,9 @@ import {
 import {buildTrailGradient} from '../../utils/color';
 import {MATRIX_CHARSET} from './charset';
 import {DEFAULT_MATRIX_COLOR_SCHEME, DEFAULT_MATRIX_OPTIONS} from './defaults';
-import {type MatrixColumnState, createColumn, tickColumn} from './matrix-column';
+import {
+  type MatrixColumnState, type MatrixColumnConfig, createColumn, tickColumn,
+} from './matrix-column';
 import type {MatrixWidgetOptions} from './types';
 
 export class MatrixWidget extends TuiWidgetEntity {
@@ -94,7 +96,6 @@ export class MatrixWidget extends TuiWidgetEntity {
 
     const absX = this.#x;
     const absY = this.#y;
-    const charset = this.#charset;
     const maxLength = this.#maxTrailLength;
 
     buffer.pushClip(absX, absY, w, h);
@@ -102,7 +103,7 @@ export class MatrixWidget extends TuiWidgetEntity {
     for (let col = 0; col < this.#columns.length; col++) {
       const column = this.#columns[col]!;
       if (shouldTick) {
-        tickColumn(column, h, this.#speedRange, this.#minTrailLength, this.#maxTrailLength, this.#density, charset);
+        tickColumn(column, this.#density, this.#columnConfig(h));
       }
 
       if (!column.active) {
@@ -112,7 +113,7 @@ export class MatrixWidget extends TuiWidgetEntity {
       const cx = absX + col;
       const {headY} = column;
       const {trailLength} = column;
-      const chars = column.chars;
+      const {chars} = column;
 
       for (let t = 0; t < trailLength; t++) {
         const cy = absY + headY - t;
@@ -128,7 +129,7 @@ export class MatrixWidget extends TuiWidgetEntity {
         buffer.drawChar({
           x: cx,
           y: cy,
-          char: chars[t] ?? charset[0]!,
+          char: chars[t] ?? this.#charset[0]!,
           fgRgba,
           bgRgba: this.#colorScheme.bgRgba,
         });
@@ -155,6 +156,16 @@ export class MatrixWidget extends TuiWidgetEntity {
     );
   }
 
+  #columnConfig(maxY: number): MatrixColumnConfig {
+    return {
+      maxY,
+      speedRange: this.#speedRange,
+      minTrail: this.#minTrailLength,
+      maxTrail: this.#maxTrailLength,
+      charset: this.#charset,
+    };
+  }
+
   #ensureColumns(width: number, height: number): void {
     if (this.#columns.length === width && this.#initialized) {
       return;
@@ -162,7 +173,7 @@ export class MatrixWidget extends TuiWidgetEntity {
 
     this.#columns = [];
     for (let x = 0; x < width; x++) {
-      this.#columns.push(createColumn(height, this.#speedRange, this.#minTrailLength, this.#maxTrailLength, this.#charset));
+      this.#columns.push(createColumn(this.#columnConfig(height)));
     }
 
     this.#initialized = true;
