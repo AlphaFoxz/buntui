@@ -163,12 +163,98 @@ describe('codegen', () => {
   describe('event handlers', () => {
     it('generates .on() registration', () => {
       const root = makeRoot(
-        [makeWidget({events: [{type: 'TuiEventBinding', event: 'click', handler: 'handleClick', loc: STUB_LOC}]})],
+        [makeWidget({events: [{type: 'TuiEventBinding', event: 'click', handler: 'handleClick', modifiers: [], loc: STUB_LOC}]})],
         [],
         new Set(['createBox']),
       );
       const result = gen(root);
       expect(result.code).toContain(".on('click', handleClick)");
+    });
+
+    it('generates key modifier guard', () => {
+      const root = makeRoot(
+        [makeWidget({events: [{type: 'TuiEventBinding', event: 'key', handler: 'onEnter', modifiers: ['enter'], loc: STUB_LOC}]})],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain(".on('key', ($event) =>");
+      expect(result.code).toContain("$event.key === 'Enter'");
+      expect(result.code).toContain('onEnter');
+    });
+
+    it('generates system modifier + key modifier guard', () => {
+      const root = makeRoot(
+        [makeWidget({events: [{type: 'TuiEventBinding', event: 'key', handler: 'onCtrlEnter', modifiers: ['ctrl', 'enter'], loc: STUB_LOC}]})],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain('$event.ctrlKey');
+      expect(result.code).toContain("$event.key === 'Enter'");
+      expect(result.code).toContain('onCtrlEnter');
+    });
+
+    it('generates stop modifier', () => {
+      const root = makeRoot(
+        [makeWidget({events: [{type: 'TuiEventBinding', event: 'click', handler: 'onClick', modifiers: ['stop'], loc: STUB_LOC}]})],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain('$event.stopPropagation()');
+      expect(result.code).toContain('onClick');
+    });
+
+    it('generates escape key modifier', () => {
+      const root = makeRoot(
+        [makeWidget({events: [{type: 'TuiEventBinding', event: 'key', handler: 'onEsc', modifiers: ['escape'], loc: STUB_LOC}]})],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain("$event.key === 'Escape'");
+    });
+
+    it('generates arrow key modifier', () => {
+      const root = makeRoot(
+        [makeWidget({events: [{type: 'TuiEventBinding', event: 'key', handler: 'onUp', modifiers: ['up'], loc: STUB_LOC}]})],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain("$event.key === 'ArrowUp'");
+    });
+
+    it('generates function key modifier', () => {
+      const root = makeRoot(
+        [makeWidget({events: [{type: 'TuiEventBinding', event: 'key', handler: 'onF1', modifiers: ['f1'], loc: STUB_LOC}]})],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain("$event.key === 'F1'");
+    });
+
+    it('passes through unknown modifier as key name', () => {
+      const root = makeRoot(
+        [makeWidget({events: [{type: 'TuiEventBinding', event: 'key', handler: 'onX', modifiers: ['x'], loc: STUB_LOC}]})],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain("$event.key === 'x'");
+    });
+
+    it('no wrapper for empty modifiers', () => {
+      const root = makeRoot(
+        [makeWidget({events: [{type: 'TuiEventBinding', event: 'click', handler: 'handleClick', modifiers: [], loc: STUB_LOC}]})],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain(".on('click', handleClick)");
+      expect(result.code).not.toContain('$event');
     });
   });
 

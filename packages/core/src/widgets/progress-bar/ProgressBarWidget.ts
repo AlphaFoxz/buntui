@@ -1,4 +1,5 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
@@ -137,8 +138,8 @@ export class ProgressBarWidget extends InteractiveWidget {
     this.#showPercentage = value;
   }
 
-  handleKey(): void {
-    // No-op
+  handleKey(event: KeyboardEvent): void {
+    this.dispatchKeyEvent(event);
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {

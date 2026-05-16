@@ -1,7 +1,7 @@
 import {resolvePercent} from '../utils/percent';
 import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import type {Mountable} from '../extern/types';
-import type {MouseEvent, WheelEvent} from '../events/types';
+import type {KeyboardEvent, MouseEvent, WheelEvent} from '../events/types';
 import type {
   TuiWidgetPercentSpec,
   TuiWidgetRect,
@@ -20,6 +20,7 @@ export type TuiWidgetEventData = {
   drag: MouseEvent;
   dragend: MouseEvent;
   wheel: WheelEvent;
+  key: KeyboardEvent;
   focus: undefined;
   blur: undefined;
   input: {value: string};
@@ -37,6 +38,7 @@ export abstract class TuiWidgetEntity implements Mountable {
   readonly #eventHandlers = new Map<string, Set<WidgetEventHandler>>();
   readonly #children: TuiWidgetEntity[] = [];
   #percentSpec: TuiWidgetPercentSpec | undefined = undefined;
+  #propagationStopped = false;
 
   get hasPercentLayout(): boolean {
     return this.#percentSpec !== undefined;
@@ -173,14 +175,15 @@ export abstract class TuiWidgetEntity implements Mountable {
   dispatch<E extends keyof TuiWidgetEventData>(eventType: E, data: TuiWidgetEventData[E]): void;
   dispatch(eventType: string, data: unknown): void;
   dispatch(eventType: string, data: unknown): void {
-    const handlers = this.#eventHandlers.get(eventType);
-    if (handlers) {
-      for (const handler of handlers) {
-        handler(data);
-      }
-    }
+    this.#dispatchInternal(eventType, data, false);
+  }
 
-    this.#parent?.dispatch(eventType, data);
+  stopPropagation(): void {
+    this.#propagationStopped = true;
+  }
+
+  dispatchKeyEvent(event: KeyboardEvent): void {
+    this.dispatch('key', event as unknown);
   }
 
   mounted() {
@@ -230,6 +233,23 @@ export abstract class TuiWidgetEntity implements Mountable {
       if (child.visible) {
         child.emitDrawCommands(buf);
       }
+    }
+  }
+
+  #dispatchInternal(eventType: string, data: unknown, stopped: boolean): void {
+    if (stopped) {
+      return;
+    }
+
+    const handlers = this.#eventHandlers.get(eventType);
+    if (handlers) {
+      for (const handler of handlers) {
+        handler(data);
+      }
+    }
+
+    if (this.#parent) {
+      this.#parent.#dispatchInternal(eventType, data, this.#propagationStopped);
     }
   }
 }

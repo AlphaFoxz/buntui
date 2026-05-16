@@ -157,6 +157,8 @@ export class SwitchWidget extends InteractiveWidget {
       return;
     }
 
+    this.dispatchKeyEvent(event);
+
     if (event.key === 'Enter' || event.key === ' ') {
       this.#toggle();
     }

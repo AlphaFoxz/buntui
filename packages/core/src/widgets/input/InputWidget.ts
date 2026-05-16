@@ -196,6 +196,8 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
       return;
     }
 
+    this.dispatchKeyEvent(event);
+
     if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
       this.#handleCharInput(event.key);
       return;

@@ -122,6 +122,8 @@ export class RadioGroupWidget extends InteractiveWidget {
       return;
     }
 
+    this.dispatchKeyEvent(event);
+
     if (this.#options.length === 0) {
       return;
     }

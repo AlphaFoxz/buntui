@@ -132,6 +132,8 @@ export class ButtonWidget extends InteractiveWidget {
       return;
     }
 
+    this.dispatchKeyEvent(event);
+
     if (event.key === 'Enter' || event.key === ' ') {
       this.dispatch('click', undefined);
     }

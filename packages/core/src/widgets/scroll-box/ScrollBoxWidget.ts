@@ -23,6 +23,9 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
   readonly #scrollbarTrackColor: number;
 
   #focused = false;
+  #dragScrolling = false;
+  #dragStartY = 0;
+  #dragStartOffset = 0;
 
   constructor(options: ScrollBoxWidgetOptions) {
     super();
@@ -70,6 +73,30 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
     this.on('wheel', data => {
       this.scrollBy(data.wheelDeltaY * this.#scrollSpeed);
     });
+
+    this.on('mousedown', data => {
+      this.#dragScrolling = true;
+      this.#dragStartY = data.y;
+      this.#dragStartOffset = this.#scrollOffsetY;
+    });
+
+    this.on('mousemove', data => {
+      if (!this.#dragScrolling) {
+        return;
+      }
+
+      if ((data.buttons ?? 0) === 0) {
+        this.#dragScrolling = false;
+        return;
+      }
+
+      const delta = data.y - this.#dragStartY;
+      this.scrollTo(this.#dragStartOffset + delta);
+    });
+
+    this.on('mouseup', () => {
+      this.#dragScrolling = false;
+    });
   }
 
   // -- Accessors --
@@ -114,6 +141,8 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
     if (event.key === undefined) {
       return;
     }
+
+    this.dispatchKeyEvent(event);
 
     const viewport = this.#computeViewport();
 

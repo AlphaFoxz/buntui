@@ -137,6 +137,37 @@ describe('event system', () => {
     widget.dispatch('ev', undefined);
     expect(results).toEqual(['a', 'b']);
   });
+
+  it('dispatch bubbles to parent', () => {
+    const parent = createWidget();
+    const child = createWidget();
+    parent.addChild(child);
+    let parentReceived = false;
+    parent.on('click', () => { parentReceived = true; });
+    child.dispatch('click', undefined);
+    expect(parentReceived).toBe(true);
+  });
+
+  it('stopPropagation prevents bubbling', () => {
+    const parent = createWidget();
+    const child = createWidget();
+    parent.addChild(child);
+    let parentReceived = false;
+    child.on('click', () => { child.stopPropagation(); });
+    parent.on('click', () => { parentReceived = true; });
+    child.dispatch('click', undefined);
+    expect(parentReceived).toBe(false);
+  });
+
+  it('stopPropagation resets after dispatch', () => {
+    const widget = createWidget();
+    widget.on('click', () => { widget.stopPropagation(); });
+    widget.dispatch('click', undefined);
+    let secondCall = false;
+    widget.on('test', () => { secondCall = true; });
+    widget.dispatch('test', undefined);
+    expect(secondCall).toBe(true);
+  });
 });
 
 describe('mounted / unmounted', () => {

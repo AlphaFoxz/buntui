@@ -122,6 +122,39 @@ describe('transform', () => {
       expect(widget.events[0]!.event).toBe('key');
       expect(widget.events[0]!.handler).toBe('onKey');
     });
+
+    it('parses @key.enter modifier', () => {
+      const root = parseTemplate('<Input @key.enter="onEnter"/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.events).toHaveLength(1);
+      expect(widget.events[0]!.event).toBe('key');
+      expect(widget.events[0]!.handler).toBe('onEnter');
+      expect(widget.events[0]!.modifiers).toEqual(['enter']);
+    });
+
+    it('parses multiple key modifiers', () => {
+      const root = parseTemplate('<Input @key.ctrl.enter="onCtrlEnter"/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.events[0]!.modifiers).toEqual(['ctrl', 'enter']);
+    });
+
+    it('parses @click.stop modifier', () => {
+      const root = parseTemplate('<Button @click.stop="onClick"/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.events[0]!.modifiers).toEqual(['stop']);
+    });
+
+    it('parses system modifier + key modifier', () => {
+      const root = parseTemplate('<Input @key.shift.escape="onShiftEsc"/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.events[0]!.modifiers).toEqual(['shift', 'escape']);
+    });
+
+    it('event without modifiers has empty modifiers array', () => {
+      const root = parseTemplate('<Button @click="handleClick"/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.events[0]!.modifiers).toEqual([]);
+    });
   });
 
   describe('v-if / v-else-if / v-else', () => {

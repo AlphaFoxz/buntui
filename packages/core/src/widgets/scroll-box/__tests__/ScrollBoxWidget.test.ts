@@ -2,7 +2,7 @@ import {it, expect, describe} from 'bun:test';
 import {createScrollBoxWidget} from '../ScrollBoxWidget';
 import {ScrollBoxWidget} from '../ScrollBoxWidget';
 import {createBox} from '../../box/BoxWidget';
-import type {KeyboardEvent} from '../../../events/types';
+import type {KeyboardEvent, MouseEvent} from '../../../events/types';
 
 function key(options: Partial<KeyboardEvent> & {key: string}): KeyboardEvent {
   return {
@@ -13,6 +13,20 @@ function key(options: Partial<KeyboardEvent> & {key: string}): KeyboardEvent {
     metaKey: options.metaKey ?? false,
     repeat: options.repeat ?? false,
     charCode: options.charCode ?? 0,
+  };
+}
+
+function mouse(options: Partial<MouseEvent> & {x: number; y: number}): MouseEvent {
+  return {
+    x: options.x,
+    y: options.y,
+    button: options.button,
+    buttons: options.buttons,
+    isRelease: options.isRelease ?? false,
+    shiftKey: options.shiftKey ?? false,
+    ctrlKey: options.ctrlKey ?? false,
+    altKey: options.altKey ?? false,
+    metaKey: options.metaKey ?? false,
   };
 }
 
@@ -286,5 +300,59 @@ describe('intrinsicSize', () => {
   it('returns undefined (requires explicit dimensions)', () => {
     const sb = createScrollBox();
     expect(sb.intrinsicSize()).toBeUndefined();
+  });
+});
+
+describe('drag scroll', () => {
+  function createScrollable(): ScrollBoxWidget {
+    const sb = createScrollBox({height: 10});
+    for (let i = 0; i < 5; i++) {
+      sb.addChild(createBox({height: 5}));
+    }
+
+    return sb;
+  }
+
+  it('dragging down scrolls content up', () => {
+    const sb = createScrollable();
+    sb.dispatch('mousedown', mouse({x: 5, y: 5, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 5, y: 8, buttons: 1}));
+    expect(sb.scrollOffsetY).toBe(3);
+  });
+
+  it('dragging up scrolls content down', () => {
+    const sb = createScrollable();
+    sb.scrollTo(5);
+    sb.dispatch('mousedown', mouse({x: 5, y: 8, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 5, y: 5, buttons: 1}));
+    expect(sb.scrollOffsetY).toBe(2);
+  });
+
+  it('mouseup stops drag scrolling', () => {
+    const sb = createScrollable();
+    sb.dispatch('mousedown', mouse({x: 5, y: 5, button: 0}));
+    sb.dispatch('mouseup', mouse({x: 5, y: 5, button: 0, isRelease: true}));
+    sb.dispatch('mousemove', mouse({x: 5, y: 10, buttons: 1}));
+    expect(sb.scrollOffsetY).toBe(0);
+  });
+
+  it('mousemove without buttons stops drag scrolling', () => {
+    const sb = createScrollable();
+    sb.dispatch('mousedown', mouse({x: 5, y: 5, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 5, y: 10, buttons: 0}));
+    expect(sb.scrollOffsetY).toBe(0);
+  });
+
+  it('clamps drag scroll to valid range', () => {
+    const sb = createScrollable();
+    sb.dispatch('mousedown', mouse({x: 5, y: 5, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 5, y: 50, buttons: 1}));
+    expect(sb.scrollOffsetY).toBe(sb.maxScrollY);
+  });
+
+  it('does not scroll on mousemove without prior mousedown', () => {
+    const sb = createScrollable();
+    sb.dispatch('mousemove', mouse({x: 5, y: 10, buttons: 1}));
+    expect(sb.scrollOffsetY).toBe(0);
   });
 });

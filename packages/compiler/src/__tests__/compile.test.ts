@@ -139,6 +139,26 @@ describe('compile', () => {
       const result = compile('<template><Button @click="handleClick"/></template>');
       expect(result.code).toContain(".on('click', handleClick)");
     });
+
+    it('generates key modifier guard for @key.enter', () => {
+      const result = compile('<template><Input @key.enter="onEnter"/></template>');
+      expect(result.code).toContain(".on('key', ($event) =>");
+      expect(result.code).toContain("$event.key === 'Enter'");
+      expect(result.code).toContain('onEnter');
+    });
+
+    it('generates system modifier + key modifier for @key.ctrl.enter', () => {
+      const result = compile('<template><Input @key.ctrl.enter="onCtrlEnter"/></template>');
+      expect(result.code).toContain('$event.ctrlKey');
+      expect(result.code).toContain("$event.key === 'Enter'");
+      expect(result.code).toContain('onCtrlEnter');
+    });
+
+    it('generates stop modifier for @click.stop', () => {
+      const result = compile('<template><Button @click.stop="onClick"/></template>');
+      expect(result.code).toContain('$event.stopPropagation()');
+      expect(result.code).toContain('onClick');
+    });
   });
 
   describe('v-show', () => {

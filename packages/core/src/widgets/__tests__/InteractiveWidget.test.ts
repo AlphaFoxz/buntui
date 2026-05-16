@@ -10,6 +10,7 @@ class TestInteractive extends InteractiveWidget {
 
   override handleKey(event: KeyboardEvent): void {
     this.handleKeyCalls.push(event);
+    this.dispatchKeyEvent(event);
   }
 }
 
@@ -97,6 +98,30 @@ describe('handleKey', () => {
     widget.handleKey(event);
     expect(widget.handleKeyCalls).toHaveLength(1);
     expect(widget.handleKeyCalls[0]).toBe(event);
+  });
+});
+
+describe('key event dispatch', () => {
+  it('dispatches key event from dispatchKeyEvent', () => {
+    const widget = new TestInteractive();
+    let received: KeyboardEvent | undefined;
+    widget.on('key', (data: unknown) => { received = data as KeyboardEvent; });
+    const event = key({key: 'Enter'});
+    widget.handleKey(event);
+    expect(received).toBeDefined();
+    expect(received!.key).toBe('Enter');
+  });
+
+  it('dispatches key event bubbles to parent', () => {
+    const parent = new TestInteractive();
+    const child = new TestInteractive();
+    parent.addChild(child);
+    let parentReceived: KeyboardEvent | undefined;
+    parent.on('key', (data: unknown) => { parentReceived = data as KeyboardEvent; });
+    const event = key({key: 'Escape'});
+    child.handleKey(event);
+    expect(parentReceived).toBeDefined();
+    expect(parentReceived!.key).toBe('Escape');
   });
 });
 

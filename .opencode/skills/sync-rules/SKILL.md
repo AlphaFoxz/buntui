@@ -53,5 +53,5 @@ Sync `.opencode/rules/*.md` documentation with the current state of the source c
 ## Notes
 
 - Rule files can be created, updated, renamed, or deleted — whichever action fits the situation.
-- When deleting a rule file, confirm with the user first. When renaming, also update any references to the old filename in CLAUDE.md or other files.
+- When deleting a rule file, confirm with the user first. When renaming, also update any references to the old filename in AGENTS.md or other files.
 - If a referenced file no longer exists and there is no clear replacement, flag it to the user instead of guessing.

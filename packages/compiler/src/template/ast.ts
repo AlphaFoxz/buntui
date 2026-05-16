@@ -53,6 +53,7 @@ export type TuiEventBinding = {
   readonly type: 'TuiEventBinding';
   event: string;
   handler: string;
+  modifiers: string[];
   loc: SourceLocation;
 };
 

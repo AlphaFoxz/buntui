@@ -128,24 +128,24 @@ function transformElement(
 
   // Transform children recursively
   const children: TuiRenderNode[] = [];
-  let ci = 0;
+  let childIdx = 0;
   const childNodes = node.children as readonly TemplateChildNode[];
-  while (ci < childNodes.length) {
-    const child = childNodes[ci]!;
+  while (childIdx < childNodes.length) {
+    const child = childNodes[childIdx]!;
     if (child.type === NodeTypes.ELEMENT && findDirective(child, 'if')) {
-      const {block, nextIndex} = processConditionalChain(child, childNodes, ci, ctx);
+      const {block, nextIndex} = processConditionalChain(child, childNodes, childIdx, ctx);
       children.push(block);
-      ci = nextIndex;
+      childIdx = nextIndex;
     } else if (child.type === NodeTypes.ELEMENT && findDirective(child, 'for')) {
       children.push(processListBlock(child, ctx));
-      ci++;
+      childIdx++;
     } else {
       const transformed = transformNode(child, ctx);
       if (transformed) {
         children.push(transformed);
       }
 
-      ci++;
+      childIdx++;
     }
   }
 
@@ -323,6 +323,7 @@ function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string)
           type: 'TuiEventBinding',
           event: config.event,
           handler: `($event) => { ${expression}.value = ${valueExpr} }`,
+          modifiers: [],
           loc: dir.loc,
         },
       },
@@ -333,12 +334,14 @@ function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string)
   if (dir.name === 'on' && dir.arg) {
     const event = resolveArgContent(dir);
     const handler = resolveExpContent(dir);
+    const modifiers = dir.modifiers.map(m => m.content);
     return [{
       type: 'event',
       binding: {
         type: 'TuiEventBinding',
         event,
         handler,
+        modifiers,
         loc: dir.loc,
       },
     }];
