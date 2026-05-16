@@ -1,31 +1,32 @@
 import type {MatrixSpeedRange} from './types';
 
 export type MatrixColumnState = {
-  /** Current head Y position (0-based, grows downward) */
   headY: number;
-  /** Trail length for this column */
   trailLength: number;
-  /** Speed: cells to advance per frame */
   speed: number;
-  /** Whether this column is active (visible) */
   active: boolean;
-  /** Cooldown frames before this column reactivates */
   cooldown: number;
+  chars: number[];
 };
 
 function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export function createColumn(maxY: number, speedRange: MatrixSpeedRange, minTrail: number, maxTrail: number): MatrixColumnState {
+function randomChar(charset: number[]): number {
+  return charset[Math.floor(Math.random() * charset.length)]!;
+}
+
+export function createColumn(maxY: number, speedRange: MatrixSpeedRange, minTrail: number, maxTrail: number, charset: number[]): MatrixColumnState {
   const speed = randomInt(speedRange.min, speedRange.max);
   const trailLength = randomInt(minTrail, maxTrail);
   return {
-    headY: randomInt(-maxTrail, 0), // Start above screen for staggered entry
+    headY: randomInt(-maxTrail, 0),
     trailLength,
     speed,
     active: true,
     cooldown: 0,
+    chars: Array.from({length: trailLength}, () => randomChar(charset)),
   };
 }
 
@@ -36,16 +37,18 @@ export function tickColumn(
   minTrail: number,
   maxTrail: number,
   density: number,
+  charset: number[],
 ): void {
   if (!col.active) {
     col.cooldown--;
     if (col.cooldown <= 0) {
       if (Math.random() < density) {
-        const restarted = createColumn(maxY, speedRange, minTrail, maxTrail);
+        const restarted = createColumn(maxY, speedRange, minTrail, maxTrail, charset);
         col.headY = restarted.headY;
         col.trailLength = restarted.trailLength;
         col.speed = restarted.speed;
         col.active = true;
+        col.chars = restarted.chars;
       } else {
         col.cooldown = randomInt(1, 10);
       }
@@ -54,9 +57,13 @@ export function tickColumn(
     return;
   }
 
+  for (let i = 0; i < col.speed; i++) {
+    col.chars.unshift(randomChar(charset));
+  }
+
+  col.chars.length = col.trailLength;
   col.headY += col.speed;
 
-  // If the tail has fully exited the screen, deactivate
   if (col.headY - col.trailLength > maxY) {
     col.active = false;
     col.cooldown = randomInt(1, 30);

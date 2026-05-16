@@ -2,7 +2,7 @@
 
 Vision: a Vite + Vue-like DX for building terminal UI apps that run on Bun.
 
-Last updated: 2026-04-29
+Last updated: 2026-05-16
 
 ## Phase 0 — Make the core work ✅ — [#10](https://github.com/AlphaFoxz/buntui/issues/10)
 
@@ -17,7 +17,7 @@ Goal: a working imperative API — create app, mount text widgets, see output, h
 | 0-5 | Scene background color from parameter, not hard-coded | ✅ Done |
 | 0-6 | End-to-end smoke test: render a BoxWidget and verify output | ✅ Done |
 
-## Phase 1 — Cross-platform support (current phase) — [#12](https://github.com/AlphaFoxz/buntui/issues/12)
+## Phase 1 — Cross-platform support — [#12](https://github.com/AlphaFoxz/buntui/issues/12)
 
 Goal: run on Linux and macOS in addition to Windows.
 
@@ -34,12 +34,13 @@ Goal: a usable set of built-in widgets beyond plain text.
 
 | # | Task | Status |
 |---|------|--------|
-| 2-1 | Box / Panel widget (rect + border + optional title) | Not started |
+| 2-1 | Box / Panel widget (rect + border + optional title) | ✅ Done |
 | 2-2 | Flex / Stack layout engine | Not started |
-| 2-3 | Input / TextField widget | Not started |
-| 2-4 | List / Select widget | Not started |
-| 2-5 | Progress bar widget | Not started |
-| 2-6 | Scroll / Viewport widget | Not started |
+| 2-3 | Input / TextField widget | ✅ Done |
+| 2-4 | List / Select widget | ✅ Done (RadioGroup + SelectButton) |
+| 2-5 | Progress bar widget | ✅ Done |
+| 2-6 | Scroll / Viewport widget | ✅ Done |
+| 2-7 | Checkbox / Switch / Button | ✅ Done |
 
 ## Phase 3 — Reactive binding layer ✅ — [#13](https://github.com/AlphaFoxz/buntui/issues/13)
 
@@ -52,16 +53,16 @@ Goal: widgets automatically re-render when reactive state changes.
 | 3-3 | Automatic dirty-marking when reactive state mutates | ✅ Done |
 | 3-4 | Batch updates within a single tick | ✅ Done |
 
-## Phase 4 — Declarative API (SFC / JSX) ✅ — [#14](https://github.com/AlphaFoxz/buntui/issues/14)
+## Phase 4 — Declarative API (SFC) ✅ — [#14](https://github.com/AlphaFoxz/buntui/issues/14)
 
-Goal: write UIs with Vue-like template syntax as shown in USAGE.md.
+Goal: write UIs with Vue-like template syntax.
 
 | # | Task | Status |
 |---|------|--------|
 | 4-1 | Design component descriptor format (`defineComponent`-like API) | ✅ Done |
-| 4-2 | Build a Vite plugin that compiles `.vue` SFCs to buntui render functions | ✅ Done |
-| 4-3 | Template compiler: `<Box>`, `<scene>` → imperative mount calls | ✅ Done |
-| 4-4 | Event binding syntax (`@keydown`, `@click`) | Not started |
+| 4-2 | Build a Bun plugin that compiles `.vue` SFCs to buntui render functions | ✅ Done |
+| 4-3 | Template compiler: `<Box>`, `<Text>` → imperative mount calls | ✅ Done |
+| 4-4 | Event binding syntax (`@keydown`, `@click`) | ✅ Done |
 | 4-5 | Prop binding (`:x`, `:y`, `v-if`, `v-for`) | ✅ Done |
 | 4-6 | `bun run dev` dev server with HMR | ✅ Done |
 
@@ -71,8 +72,8 @@ Goal: publishable package with good DX.
 
 | # | Task | Status |
 |---|------|--------|
-| 5-1 | CLI scaffolding tool (`bunx create-buntui`) | Not started |
-| 5-2 | Pre-built binary distribution (npm package with pre-compiled .dll/.so/.dylib) | Not started |
+| 5-1 | CLI scaffolding tool (`bunx create-buntui`) | ✅ Done |
+| 5-2 | Pre-built binary distribution (npm package with pre-compiled .dll/.so/.dylib) | ✅ Done (`@buntui/native-platforms`) |
 | 5-3 | Documentation site | Not started |
 | 5-4 | Plugin system (custom widgets, middleware) | Not started |
 | 5-5 | DevTools (widget inspector, state viewer) | Not started |
@@ -82,10 +83,10 @@ Goal: publishable package with good DX.
 ```
 Phase 0 (core works) ✅             #10
   └→ Phase 1 (cross-platform) ← current  #12
-      └→ Phase 2 (widget library)  #11
+      └→ Phase 2 (widget library) ← mostly done  #11
 Phase 3 (reactive bindings) ✅      #13
   └→ Phase 4 (declarative API) ✅   #14
-      └→ Phase 5 (ecosystem)        #15
+      └→ Phase 5 (ecosystem) ← partially done  #15
 ```
 
-Phases 0, 3, and 4 are complete. Phase 1 (cross-platform) is the current focus. Phase 2 (widgets) can proceed in parallel once Phase 1 is done.
+Phases 0, 3, and 4 are complete. Phase 2 is mostly done (only Flex/Stack layout engine remains). Phase 1 (cross-platform) is the current focus. Phase 5 has partial progress (CLI scaffolding and binary distribution done).

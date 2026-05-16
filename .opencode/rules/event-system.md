@@ -1,11 +1,3 @@
----
-paths:
-  - "packages/core/src/events/**"
-  - "packages/core/src/app/**"
-  - "packages/native/src/core/event_bus.zig"
-  - "packages/native/src/input/**"
----
-
 # Event System
 
 The event system bridges Zig (producer) and TypeScript (consumer) through a lock-free ring buffer.

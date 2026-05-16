@@ -1,11 +1,3 @@
----
-paths:
-  - "packages/core/src/draw_list/**"
-  - "packages/core/src/widgets/**"
-  - "packages/native/src/draw_list/**"
-  - "packages/native/src/render/**"
----
-
 # DrawList Rendering Pipeline
 
 DrawList is the binary command buffer bridging TS widget state to Zig rendering. TS emits draw commands each frame, Zig rasterizes them.
@@ -44,7 +36,7 @@ Unknown command types are skipped (`payload_len` allows parser to advance past t
 
 - **Zig**: `packages/native/src/draw_list/` — commands.zig, clip_stack.zig, rasterizer.zig, draw_list.zig
 - **TS**: `packages/core/src/draw_list/` — DrawListBuffer.ts (builder), types.ts (enums)
-- **FFI**: `renderDrawList(ctx, buf_ptr, buf_len)` in lib.zig + extern/app/lib.ts
+- **FFI**: `renderDrawList(ctx, buf_ptr, buf_len)` in lib.zig + app/NativeBackend.ts
 
 ## Rendering Rules
 

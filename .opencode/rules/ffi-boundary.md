@@ -1,10 +1,3 @@
----
-paths:
-  - "packages/core/src/extern/**"
-  - "packages/native/src/lib.zig"
-  - "packages/native/src/core/**"
----
-
 # FFI Boundary Protocol
 
 This document defines the protocol for Zig/TypeScript FFI communication.

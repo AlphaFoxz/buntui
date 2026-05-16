@@ -16,7 +16,10 @@ The compiler resolves template tags with a two-tier strategy:
 {
   ".": "./dist/index.js",
   "./matrix": "./dist/matrix.js",
-  "./framerate": "./dist/framerate.js"
+  "./framerate": "./dist/framerate.js",
+  "./snake": "./dist/snake.js",
+  "./videoplayer": "./dist/videoplayer.js",
+  "./logger": "./dist/logger.js"
 }
 ```
 

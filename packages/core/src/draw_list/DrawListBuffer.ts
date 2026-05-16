@@ -6,6 +6,7 @@ import {
   CMD_HEADER_SIZE,
   BUFFER_MAGIC,
   BUFFER_VERSION,
+  type CursorMode,
 } from './types';
 
 const textEncoder = new TextEncoder();
@@ -254,7 +255,7 @@ export class DrawListBuffer {
     this.#writeHeader(DrawCmd.HideCursor, 0, 0);
   }
 
-  setCursorMode(mode: number): void {
+  setCursorMode(mode: CursorMode): void {
     this.#writeHeader(DrawCmd.SetCursorMode, 0, 1);
     this.#view.setUint8(this.#cursor, mode);
     this.#cursor += 1;

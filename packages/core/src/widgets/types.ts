@@ -55,6 +55,45 @@ export type TuiWidgetStyle = {
   styleModifier: U16;
 };
 
+export type FontStyleName = 'bold' | 'dim' | 'italic' | 'underline' | 'slowblink' | 'rapidblink' | 'reverse' | 'hidden' | 'crossedout' | 'fraktur' | 'overline';
+
+export const FontStyleBit: Record<FontStyleName, U16> = {
+  bold: Math.trunc(1),
+  dim: 1 << 1,
+  italic: 1 << 2,
+  underline: 1 << 3,
+  slowblink: 1 << 4,
+  rapidblink: 1 << 5,
+  reverse: 1 << 6,
+  hidden: 1 << 7,
+  crossedout: 1 << 8,
+  fraktur: 1 << 9,
+  overline: 1 << 10,
+};
+
+export type TuiFontStyleInput = FontStyleName | FontStyleName[] | U16;
+
+export function resolveFontStyle(value: TuiFontStyleInput | undefined): U16 {
+  if (value === undefined) {
+    return 0;
+  }
+
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    let result = 0;
+    for (const name of value) {
+      result |= FontStyleBit[name] ?? 0;
+    }
+
+    return result;
+  }
+
+  return FontStyleBit[value] ?? 0;
+}
+
 /*
  * @summary 96 bits = 12 bytes
  */

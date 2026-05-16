@@ -1,0 +1,25 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "instructions": [
+        ".opencode/CLAUDE.md",
+        ".opencode/rules/drawlist-rendering.md",
+        ".opencode/rules/event-system.md",
+        ".opencode/rules/ffi-boundary.md",
+        ".opencode/rules/sfc-extensions.md",
+        ".opencode/rules/typescript-coding.md",
+        ".opencode/rules/zig-coding.md"
+    ],
+    "permission": {
+        "bash": {
+            "bun *": "allow",
+            "bunx *": "allow",
+            "gh *": "allow",
+            "git log *": "allow",
+            "zig *": "allow",
+            "ls": "allow",
+            "ffmpeg *": "allow",
+            "yt-dlp *": "allow",
+            "*": "ask"
+        }
+    }
+}

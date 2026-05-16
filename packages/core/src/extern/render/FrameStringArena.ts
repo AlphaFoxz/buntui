@@ -8,7 +8,8 @@ export class SharedStringArena {
   #cursor = 0;
   readonly #encoder = new TextEncoder('utf-8');
   constructor(bytes?: number) {
-    this.#buffer = new Uint8Array(bytes ?? this.#size);
+    this.#size = bytes ?? this.#size;
+    this.#buffer = new Uint8Array(this.#size);
     this.#ptr = ptr(this.#buffer);
   }
 

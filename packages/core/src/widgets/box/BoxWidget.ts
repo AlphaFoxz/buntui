@@ -8,6 +8,7 @@ import {
   resolveBorderStyle,
   resolveLayoutDirection,
   resolveLayoutAlignment,
+  resolveFontStyle,
   type LayoutAlignment,
   type LayoutAlignmentName,
   type TuiBorderStyleName,
@@ -21,13 +22,13 @@ import {
   type TuiWidgetShadow,
   type TuiWidgetSize,
   type TuiWidgetStyle,
+  type TuiFontStyleInput,
 } from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 
 export type BorderShorthand = boolean | string | number;
 
 export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & Partial<TuiWidgetShadow>, 'colorFg' | 'colorBg' | 'borderColor' | 'shadowColor' | 'borderStyle'>
-  & Partial<TuiWidgetStyle>
   & Partial<TuiWidgetPadding>
   & {
     x?: TuiSizeValue;
@@ -38,14 +39,14 @@ export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & 
     colorBg?: TuiColor;
     borderColor?: TuiColor;
     shadowColor?: TuiColor;
-    /** Border shorthand: true/false, "1 0", "1 0 1 0", etc. Expanded before individual sides. */
     border?: BorderShorthand;
     borderStyle?: TuiBorderStyleName;
-    /** Layout direction for children. Defaults to 'vertical'. */
     direction?: LayoutDirectionName;
     gap?: U16;
     align?: LayoutAlignmentName;
     draggable?: boolean;
+    styleModifier?: TuiFontStyleInput;
+    styleZIndex?: I16;
   };
 
 /**
@@ -189,7 +190,7 @@ export class BoxWidget extends TuiWidgetEntity {
     };
     this.#style = {
       styleZIndex: options.styleZIndex ?? 0,
-      styleModifier: options.styleModifier ?? 0,
+      styleModifier: resolveFontStyle(options.styleModifier),
     };
     this.#border = initBorder(options);
     this.#shadow = {
@@ -265,8 +266,14 @@ export class BoxWidget extends TuiWidgetEntity {
     }
   }
 
-  updateStyle(style: Partial<TuiWidgetStyle>): void {
-    Object.assign(this.#style, style);
+  updateStyle(style: Omit<Partial<TuiWidgetStyle>, 'styleModifier'> & {styleModifier?: TuiFontStyleInput}): void {
+    if (style.styleModifier !== undefined) {
+      this.#style.styleModifier = resolveFontStyle(style.styleModifier);
+    }
+
+    if (style.styleZIndex !== undefined) {
+      this.#style.styleZIndex = style.styleZIndex;
+    }
   }
 
   updateBorder(border: Omit<Partial<TuiWidgetBorder>, 'borderStyle'> & {border?: BorderShorthand; borderStyle?: TuiBorderStyleName}): void {

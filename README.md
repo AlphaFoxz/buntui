@@ -86,18 +86,38 @@ type ParseResult<File> = Bolb | object | 'IO错误了所以Result是空，注意
 
 - 基本开发
   - [x] 组件热重载
-  - [ ] types支持
+  - [x] types支持
+  - [x] 组件生命周期
+  - [x] 日志
+  - [x] 主题系统
   - [ ] 文档
-  - [ ] 组件生命周期
-  - [ ] 日志
-- 程序员工具
-  - [ ] 端口查询
-  - [ ] docker拼接
-- 强交互
-  - [x] 帧率检查
+- 内置组件
+  - [x] Box / Panel
+  - [x] Text
+  - [x] Input / TextField
+  - [x] Button / Checkbox / Switch
+  - [x] RadioGroup / SelectButton
+  - [x] ProgressBar
+  - [x] ScrollBox
+  - [ ] Flex / Stack 布局引擎
+- 拓展组件
+  - [x] 帧率检查 (Framerate)
   - [x] 可拖拽的组件
+  - [x] Matrix 动画
+  - [x] Snake 游戏
+  - [x] VideoPlayer (braille渲染)
+  - [x] Logger
+- 跨平台
+  - [ ] POSIX raw-mode (termios)
+  - [ ] POSIX 输入监听
+  - [ ] CI: Linux/macOS 构建
+- 生态
+  - [x] CLI scaffolding (`bunx create-buntui`)
+  - [x] 预编译二进制分发 (`@buntui/native-platforms`)
+  - [ ] 文档站
+  - [ ] 插件系统
+  - [ ] DevTools
+- 强交互
   - [ ] 自定义热键
-- App方向-更多拓展与内置组件
-  - [ ] 窗口
+  - [ ] 窗口（最大化/最小化）
   - [ ] 屏保动画
-  - [ ] 颜色主题

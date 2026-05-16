@@ -6,6 +6,7 @@ type TuiBorderStyle = 'none' | 'solid' | 'double' | 'rounded' | 'bold' | 'dashed
 type TuiLayoutDirection = 'horizontal' | 'vertical';
 type TuiLayoutAlignment = 'start' | 'center' | 'end' | 'stretch';
 type TuiBorderSides = boolean | 'true' | 'false' | `${number}` | `${number} ${number}` | `${number} ${number} ${number}` | `${number} ${number} ${number} ${number}`;
+type TuiFontStyle = 'bold' | 'dim' | 'italic' | 'underline' | 'slowblink' | 'rapidblink' | 'reverse' | 'hidden' | 'crossedout' | 'fraktur' | 'overline';
 
 type TuiBoxProps = {
   x?: TuiSizeValue;
@@ -22,7 +23,7 @@ type TuiBoxProps = {
   borderBottom?: boolean;
   borderLeft?: boolean;
   zIndex?: number;
-  styleModifier?: number;
+  styleModifier?: TuiFontStyle | TuiFontStyle[];
   shadowOffsetX?: number;
   shadowOffsetY?: number;
   shadowColor?: TuiColor;
@@ -45,7 +46,7 @@ type TuiTextProps = {
   colorFg?: TuiColor;
   colorBg?: TuiColor;
   zIndex?: number;
-  styleModifier?: number;
+  styleModifier?: TuiFontStyle | TuiFontStyle[];
   value?: string;
   overflow?: 'clip' | 'marquee';
   scrollSpeed?: number;

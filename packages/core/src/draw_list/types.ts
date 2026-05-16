@@ -61,6 +61,25 @@ export const CursorMode = {
 } as const;
 export type CursorMode = Enum<typeof CursorMode>;
 
+export type CursorModeName = 'blinking-block' | 'block' | 'blinking-underscore' | 'underscore' | 'blinking-ibeam' | 'ibeam';
+
+const CURSOR_MODE_MAP: Record<CursorModeName, CursorMode> = {
+  'blinking-block': 1,
+  block: 2,
+  'blinking-underscore': 3,
+  underscore: 4,
+  'blinking-ibeam': 5,
+  ibeam: 6,
+};
+
+export function resolveCursorMode(value: CursorModeName | CursorMode): CursorMode {
+  if (typeof value === 'string') {
+    return CURSOR_MODE_MAP[value] ?? 1;
+  }
+
+  return value;
+}
+
 export const LineDirection = {
   Horizontal: 0,
   Vertical: 1,

@@ -3,19 +3,20 @@ import {parseColor, type TuiColor} from '../../utils/color';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {getTheme} from '../../theme/provider';
 import {extractPercentSpec, isPercent} from '../../utils/percent';
-import type {
-  TuiSizeValue,
-  TuiWidgetColor,
-  TuiWidgetRect,
-  TuiWidgetSize,
-  TuiWidgetStyle,
-  TuiWidgetText,
+import {
+  type TuiSizeValue,
+  type TuiWidgetColor,
+  type TuiWidgetRect,
+  type TuiWidgetSize,
+  type TuiWidgetStyle,
+  type TuiWidgetText,
+  type TuiFontStyleInput,
+  resolveFontStyle,
 } from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import type {TextOverflow} from './types';
 
 export type TextWidgetOptions = Omit<TuiWidgetColor & TuiWidgetText, 'colorFg' | 'colorBg'>
-  & Partial<TuiWidgetStyle>
   & {
     x?: TuiSizeValue;
     y?: TuiSizeValue;
@@ -26,6 +27,8 @@ export type TextWidgetOptions = Omit<TuiWidgetColor & TuiWidgetText, 'colorFg' |
     overflow?: TextOverflow;
     scrollSpeed?: number;
     scrollPauseMs?: number;
+    styleModifier?: TuiFontStyleInput;
+    styleZIndex?: I16;
   };
 
 export class TextWidget extends TuiWidgetEntity {
@@ -63,7 +66,7 @@ export class TextWidget extends TuiWidgetEntity {
     };
     this.#style = {
       styleZIndex: options.styleZIndex ?? 0,
-      styleModifier: options.styleModifier ?? 0,
+      styleModifier: resolveFontStyle(options.styleModifier),
     };
     this.#value = options.value;
     this.#overflow = options.overflow ?? 'marquee';
@@ -97,8 +100,14 @@ export class TextWidget extends TuiWidgetEntity {
     return this.#style;
   }
 
-  updateStyle(style: Partial<TuiWidgetStyle>) {
-    Object.assign(this.#style, style);
+  updateStyle(style: Omit<Partial<TuiWidgetStyle>, 'styleModifier'> & {styleModifier?: TuiFontStyleInput}) {
+    if (style.styleModifier !== undefined) {
+      this.#style.styleModifier = resolveFontStyle(style.styleModifier);
+    }
+
+    if (style.styleZIndex !== undefined) {
+      this.#style.styleZIndex = style.styleZIndex;
+    }
   }
 
   override get zIndex(): number {

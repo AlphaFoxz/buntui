@@ -102,7 +102,7 @@ export class MatrixWidget extends TuiWidgetEntity {
     for (let col = 0; col < this.#columns.length; col++) {
       const column = this.#columns[col]!;
       if (shouldTick) {
-        tickColumn(column, h, this.#speedRange, this.#minTrailLength, this.#maxTrailLength, this.#density);
+        tickColumn(column, h, this.#speedRange, this.#minTrailLength, this.#maxTrailLength, this.#density, charset);
       }
 
       if (!column.active) {
@@ -112,6 +112,7 @@ export class MatrixWidget extends TuiWidgetEntity {
       const cx = absX + col;
       const {headY} = column;
       const {trailLength} = column;
+      const chars = column.chars;
 
       for (let t = 0; t < trailLength; t++) {
         const cy = absY + headY - t;
@@ -124,12 +125,10 @@ export class MatrixWidget extends TuiWidgetEntity {
           ? this.#colorScheme.leadRgba
           : (this.#gradientLut[Math.min(t, maxLength - 1)] ?? this.#colorScheme.trailRgba);
 
-        const charCode = charset[Math.floor(Math.random() * charset.length)]!;
-
         buffer.drawChar({
           x: cx,
           y: cy,
-          char: charCode,
+          char: chars[t] ?? charset[0]!,
           fgRgba,
           bgRgba: this.#colorScheme.bgRgba,
         });
@@ -163,7 +162,7 @@ export class MatrixWidget extends TuiWidgetEntity {
 
     this.#columns = [];
     for (let x = 0; x < width; x++) {
-      this.#columns.push(createColumn(height, this.#speedRange, this.#minTrailLength, this.#maxTrailLength));
+      this.#columns.push(createColumn(height, this.#speedRange, this.#minTrailLength, this.#maxTrailLength, this.#charset));
     }
 
     this.#initialized = true;

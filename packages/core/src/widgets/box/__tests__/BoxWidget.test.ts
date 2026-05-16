@@ -234,7 +234,7 @@ describe('intrinsicSize', () => {
 
   it('returns size for horizontal layout with children', () => {
     const box = createBoxWith();
-    box.updateDirection(LayoutDirection.Horizontal as LayoutDirection);
+    box.updateDirection('horizontal');
     box.addChild(createChild('ab', 2, 1));
     box.addChild(createChild('abcde', 5, 1));
     const size = box.intrinsicSize();

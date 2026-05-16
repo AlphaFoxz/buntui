@@ -1,6 +1,6 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent, type MouseEvent} from '../../events/types';
-import {BorderSides, CursorMode} from '../../draw_list/types';
+import {BorderSides, resolveCursorMode} from '../../draw_list/types';
 import {resolveBorderStyle, type TuiWidgetRect} from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import type {Focusable} from '../Focusable';
@@ -398,7 +398,7 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
       const textBeforeCursor = this.#value.slice(this.#scrollOffset, this.#cursorPos);
       const cursorX = textX + stringDisplayWidth(textBeforeCursor);
       buffer.setCursor(cursorX, textY);
-      buffer.setCursorMode(CursorMode.BlinkingIBeam);
+      buffer.setCursorMode(resolveCursorMode('blinking-ibeam'));
       buffer.showCursor();
     }
 

@@ -16,6 +16,8 @@ This project uses **Bun exclusively** as its runtime, package manager, and build
 - **packages/buntui/** (`@buntui/buntui`) — Umbrella package re-exporting `@buntui/core` + `@buntui/extensions`
 - **packages/compiler/** (`@buntui/compiler`) — SFC compiler using Vue compiler-core for template/script compilation, plus dev server with HMR
 - **packages/playground/** (`@buntui/playground`) — Demo application (`bun run dev`)
+- **packages/create-buntui/** (`create-buntui`) — CLI scaffolding tool (`bunx create-buntui`)
+- **packages/native-platforms/** (`@buntui/native-platforms`) — Pre-built binary distribution for win32-x64, linux-x64, darwin-x64, darwin-arm64
 
 ### Compiler Pipeline
 
@@ -86,9 +88,10 @@ The `native` package uses `zig build` (`build.zig`). It produces a shared librar
 
 **Zig side** (`packages/native/src/lib.zig`): All exports are `pub export fn` with C ABI compatibility. `lib.zig` is a thin wrapper only — all business logic lives in separate modules. Exports cover app lifecycle, rendering, event bus, and ANSI helpers.
 
-**TypeScript side** (`packages/core/src/extern/`): Bun FFI bindings via `dlopen()`:
-- `extern/app/lib.ts` — App lifecycle, scene, render, and DrawList FFI bindings
-- `extern/events.ts` — Event bus FFI bindings
+**TypeScript side** (`packages/core/src/`): Bun FFI bindings via `dlopen()`:
+- `app/TuiBackend.ts` — Backend abstraction interface (lifecycle, render, events)
+- `app/NativeBackend.ts` — FFI `dlopen()` with all native symbols (single entry point for app lifecycle, render, event bus poll/commit)
+- `events/index.ts` — EventBus consuming events via `NativeBackend.startEvents()`
 - `extern/ansi.ts` — ANSI helper FFI bindings
 - `extern/TuiDataViewWrapper.ts` — Safe DataView wrapper for FFI memory access (required by XO lint rules over native `DataView`)
 
@@ -106,7 +109,7 @@ Frame lifecycle: TS widget tree → emitDrawCommands() → DrawListBuffer (Array
 
 Command buffer format: `[Buffer Header 8B] [Cmd Header 8B] [Payload] ...`. Each widget implements `emitDrawCommands(buf: DrawListBuffer)`. Z-ordering is painter's algorithm (traversal order). Zig maintains a 32-deep clip rectangle stack.
 
-Key files: Zig side `packages/native/src/draw_list/`, TS side `packages/core/src/draw_list/`, FFI `renderDrawList()` in `lib.zig` + `extern/app/lib.ts`.
+Key files: Zig side `packages/native/src/draw_list/`, TS side `packages/core/src/draw_list/`, FFI `renderDrawList()` in `lib.zig` + `app/NativeBackend.ts`.
 
 ### Event System
 
@@ -154,7 +157,10 @@ When new Win32 functions are needed, declare them directly as `extern "kernel32"
 {
   ".": "./dist/index.js",
   "./matrix": "./dist/matrix.js",
-  "./framerate": "./dist/framerate.js"
+  "./framerate": "./dist/framerate.js",
+  "./snake": "./dist/snake.js",
+  "./videoplayer": "./dist/videoplayer.js",
+  "./logger": "./dist/logger.js"
 }
 ```
 

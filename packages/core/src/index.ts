@@ -32,8 +32,12 @@ export type {
   LayoutAlignment,
   LayoutDirectionName,
   LayoutAlignmentName,
+  FontStyleName,
+  TuiFontStyleInput,
 } from './widgets/types';
-export {LayoutDirection as LayoutDirectionValue, LayoutAlignment as LayoutAlignmentValue} from './widgets/types';
+export {
+  LayoutDirection as LayoutDirectionValue, LayoutAlignment as LayoutAlignmentValue, FontStyleBit, resolveFontStyle,
+} from './widgets/types';
 export {DrawListBuffer} from './draw_list/DrawListBuffer';
 export {createInputWidget, InputWidget} from './widgets/input/InputWidget';
 export type {InputWidgetOptions} from './widgets/input/types';
@@ -51,7 +55,10 @@ export {createScrollBoxWidget, ScrollBoxWidget} from './widgets/scroll-box/Scrol
 export type {ScrollBoxWidgetOptions} from './widgets/scroll-box/types';
 export {createProgressBarWidget, ProgressBarWidget} from './widgets/progress-bar/ProgressBarWidget';
 export type {ProgressBarWidgetOptions} from './widgets/progress-bar/types';
-export {BorderSides, BorderStyle, CursorMode} from './draw_list/types';
+export {
+  BorderSides, BorderStyle, CursorMode, resolveCursorMode,
+} from './draw_list/types';
+export type {CursorModeName} from './draw_list/types';
 export type {KeyboardEvent, MouseEvent} from './events/types';
 export {
   isPercent, resolvePercent, extractPercentSpec, resolveSizeValue,
