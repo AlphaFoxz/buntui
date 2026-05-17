@@ -13,6 +13,7 @@
     <SwitchDemo v-if="currentTab === 'Switch'" />
     <TextDemo v-show="currentTab === 'Text'" />
 
+    <FrameRateWatcher x="10%" />
     <Logger hijack />
 </template>
 
@@ -20,6 +21,7 @@
 import { ref } from '@vue/reactivity'
 import Logger from '@buntui/extensions/logger'
 import Matrix from '@buntui/extensions/matrix'
+import FrameRateWatcher from '@buntui/extensions/framerate'
 
 import BoxDemo from './components/BoxDemo.vue'
 import ButtonDemo from './components/ButtonDemo.vue'

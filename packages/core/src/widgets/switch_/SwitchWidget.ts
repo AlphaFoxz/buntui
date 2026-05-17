@@ -5,7 +5,6 @@ import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
 import {getTheme} from '../../theme/provider';
-import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {SwitchWidgetOptions} from './types';
 
 type SwitchColors = {
@@ -69,17 +68,7 @@ export class SwitchWidget extends InteractiveWidget {
   constructor(options: SwitchWidgetOptions = {}) {
     super();
     const resolved = {...getDefaultSwitchOptions(), ...options};
-    const spec = extractPercentSpec(resolved.x, resolved.y, resolved.width, resolved.height);
-    if (spec) {
-      this.setPercentSpec(spec);
-    }
-
-    this.#rect = {
-      x: isPercent(resolved.x) ? 0 : resolved.x,
-      y: isPercent(resolved.y) ? 0 : resolved.y,
-      width: isPercent(resolved.width) ? 0 : resolved.width,
-      height: isPercent(resolved.height) ? 0 : resolved.height,
-    };
+    this.#rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
     this.#label = resolved.label;
     this.#checked = resolved.checked;
     this.setDisabled(resolved.disabled);

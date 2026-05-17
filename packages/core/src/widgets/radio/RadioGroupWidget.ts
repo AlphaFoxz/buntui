@@ -4,7 +4,6 @@ import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {getTheme} from '../../theme/provider';
-import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {RadioGroupWidgetOptions} from './types';
 
 function getDefaultRadioOptions(): Required<RadioGroupWidgetOptions> {
@@ -50,17 +49,7 @@ export class RadioGroupWidget extends InteractiveWidget {
   constructor(options: RadioGroupWidgetOptions = {}) {
     super();
     const resolved = {...getDefaultRadioOptions(), ...options};
-    const spec = extractPercentSpec(resolved.x, resolved.y, resolved.width, resolved.height);
-    if (spec) {
-      this.setPercentSpec(spec);
-    }
-
-    this.#rect = {
-      x: isPercent(resolved.x) ? 0 : resolved.x,
-      y: isPercent(resolved.y) ? 0 : resolved.y,
-      width: isPercent(resolved.width) ? 0 : resolved.width,
-      height: isPercent(resolved.height) ? 0 : resolved.height,
-    };
+    this.#rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
     this.#options = resolved.options;
     this.#value = resolved.value;
     this.setDisabled(resolved.disabled);

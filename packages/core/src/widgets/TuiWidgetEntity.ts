@@ -1,8 +1,9 @@
-import {resolvePercent} from '../utils/percent';
+import {extractPercentSpec, isPercent} from '../utils/percent';
 import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import type {Mountable} from '../extern/types';
 import type {KeyboardEvent, MouseEvent, WheelEvent} from '../events/types';
 import type {
+  TuiSizeValue,
   TuiWidgetPercentSpec,
   TuiWidgetRect,
   TuiWidgetSize,
@@ -56,19 +57,19 @@ export abstract class TuiWidgetEntity implements Mountable {
     const updates: Partial<TuiWidgetRect> = {};
     const spec = this.#percentSpec;
     if (spec.x !== undefined) {
-      updates.x = resolvePercent(spec.x, parentWidth);
+      updates.x = this.#resolvePercent(spec.x, parentWidth);
     }
 
     if (spec.y !== undefined) {
-      updates.y = resolvePercent(spec.y, parentHeight);
+      updates.y = this.#resolvePercent(spec.y, parentHeight);
     }
 
     if (spec.width !== undefined) {
-      updates.width = resolvePercent(spec.width, parentWidth);
+      updates.width = this.#resolvePercent(spec.width, parentWidth);
     }
 
     if (spec.height !== undefined) {
-      updates.height = resolvePercent(spec.height, parentHeight);
+      updates.height = this.#resolvePercent(spec.height, parentHeight);
     }
 
     if (Object.keys(updates).length > 0) {
@@ -208,6 +209,26 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   abstract emitDrawCommands(buf: DrawListBuffer): void;
 
+  protected initRect(
+    x?: TuiSizeValue,
+    y?: TuiSizeValue,
+    width?: TuiSizeValue,
+    height?: TuiSizeValue,
+    defaults?: Partial<TuiWidgetRect>,
+  ): TuiWidgetRect {
+    const spec = extractPercentSpec(x, y, width, height);
+    if (spec) {
+      this.setPercentSpec(spec);
+    }
+
+    return {
+      x: isPercent(x) ? 0 : (x ?? defaults?.x ?? 0),
+      y: isPercent(y) ? 0 : (y ?? defaults?.y ?? 0),
+      width: isPercent(width) ? 0 : (width ?? defaults?.width ?? 0),
+      height: isPercent(height) ? 0 : (height ?? defaults?.height ?? 0),
+    };
+  }
+
   /**
    * Propagate a position delta to all children.
    * Called by subclasses in their updateRect when position changes.
@@ -234,6 +255,11 @@ export abstract class TuiWidgetEntity implements Mountable {
         child.emitDrawCommands(buf);
       }
     }
+  }
+
+  #resolvePercent(value: `${number}%`, total: number): number {
+    const pct = Number.parseFloat(value);
+    return Math.max(0, Math.floor(pct / 100 * total));
   }
 
   #dispatchInternal(eventType: string, data: unknown, stopped: boolean): void {

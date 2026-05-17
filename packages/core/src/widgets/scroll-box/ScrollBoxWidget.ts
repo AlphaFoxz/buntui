@@ -2,7 +2,6 @@ import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
 import {parseColor} from '../../utils/color';
 import {getTheme} from '../../theme/provider';
-import {extractPercentSpec, isPercent} from '../../utils/percent';
 import type {Focusable} from '../Focusable';
 import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
@@ -29,17 +28,7 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
 
   constructor(options: ScrollBoxWidgetOptions) {
     super();
-    const spec = extractPercentSpec(options.x, options.y, options.width, options.height);
-    if (spec) {
-      this.setPercentSpec(spec);
-    }
-
-    this.#rect = {
-      x: isPercent(options.x) ? 0 : (options.x ?? 0),
-      y: isPercent(options.y) ? 0 : (options.y ?? 0),
-      width: isPercent(options.width) ? 0 : (options.width ?? 20),
-      height: isPercent(options.height) ? 0 : (options.height ?? 10),
-    };
+    this.#rect = this.initRect(options.x, options.y, options.width, options.height, {width: 20, height: 10});
 
     this.#innerBox = createBox({
       x: this.#rect.x,

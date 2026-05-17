@@ -2,7 +2,6 @@ import {stringDisplayWidth, truncateToWidth, charDisplayWidth} from '../../utils
 import {parseColor, type TuiColor} from '../../utils/color';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {getTheme} from '../../theme/provider';
-import {extractPercentSpec, isPercent} from '../../utils/percent';
 import {
   type TuiSizeValue,
   type TuiWidgetColor,
@@ -48,17 +47,7 @@ export class TextWidget extends TuiWidgetEntity {
 
   constructor(options: TextWidgetOptions) {
     super();
-    const spec = extractPercentSpec(options.x, options.y, options.width, options.height);
-    if (spec) {
-      this.setPercentSpec(spec);
-    }
-
-    this.#rect = {
-      x: isPercent(options.x) ? 0 : (options.x ?? 0),
-      y: isPercent(options.y) ? 0 : (options.y ?? 0),
-      width: isPercent(options.width) ? 0 : (options.width ?? 32),
-      height: isPercent(options.height) ? 0 : (options.height ?? 1),
-    };
+    this.#rect = this.initRect(options.x, options.y, options.width, options.height, {width: 32, height: 1});
     const theme = getTheme();
     this.#color = {
       colorFg: parseColor(options.colorFg ?? theme.colors.text),

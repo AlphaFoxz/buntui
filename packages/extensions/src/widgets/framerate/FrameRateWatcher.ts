@@ -1,60 +1,110 @@
 import {
-  BoxWidget,
-  TextWidget,
+  type DrawListBuffer,
+  type TuiWidgetRect,
+  type TuiSizeValue,
   TUI_CONTEXT_INSTANCE,
+  TuiWidgetEntity,
   getTheme,
-  isPercent,
-  type BoxWidgetOptions,
+  parseColor,
+  type TuiColor,
 } from '@buntui/core';
 
-export type FrameRateWatcherOptions = BoxWidgetOptions;
+export type FrameRateWatcherOptions = {
+  x?: TuiSizeValue;
+  y?: TuiSizeValue;
+  colorFg?: TuiColor;
+  colorBg?: TuiColor;
+};
 
-export class FrameRateWatcher extends BoxWidget {
+const FPS_BG = 0x1E_1E_2E_DD;
+
+export class FrameRateWatcher extends TuiWidgetEntity {
+  #x: number;
+  #y: number;
   #latestTick = 0n;
+  #fps = 0;
   #timer: NodeJS.Timeout | null = null;
-  readonly #label: TextWidget;
+  readonly #colorFg: number;
+  readonly #colorBg: number;
 
-  constructor(options: Partial<BoxWidgetOptions> = {}) {
-    super({
-      x: options.x ?? 0,
-      y: options.y ?? 0,
-      width: options.width ?? 32,
-      height: options.height ?? 3,
-      borderStyle: options.borderStyle ?? 'solid',
-      borderTop: options.borderTop ?? true,
-      borderRight: options.borderRight ?? true,
-      borderBottom: options.borderBottom ?? true,
-      borderLeft: options.borderLeft ?? true,
-      colorFg: options.colorFg,
-      colorBg: options.colorBg,
-      borderColor: options.borderColor,
-      shadowColor: options.shadowColor,
+  constructor(options: FrameRateWatcherOptions = {}) {
+    super();
+    const rect = this.initRect(options.x, options.y);
+    this.#x = rect.x;
+    this.#y = rect.y;
+    const theme = getTheme();
+    this.#colorFg = parseColor(options.colorFg ?? theme.colors.text);
+    this.#colorBg = parseColor(options.colorBg ?? FPS_BG);
+    this.setDraggable(true);
+  }
+
+  override get zIndex(): number {
+    return 999;
+  }
+
+  override get rect(): TuiWidgetRect {
+    const text = `${this.#fps}fps`;
+    return {
+      x: this.#x,
+      y: this.#y,
+      width: text.length,
+      height: 1,
+    };
+  }
+
+  override updateRect(rect: Partial<TuiWidgetRect>): void {
+    if (rect.x !== undefined) {
+      this.#x = rect.x;
+    }
+
+    if (rect.y !== undefined) {
+      this.#y = rect.y;
+    }
+  }
+
+  override containsPoint(x: number, y: number): boolean {
+    const text = `${this.#fps}fps`;
+    return x >= this.#x
+      && x < this.#x + text.length
+      && y >= this.#y
+      && y < this.#y + 1;
+  }
+
+  override emitDrawCommands(buf: DrawListBuffer): void {
+    const text = `${this.#fps}fps`;
+    const w = text.length;
+    buf.pushClip(this.#x, this.#y, w, 1);
+    buf.drawRect({
+      x: this.#x,
+      y: this.#y,
+      width: w,
+      height: 1,
+      bgRgba: this.#colorBg,
     });
-    this.#label = new TextWidget({
-      x: isPercent(options.x) ? 0 : (options.x ?? 0),
-      y: isPercent(options.y) ? 0 : (options.y ?? 0),
-      width: isPercent(options.width) ? 0 : (options.width ?? 0),
-      height: isPercent(options.height) ? 0 : (options.height ?? 0),
-      colorFg: options.colorFg ?? getTheme().colors.text,
-      colorBg: 0x00_00_00_00,
-      value: '0 fps',
+    buf.drawText({
+      x: this.#x,
+      y: this.#y,
+      text,
+      fgRgba: this.#colorFg,
+      bgRgba: this.#colorBg,
     });
-    this.addChild(this.#label);
+    buf.popClip();
   }
 
   override mounted(): void {
     super.mounted();
     this.#timer = setInterval(() => {
       const currentTick = TUI_CONTEXT_INSTANCE.tick;
-      this.#label.updateValue(`${currentTick - this.#latestTick} fps`);
+      this.#fps = Number(currentTick - this.#latestTick);
       this.#latestTick = currentTick;
-    }, 1 * 1000);
+    }, 1000);
   }
 
   override unmounted(): void {
     super.unmounted();
     if (this.#timer) {
       clearInterval(this.#timer);
+      this.#timer = null;
     }
   }
 }

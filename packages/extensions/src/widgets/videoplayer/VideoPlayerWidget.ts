@@ -2,8 +2,6 @@ import {
   type DrawListBuffer,
   type KeyboardEvent,
   type TuiWidgetRect,
-  extractPercentSpec,
-  isPercent,
   widgets,
 } from '@buntui/core';
 import {encodeBrailleFrame, isVideoFile} from './braille';
@@ -48,15 +46,11 @@ export class VideoPlayerWidget extends widgets.InteractiveWidget {
   constructor(options: VideoPlayerWidgetOptions = {}) {
     super();
     const resolved = {...DEFAULT_VIDEOPLAYER_OPTIONS, ...options};
-    const spec = extractPercentSpec(resolved.x, resolved.y, resolved.width, resolved.height);
-    if (spec) {
-      this.setPercentSpec(spec);
-    }
-
-    this.#x = isPercent(resolved.x) ? 0 : (typeof resolved.x === 'number' ? resolved.x : 0);
-    this.#y = isPercent(resolved.y) ? 0 : (typeof resolved.y === 'number' ? resolved.y : 0);
-    this.#width = isPercent(resolved.width) ? 0 : (typeof resolved.width === 'number' ? resolved.width : 0);
-    this.#height = isPercent(resolved.height) ? 0 : (typeof resolved.height === 'number' ? resolved.height : 0);
+    const rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
+    this.#x = rect.x;
+    this.#y = rect.y;
+    this.#width = rect.width;
+    this.#height = rect.height;
 
     const schemeOverride = resolved.colorScheme ?? {};
     this.#colorScheme = {
