@@ -3,16 +3,16 @@ import {BorderSides} from '../../draw_list/types';
 import {parseColor, type TuiColor} from '../../utils/color';
 import {getTheme} from '../../theme/provider';
 import {
-  LayoutAlignment as LayoutAlignmentEnum,
+  TuiLayoutAlignment as LayoutAlignmentEnum,
   resolveBorderStyle,
   resolveLayoutDirection,
   resolveLayoutAlignment,
   resolveFontStyle,
-  type LayoutAlignment,
-  type LayoutAlignmentName,
+  type TuiLayoutAlignment,
+  type TuiLayoutAlignmentName,
   type TuiBorderStyleName,
-  type LayoutDirection,
-  type LayoutDirectionName,
+  type TuiLayoutDirection,
+  type TuiLayoutDirectionName,
   type TuiSizeValue,
   type TuiWidgetBorder,
   type TuiWidgetColor,
@@ -40,9 +40,9 @@ export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & 
     shadowColor?: TuiColor;
     border?: BorderShorthand;
     borderStyle?: TuiBorderStyleName;
-    direction?: LayoutDirectionName;
+    direction?: TuiLayoutDirectionName;
     gap?: U16;
-    align?: LayoutAlignmentName;
+    align?: TuiLayoutAlignmentName;
     draggable?: boolean;
     styleModifier?: TuiFontStyleInput;
     styleZIndex?: I16;
@@ -164,9 +164,9 @@ export class BoxWidget extends TuiWidgetEntity {
   readonly #border: TuiWidgetBorder;
   readonly #shadow: TuiWidgetShadow;
   readonly #padding: TuiWidgetPadding;
-  #direction: LayoutDirection;
+  #direction: TuiLayoutDirection;
   #gap: U16;
-  #align: LayoutAlignment;
+  #align: TuiLayoutAlignment;
   #layoutDirty = false;
   readonly #ownChildren: TuiWidgetEntity[] = [];
 
@@ -322,7 +322,7 @@ export class BoxWidget extends TuiWidgetEntity {
     this.#layoutDirty = true;
   }
 
-  updateDirection(direction: LayoutDirectionName): void {
+  updateDirection(direction: TuiLayoutDirectionName): void {
     this.#direction = resolveLayoutDirection(direction);
     this.#layoutDirty = true;
   }
@@ -332,7 +332,7 @@ export class BoxWidget extends TuiWidgetEntity {
     this.#layoutDirty = true;
   }
 
-  updateAlign(align: LayoutAlignmentName): void {
+  updateAlign(align: TuiLayoutAlignmentName): void {
     this.#align = resolveLayoutAlignment(align);
     this.#layoutDirty = true;
   }

@@ -55,9 +55,9 @@ export type TuiWidgetStyle = {
   styleModifier: U16;
 };
 
-export type FontStyleName = 'bold' | 'dim' | 'italic' | 'underline' | 'slowblink' | 'rapidblink' | 'reverse' | 'hidden' | 'crossedout' | 'fraktur' | 'overline';
+export type TuiFontStyleName = 'bold' | 'dim' | 'italic' | 'underline' | 'slowblink' | 'rapidblink' | 'reverse' | 'hidden' | 'crossedout' | 'fraktur' | 'overline';
 
-export const FontStyleBit: Record<FontStyleName, U16> = {
+export const TuiFontStyleBit: Record<TuiFontStyleName, U16> = {
   bold: Math.trunc(1),
   dim: 1 << 1,
   italic: 1 << 2,
@@ -71,7 +71,7 @@ export const FontStyleBit: Record<FontStyleName, U16> = {
   overline: 1 << 10,
 };
 
-export type TuiFontStyleInput = FontStyleName | FontStyleName[] | U16;
+export type TuiFontStyleInput = TuiFontStyleName | TuiFontStyleName[] | U16;
 
 export function resolveFontStyle(value: TuiFontStyleInput | undefined): U16 {
   if (value === undefined) {
@@ -85,13 +85,13 @@ export function resolveFontStyle(value: TuiFontStyleInput | undefined): U16 {
   if (Array.isArray(value)) {
     let result = 0;
     for (const name of value) {
-      result |= FontStyleBit[name] ?? 0;
+      result |= TuiFontStyleBit[name] ?? 0;
     }
 
     return result;
   }
 
-  return FontStyleBit[value] ?? 0;
+  return TuiFontStyleBit[value] ?? 0;
 }
 
 /*
@@ -134,18 +134,8 @@ export type TuiWidgetBorder = {
  * │   │   ┃  │   │   ║  ┃   │   │  ║   │   │
  * ┕━━━┷━━━┛  ╘═══╧═══╝  ┖───┴───┘  ╙───┴───┘
  */
-export const TuiWidgetBorderStyle = {
-  None: 0,
-  Solid: 1,
-  Double: 2,
-  Rounded: 3,
-  Bold: 4,
-  Dashed: 5,
-  Dotted: 6,
-  OutsetBold: 7,
-  OutsetDouble: 8,
-} as const;
-export type TuiWidgetBorderStyle = Enum<typeof TuiWidgetBorderStyle>;
+export type {BorderStyle as TuiWidgetBorderStyle} from '../draw_list/types';
+export {BorderStyle} from '../draw_list/types';
 
 export type TuiBorderStyleName = 'none' | 'solid' | 'double' | 'rounded' | 'bold' | 'dashed' | 'dotted' | 'outsetbold' | 'outsetdouble';
 
@@ -217,20 +207,20 @@ export type TuiWidgetPadding = {
   paddingLeft: U16;
 };
 
-export const LayoutDirection = {
+export const TuiLayoutDirection = {
   Horizontal: 0,
   Vertical: 1,
 } as const;
-export type LayoutDirection = Enum<typeof LayoutDirection>;
+export type TuiLayoutDirection = Enum<typeof TuiLayoutDirection>;
 
-export type LayoutDirectionName = 'horizontal' | 'vertical';
+export type TuiLayoutDirectionName = 'horizontal' | 'vertical';
 
-const LAYOUT_DIRECTION_MAP: Record<LayoutDirectionName, LayoutDirection> = {
+const LAYOUT_DIRECTION_MAP: Record<TuiLayoutDirectionName, TuiLayoutDirection> = {
   horizontal: 0,
   vertical: 1,
 };
 
-export function resolveLayoutDirection(value: LayoutDirectionName | LayoutDirection): LayoutDirection {
+export function resolveLayoutDirection(value: TuiLayoutDirectionName | TuiLayoutDirection): TuiLayoutDirection {
   if (typeof value === 'string') {
     return LAYOUT_DIRECTION_MAP[value] ?? 1;
   }
@@ -238,24 +228,24 @@ export function resolveLayoutDirection(value: LayoutDirectionName | LayoutDirect
   return value;
 }
 
-export const LayoutAlignment = {
+export const TuiLayoutAlignment = {
   Start: 0,
   Center: 1,
   End: 2,
   Stretch: 3,
 } as const;
-export type LayoutAlignment = Enum<typeof LayoutAlignment>;
+export type TuiLayoutAlignment = Enum<typeof TuiLayoutAlignment>;
 
-export type LayoutAlignmentName = 'start' | 'center' | 'end' | 'stretch';
+export type TuiLayoutAlignmentName = 'start' | 'center' | 'end' | 'stretch';
 
-const LAYOUT_ALIGNMENT_MAP: Record<LayoutAlignmentName, LayoutAlignment> = {
+const LAYOUT_ALIGNMENT_MAP: Record<TuiLayoutAlignmentName, TuiLayoutAlignment> = {
   start: 0,
   center: 1,
   end: 2,
   stretch: 3,
 };
 
-export function resolveLayoutAlignment(value: LayoutAlignmentName | LayoutAlignment): LayoutAlignment {
+export function resolveLayoutAlignment(value: TuiLayoutAlignmentName | TuiLayoutAlignment): TuiLayoutAlignment {
   if (typeof value === 'string') {
     return LAYOUT_ALIGNMENT_MAP[value] ?? 3;
   }

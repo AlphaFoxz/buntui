@@ -1,3 +1,4 @@
+import {RUNTIME_HELPERS} from '../runtime-helpers';
 import type {
   TuiRenderRoot,
   TuiWidgetCall,
@@ -6,6 +7,8 @@ import type {
   TuiListBlock,
   TuiEventBinding,
 } from './ast';
+
+const {EFFECT, UNREF} = RUNTIME_HELPERS;
 
 /**
  * Maps widget prop names to their runtime update method.
@@ -160,7 +163,7 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
 
   // Import reactivity helpers if we have dynamic bindings
   if (root.effects.length > 0 || hasDynamicBindings(root)) {
-    imports.push(`import {effect, unref} from '${react}';`);
+    imports.push(`import {${EFFECT}, ${UNREF}} from '${react}';`);
   }
 
   // Generate setup function
@@ -286,7 +289,7 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
   }
 
   for (const prop of node.dynamicProps) {
-    props.push(`${prop.name}: unref(${prop.expression})`);
+    props.push(`${prop.name}: ${UNREF}(${prop.expression})`);
   }
 
   if (props.length > 0) {
@@ -303,10 +306,10 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
     if (info) {
       if (info.field) {
         // Grouped prop: widget.updateRect({x: unref(expr)})
-        lines.push(`effect(() => { ${varName}.${info.method}({${info.field}: unref(${prop.expression})}); });`);
+        lines.push(`${EFFECT}(() => { ${varName}.${info.method}({${info.field}: ${UNREF}(${prop.expression})}); });`);
       } else {
         // Primitive prop: widget.updateText(unref(expr))
-        lines.push(`effect(() => { ${varName}.${info.method}(unref(${prop.expression})); });`);
+        lines.push(`${EFFECT}(() => { ${varName}.${info.method}(${UNREF}(${prop.expression})); });`);
       }
 
       continue;
@@ -317,8 +320,8 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
     if (setter) {
       const expr = prop.name === 'visible'
         ? wrapConditionExpr(prop.expression)
-        : `unref(${prop.expression})`;
-      lines.push(`effect(() => { ${varName}.${setter}(${expr}); });`);
+        : `${UNREF}(${prop.expression})`;
+      lines.push(`${EFFECT}(() => { ${varName}.${setter}(${expr}); });`);
     }
   }
 
@@ -470,7 +473,7 @@ function wrapConditionExpr(expr: string): string {
         return match;
       }
 
-      return `unref(${ident})`;
+      return `${UNREF}(${ident})`;
     },
   );
 }
@@ -644,7 +647,7 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
     effectLines.push('}');
   }
 
-  lines.push('effect(() => {');
+  lines.push(`${EFFECT}(() => {`);
   for (const l of effectLines) {
     lines.push(`  ${l}`);
   }
@@ -680,7 +683,7 @@ function buildWidgetCreation(node: TuiWidgetCall): string {
   }
 
   for (const prop of node.dynamicProps) {
-    props.push(`${prop.name}: unref(${prop.expression})`);
+    props.push(`${prop.name}: ${UNREF}(${prop.expression})`);
   }
 
   return props.length > 0
@@ -698,9 +701,9 @@ function buildGuardedUpdateEffects(node: TuiWidgetCall, varName: string): string
     const info = PROP_UPDATE_MAP[prop.name];
     if (info) {
       if (info.field) {
-        effects.push(`effect(() => { if (${varName}) { ${varName}.${info.method}({${info.field}: unref(${prop.expression})}); } });`);
+        effects.push(`${EFFECT}(() => { if (${varName}) { ${varName}.${info.method}({${info.field}: ${UNREF}(${prop.expression})}); } });`);
       } else {
-        effects.push(`effect(() => { if (${varName}) { ${varName}.${info.method}(unref(${prop.expression})); } });`);
+        effects.push(`${EFFECT}(() => { if (${varName}) { ${varName}.${info.method}(${UNREF}(${prop.expression})); } });`);
       }
 
       continue;
@@ -710,8 +713,8 @@ function buildGuardedUpdateEffects(node: TuiWidgetCall, varName: string): string
     if (setter) {
       const expr = prop.name === 'visible'
         ? wrapConditionExpr(prop.expression)
-        : `unref(${prop.expression})`;
-      effects.push(`effect(() => { if (${varName}) { ${varName}.${setter}(${expr}); } });`);
+        : `${UNREF}(${prop.expression})`;
+      effects.push(`${EFFECT}(() => { if (${varName}) { ${varName}.${setter}(${expr}); } });`);
     }
   }
 

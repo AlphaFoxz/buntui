@@ -11,6 +11,7 @@
     ],
     "permission": {
         "bash": {
+            "*": "ask",
             "bun *": "allow",
             "bunx *": "allow",
             "gh *": "allow",
@@ -18,8 +19,7 @@
             "zig *": "allow",
             "ls": "allow",
             "ffmpeg *": "allow",
-            "yt-dlp *": "allow",
-            "*": "ask"
+            "yt-dlp *": "allow"
         }
     }
 }

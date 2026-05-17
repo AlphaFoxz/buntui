@@ -28,15 +28,13 @@ export type {
   TuiPercent,
   TuiSizeValue,
   TuiWidgetPercentSpec,
-  LayoutDirection,
-  LayoutAlignment,
-  LayoutDirectionName,
-  LayoutAlignmentName,
-  FontStyleName,
+  TuiLayoutDirectionName,
+  TuiLayoutAlignmentName,
+  TuiFontStyleName,
   TuiFontStyleInput,
 } from './widgets/types';
 export {
-  LayoutDirection as LayoutDirectionValue, LayoutAlignment as LayoutAlignmentValue, FontStyleBit, resolveFontStyle,
+  TuiLayoutDirection, TuiLayoutAlignment, TuiFontStyleBit, resolveFontStyle, resolveBorderStyle,
 } from './widgets/types';
 export {DrawListBuffer} from './draw_list/DrawListBuffer';
 export {createInputWidget, InputWidget} from './widgets/input/InputWidget';

@@ -307,6 +307,11 @@ function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string)
       }
     }
 
+    const isSimpleIdentifier = /^[a-zA-Z_$][\w$]*$/v.test(expression);
+    const assignment = isSimpleIdentifier
+      ? `${expression}.value = ${valueExpr}`
+      : `${expression} = ${valueExpr}`;
+
     return [
       {
         type: 'dynamic',
@@ -322,7 +327,7 @@ function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string)
         binding: {
           type: 'TuiEventBinding',
           event: config.event,
-          handler: `($event) => { ${expression}.value = ${valueExpr} }`,
+          handler: `($event) => { ${assignment} }`,
           modifiers: [],
           loc: dir.loc,
         },

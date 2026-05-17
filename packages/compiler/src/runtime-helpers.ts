@@ -22,6 +22,7 @@ export const RUNTIME_HELPERS = {
   REF: 'ref',
   EFFECT: 'effect',
   COMPUTED: 'computed',
+  UNREF: 'unref',
 } as const;
 
 /**
