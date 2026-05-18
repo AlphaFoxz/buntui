@@ -1,10 +1,25 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {execSync} from 'node:child_process';
 
 const templateDir = path.resolve(import.meta.dir, '..', 'templates', 'basic');
 
-export function scaffold(projectName: string, targetDir: string): void {
+function copyRecursive(srcDir: string, outDir: string, projectName: string): void {
+  const entries = fs.readdirSync(srcDir, {withFileTypes: true});
+  for (const entry of entries) {
+    const srcPath = path.join(srcDir, entry.name);
+    const outPath = path.join(outDir, entry.name);
+    if (entry.isDirectory()) {
+      fs.mkdirSync(outPath, {recursive: true});
+      copyRecursive(srcPath, outPath, projectName);
+    } else {
+      const content = fs.readFileSync(srcPath, 'utf-8');
+      const rendered = content.replaceAll('{{name}}', projectName);
+      fs.writeFileSync(outPath, rendered, 'utf-8');
+    }
+  }
+}
+
+export function scaffoldCopy(projectName: string, targetDir: string): string {
   const outputDir = path.resolve(targetDir, projectName);
 
   if (fs.existsSync(outputDir)) {
@@ -12,14 +27,6 @@ export function scaffold(projectName: string, targetDir: string): void {
   }
 
   fs.mkdirSync(outputDir, {recursive: true});
-
-  const files = fs.readdirSync(templateDir);
-  for (const file of files) {
-    const src = path.join(templateDir, file);
-    const content = fs.readFileSync(src, 'utf-8');
-    const rendered = content.replaceAll('{{name}}', projectName);
-    fs.writeFileSync(path.join(outputDir, file), rendered, 'utf-8');
-  }
-
-  execSync('bun install', {cwd: outputDir, stdio: 'inherit'});
+  copyRecursive(templateDir, outputDir, projectName);
+  return outputDir;
 }

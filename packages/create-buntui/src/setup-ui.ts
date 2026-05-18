@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import process from 'node:process';
+import {execSync} from 'node:child_process';
 import {
   createBox,
   createTextWidget,
@@ -7,7 +8,7 @@ import {
   createButtonWidget,
   type createApp,
 } from '@buntui/core';
-import {scaffold} from './scaffold';
+import {scaffoldCopy} from './scaffold';
 
 type TuiApp = ReturnType<typeof createApp>;
 
@@ -122,12 +123,13 @@ export function setupUI(app: TuiApp, defaultName?: string): void {
 
     status.updateValue(' Creating project...');
     try {
-      scaffold(name, process.cwd());
-      status.updateValue(` Project "${name}" created successfully!`);
+      const projectDir = scaffoldCopy(name, process.cwd());
+      status.updateValue(` Project "${name}" created!`);
       setTimeout(() => {
         app.dispose();
+        execSync('bun install', {cwd: projectDir, stdio: 'inherit'});
         process.exit(0);
-      }, 1500);
+      }, 800);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       status.updateValue(` ${message}`);
