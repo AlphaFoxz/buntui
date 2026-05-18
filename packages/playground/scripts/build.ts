@@ -69,13 +69,6 @@ for (const candidate of dllSearchPaths) {
     const dest = path.resolve(import.meta.dir, '..', 'dist', binaryName);
     fs.copyFileSync(candidate, dest);
     console.log(`Copied: ${binaryName} -> dist/`);
-    if (process.platform === 'win32') {
-      const pdbSrc = candidate.replace(/\.dll$/v, '.pdb');
-      if (fs.existsSync(pdbSrc)) {
-        fs.copyFileSync(pdbSrc, dest.replace(/\.dll$/v, '.pdb'));
-      }
-    }
-
     break;
   }
 }

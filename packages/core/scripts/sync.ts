@@ -1,7 +1,7 @@
 import {cp} from 'node:fs/promises';
+import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import fs from 'node:fs';
 import {suffix} from 'bun:ffi';
 
 const appName = 'buntui';
@@ -17,17 +17,6 @@ const tasks: Array<{from: string; to: string}> = [
     to: path.join(rootDir, 'core', 'src', 'utils', binaryName),
   },
 ];
-
-if (process.platform === 'win32') {
-  const pdbName = `${appName}.pdb`;
-  const pdbSource = path.join(rootDir, 'native-platforms', platformKey, pdbName);
-  if (fs.existsSync(pdbSource)) {
-    tasks.push({
-      from: pdbSource,
-      to: path.join(rootDir, 'core', 'src', 'utils', pdbName),
-    });
-  }
-}
 
 const queue: Array<Promise<void>> = [];
 for (const task of tasks) {

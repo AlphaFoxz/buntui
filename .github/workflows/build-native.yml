@@ -56,9 +56,6 @@ jobs:
                   dest="../native-platforms/${{ matrix.platform-key }}"
                   mkdir -p "$dest"
                   cp "zig-out/${{ matrix.lib-dir }}/${{ matrix.lib-prefix }}buntui.${{ matrix.binary-ext }}" "$dest/buntui.${{ matrix.binary-ext }}"
-                  if [ -f "zig-out/bin/buntui.pdb" ]; then
-                    cp zig-out/bin/buntui.pdb "$dest/buntui.pdb"
-                  fi
 
             - uses: actions/upload-artifact@v4
               with:
