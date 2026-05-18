@@ -100,12 +100,25 @@ jobs:
 
             - run: bun run scripts/resolve-workspace.ts
 
-            - name: Download native artifacts
-              uses: actions/download-artifact@v4
+            - uses: actions/download-artifact@v4
               with:
-                  path: packages/native-platforms
-                  pattern: native-*
-                  merge-multiple: true
+                  name: native-win32-x64
+                  path: packages/native-platforms/win32-x64
+
+            - uses: actions/download-artifact@v4
+              with:
+                  name: native-linux-x64
+                  path: packages/native-platforms/linux-x64
+
+            - uses: actions/download-artifact@v4
+              with:
+                  name: native-darwin-x64
+                  path: packages/native-platforms/darwin-x64
+
+            - uses: actions/download-artifact@v4
+              with:
+                  name: native-darwin-arm64
+                  path: packages/native-platforms/darwin-arm64
 
             - name: Verify native binaries
               run: |
