@@ -2,6 +2,8 @@ name: Publish to npm
 
 on:
     push:
+        branches:
+            - main
         tags:
             - 'v*'
     workflow_dispatch:
@@ -20,7 +22,13 @@ jobs:
 
             - run: bun install
 
-            - run: bun run build
+            - name: Build packages (skip native — binaries are pre-built)
+              run: |
+                  for pkg in core extensions buntui compiler; do
+                    echo "::group::Building $pkg"
+                    bun run --cwd "packages/$pkg" build
+                    echo "::endgroup::"
+                  done
 
             - run: bun run scripts/resolve-workspace.ts
 

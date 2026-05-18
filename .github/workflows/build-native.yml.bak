@@ -2,7 +2,8 @@ name: Build Native Library
 
 on:
     push:
-        branches: []
+        branches:
+            - main
         paths:
             - 'packages/native/src/**'
             - 'packages/native/build.zig'
