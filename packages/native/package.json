@@ -1,11 +1,21 @@
 {
     "name": "@buntui/native",
-    "version": "0.0.0-alpha.0",
+    "version": "0.0.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AlphaFoxz/buntui.git",
+        "directory": "packages/native"
+    },
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
     "exports": {
-        ".": "./src/index.ts"
+        ".": {
+            "types": "./src/index.ts",
+            "default": "./src/index.ts"
+        }
     },
     "files": [
-        "src/index.ts"
+        "src/"
     ],
     "optionalDependencies": {
         "@buntui/native-win32-x64": "workspace:*",
@@ -16,6 +26,5 @@
     "scripts": {
         "build": "zig build && bun run ./scripts/copy-binary.ts",
         "zig-test": "zig test src/tests.zig -lc"
-    },
-    "dependencies": {}
+    }
 }

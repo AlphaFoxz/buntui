@@ -1,6 +1,11 @@
 {
     "name": "@buntui/extensions",
-    "version": "0.0.0-alpha.0",
+    "version": "0.0.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AlphaFoxz/buntui.git",
+        "directory": "packages/extensions"
+    },
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "exports": {
@@ -29,6 +34,9 @@
             "default": "./dist/logger.js"
         }
     },
+    "files": [
+        "dist/"
+    ],
     "sideEffects": false,
     "scripts": {
         "build": "tsc --project ./tsconfig.json"
@@ -37,9 +45,6 @@
         "@buntui/core": "workspace:*"
     },
     "devDependencies": {
-        "@types/bun": "^1.3.13"
-    },
-    "peerDependencies": {
-        "typescript": "^6.0.3"
+        "@types/bun": "^1.3.14"
     }
 }

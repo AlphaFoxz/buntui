@@ -1,21 +1,33 @@
 {
     "name": "@buntui/core",
-    "version": "0.0.0-alpha.0",
-    "main": "dist/index.bun.mjs",
+    "version": "0.0.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AlphaFoxz/buntui.git",
+        "directory": "packages/core"
+    },
+    "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist/"
+    ],
+    "sideEffects": false,
     "scripts": {
         "test": "bun test",
-        "build": "bun build --target=bun --production ./src/index.ts --outfile ./dist/index.bun.mjs && tsc --project ./tsconfig.json",
+        "build": "tsc --project ./tsconfig.json",
         "sync": "bun run ./scripts/sync.ts"
     },
     "dependencies": {
         "@buntui/native": "workspace:*"
     },
     "devDependencies": {
-        "@types/bun": "^1.3.13",
+        "@types/bun": "^1.3.14",
         "string-width": "^8.2.1"
-    },
-    "peerDependencies": {
-        "typescript": "^6.0.3"
     }
 }

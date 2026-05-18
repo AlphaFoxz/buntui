@@ -1,0 +1,117 @@
+name: Publish to npm
+
+on:
+    push:
+        tags:
+            - 'v*'
+    workflow_dispatch:
+
+permissions:
+    id-token: write
+    contents: read
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: oven-sh/setup-bun@v2
+
+            - run: bun install
+
+            - run: bun run build
+
+            - run: bun run scripts/resolve-workspace.ts
+
+            - uses: actions/setup-node@v6
+              with:
+                  node-version: '22'
+                  registry-url: 'https://registry.npmjs.org'
+                  package-manager-cache: false
+
+            - run: npm install -g npm@latest
+
+            - name: Determine npm dist-tag
+              id: dist-tag
+              run: |
+                  if echo "$GITHUB_REF_NAME" | grep -qiE '(alpha|beta|rc)'; then
+                    TAG=$(echo "$GITHUB_REF_NAME" | grep -oEi '(alpha|beta|rc)' | head -1 | tr '[:upper:]' '[:lower:]')
+                    echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "tag=latest" >> "$GITHUB_OUTPUT"
+                  fi
+
+            - name: Verify build artifacts
+              run: |
+                  for pkg in packages/core packages/extensions packages/compiler packages/buntui; do
+                    if [ ! -f "$pkg/dist/index.js" ] && [ ! -f "$pkg/dist/index.d.ts" ]; then
+                      echo "ERROR: Missing build output in $pkg/dist/"
+                      exit 1
+                    fi
+                  done
+
+            - name: Publish @buntui/native-win32-x64
+              run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
+              working-directory: packages/native-platforms/win32-x64
+              continue-on-error: true
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Publish @buntui/native-linux-x64
+              run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
+              working-directory: packages/native-platforms/linux-x64
+              continue-on-error: true
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Publish @buntui/native-darwin-x64
+              run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
+              working-directory: packages/native-platforms/darwin-x64
+              continue-on-error: true
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Publish @buntui/native-darwin-arm64
+              run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
+              working-directory: packages/native-platforms/darwin-arm64
+              continue-on-error: true
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Publish @buntui/native
+              run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
+              working-directory: packages/native
+              continue-on-error: true
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Publish @buntui/core
+              run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
+              working-directory: packages/core
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Publish @buntui/extensions
+              run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
+              working-directory: packages/extensions
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Publish @buntui/compiler
+              run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
+              working-directory: packages/compiler
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Publish buntui
+              run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
+              working-directory: packages/buntui
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Publish create-buntui
+              run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
+              working-directory: packages/create-buntui
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

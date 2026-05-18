@@ -1,6 +1,11 @@
 {
     "name": "@buntui/native-win32-x64",
-    "version": "0.0.0-alpha.0",
+    "version": "0.0.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AlphaFoxz/buntui.git",
+        "directory": "packages/native-platforms/win32-x64"
+    },
     "os": [
         "win32"
     ],
