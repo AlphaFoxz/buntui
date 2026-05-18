@@ -3,7 +3,7 @@
     "private": true,
     "version": "0.1.0-alpha.1",
     "scripts": {
-        "dev": "bun --preload ./src/vue-plugin.ts src/dev.ts",
+        "dev": "bun --preload @buntui/compiler/vue-plugin src/dev.ts",
         "build": "bun run ./scripts/build.ts --name=main.bunjs"
     },
     "dependencies": {

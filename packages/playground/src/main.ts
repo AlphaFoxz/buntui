@@ -1,15 +1,15 @@
 import {createApp} from '@buntui/core';
-import Demo from './Demo.vue';
-// Import Demo from './VideoPlayer.vue';
+import App from './App.vue';
+// Import App from './VideoPlayer.vue';
 
-export const ENTRY = 'Demo.vue';
+export const ENTRY = 'App.vue';
 // Export const ENTRY = 'VideoPlayer.vue';
 
 export function run() {
   const app = createApp({
     logLevel: 'debug', clearLog: true, debugMode: true, tickRate: 120, renderRate: 60,
   });
-  const scene = app.createScene(Demo, {bgHexRgb: 0x00_00_00, visible: true});
+  const scene = app.createScene(App, {bgHexRgb: 0x00_00_00, visible: true});
   // App.switchScene(scene);
   app.start();
   // Scene.setVisible(false);

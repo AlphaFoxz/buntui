@@ -1,6 +1,3 @@
-type TuiSizeValue = number | `${number}%`;
-type TuiColor = number | string;
-
 type TuiPointerEvent = {
   readonly x: number;
   readonly y: number;

@@ -8,6 +8,7 @@ import {
   BUFFER_VERSION,
   BorderSides,
   CursorMode,
+  resolveCursorMode,
 } from '../types';
 
 function createBuffer(): DrawListBuffer {
@@ -297,6 +298,40 @@ describe('terminal control', () => {
     const offset = BUFFER_HEADER_SIZE + CMD_HEADER_SIZE;
     const view = new DataView(buf.buffer);
     expect(view.getUint8(offset)).toBe(CursorMode.BlinkingIBeam);
+  });
+});
+
+describe('buffer overflow', () => {
+  it('drawText throws when buffer cannot fit payload', () => {
+    const buf = new DrawListBuffer(BUFFER_HEADER_SIZE + CMD_HEADER_SIZE + 4);
+    buf.reset();
+    expect(() => buf.drawText({x: 0, y: 0, text: 'Hello', fgRgba: 0, bgRgba: 0})).toThrow(/overflow/);
+  });
+
+  it('setTitle throws when buffer cannot fit payload', () => {
+    const buf = new DrawListBuffer(BUFFER_HEADER_SIZE + CMD_HEADER_SIZE + 1);
+    buf.reset();
+    expect(() => buf.setTitle('Title')).toThrow(/overflow/);
+  });
+});
+
+describe('resolveCursorMode', () => {
+  it('resolves string names to enum values', () => {
+    expect(resolveCursorMode('blinking-block')).toBe(1);
+    expect(resolveCursorMode('block')).toBe(2);
+    expect(resolveCursorMode('blinking-underscore')).toBe(3);
+    expect(resolveCursorMode('underscore')).toBe(4);
+    expect(resolveCursorMode('blinking-ibeam')).toBe(5);
+    expect(resolveCursorMode('ibeam')).toBe(6);
+  });
+
+  it('passes through numeric values', () => {
+    expect(resolveCursorMode(3)).toBe(3);
+    expect(resolveCursorMode(6)).toBe(6);
+  });
+
+  it('defaults unknown string to 1', () => {
+    expect(resolveCursorMode('unknown' as any)).toBe(1);
   });
 });
 

@@ -2,12 +2,13 @@
     "name": "{{name}}",
     "version": "0.0.1",
     "scripts": {
-        "dev": "bun --preload ./src/vue-plugin.ts src/dev.ts",
+        "dev": "bun --preload @buntui/compiler/vue-plugin src/dev.ts",
         "build": "bun run ./scripts/build.ts"
     },
     "dependencies": {
-        "@buntui/core": "^0.1.0-alpha.1",
-        "@buntui/compiler": "^0.1.0-alpha.1",
+        "@buntui/core": "alpha",
+        "@buntui/compiler": "alpha",
+        "@buntui/native": "alpha",
         "@vue/reactivity": "^3.5.34"
     },
     "devDependencies": {

@@ -21,6 +21,8 @@
 import { onTick } from '@buntui/core'
 import { ref } from '@vue/reactivity'
 
+import HelloWidget from './components/HelloWidget.vue'
+
 const title = '{{name}}'
 const clock = ref('')
 

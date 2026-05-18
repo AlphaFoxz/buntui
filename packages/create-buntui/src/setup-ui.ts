@@ -13,8 +13,11 @@ import {scaffoldCopy} from './scaffold';
 type TuiApp = ReturnType<typeof createApp>;
 
 const ACCENT = 'rgb(122, 162, 247)';
+const ACCENT_HOVER = 'rgb(157, 122, 247)';
+const ACCENT_PRESSED = 'rgb(91, 110, 181)';
 const BG = 'rgb(26, 27, 38)';
 const SURFACE = 'rgb(36, 40, 59)';
+const SURFACE_HOVER = 'rgb(59, 66, 91)';
 const TEXT = 'rgb(192, 202, 229)';
 const TEXT_DIM = 'rgb(86, 95, 137)';
 
@@ -25,106 +28,127 @@ export function setupUI(app: TuiApp, defaultName?: string): void {
     },
   }, {bgHexRgb: BG, visible: true});
 
-  // Title bar
-  scene.mount(createTextWidget({
-    x: 0,
-    y: 0,
-    width: '100%',
-    height: 1,
-    value: ' Create Buntui App',
-    colorFg: ACCENT,
-    colorBg: BG,
-  }));
-
-  // Container box
-  const box = createBox({
+  const card = createBox({
     x: '25%',
-    y: '20%',
+    y: 3,
     width: '50%',
-    height: 12,
+    height: 16,
     colorBg: SURFACE,
     borderColor: ACCENT,
-    borderStyle: 'solid',
+    borderStyle: 'rounded',
+    paddingTop: 1,
+    paddingBottom: 1,
+    paddingLeft: 2,
+    paddingRight: 2,
+    shadowOffsetX: 2,
+    shadowOffsetY: 1,
+    shadowColor: 'rgb(10, 10, 18)',
   });
+
+  const title = createTextWidget({
+    width: '100%',
+    height: 1,
+    value: 'Create Buntui App',
+    colorFg: ACCENT,
+    colorBg: SURFACE,
+    styleModifier: 'bold',
+  });
+
+  const separator = createTextWidget({
+    width: '100%',
+    height: 1,
+    value: '─'.repeat(40),
+    colorFg: TEXT_DIM,
+    colorBg: SURFACE,
+    overflow: 'clip',
+  });
+
   const input = createInputWidget({
-    x: '0%',
-    y: '22%',
+    width: '100%',
     value: defaultName ?? 'my-buntui-app',
     colorFg: TEXT,
     colorBg: BG,
     borderColorUnfocused: TEXT_DIM,
     borderColorFocused: ACCENT,
     borderStyle: 'solid',
-    placeholder: 'Type something...',
+    placeholder: 'my-buntui-app',
     label: 'Project name',
   });
-  box.addChild(input);
-  scene.mount(box);
 
-  // Create button
+  const btnRow = createBox({
+    width: '100%',
+    height: 3,
+    border: false,
+    direction: 'horizontal',
+    gap: 2,
+    align: 'center',
+  });
+
   const createBtn = createButtonWidget({
-    x: '35%',
-    y: '50%',
     width: 12,
     height: 3,
-    value: ' Create ',
+    value: 'Create',
     colorFgNormal: BG,
     colorBgNormal: ACCENT,
     borderColorNormal: ACCENT,
-    borderStyleNormal: 'solid',
+    borderStyleNormal: 'rounded',
     colorFgFocused: BG,
-    colorBgFocused: 'rgb(157, 122, 247)',
-    borderColorFocused: 'rgb(157, 122, 247)',
-    borderStyleFocused: 'solid',
+    colorBgFocused: ACCENT_HOVER,
+    borderColorFocused: ACCENT_HOVER,
+    borderStyleFocused: 'rounded',
     colorFgPressed: BG,
-    colorBgPressed: 'rgb(91, 110, 181)',
-    borderColorPressed: 'rgb(91, 110, 181)',
-    borderStylePressed: 'solid',
+    colorBgPressed: ACCENT_PRESSED,
+    borderColorPressed: ACCENT_PRESSED,
+    borderStylePressed: 'rounded',
   });
 
-  // Cancel button
   const cancelBtn = createButtonWidget({
-    x: '50%',
-    y: '50%',
     width: 12,
     height: 3,
-    value: ' Cancel ',
+    value: 'Cancel',
     colorFgNormal: TEXT_DIM,
     colorBgNormal: SURFACE,
     borderColorNormal: TEXT_DIM,
-    borderStyleNormal: 'solid',
+    borderStyleNormal: 'rounded',
     colorFgFocused: TEXT,
-    colorBgFocused: 'rgb(59, 66, 91)',
+    colorBgFocused: SURFACE_HOVER,
     borderColorFocused: TEXT,
-    borderStyleFocused: 'solid',
+    borderStyleFocused: 'rounded',
     colorFgPressed: TEXT_DIM,
     colorBgPressed: 'rgb(42, 48, 69)',
     borderColorPressed: 'rgb(42, 48, 69)',
-    borderStylePressed: 'solid',
+    borderStylePressed: 'rounded',
   });
 
-  // Status text
-  const status = createTextWidget({
-    x: '27%',
-    y: '60%',
-    width: '46%',
+  btnRow.addChild(createBtn);
+  btnRow.addChild(cancelBtn);
+
+  const hint = createTextWidget({
+    width: '100%',
     height: 1,
     value: '',
     colorFg: TEXT_DIM,
-    colorBg: BG,
+    colorBg: SURFACE,
   });
+
+  card.addChild(title);
+  card.addChild(separator);
+  card.addChild(input);
+  card.addChild(btnRow);
+  card.addChild(hint);
+  scene.mount(card);
 
   createBtn.on('click', () => {
     const name = input.value.trim();
     if (!name) {
-      status.updateValue(' Please enter a project name');
+      hint.updateValue('Please enter a project name');
       return;
     }
 
-    status.updateValue(' Creating project...');
+    hint.updateValue('Creating project...');
     try {
       const projectDir = scaffoldCopy(name, process.cwd());
-      status.updateValue(` Project "${name}" created!`);
+      hint.updateValue(`Project "${name}" created!`);
       setTimeout(() => {
         app.dispose();
         execSync('bun install', {cwd: projectDir, stdio: 'inherit'});
@@ -132,7 +156,7 @@ export function setupUI(app: TuiApp, defaultName?: string): void {
       }, 800);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      status.updateValue(` ${message}`);
+      hint.updateValue(message);
     }
   });
 
@@ -141,7 +165,7 @@ export function setupUI(app: TuiApp, defaultName?: string): void {
     process.exit(0);
   });
 
-  scene.mount(createBtn);
-  scene.mount(cancelBtn);
-  scene.mount(status);
+  input.on('submit', () => {
+    createBtn.dispatch('click', undefined);
+  });
 }

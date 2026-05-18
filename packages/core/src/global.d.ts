@@ -1,6 +1,30 @@
 import type {DefineComponent} from 'vue';
 
-// ---- Prop Types ----
+type TuiSizeValue = number | `${number}%`;
+type TuiColor = number | string;
+
+type TuiPointerEvent = {
+  readonly x: number;
+  readonly y: number;
+  readonly button: number | undefined;
+  readonly buttons: number | undefined;
+  readonly isRelease: boolean;
+  readonly shiftKey: boolean;
+  readonly ctrlKey: boolean;
+  readonly altKey: boolean;
+  readonly metaKey: boolean;
+};
+
+type TuiWheelEvent = TuiPointerEvent & {
+  readonly wheelDeltaY: number;
+};
+
+type TuiCheckboxChangeEvent = {checked: boolean};
+type TuiSwitchChangeEvent = {checked: boolean};
+type TuiInputEvent = {value: string};
+type TuiSubmitEvent = {value: string};
+type TuiRadioGroupChangeEvent = {value: number; label: string};
+type TuiSelectButtonChangeEvent = {value: unknown; label: string};
 
 type TuiBorderStyle = 'none' | 'solid' | 'double' | 'rounded' | 'bold' | 'dashed' | 'dotted' | 'outsetbold' | 'outsetdouble';
 type TuiLayoutDirection = 'horizontal' | 'vertical';
@@ -237,11 +261,6 @@ type TuiProgressBarProps = {
   colorTextDisabled?: TuiColor;
 };
 
-// ---- Event Types (payload types are global, defined in tui-types.d.ts) ----
-
-// DefineComponent expects emits in function form (ObjectEmitsOptions).
-// See @vue/runtime-core: ObjectEmitsOptions = Record<string, ((...args: any[]) => any) | null>
-
 type TuiBaseEmits = {
   click: (data: TuiPointerEvent) => void;
   mousedown: (data: TuiPointerEvent) => void;
@@ -287,14 +306,10 @@ type TuiSelectButtonEmits = TuiInteractiveEmits & {
   'update:modelValue': (value: string) => void;
 };
 
-// ---- Component Type ----
-// Use Vue's DefineComponent for proper Volar emit resolution.
-// DefineComponent has 17 generic params; we only fill Props and Emits (8th).
 type _Empty = Record<string, never>;
 type TuiComponent<P, E extends Record<string, ((...args: any[]) => any) | null>>
   = DefineComponent<P, _Empty, _Empty, _Empty, _Empty, _Empty, _Empty, E>;
 
-// ---- Global Component Registration (for Volar) ----
 declare module 'vue' {
   export type GlobalComponents = {
     Box: TuiComponent<TuiBoxProps, TuiBaseEmits>;

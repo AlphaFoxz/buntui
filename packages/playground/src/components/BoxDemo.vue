@@ -209,7 +209,6 @@
 </template>
 
 <script setup lang="ts">
-import { onTick } from '@buntui/core'
 import { ref } from '@vue/reactivity'
 
 const timeCount = ref(0)

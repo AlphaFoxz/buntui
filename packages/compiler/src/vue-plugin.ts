@@ -1,5 +1,6 @@
-import {compile, CORE_REGISTRY} from '@buntui/compiler';
 import {type BunPlugin, type PluginBuilder} from 'bun';
+import {compile} from './compile';
+import {CORE_REGISTRY} from './runtime-helpers';
 
 function buntuiVuePlugin(): BunPlugin {
   return {

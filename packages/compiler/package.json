@@ -12,6 +12,10 @@
         ".": {
             "types": "./dist/index.d.ts",
             "default": "./dist/index.js"
+        },
+        "./vue-plugin": {
+            "types": "./dist/vue-plugin.d.ts",
+            "default": "./dist/vue-plugin.js"
         }
     },
     "files": [

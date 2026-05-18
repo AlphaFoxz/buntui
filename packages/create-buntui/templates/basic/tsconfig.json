@@ -22,6 +22,7 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.vue"
+    "src/**/*.vue",
+    "node_modules/@buntui/core/dist/global.d.ts"
   ]
 }

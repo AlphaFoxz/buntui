@@ -2,6 +2,7 @@ import process from 'node:process';
 import path from 'node:path';
 import fs from 'node:fs';
 import {compile, CORE_REGISTRY} from '@buntui/compiler';
+import {getBinaryPath} from '@buntui/native';
 
 const result = await Bun.build({
   entrypoints: ['src/main.ts'],
@@ -49,7 +50,9 @@ function getBinaryExt(): string {
 const binaryName = `buntui.${getBinaryExt()}`;
 const libPrefix = process.platform === 'win32' ? '' : 'lib';
 const distName = `${libPrefix}${binaryName}`;
+const nativePath = getBinaryPath();
 const dllSearchPaths = [
+  ...(nativePath ? [nativePath] : []),
   path.resolve(import.meta.dir, '..', 'node_modules', '@buntui', 'core', binaryName),
   path.resolve(import.meta.dir, '..', binaryName),
 ];

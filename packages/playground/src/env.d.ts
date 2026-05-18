@@ -1,12 +1,3 @@
-// Global TUI type declarations — no import/export so these are available everywhere.
-
-// ---- Shared Value Types ----
-// Matches core/src/widgets/types.ts and core/src/utils/color.ts
-type TuiSizeValue = number | `${number}%`;
-type TuiColor = number | string;
-
-// ---- Event Payload Types ----
-
 type TuiPointerEvent = {
   readonly x: number;
   readonly y: number;

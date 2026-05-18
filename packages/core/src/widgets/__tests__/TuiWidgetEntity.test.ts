@@ -320,6 +320,132 @@ describe('renderChildren', () => {
   });
 });
 
+describe('resolveLayout', () => {
+  it('resolves percent spec to absolute values', () => {
+    class LayoutWidget extends TestWidget {
+      override initRect = super.initRect;
+    }
+
+    const widget = new LayoutWidget();
+    const rect = widget.initRect('50%', '25%', '100%', '10%');
+    widget.setPercentSpec({x: '50%', y: '25%', width: '100%', height: '10%'});
+    expect(widget.hasPercentLayout).toBe(true);
+    widget.resolveLayout(200, 40);
+    expect(widget.rect.x).toBe(100);
+    expect(widget.rect.y).toBe(10);
+    expect(widget.rect.width).toBe(200);
+    expect(widget.rect.height).toBe(4);
+  });
+
+  it('does nothing when no percent spec is set', () => {
+    const widget = createWidget();
+    widget.resolveLayout(200, 40);
+    expect(widget.rect).toEqual({x: 0, y: 0, width: 10, height: 5});
+  });
+});
+
+describe('initRect', () => {
+  it('returns defaults for undefined values', () => {
+    class InitWidget extends TestWidget {
+      callInitRect = this.initRect.bind(this);
+    }
+
+    const widget = new InitWidget();
+    const rect = widget.callInitRect();
+    expect(rect).toEqual({x: 0, y: 0, width: 0, height: 0});
+  });
+
+  it('uses provided defaults for undefined values', () => {
+    class InitWidget extends TestWidget {
+      callInitRect = this.initRect.bind(this);
+    }
+
+    const widget = new InitWidget();
+    const rect = widget.callInitRect(undefined, undefined, undefined, undefined, {x: 1, width: 20});
+    expect(rect).toEqual({x: 1, y: 0, width: 20, height: 0});
+  });
+
+  it('returns 0 for percent values (resolved later)', () => {
+    class InitWidget extends TestWidget {
+      callInitRect = this.initRect.bind(this);
+    }
+
+    const widget = new InitWidget();
+    const rect = widget.callInitRect('50%', '25%', '100%', '10%');
+    expect(rect).toEqual({x: 0, y: 0, width: 0, height: 0});
+    expect(widget.hasPercentLayout).toBe(true);
+  });
+
+  it('uses absolute values directly', () => {
+    class InitWidget extends TestWidget {
+      callInitRect = this.initRect.bind(this);
+    }
+
+    const widget = new InitWidget();
+    const rect = widget.callInitRect(5, 10, 30, 20);
+    expect(rect).toEqual({x: 5, y: 10, width: 30, height: 20});
+    expect(widget.hasPercentLayout).toBe(false);
+  });
+});
+
+describe('closest', () => {
+  it('returns self if predicate matches', () => {
+    const widget = createWidget();
+    expect(widget.closest(w => w === widget)).toBe(widget);
+  });
+
+  it('walks up to parent', () => {
+    const parent = createWidget();
+    const child = createWidget();
+    parent.addChild(child);
+    expect(child.closest(w => w === parent)).toBe(parent);
+  });
+
+  it('returns undefined when no ancestor matches', () => {
+    const parent = createWidget();
+    const child = createWidget();
+    parent.addChild(child);
+    expect(child.closest(() => false)).toBeUndefined();
+  });
+});
+
+describe('parent / children', () => {
+  it('parent is null by default', () => {
+    expect(createWidget().parent).toBeNull();
+  });
+
+  it('children is empty by default', () => {
+    expect(createWidget().children).toEqual([]);
+  });
+
+  it('addChild sets parent and adds to children', () => {
+    const parent = createWidget();
+    const child = createWidget();
+    parent.addChild(child);
+    expect(parent.children).toContain(child);
+    expect(child.parent).toBe(parent);
+  });
+
+  it('removeChild clears parent and removes from children', () => {
+    const parent = createWidget();
+    const child = createWidget();
+    parent.addChild(child);
+    parent.removeChild(child);
+    expect(parent.children).not.toContain(child);
+    expect(child.parent).toBeNull();
+  });
+});
+
+describe('dispatchKeyEvent', () => {
+  it('dispatches key event', () => {
+    const widget = createWidget();
+    let received = false;
+    widget.on('key', () => { received = true; });
+    widget.dispatchKeyEvent({key: 'Enter'} as any);
+    expect(received).toBe(true);
+  });
+});
+
 describe('update', () => {
   it('default implementation does not throw', () => {
     const widget = new (class extends TuiWidgetEntity {
