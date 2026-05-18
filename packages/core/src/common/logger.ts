@@ -83,7 +83,7 @@ class LoggerImpl {
       fs.mkdirSync(this.#logFileDir);
     }
 
-    if (!fs.existsSync(this.#logFile) && clearLog) {
+    if (clearLog) {
       fs.writeFileSync(this.#logFile, '');
     }
 
@@ -121,6 +121,12 @@ class LoggerImpl {
       clearImmediate(this.#immediateId);
       this.#immediateId = undefined;
     }
+
+    for (const task of this.#taskQueue) {
+      void task();
+    }
+
+    this.#taskQueue.length = 0;
   }
 
   logDebug(content: string) {

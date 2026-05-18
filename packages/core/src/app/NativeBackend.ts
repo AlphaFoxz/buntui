@@ -4,6 +4,7 @@ import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import type {CStruct} from '../extern/types';
 import type {LogLevel} from '../extern/app/types';
 import TuiDataView from '../extern/TuiDataViewWrapper';
+import {LOGGER} from '../common/logger';
 import {
   TuiEventType, KeyboardEvent, MouseEvent, WheelEvent, TermResizeEvent,
   type TuiEvent,
@@ -111,14 +112,14 @@ export class NativeBackend implements TuiBackend {
 
           const SCHEMA_CLASS = schemaRegistry.get(eventType);
           if (!SCHEMA_CLASS) {
-            console.warn(`Unknown event type: ${eventType}`);
+            LOGGER.logWarning(`Unknown event type: ${eventType}`);
             throw new Error(`Unknown event type: ${eventType}`);
           }
 
           const event = new SCHEMA_CLASS(payloadBuf);
           handler(eventType, event);
         } catch (error) {
-          console.error('Event parse error:', error);
+          LOGGER.logError(`Event parse error: ${formatError(error)}`);
         } finally {
           lib.event_bus_commit();
         }
@@ -133,4 +134,12 @@ export class NativeBackend implements TuiBackend {
   stopEvents(): void {
     this.#eventRunning = false;
   }
+}
+
+function formatError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.stack ?? error.message;
+  }
+
+  return String(error);
 }

@@ -207,6 +207,10 @@ export abstract class TuiWidgetEntity implements Mountable {
     return undefined;
   }
 
+  update(_dt: number): void {
+    void _dt;
+  }
+
   abstract emitDrawCommands(buf: DrawListBuffer): void;
 
   protected initRect(

@@ -21,7 +21,7 @@ class MockBackend implements TuiBackend {
 }
 
 function createMockScene(visible: boolean, emitDrawCommands?: (buf: DrawListBuffer) => void): TuiScene {
-  return {visible, emitDrawCommands: emitDrawCommands ?? (() => {})} as unknown as TuiScene;
+  return {visible, update: () => {}, emitDrawCommands: emitDrawCommands ?? (() => {})} as unknown as TuiScene;
 }
 
 describe('RenderLoop', () => {
@@ -96,6 +96,59 @@ describe('RenderLoop', () => {
       await new Promise(resolve => setTimeout(resolve, 50));
 
       expect(backend.renderCalls).toHaveLength(0);
+    });
+  });
+
+  describe('tick rate', () => {
+    it('calls scene.update with fixed timestep', async () => {
+      const backend = new MockBackend();
+      const updateDts: number[] = [];
+      const scene = createMockScene(true);
+      scene.update = (dt: number) => { updateDts.push(dt); };
+      renderLoop = new RenderLoop(() => scene, backend, {tickRate: 60, renderRate: 1000});
+      renderLoop.start();
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+      renderLoop.stop();
+
+      expect(updateDts.length).toBeGreaterThan(0);
+      for (const dt of updateDts) {
+        expect(dt).toBeCloseTo(1000 / 60, 0);
+      }
+    });
+
+    it('respects custom tickRate', async () => {
+      const backend = new MockBackend();
+      const updateDts: number[] = [];
+      const scene = createMockScene(true);
+      scene.update = (dt: number) => { updateDts.push(dt); };
+      renderLoop = new RenderLoop(() => scene, backend, {tickRate: 10, renderRate: 1000});
+      renderLoop.start();
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+      renderLoop.stop();
+
+      for (const dt of updateDts) {
+        expect(dt).toBeCloseTo(100, 0);
+      }
+    });
+  });
+
+  describe('render rate', () => {
+    it('renders fewer frames with low renderRate', async () => {
+      const backendHigh = new MockBackend();
+      const loopHigh = new RenderLoop(() => createMockScene(true), backendHigh, {renderRate: 60, tickRate: 10});
+      loopHigh.start();
+      await new Promise(resolve => setTimeout(resolve, 200));
+      loopHigh.stop();
+
+      const backendLow = new MockBackend();
+      const loopLow = new RenderLoop(() => createMockScene(true), backendLow, {renderRate: 5, tickRate: 10});
+      loopLow.start();
+      await new Promise(resolve => setTimeout(resolve, 200));
+      loopLow.stop();
+
+      expect(backendLow.renderCalls.length).toBeLessThan(backendHigh.renderCalls.length);
     });
   });
 });

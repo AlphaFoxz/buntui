@@ -319,3 +319,25 @@ describe('renderChildren', () => {
     expect(child.emitCommandsCalled).toBe(false);
   });
 });
+
+describe('update', () => {
+  it('default implementation does not throw', () => {
+    const widget = new (class extends TuiWidgetEntity {
+      override emitDrawCommands() {}
+    })();
+    expect(() => widget.update(16)).not.toThrow();
+  });
+
+  it('subclass can override to receive dt', () => {
+    const received: number[] = [];
+    const widget = new (class extends TuiWidgetEntity {
+      override emitDrawCommands() {}
+      override update(dt: number): void {
+        received.push(dt);
+      }
+    })();
+    widget.update(16);
+    widget.update(33);
+    expect(received).toEqual([16, 33]);
+  });
+});

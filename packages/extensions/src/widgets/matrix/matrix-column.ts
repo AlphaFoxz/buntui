@@ -7,6 +7,8 @@ export type MatrixColumnState = {
   active: boolean;
   cooldown: number;
   chars: number[];
+  accumulator: number;
+  tickInterval: number;
 };
 
 export type MatrixColumnConfig = {
@@ -15,6 +17,7 @@ export type MatrixColumnConfig = {
   minTrail: number;
   maxTrail: number;
   charset: number[];
+  tickIntervalRange: {min: number; max: number};
 };
 
 function randomInt(min: number, max: number): number {
@@ -26,9 +29,10 @@ function randomChar(charset: number[]): number {
 }
 
 export function createColumn(config: MatrixColumnConfig): MatrixColumnState {
-  const {maxTrail, speedRange, minTrail, charset} = config;
+  const {maxTrail, speedRange, minTrail, charset, tickIntervalRange} = config;
   const speed = randomInt(speedRange.min, speedRange.max);
   const trailLength = randomInt(minTrail, maxTrail);
+  const tickInterval = randomInt(tickIntervalRange.min, tickIntervalRange.max);
   return {
     headY: randomInt(-maxTrail, 0),
     trailLength,
@@ -36,10 +40,12 @@ export function createColumn(config: MatrixColumnConfig): MatrixColumnState {
     active: true,
     cooldown: 0,
     chars: Array.from({length: trailLength}, () => randomChar(charset)),
+    accumulator: randomInt(0, tickInterval),
+    tickInterval,
   };
 }
 
-export function tickColumn(col: MatrixColumnState, density: number, config: MatrixColumnConfig): void {
+export function tickColumn(col: MatrixColumnState, dt: number, density: number, config: MatrixColumnConfig): void {
   const {charset} = config;
   if (!col.active) {
     col.cooldown--;
@@ -51,6 +57,8 @@ export function tickColumn(col: MatrixColumnState, density: number, config: Matr
         col.speed = restarted.speed;
         col.active = true;
         col.chars = restarted.chars;
+        col.accumulator = restarted.accumulator;
+        col.tickInterval = restarted.tickInterval;
       } else {
         col.cooldown = randomInt(1, 10);
       }
@@ -58,6 +66,13 @@ export function tickColumn(col: MatrixColumnState, density: number, config: Matr
 
     return;
   }
+
+  col.accumulator += dt;
+  if (col.accumulator < col.tickInterval) {
+    return;
+  }
+
+  col.accumulator -= col.tickInterval;
 
   for (let i = 0; i < col.speed; i++) {
     col.chars.unshift(randomChar(charset));

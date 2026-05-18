@@ -166,8 +166,13 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
     imports.push(`import {${EFFECT}, ${UNREF}} from '${react}';`);
   }
 
+  // Import runSetup for component lifecycle scoping
+  if (hasComponentCalls(root)) {
+    imports.push(`import { runSetup as __runSetup } from '${core}';`);
+  }
+
   // Generate setup function
-  lines.push('', 'export function setup(scene) {');
+  lines.push('', 'export function setup(__scene) {');
 
   // Embed script body inside setup() so side effects (setInterval, etc.)
   // are scoped to the setup call, not module-level
@@ -204,7 +209,7 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
     const child = root.children[childIndex]!;
     if (child.type === 'TuiWidgetCall' && !child.isComponent) {
       const varName = getWidgetVarName(child, childStartIndices[childIndex]!);
-      lines.push(`  scene.mount(${varName});`);
+      lines.push(`  __scene.mount(${varName});`);
       mountedWidgetVars.push(varName);
     }
   }
@@ -213,7 +218,7 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
   lines.push(...deferredLines);
 
   // Return cleanup function so parent v-if can unmount this component's widgets
-  const cleanupLines = mountedWidgetVars.map(v => `    scene.unmount(${v});`);
+  const cleanupLines = mountedWidgetVars.map(v => `    __scene.unmount(${v});`);
   lines.push('  return () => {', ...cleanupLines, '  };', '}', '', 'export default { setup };');
 
   const body = lines.join('\n');
@@ -255,8 +260,8 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
     const lines = [
       `const ${varName}_w = [];`,
       `const ${varName} = ${node.creator}.setup({`,
-      `  mount(w) { scene.mount(w); ${varName}_w.push(w); },`,
-      `  unmount(w) { scene.unmount(w); const i = ${varName}_w.indexOf(w); if (i >= 0) ${varName}_w.splice(i, 1); }`,
+      `  mount(w) { __scene.mount(w); ${varName}_w.push(w); },`,
+      `  unmount(w) { __scene.unmount(w); const i = ${varName}_w.indexOf(w); if (i >= 0) ${varName}_w.splice(i, 1); }`,
       '});',
       `effect(() => { const _v = ${wrapConditionExpr(showProp.expression)}; for (const w of ${varName}_w) { w.setVisible(_v); } });`,
     ];
@@ -266,7 +271,7 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
   // Component call: ImportName.setup(scene)
   if (node.isComponent) {
     return {
-      lines: [`${node.creator}.setup(scene);`],
+      lines: [`${node.creator}.setup(__scene);`],
       nextIndex: index + 1,
     };
   }
@@ -579,7 +584,7 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
       if (tree.root.isComponent) {
         effectLines.push('    }');
       } else {
-        effectLines.push(`      scene.mount(${tree.root.varName});`, '    }');
+        effectLines.push(`      __scene.mount(${tree.root.varName});`, '    }');
       }
     }
 
@@ -600,7 +605,7 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
         } else {
           effectLines.push(
             `    if (${tree.root.varName}) {`,
-            `      scene.unmount(${tree.root.varName});`,
+            `      __scene.unmount(${tree.root.varName});`,
             `      ${tree.root.varName} = null;`,
           );
         }
@@ -631,7 +636,7 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
         } else {
           effectLines.push(
             `    if (${tree.root.varName}) {`,
-            `      scene.unmount(${tree.root.varName});`,
+            `      __scene.unmount(${tree.root.varName});`,
             `      ${tree.root.varName} = null;`,
           );
         }
@@ -669,7 +674,7 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
 
 function buildWidgetCreation(node: TuiWidgetCall): string {
   if (node.isComponent) {
-    return `${node.creator}.setup(scene)`;
+    return `__runSetup(__scene, () => ${node.creator}.setup(__scene))`;
   }
 
   const props: string[] = [];
@@ -798,6 +803,38 @@ function hasDynamicBindings(root: TuiRenderRoot): boolean {
         node.dynamicProps.length > 0
         || node.children.some(n => checkNode(n))
       );
+    }
+
+    if (node.type === 'TuiConditionalBlock') {
+      if (node.consequent.some(n => checkNode(n))) {
+        return true;
+      }
+
+      if (node.alternate) {
+        if (Array.isArray(node.alternate)) {
+          return node.alternate.some(n => checkNode(n));
+        }
+
+        return checkNode(node.alternate);
+      }
+
+      return false;
+    }
+
+    if (node.type === 'TuiListBlock') {
+      return node.body.some(n => checkNode(n));
+    }
+
+    return false;
+  }
+
+  return root.children.some(n => checkNode(n));
+}
+
+function hasComponentCalls(root: TuiRenderRoot): boolean {
+  function checkNode(node: TuiRenderNode): boolean {
+    if (node.type === 'TuiWidgetCall') {
+      return Boolean(node.isComponent) || node.children.some(n => checkNode(n));
     }
 
     if (node.type === 'TuiConditionalBlock') {

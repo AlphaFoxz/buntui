@@ -6,8 +6,8 @@ describe('compile', () => {
     it('compiles minimal template with single widget', () => {
       const result = compile('<template><Box x="1" y="2"/></template>');
       expect(result.code).toContain('createBox');
-      expect(result.code).toContain('scene.mount');
-      expect(result.code).toContain('export function setup(scene)');
+      expect(result.code).toContain('__scene.mount');
+      expect(result.code).toContain('export function setup(__scene)');
       expect(result.code).toContain('export default { setup };');
       expect(result.imports.length).toBeGreaterThan(0);
       expect(result.imports.some(i => i.includes('createBox'))).toBe(true);
@@ -55,7 +55,7 @@ describe('compile', () => {
         '<template><MyWidget/></template>'
         + '<script setup>import MyWidget from "./MyWidget.vue";</script>',
       );
-      expect(result.code).toContain('MyWidget.setup(scene)');
+      expect(result.code).toContain('MyWidget.setup(__scene)');
     });
 
     it('ignores non-.vue imports as components', () => {
@@ -252,7 +252,7 @@ describe('compile', () => {
   describe('edge cases: empty template', () => {
     it('compiles empty template without error', () => {
       const result = compile('<template></template>');
-      expect(result.code).toContain('export function setup(scene)');
+      expect(result.code).toContain('export function setup(__scene)');
       expect(result.code).not.toContain('scene.mount');
     });
   });
@@ -342,8 +342,8 @@ describe('compile', () => {
         + 'import CompB from "./CompB.vue";\n'
         + '</script>',
       );
-      expect(result.code).toContain('CompA.setup(scene)');
-      expect(result.code).toContain('CompB.setup(scene)');
+      expect(result.code).toContain('CompA.setup(__scene)');
+      expect(result.code).toContain('CompB.setup(__scene)');
     });
   });
 

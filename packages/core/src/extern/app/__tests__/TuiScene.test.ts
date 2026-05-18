@@ -226,4 +226,111 @@ describe('destroy', () => {
     expect(w1.refrenceCount).toBe(0);
     expect(w2.refrenceCount).toBe(0);
   });
+
+  it('clears tick handlers', () => {
+    const scene = new TuiScene();
+    let called = false;
+    scene.onTick(() => { called = true; });
+    scene.destroy();
+    scene.update(16);
+    expect(called).toBe(false);
+  });
+});
+
+describe('onTick / offTick', () => {
+  it('onTick registers handler called on update', () => {
+    const scene = new TuiScene();
+    const received: number[] = [];
+    scene.onTick(dt => received.push(dt));
+    scene.update(16);
+    expect(received).toEqual([16]);
+  });
+
+  it('onTick supports multiple handlers', () => {
+    const scene = new TuiScene();
+    let count = 0;
+    scene.onTick(() => { count++; });
+    scene.onTick(() => { count++; });
+    scene.update(16);
+    expect(count).toBe(2);
+  });
+
+  it('onTick returns unsubscribe function', () => {
+    const scene = new TuiScene();
+    let count = 0;
+    const unsub = scene.onTick(() => { count++; });
+    scene.update(16);
+    expect(count).toBe(1);
+    unsub();
+    scene.update(16);
+    expect(count).toBe(1);
+  });
+
+  it('onTick unsubscribe is idempotent', () => {
+    const scene = new TuiScene();
+    let count = 0;
+    const unsub = scene.onTick(() => { count++; });
+    unsub();
+    unsub();
+    scene.update(16);
+    expect(count).toBe(0);
+  });
+
+  it('offTick removes handler', () => {
+    const scene = new TuiScene();
+    let count = 0;
+    const handler = () => { count++; };
+    scene.onTick(handler);
+    scene.offTick(handler);
+    scene.update(16);
+    expect(count).toBe(0);
+  });
+
+  it('offTick with non-registered handler does nothing', () => {
+    const scene = new TuiScene();
+    scene.offTick(() => {});
+  });
+
+  it('clearWidgets clears tick handlers', () => {
+    const scene = new TuiScene();
+    let called = false;
+    scene.onTick(() => { called = true; });
+    scene.clearWidgets();
+    scene.update(16);
+    expect(called).toBe(false);
+  });
+});
+
+describe('update', () => {
+  it('calls update on visible widgets', () => {
+    const scene = new TuiScene();
+    const received: number[] = [];
+    const widget = createWidget();
+    widget.update = (dt: number) => { received.push(dt); };
+    scene.mount(widget);
+    scene.update(33);
+    expect(received).toEqual([33]);
+  });
+
+  it('skips invisible widgets', () => {
+    const scene = new TuiScene();
+    let called = false;
+    const widget = createWidget();
+    widget.setVisible(false);
+    widget.update = () => { called = true; };
+    scene.mount(widget);
+    scene.update(16);
+    expect(called).toBe(false);
+  });
+
+  it('tick handlers run before widget updates', () => {
+    const scene = new TuiScene();
+    const order: string[] = [];
+    scene.onTick(() => { order.push('tick'); });
+    const widget = createWidget();
+    widget.update = () => { order.push('widget'); };
+    scene.mount(widget);
+    scene.update(16);
+    expect(order).toEqual(['tick', 'widget']);
+  });
 });

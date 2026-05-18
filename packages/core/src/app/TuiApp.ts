@@ -14,6 +14,7 @@ import {PointerManager} from './PointerManager';
 import {RenderLoop} from './RenderLoop';
 import {type TuiBackend} from './TuiBackend';
 import {NativeBackend} from './NativeBackend';
+import {runSetup} from './scene-context';
 
 /**
  * Structural type for compiled SFC modules.
@@ -51,11 +52,16 @@ export class TuiApp {
 
     const getScene = () => this.#currentScene;
     this.#pointerManager = new PointerManager(getScene, this.#focusManager);
-    this.#renderLoop = new RenderLoop(getScene, this.#backend);
+    this.#renderLoop = new RenderLoop(getScene, this.#backend, {
+      tickRate: options?.tickRate,
+      renderRate: options?.renderRate,
+    });
     setAppInstance(this);
   }
 
   start() {
+    interceptConsole();
+
     if (this.#debugMode) {
       EVENT_BUS.on(TuiEventType.KeyboardEvent, data => {
         LOGGER.logDebug(`按键事件：${JSON.stringify(data)}`);
@@ -111,10 +117,13 @@ export class TuiApp {
     this.#pointerManager.stop();
     this.#focusManager.stop();
 
+    restoreConsole();
+    flushConsole();
     setAppInstance(undefined);
     this.#currentScene?.destroy();
     this.#backend.stopApp();
     EVENT_BUS.stop();
+    LOGGER.logInfo('TUI application stopped');
     LOGGER.deinit();
   }
 
@@ -134,10 +143,8 @@ export class TuiApp {
     if (typeof module_.setup === 'function') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
       const setup = module_.setup as (scene: TuiScene) => (() => void) | void;
-      const cleanup = setup(scene);
-      if (cleanup) {
-        this.#cleanups.set(scene.id, cleanup);
-      }
+      const cleanup = runSetup(scene, () => setup(scene));
+      this.#cleanups.set(scene.id, cleanup);
     }
 
     this.#scenes.push(scene);
@@ -214,18 +221,88 @@ function setAppInstance(instance: TuiApp | undefined) {
   appInstance = instance;
 }
 
-function onUnexceptExit(error: unknown) {
-  let errorString = 'Unexcept exit';
-  const errorType = typeof error;
-  if (errorType === 'object') {
-    errorString += JSON.stringify(error);
-  } else if (errorType === 'string' || errorType === 'number' || errorType === 'boolean') {
-    errorString += String(error);
-  } else {
-    errorString += `Unknown error, error type: \`${errorType}\``;
+type ConsoleMethod = (...args: unknown[]) => void;
+
+const originalConsoleLog: ConsoleMethod = console.log;
+const originalConsoleError: ConsoleMethod = console.error;
+const originalConsoleWarn: ConsoleMethod = console.warn;
+
+const pendingConsoleOutput: Array<{level: 'log' | 'error' | 'warn'; message: string}> = [];
+
+function interceptConsole() {
+  console.log = (...args: unknown[]) => {
+    const message = args.map(a => formatArg(a)).join(' ');
+    LOGGER.logInfo(message);
+    pendingConsoleOutput.push({level: 'log', message});
+  };
+
+  console.error = (...args: unknown[]) => {
+    const message = args.map(a => formatArg(a)).join(' ');
+    LOGGER.logError(message);
+    pendingConsoleOutput.push({level: 'error', message});
+  };
+
+  console.warn = (...args: unknown[]) => {
+    const message = args.map(a => formatArg(a)).join(' ');
+    LOGGER.logWarning(message);
+    pendingConsoleOutput.push({level: 'warn', message});
+  };
+}
+
+function flushConsole() {
+  for (const {level, message} of pendingConsoleOutput) {
+    switch (level) {
+      case 'error': {
+        originalConsoleError(message);
+        break;
+      }
+
+      case 'warn': {
+        originalConsoleWarn(message);
+        break;
+      }
+
+      case 'log': {
+        originalConsoleLog(message);
+        break;
+      }
+    }
   }
 
-  LOGGER.logError(errorString);
+  pendingConsoleOutput.length = 0;
+}
+
+function restoreConsole() {
+  console.log = originalConsoleLog;
+  console.error = originalConsoleError;
+  console.warn = originalConsoleWarn;
+}
+
+function formatArg(arg: unknown): string {
+  if (arg instanceof Error) {
+    return arg.stack ?? arg.message;
+  }
+
+  if (typeof arg === 'object' && arg !== null) {
+    try {
+      return JSON.stringify(arg);
+    } catch {
+      return '[object]';
+    }
+  }
+
+  return String(arg);
+}
+
+function onUnexceptExit(error: unknown) {
+  const message = error instanceof Error
+    ? (error.stack ?? error.message)
+    : String(error);
+
+  LOGGER.logError(`Unhandled error: ${message}`);
+  pendingConsoleOutput.push({level: 'error', message});
+  restoreConsole();
+  flushConsole();
   setTimeout(() => {
     if (appInstance) {
       appInstance.dispose();

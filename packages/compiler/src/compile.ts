@@ -55,7 +55,9 @@ export function compile(source: string, options?: CompileOptions): CompileResult
     scriptBody: analysis.scriptBody.length > 0 ? analysis.scriptBody : undefined,
   });
 
-  return assembleOutput(codegenResult, analysis.scriptImports, descriptor, templateAst);
+  const coreModuleId = options?.codegen?.coreModuleId ?? '@buntui/core';
+
+  return assembleOutput(codegenResult, analysis.scriptImports, descriptor, templateAst, coreModuleId);
 }
 
 function analyzeScript(
@@ -156,14 +158,20 @@ function analyzeImportsFromAst(
   return {componentMap, widgetImportMap};
 }
 
+const BUNTUI_LIFECYCLE_HOOKS = new Set(['onMounted', 'onUnmounted', 'onTick']);
+
 function assembleOutput(
   codegenResult: CodegenResult,
   scriptImports: string[],
   descriptor: SFCDescriptor,
   templateAst: RootNode,
+  coreModuleId: string,
 ): CompileResult {
   const codegenImportSet = new Set(codegenResult.imports);
-  const extraScriptImports = scriptImports.filter(i => !codegenImportSet.has(i));
+  const extraScriptImports = scriptImports
+    .filter(i => !codegenImportSet.has(i))
+    .map(line => rewriteLifecycleImport(line, coreModuleId));
+
   const allImports = [...codegenResult.imports, ...extraScriptImports];
 
   const code = [
@@ -180,3 +188,35 @@ function assembleOutput(
 }
 
 export {type SFCDescriptor} from '@vue/compiler-sfc';
+
+function rewriteLifecycleImport(line: string, coreModuleId: string): string {
+  // eslint-disable-next-line require-unicode-regexp
+  const vueMatch = /^(\s*import\s*{)([^}]+)(}\s*from\s*)['"]vue['"]\s*;?\s*$/.exec(line);
+  if (!vueMatch) {
+    return line;
+  }
+
+  const [, prefix, names, suffix] = vueMatch;
+  const nameList = (names ?? '').split(',').map(n => n.trim()).filter(Boolean);
+  const buntuiNames: string[] = [];
+  const remainingNames: string[] = [];
+
+  for (const name of nameList) {
+    if (BUNTUI_LIFECYCLE_HOOKS.has(name)) {
+      buntuiNames.push(name);
+    } else {
+      remainingNames.push(name);
+    }
+  }
+
+  const lines: string[] = [];
+  if (buntuiNames.length > 0) {
+    lines.push(`${prefix} ${buntuiNames.join(', ')} ${suffix}'${coreModuleId}';`);
+  }
+
+  if (remainingNames.length > 0) {
+    lines.push(`${prefix} ${remainingNames.join(', ')} ${suffix}'vue';`);
+  }
+
+  return lines.length > 0 ? lines.join('\n') : line;
+}

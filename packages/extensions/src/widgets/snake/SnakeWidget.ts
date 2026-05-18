@@ -34,7 +34,7 @@ export class SnakeWidget extends widgets.InteractiveWidget {
   readonly #initialSpeed: number;
   readonly #speedIncrement: number;
 
-  #lastTick = 0;
+  #accumulator = 0;
   #state: SnakeGameState = 'idle';
   #direction: SnakeDirection = 'right';
   #nextDirection: SnakeDirection = 'right';
@@ -132,6 +132,19 @@ export class SnakeWidget extends widgets.InteractiveWidget {
     }
   }
 
+  override update(dt: number): void {
+    if (this.#state !== 'playing') {
+      return;
+    }
+
+    this.#accumulator += dt;
+    if (this.#accumulator >= this.#tickInterval) {
+      this.#accumulator -= this.#tickInterval;
+      this.#direction = this.#nextDirection;
+      this.#tick(this.#width - 2, this.#height - 2);
+    }
+  }
+
   override emitDrawCommands(buffer: DrawListBuffer): void {
     const w = this.#width;
     const h = this.#height;
@@ -155,14 +168,6 @@ export class SnakeWidget extends widgets.InteractiveWidget {
     }
 
     this.#ensureInitialized(gridW, gridH);
-
-    const now = Date.now();
-    const shouldTick = this.#state === 'playing' && now - this.#lastTick >= this.#tickInterval;
-    if (shouldTick) {
-      this.#lastTick = now;
-      this.#direction = this.#nextDirection;
-      this.#tick(gridW, gridH);
-    }
 
     const absX = this.#x;
     const absY = this.#y;
@@ -350,7 +355,7 @@ export class SnakeWidget extends widgets.InteractiveWidget {
     this.#score = 0;
     this.#tickInterval = this.#initialSpeed;
     this.#state = 'playing';
-    this.#lastTick = Date.now();
+    this.#accumulator = 0;
     this.#spawnFood(gridW, gridH);
   }
 

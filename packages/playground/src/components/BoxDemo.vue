@@ -209,7 +209,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from '@vue/reactivity'
+import { onTick } from '@buntui/core'
+import { ref } from '@vue/reactivity'
 
 const timeCount = ref(0)
 const show = ref(true)
@@ -218,9 +219,6 @@ setInterval(() => {
     timeCount.value += 1
     show.value = !show.value
 }, 1000)
-const title = computed(() => {
-    return `buntui Demo ${timeCount.value} s`
-})
 
 const text1 = ref('Drag Me!')
 function handleDragstart() {

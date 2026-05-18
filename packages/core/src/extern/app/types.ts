@@ -7,6 +7,8 @@ export type TuiAppOptions = {
   backendLogName: string;
   clearLog: boolean;
   debugMode: boolean;
+  tickRate?: number;
+  renderRate?: number;
 };
 
 export type TuiSceneOptions = {

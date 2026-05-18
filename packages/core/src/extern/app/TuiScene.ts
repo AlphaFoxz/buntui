@@ -13,6 +13,7 @@ export class TuiScene {
   #bgRgba: number;
   readonly #widgets = new Set<TuiWidgetEntity>();
   readonly #lifecycleHandlers = new Map<string, Array<() => void>>();
+  readonly #tickHandlers: Array<(dt: number) => void> = [];
   #sortedCache: TuiWidgetEntity[] | undefined = undefined;
 
   constructor(options?: Partial<TuiSceneOptions>) {
@@ -68,6 +69,18 @@ export class TuiScene {
     this.#visible = visible;
   }
 
+  update(dt: number): void {
+    for (const handler of this.#tickHandlers) {
+      handler(dt);
+    }
+
+    for (const widget of this.#widgets) {
+      if (widget.visible) {
+        widget.update(dt);
+      }
+    }
+  }
+
   emitDrawCommands(buf: DrawListBuffer): void {
     const termCols = TUI_CONTEXT_INSTANCE.cols;
     const termRows = TUI_CONTEXT_INSTANCE.rows;
@@ -108,6 +121,7 @@ export class TuiScene {
     }
 
     this.#widgets.clear();
+    this.#tickHandlers.length = 0;
     this.#invalidateCache();
   }
 
@@ -117,6 +131,30 @@ export class TuiScene {
     }
 
     this.#lifecycleHandlers.clear();
+    this.#tickHandlers.length = 0;
+  }
+
+  onTick(handler: (dt: number) => void): () => void {
+    this.#tickHandlers.push(handler);
+    let removed = false;
+    return () => {
+      if (removed) {
+        return;
+      }
+
+      removed = true;
+      const index = this.#tickHandlers.indexOf(handler);
+      if (index !== -1) {
+        this.#tickHandlers.splice(index, 1);
+      }
+    };
+  }
+
+  offTick(handler: (dt: number) => void): void {
+    const index = this.#tickHandlers.indexOf(handler);
+    if (index !== -1) {
+      this.#tickHandlers.splice(index, 1);
+    }
   }
 
   on(event: 'enter' | 'exit', handler: () => void): void {

@@ -87,7 +87,7 @@ describe('codegen', () => {
     it('generates export function setup(scene)', () => {
       const root = makeRoot([makeWidget()], [], new Set(['createBox']));
       const result = gen(root);
-      expect(result.code).toContain('export function setup(scene) {');
+      expect(result.code).toContain('export function setup(__scene) {');
       expect(result.code).toContain('export default { setup };');
     });
 
@@ -348,7 +348,7 @@ describe('codegen', () => {
       const component = makeWidget({tag: 'MyWidget', creator: 'MyWidget', isComponent: true});
       const root = makeRoot([component], [], new Set());
       const result = gen(root);
-      expect(result.code).toContain('MyWidget.setup(scene)');
+      expect(result.code).toContain('MyWidget.setup(__scene)');
     });
 
     it('does not mount component widgets', () => {
@@ -356,6 +356,32 @@ describe('codegen', () => {
       const root = makeRoot([component], [], new Set());
       const result = gen(root);
       expect(result.code).not.toContain('scene.mount(MyWidget');
+    });
+
+    it('wraps component setup with __runSetup', () => {
+      const component = makeWidget({tag: 'MyWidget', creator: 'MyWidget', isComponent: true});
+      const block: TuiConditionalBlock = {
+        type: 'TuiConditionalBlock',
+        condition: 'show',
+        consequent: [component],
+        loc: STUB_LOC,
+      };
+      const root = makeRoot([block], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain('__runSetup(__scene, () => MyWidget.setup(__scene))');
+    });
+
+    it('imports runSetup when components exist', () => {
+      const component = makeWidget({tag: 'MyWidget', creator: 'MyWidget', isComponent: true});
+      const root = makeRoot([component], [], new Set());
+      const result = gen(root);
+      expect(result.imports.some(i => i.includes('runSetup as __runSetup'))).toBe(true);
+    });
+
+    it('does not import runSetup without components', () => {
+      const root = makeRoot([makeWidget()], [], new Set(['createBox']));
+      const result = gen(root);
+      expect(result.imports.some(i => i.includes('__runSetup'))).toBe(false);
     });
   });
 

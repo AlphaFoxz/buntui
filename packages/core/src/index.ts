@@ -65,3 +65,5 @@ export {defineTheme, catppuccinMocha} from './theme/themes';
 export type {TuiTheme, TuiThemeColors, TuiThemeBorderStyle} from './theme/types';
 export {getTheme, setTheme} from './theme/provider';
 export {useTheme} from './theme/use-theme';
+export {onTick, onMounted, onUnmounted} from './app/composables';
+export {runSetup} from './app/scene-context';

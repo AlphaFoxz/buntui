@@ -33,4 +33,6 @@ export type MatrixWidgetOptions = {
   density?: number;
   /** Custom character set. Array of code points. Overrides built-in sets. */
   charset?: number[];
+  /** Per-column tick interval range in ms. Lower = faster. (default: {min:60, max:150}) */
+  tickIntervalRange?: {min: number; max: number};
 };

@@ -32,7 +32,7 @@ export class VideoPlayerWidget extends widgets.InteractiveWidget {
 
   #playerState: VideoPlayerState = 'loading';
   #currentFrame = 0;
-  #lastTick = 0;
+  #accumulator = 0;
   #loadingProgress = '';
 
   #audioProcess: ReturnType<typeof Bun.spawn> | undefined;
@@ -139,7 +139,7 @@ export class VideoPlayerWidget extends widgets.InteractiveWidget {
           }
 
           this.#playerState = 'playing';
-          this.#lastTick = Date.now();
+          this.#accumulator = 0;
           this.#startAudio(0);
 
           break;
@@ -155,8 +155,7 @@ export class VideoPlayerWidget extends widgets.InteractiveWidget {
         case 'paused': {
           this.#startAudio(this.#frameOffsetMs);
           this.#playerState = 'playing';
-          // Offset lastTick forward to compensate for ffplay startup latency
-          this.#lastTick = Date.now() + 150;
+          this.#accumulator = 0;
 
           break;
         }
@@ -170,6 +169,28 @@ export class VideoPlayerWidget extends widgets.InteractiveWidget {
       this.#currentFrame = 0;
       this.#stopAudio();
       this.#playerState = 'ready';
+    }
+  }
+
+  override update(dt: number): void {
+    if (this.#playerState !== 'playing' || !this.#frameData) {
+      return;
+    }
+
+    this.#accumulator += dt;
+    if (this.#accumulator >= this.#frameInterval) {
+      this.#accumulator -= this.#frameInterval;
+      this.#currentFrame++;
+      if (this.#currentFrame >= this.#frameCount) {
+        if (this.#loop) {
+          this.#currentFrame = 0;
+          this.#startAudio(0);
+        } else {
+          this.#currentFrame = this.#frameCount - 1;
+          this.#playerState = 'ended';
+          this.#stopAudio();
+        }
+      }
     }
   }
 
@@ -208,25 +229,6 @@ export class VideoPlayerWidget extends widgets.InteractiveWidget {
       this.#drawOverlay(buffer, absX, absY, w, h, message);
       buffer.popClip();
       return;
-    }
-
-    // Advance frame
-    if (this.#playerState === 'playing' && this.#frameData) {
-      const now = Date.now();
-      if (now - this.#lastTick >= this.#frameInterval) {
-        this.#lastTick = now;
-        this.#currentFrame++;
-        if (this.#currentFrame >= this.#frameCount) {
-          if (this.#loop) {
-            this.#currentFrame = 0;
-            this.#startAudio(0);
-          } else {
-            this.#currentFrame = this.#frameCount - 1;
-            this.#playerState = 'ended';
-            this.#stopAudio();
-          }
-        }
-      }
     }
 
     // Render current frame — batch by row to stay within DrawListBuffer limits

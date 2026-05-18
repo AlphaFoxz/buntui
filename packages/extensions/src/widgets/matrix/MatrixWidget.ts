@@ -26,12 +26,11 @@ export class MatrixWidget extends TuiWidgetEntity {
   readonly #maxTrailLength: number;
   readonly #density: number;
   readonly #charset: number[];
+  readonly #tickIntervalRange: {min: number; max: number};
 
   #columns: MatrixColumnState[] = [];
   #gradientLut: number[] = [];
   #initialized = false;
-  #lastTick = 0;
-  readonly #tickInterval: number;
 
   constructor(options: MatrixWidgetOptions = {}) {
     super();
@@ -53,7 +52,7 @@ export class MatrixWidget extends TuiWidgetEntity {
     this.#maxTrailLength = resolved.maxTrailLength ?? 20;
     this.#density = resolved.density ?? 0.8;
     this.#charset = resolved.charset ?? MATRIX_CHARSET;
-    this.#tickInterval = 16;
+    this.#tickIntervalRange = resolved.tickIntervalRange ?? {min: 60, max: 150};
 
     this.#rebuildGradient();
   }
@@ -75,6 +74,14 @@ export class MatrixWidget extends TuiWidgetEntity {
       && y < this.#y + this.#height;
   }
 
+  override update(dt: number): void {
+    this.#ensureColumns(this.#width, this.#height);
+    const config = this.#columnConfig(this.#height);
+    for (const col of this.#columns) {
+      tickColumn(col, dt, this.#density, config);
+    }
+  }
+
   override emitDrawCommands(buffer: DrawListBuffer): void {
     const w = this.#width;
     const h = this.#height;
@@ -84,12 +91,6 @@ export class MatrixWidget extends TuiWidgetEntity {
 
     this.#ensureColumns(w, h);
 
-    const now = Date.now();
-    const shouldTick = now - this.#lastTick >= this.#tickInterval;
-    if (shouldTick) {
-      this.#lastTick = now;
-    }
-
     const absX = this.#x;
     const absY = this.#y;
     const maxLength = this.#maxTrailLength;
@@ -98,9 +99,6 @@ export class MatrixWidget extends TuiWidgetEntity {
 
     for (let col = 0; col < this.#columns.length; col++) {
       const column = this.#columns[col]!;
-      if (shouldTick) {
-        tickColumn(column, this.#density, this.#columnConfig(h));
-      }
 
       if (!column.active) {
         continue;
@@ -159,6 +157,7 @@ export class MatrixWidget extends TuiWidgetEntity {
       minTrail: this.#minTrailLength,
       maxTrail: this.#maxTrailLength,
       charset: this.#charset,
+      tickIntervalRange: this.#tickIntervalRange,
     };
   }
 
