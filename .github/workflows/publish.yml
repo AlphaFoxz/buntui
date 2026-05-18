@@ -1,26 +1,94 @@
-name: Publish to npm
+name: Release
 
 on:
     push:
-        # branches:
-        # - main
         tags:
             - 'v*'
     workflow_dispatch:
 
 permissions:
     id-token: write
-    contents: read
+    contents: write
+
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-    publish:
+    build-native:
         runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                include:
+                    - zig-target: x86_64-windows-gnu
+                      platform-key: win32-x64
+                      lib-dir: bin
+                      lib-prefix: ''
+                      binary-ext: dll
+                    - zig-target: x86_64-linux-gnu
+                      platform-key: linux-x64
+                      lib-dir: lib
+                      lib-prefix: lib
+                      binary-ext: so
+                    - zig-target: aarch64-macos
+                      platform-key: darwin-arm64
+                      lib-dir: lib
+                      lib-prefix: lib
+                      binary-ext: dylib
+                    - zig-target: x86_64-macos
+                      platform-key: darwin-x64
+                      lib-dir: lib
+                      lib-prefix: lib
+                      binary-ext: dylib
+
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: mlugg/setup-zig@v2
+              with:
+                  version: '0.16.0'
+
+            - name: Build
+              working-directory: packages/native
+              run: zig build -Dtarget=${{ matrix.zig-target }} -Drelease=true
+
+            - name: Copy to platform package
+              working-directory: packages/native
+              run: |
+                  dest="../native-platforms/${{ matrix.platform-key }}"
+                  mkdir -p "$dest"
+                  cp "zig-out/${{ matrix.lib-dir }}/${{ matrix.lib-prefix }}buntui.${{ matrix.binary-ext }}" "$dest/buntui.${{ matrix.binary-ext }}"
+
+            - uses: actions/upload-artifact@v4
+              with:
+                  name: native-${{ matrix.platform-key }}
+                  path: packages/native-platforms/${{ matrix.platform-key }}/
+                  if-no-files-found: error
+
+            - name: Rename binary for release
+              working-directory: packages/native-platforms/${{ matrix.platform-key }}
+              run: cp "buntui.${{ matrix.binary-ext }}" "buntui-${{ matrix.platform-key }}.${{ matrix.binary-ext }}"
+
+            - name: Upload to GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: packages/native-platforms/${{ matrix.platform-key }}/buntui-${{ matrix.platform-key }}.${{ matrix.binary-ext }}
+
+    publish:
+        needs: build-native
+        runs-on: ubuntu-latest
+        permissions:
+            id-token: write
+            contents: read
+
         steps:
             - uses: actions/checkout@v6
 
             - uses: oven-sh/setup-bun@v2
 
             - run: bun install
+
+            - name: Sync version
+              run: bun run sync
 
             - name: Build packages (skip native — binaries are pre-built)
               run: |
@@ -31,6 +99,26 @@ jobs:
                   done
 
             - run: bun run scripts/resolve-workspace.ts
+
+            - name: Download native artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: packages/native-platforms
+                  pattern: native-*
+                  merge-multiple: true
+
+            - name: Verify native binaries
+              run: |
+                  for dir in packages/native-platforms/*/; do
+                    platform=$(basename "$dir")
+                    count=$(find "$dir" -maxdepth 1 \( -name '*.dll' -o -name '*.so' -o -name '*.dylib' \) | wc -l)
+                    if [ "$count" -eq 0 ]; then
+                      echo "ERROR: No binary found for $platform"
+                      exit 1
+                    else
+                      echo "OK: $platform binary present"
+                    fi
+                  done
 
             - uses: actions/setup-node@v6
               with:
