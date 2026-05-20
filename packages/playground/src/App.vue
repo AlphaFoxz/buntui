@@ -14,7 +14,7 @@
     <TextDemo v-show="currentTab === 'Text'" />
 
     <FrameRateWatcher x="10%" />
-    <Logger hijack />
+    <Logger />
 </template>
 
 <script setup lang="ts">

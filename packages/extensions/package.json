@@ -32,6 +32,10 @@
         "./logger": {
             "types": "./dist/logger.d.ts",
             "default": "./dist/logger.js"
+        },
+        "./hmr-error-overlay": {
+            "types": "./dist/hmr-error-overlay.d.ts",
+            "default": "./dist/hmr-error-overlay.js"
         }
     },
     "files": [

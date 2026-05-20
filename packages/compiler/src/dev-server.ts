@@ -131,6 +131,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
   const childTemporaryMap = new Map<string, string>(); // ResolvedPath -> temp file path
   const allTemporaryFiles = new Set<string>();
   let firstLoad = true;
+  let needsFullReload = false;
 
   /**
    * Full reload: compile all files, write all temp files.
@@ -265,9 +266,9 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
     try {
       onClear();
 
-      if (firstLoad || !changedFile || changedFile === file) {
-        // Root file changed or first load — need full recompile
+      if (firstLoad || needsFullReload || !changedFile || changedFile === file) {
         firstLoad = false;
+        needsFullReload = false;
         await fullReload();
       } else {
         await incrementalReload(changedFile);
@@ -276,6 +277,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
       // Refresh watchers for imported .vue files after successful compile
       updateChildWatchers();
     } catch (error) {
+      needsFullReload = true;
       onError?.(error instanceof Error ? error : new Error(String(error)));
     }
   }

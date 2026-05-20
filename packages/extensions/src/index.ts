@@ -5,5 +5,6 @@ export * from './framerate';
 export * from './snake';
 export * from './videoplayer';
 export * from './logger';
+export * from './hmr-error-overlay';
 
 export {EXTENSION_REGISTRY} from './registry';

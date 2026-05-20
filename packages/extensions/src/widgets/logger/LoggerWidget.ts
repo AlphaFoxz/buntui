@@ -18,7 +18,6 @@ export type LoggerWidgetOptions = {
   colorFg?: TuiColor;
   colorBg?: TuiColor;
   label?: string;
-  hijack?: boolean;
 };
 
 export class LoggerWidget extends TuiWidgetEntity {
@@ -33,7 +32,6 @@ export class LoggerWidget extends TuiWidgetEntity {
   readonly #panelHeight: number;
   #panelVisible = false;
   #scrollPending = false;
-  #restoreConsole: (() => void) | null = null;
 
   constructor(options: LoggerWidgetOptions = {}) {
     super();
@@ -91,10 +89,6 @@ export class LoggerWidget extends TuiWidgetEntity {
     this.#toggleBtn.on('click', () => {
       this.toggle();
     });
-
-    if (options.hijack) {
-      this.hijackConsole();
-    }
   }
 
   // -- Public API --
@@ -143,27 +137,6 @@ export class LoggerWidget extends TuiWidgetEntity {
 
   get isOpen(): boolean {
     return this.#panelVisible;
-  }
-
-  /**
-   * Replace console.log with a wrapper that sends output to this logger.
-   * Call restoreConsole() to undo.
-   */
-  hijackConsole(): void {
-    const original = console.log;
-    this.#restoreConsole = () => {
-      console.log = original;
-    };
-
-    console.log = (...args: unknown[]) => {
-      this.log(args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' '));
-    };
-  }
-
-  restoreConsole(): void {
-    const restore = this.#restoreConsole;
-    this.#restoreConsole = null;
-    restore?.();
   }
 
   // -- Overrides --
