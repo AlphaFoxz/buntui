@@ -71,7 +71,7 @@ class LoggerImpl {
     this.#logLevel = logLevelToNumber(logLevel);
 
     if (!fs.existsSync(this.#logFileDir)) {
-      fs.mkdirSync(this.#logFileDir);
+      fs.mkdirSync(this.#logFileDir, {recursive: true});
     }
 
     if (clearLog) {

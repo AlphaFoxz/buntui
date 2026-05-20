@@ -8,3 +8,5 @@ zig-out
 *.exe
 *.dll
 *.pdb
+
+.dev/

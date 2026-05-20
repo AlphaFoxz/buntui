@@ -5,12 +5,15 @@ import {
   readFileSync,
   readdirSync,
   unlinkSync,
+  mkdirSync,
 } from 'node:fs';
 import {compile, type CompileOptions} from './compile';
 
 export type DevServerOptions = {
   /** Path to the .vue SFC file to watch */
   file: string;
+  /** Directory for HMR temporary files (default: same directory as `file`) */
+  tempDir?: string;
   /** Compile options forwarded to compile(). `filename` defaults to `file`. */
   compileOptions?: CompileOptions;
   /** Called to clear existing state before reload */
@@ -105,6 +108,7 @@ function cleanupStaleTemporaryFiles(dir: string): void {
 export function createDevServer(options: DevServerOptions): {close: () => void} {
   const {
     file,
+    tempDir: temporaryDirOption,
     compileOptions,
     onClear,
     onReload,
@@ -112,8 +116,12 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
     debounceMs = 100,
   } = options;
 
+  const baseDir = path.dirname(file);
+  const temporaryDir = temporaryDirOption ?? baseDir;
+  mkdirSync(temporaryDir, {recursive: true});
+
   // Clean up stale temporary files from previous sessions
-  cleanupStaleTemporaryFiles(path.dirname(file));
+  cleanupStaleTemporaryFiles(temporaryDir);
 
   let timer: ReturnType<typeof setTimeout> | undefined;
   let extraWatchers: Array<ReturnType<typeof watch>> = [];
@@ -121,6 +129,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
   // Persistent state across reloads for incremental compilation
   const compiledCache = new Map<string, string>(); // ResolvedPath -> compiled code
   const childTemporaryMap = new Map<string, string>(); // ResolvedPath -> temp file path
+  const allTemporaryFiles = new Set<string>();
   let firstLoad = true;
 
   /**
@@ -129,7 +138,6 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
    */
   async function fullReload() {
     const allVueFiles = discoverVueFiles(file);
-    const baseDir = path.dirname(file);
 
     // Compile every .vue file
     compiledCache.clear();
@@ -145,6 +153,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
     // Delete old child temp files
     const oldDeletions: Array<Promise<void>> = [];
     for (const temporaryPath of childTemporaryMap.values()) {
+      allTemporaryFiles.delete(temporaryPath);
       oldDeletions.push(Bun.file(temporaryPath).unlink().catch(ignoreCleanupError));
     }
 
@@ -166,15 +175,16 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
         }
       }
 
-      const childTemporary = path.join(baseDir, `_hmr_c_${temporaryCounter++}.ts`);
+      const childTemporary = path.join(temporaryDir, `_hmr_c_${temporaryCounter++}.ts`);
       childTemporaryMap.set(vueFile, childTemporary);
+      allTemporaryFiles.add(childTemporary);
       childWrites.push(Bun.write(childTemporary, childCode).then(ignoreCleanupError));
     }
 
     await Promise.all(childWrites);
 
     // Build and import root
-    await writeAndImportRoot(baseDir);
+    await writeAndImportRoot();
   }
 
   /**
@@ -182,8 +192,6 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
    * Write a new temp file for it; unchanged children keep their temp files (Bun cache hit).
    */
   async function incrementalReload(changedFile: string) {
-    const baseDir = path.dirname(file);
-
     // Recompile only the changed child
     const source = readFileSync(changedFile, 'utf-8');
     const result = compile(source, {
@@ -209,24 +217,26 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
 
     // Write new temp file for the changed child
     const oldTemporary = childTemporaryMap.get(changedFile);
-    const newTemporary = path.join(baseDir, `_hmr_c_${temporaryCounter++}.ts`);
+    const newTemporary = path.join(temporaryDir, `_hmr_c_${temporaryCounter++}.ts`);
     childTemporaryMap.set(changedFile, newTemporary);
+    allTemporaryFiles.add(newTemporary);
     await Bun.write(newTemporary, childCode);
 
     // Delete old temp file
     if (oldTemporary) {
+      allTemporaryFiles.delete(oldTemporary);
       await Bun.file(oldTemporary).unlink().catch(ignoreCleanupError);
     }
 
     // Build and import root with updated import paths
-    await writeAndImportRoot(baseDir);
+    await writeAndImportRoot();
   }
 
   /**
    * Generate root temp file with all .vue imports replaced by child temp paths,
    * then import it and call onReload.
    */
-  async function writeAndImportRoot(baseDir: string) {
+  async function writeAndImportRoot() {
     let rootCode = compiledCache.get(file)!;
     for (const [resolvedChild, temporaryPath] of childTemporaryMap) {
       const importPath = findVueImportPath(rootCode, resolvedChild, baseDir);
@@ -235,7 +245,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
       }
     }
 
-    const temporaryFile = path.join(baseDir, `_hmr_${temporaryCounter++}.ts`);
+    const temporaryFile = path.join(temporaryDir, `_hmr_${temporaryCounter++}.ts`);
     await Bun.write(temporaryFile, rootCode);
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- dynamic import of compiled output
@@ -313,7 +323,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
       w.close();
     }
 
-    for (const temporaryPath of childTemporaryMap.values()) {
+    for (const temporaryPath of allTemporaryFiles) {
       try {
         unlinkSync(temporaryPath);
       } catch {
@@ -330,7 +340,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
         w.close();
       }
 
-      for (const temporaryPath of childTemporaryMap.values()) {
+      for (const temporaryPath of allTemporaryFiles) {
         try {
           unlinkSync(temporaryPath);
         } catch {
@@ -338,6 +348,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
         }
       }
 
+      allTemporaryFiles.clear();
       childTemporaryMap.clear();
     },
   };
