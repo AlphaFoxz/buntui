@@ -354,6 +354,20 @@ describe('PointerManager', () => {
       expect(widget.rect.x).toBe(5);
       expect(widget.rect.y).toBe(5);
     });
+
+    it('allows dragging to negative coordinates', () => {
+      ctx = createTestSetup();
+      const widget = new TrackableDraggableWidget();
+      widget.updateRect({x: 3, y: 3});
+      widget.setDraggable(true);
+      ctx.mountWidget(widget);
+
+      ctx.emitMouse({button: 0, x: 5, y: 5});
+      ctx.emitMouse({buttons: 1, x: 1, y: 1});
+
+      expect(widget.rect.x).toBe(-1);
+      expect(widget.rect.y).toBe(-1);
+    });
   });
 
   describe('no scene', () => {

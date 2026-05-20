@@ -64,17 +64,17 @@ export class DrawListBuffer {
 
   setCursor(x: number, y: number): void {
     this.#writeHeader(DrawCmd.SetCursor, 0, 4);
-    this.#view.setUint16(this.#cursor, x, true);
-    this.#view.setUint16(this.#cursor + 2, y, true);
+    this.#view.setInt16(this.#cursor, x, true);
+    this.#view.setInt16(this.#cursor + 2, y, true);
     this.#cursor += 4;
   }
 
   pushClip(x: number, y: number, width: number, height: number): void {
     this.#writeHeader(DrawCmd.PushClip, 0, 8);
-    this.#view.setUint16(this.#cursor, x, true);
-    this.#view.setUint16(this.#cursor + 2, y, true);
-    this.#view.setUint16(this.#cursor + 4, width, true);
-    this.#view.setUint16(this.#cursor + 6, height, true);
+    this.#view.setInt16(this.#cursor, x, true);
+    this.#view.setInt16(this.#cursor + 2, y, true);
+    this.#view.setInt16(this.#cursor + 4, width, true);
+    this.#view.setInt16(this.#cursor + 6, height, true);
     this.#cursor += 8;
   }
 
@@ -101,10 +101,10 @@ export class DrawListBuffer {
   }): void {
     this.#writeHeader(DrawCmd.DrawRect, 0, 16);
     const offset = this.#cursor;
-    this.#view.setUint16(offset, x, true);
-    this.#view.setUint16(offset + 2, y, true);
-    this.#view.setUint16(offset + 4, width, true);
-    this.#view.setUint16(offset + 6, height, true);
+    this.#view.setInt16(offset, x, true);
+    this.#view.setInt16(offset + 2, y, true);
+    this.#view.setInt16(offset + 4, width, true);
+    this.#view.setInt16(offset + 6, height, true);
     this.#view.setUint32(offset + 8, bgRgba, true);
     this.#view.setUint16(offset + 12, fillChar, true);
     this.#view.setUint16(offset + 14, fontStyle, true);
@@ -123,8 +123,8 @@ export class DrawListBuffer {
     const textLength = encoded.length;
     this.#writeHeader(DrawCmd.DrawText, 0, 16 + textLength);
     const offset = this.#cursor;
-    this.#view.setUint16(offset, x, true);
-    this.#view.setUint16(offset + 2, y, true);
+    this.#view.setInt16(offset, x, true);
+    this.#view.setInt16(offset + 2, y, true);
     this.#view.setUint32(offset + 4, fgRgba, true);
     this.#view.setUint32(offset + 8, bgRgba, true);
     this.#view.setUint16(offset + 12, fontStyle, true);
@@ -144,10 +144,10 @@ export class DrawListBuffer {
   }): void {
     this.#writeHeader(DrawCmd.DrawBorder, 0, 16);
     const offset = this.#cursor;
-    this.#view.setUint16(offset, x, true);
-    this.#view.setUint16(offset + 2, y, true);
-    this.#view.setUint16(offset + 4, width, true);
-    this.#view.setUint16(offset + 6, height, true);
+    this.#view.setInt16(offset, x, true);
+    this.#view.setInt16(offset + 2, y, true);
+    this.#view.setInt16(offset + 4, width, true);
+    this.#view.setInt16(offset + 6, height, true);
     this.#view.setUint32(offset + 8, colorRgba, true);
     this.#view.setUint8(offset + 12, style);
     this.#view.setUint8(offset + 13, sides);
@@ -166,12 +166,12 @@ export class DrawListBuffer {
   }): void {
     this.#writeHeader(DrawCmd.DrawShadow, 0, 16);
     const offset = this.#cursor;
-    this.#view.setUint16(offset, x, true);
-    this.#view.setUint16(offset + 2, y, true);
-    this.#view.setUint16(offset + 4, width, true);
-    this.#view.setUint16(offset + 6, height, true);
-    this.#view.setUint16(offset + 8, offsetX, true);
-    this.#view.setUint16(offset + 10, offsetY, true);
+    this.#view.setInt16(offset, x, true);
+    this.#view.setInt16(offset + 2, y, true);
+    this.#view.setInt16(offset + 4, width, true);
+    this.#view.setInt16(offset + 6, height, true);
+    this.#view.setInt16(offset + 8, offsetX, true);
+    this.#view.setInt16(offset + 10, offsetY, true);
     this.#view.setUint32(offset + 12, colorRgba, true);
     this.#cursor = offset + 16;
   }
@@ -185,10 +185,10 @@ export class DrawListBuffer {
   }): void {
     this.#writeHeader(DrawCmd.DrawFill, 0, 12);
     const offset = this.#cursor;
-    this.#view.setUint16(offset, x, true);
-    this.#view.setUint16(offset + 2, y, true);
-    this.#view.setUint16(offset + 4, width, true);
-    this.#view.setUint16(offset + 6, height, true);
+    this.#view.setInt16(offset, x, true);
+    this.#view.setInt16(offset + 2, y, true);
+    this.#view.setInt16(offset + 4, width, true);
+    this.#view.setInt16(offset + 6, height, true);
     this.#view.setUint32(offset + 8, rgba, true);
     this.#cursor = offset + 12;
   }
@@ -205,8 +205,8 @@ export class DrawListBuffer {
     const flags = wide ? 1 : 0;
     this.#writeHeader(DrawCmd.DrawChar, flags, 16);
     const offset = this.#cursor;
-    this.#view.setUint16(offset, x, true);
-    this.#view.setUint16(offset + 2, y, true);
+    this.#view.setInt16(offset, x, true);
+    this.#view.setInt16(offset + 2, y, true);
     this.#view.setUint32(offset + 4, fgRgba, true);
     this.#view.setUint32(offset + 8, bgRgba, true);
     this.#view.setUint16(offset + 12, char, true);
@@ -224,8 +224,8 @@ export class DrawListBuffer {
   }): void {
     this.#writeHeader(DrawCmd.DrawLine, 0, 16);
     const offset = this.#cursor;
-    this.#view.setUint16(offset, x, true);
-    this.#view.setUint16(offset + 2, y, true);
+    this.#view.setInt16(offset, x, true);
+    this.#view.setInt16(offset + 2, y, true);
     this.#view.setUint16(offset + 4, length, true);
     this.#view.setUint16(offset + 6, direction, true);
     this.#view.setUint32(offset + 8, colorRgba, true);

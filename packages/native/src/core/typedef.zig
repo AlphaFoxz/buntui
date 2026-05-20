@@ -1,4 +1,4 @@
-pub const TuiScale = u16;
+pub const TuiScale = i16;
 
 pub const Bool = enum(u8) {
     False = 0,

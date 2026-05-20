@@ -77,10 +77,10 @@ fn rasterizeSetBackground(state: *RasterizerState, payload: []const u8) void {
 fn rasterizePushClip(state: *RasterizerState, payload: []const u8) void {
     if (payload.len < 8) return;
     const rect: ClipRect = .{
-        .x = readU16(payload, 0),
-        .y = readU16(payload, 2),
-        .width = readU16(payload, 4),
-        .height = readU16(payload, 6),
+        .x = readI16(payload, 0),
+        .y = readI16(payload, 2),
+        .width = readI16(payload, 4),
+        .height = readI16(payload, 6),
     };
     _ = state.clip_stack.push(rect);
 }
@@ -148,10 +148,10 @@ inline fn writeWidePair(
 
 fn rasterizeDrawRect(state: *RasterizerState, cells: []TuiCell, payload: []const u8, flags: cmd.DrawRectFlags) void {
     if (payload.len < 16) return;
-    const x = readU16(payload, 0);
-    const y = readU16(payload, 2);
-    const w = readU16(payload, 4);
-    const h = readU16(payload, 6);
+    const x = readI16(payload, 0);
+    const y = readI16(payload, 2);
+    const w = readI16(payload, 4);
+    const h = readI16(payload, 6);
     const fill_rgba = Rgba.fromU32(readU32(payload, 8));
     const fill_char = readU16(payload, 12);
     const font_style = readU16(payload, 14);
@@ -163,7 +163,7 @@ fn rasterizeDrawRect(state: *RasterizerState, cells: []TuiCell, payload: []const
 
     const col_step: TuiScale = if (is_wide) 2 else 1;
 
-    const aligned_x: TuiScale = if (is_wide and (visible.x - x) % 2 != 0) visible.x + 1 else visible.x;
+    const aligned_x: TuiScale = if (is_wide and @rem(visible.x - x, 2) != 0) visible.x + 1 else visible.x;
 
     var row: TuiScale = visible.y;
     while (row < visible.y + visible.height) : (row += 1) {
@@ -187,8 +187,8 @@ fn rasterizeDrawRect(state: *RasterizerState, cells: []TuiCell, payload: []const
 
 fn rasterizeDrawText(state: *RasterizerState, cells: []TuiCell, payload: []const u8) void {
     if (payload.len < 16) return;
-    const start_x = readU16(payload, 0);
-    const start_y = readU16(payload, 2);
+    const start_x = readI16(payload, 0);
+    const start_y = readI16(payload, 2);
     const fg_rgba = Rgba.fromU32(readU32(payload, 4));
     const bg_rgba = Rgba.fromU32(readU32(payload, 8));
     const font_style = readU16(payload, 12);
@@ -199,7 +199,7 @@ fn rasterizeDrawText(state: *RasterizerState, cells: []TuiCell, payload: []const
     if (text_bytes.len < text_len) return;
 
     const clip = state.clip_stack.current();
-    const row_range = clipRow(clip, start_y, start_x, start_x + text_len);
+    const row_range = clipRow(clip, start_y, start_x, start_x + @as(TuiScale, @intCast(text_len)));
     if (row_range.start == row_range.end) return;
     const col_min = row_range.start;
     const col_max = row_range.end;
@@ -232,10 +232,10 @@ fn rasterizeDrawText(state: *RasterizerState, cells: []TuiCell, payload: []const
 
 fn rasterizeDrawBorder(state: *RasterizerState, cells: []TuiCell, payload: []const u8) void {
     if (payload.len < 16) return;
-    const x = readU16(payload, 0);
-    const y = readU16(payload, 2);
-    const w = readU16(payload, 4);
-    const h = readU16(payload, 6);
+    const x = readI16(payload, 0);
+    const y = readI16(payload, 2);
+    const w = readI16(payload, 4);
+    const h = readI16(payload, 6);
     const color_rgba = Rgba.fromU32(readU32(payload, 8));
     const border_style: cmd.BorderStyle = @enumFromInt(payload[12]);
     const sides = payload[13];
@@ -304,12 +304,12 @@ fn drawBorderEdge(
 
 fn rasterizeDrawShadow(state: *RasterizerState, cells: []TuiCell, payload: []const u8) void {
     if (payload.len < 16) return;
-    const x = readU16(payload, 0);
-    const y = readU16(payload, 2);
-    const w = readU16(payload, 4);
-    const h = readU16(payload, 6);
-    const offset_x = readU16(payload, 8);
-    const offset_y = readU16(payload, 10);
+    const x = readI16(payload, 0);
+    const y = readI16(payload, 2);
+    const w = readI16(payload, 4);
+    const h = readI16(payload, 6);
+    const offset_x = readI16(payload, 8);
+    const offset_y = readI16(payload, 10);
     const shadow_color = Rgba.fromU32(readU32(payload, 12));
 
     const clip = state.clip_stack.current();
@@ -331,10 +331,10 @@ fn rasterizeDrawShadow(state: *RasterizerState, cells: []TuiCell, payload: []con
 
 fn rasterizeDrawFill(state: *RasterizerState, cells: []TuiCell, payload: []const u8) void {
     if (payload.len < 12) return;
-    const x = readU16(payload, 0);
-    const y = readU16(payload, 2);
-    const w = readU16(payload, 4);
-    const h = readU16(payload, 6);
+    const x = readI16(payload, 0);
+    const y = readI16(payload, 2);
+    const w = readI16(payload, 4);
+    const h = readI16(payload, 6);
     const fill_color = Rgba.fromU32(readU32(payload, 8));
 
     const clip = state.clip_stack.current();
@@ -352,8 +352,8 @@ fn rasterizeDrawFill(state: *RasterizerState, cells: []TuiCell, payload: []const
 
 fn rasterizeDrawChar(state: *RasterizerState, cells: []TuiCell, payload: []const u8, flags: cmd.DrawCharFlags) void {
     if (payload.len < 16) return;
-    const x = readU16(payload, 0);
-    const y = readU16(payload, 2);
+    const x = readI16(payload, 0);
+    const y = readI16(payload, 2);
     const fg_rgba = Rgba.fromU32(readU32(payload, 4));
     const bg_rgba = Rgba.fromU32(readU32(payload, 8));
     const char = readU16(payload, 12);
@@ -386,9 +386,9 @@ fn rasterizeDrawChar(state: *RasterizerState, cells: []TuiCell, payload: []const
 
 fn rasterizeDrawLine(state: *RasterizerState, cells: []TuiCell, payload: []const u8) void {
     if (payload.len < 16) return;
-    const x = readU16(payload, 0);
-    const y = readU16(payload, 2);
-    const length = readU16(payload, 4);
+    const x = readI16(payload, 0);
+    const y = readI16(payload, 2);
+    const length: TuiScale = @intCast(readU16(payload, 4));
     const direction = readU16(payload, 6);
     const color_rgba = Rgba.fromU32(readU32(payload, 8));
     const line_style: cmd.LineStyle = @enumFromInt(payload[12]);
@@ -409,8 +409,8 @@ fn rasterizeDrawLine(state: *RasterizerState, cells: []TuiCell, payload: []const
 // ============ Helpers ============
 
 inline fn writeCell(cells: []TuiCell, frame_width: TuiScale, frame_height: TuiScale, x: TuiScale, y: TuiScale, new_cell: TuiCell) void {
-    if (x >= frame_width or y >= frame_height) return;
-    const idx = @as(usize, y) * frame_width + x;
+    if (x < 0 or y < 0 or x >= frame_width or y >= frame_height) return;
+    const idx = @as(usize, @intCast(y)) * @as(usize, @intCast(frame_width)) + @as(usize, @intCast(x));
     if (idx >= cells.len) return;
 
     const existing = cells[idx];
@@ -457,9 +457,9 @@ inline fn writeCell(cells: []TuiCell, frame_width: TuiScale, frame_height: TuiSc
     // both halves must be cleared — a terminal cannot render half of a wide glyph.
     if (existing.cell_type == .Wide and cells[idx].cell_type != .Wide) {
         // Wide cell replaced: clear orphaned Hidden continuation at N+1
-        const next_x = x + 1;
+        const next_x: TuiScale = x + 1;
         if (next_x < frame_width) {
-            const next_idx = @as(usize, y) * frame_width + next_x;
+            const next_idx = @as(usize, @intCast(y)) * @as(usize, @intCast(frame_width)) + @as(usize, @intCast(next_x));
             if (next_idx < cells.len and cells[next_idx].cell_type == .Hidden) {
                 cells[next_idx].char = ' ';
                 cells[next_idx].cell_type = .Ascii;
@@ -469,7 +469,7 @@ inline fn writeCell(cells: []TuiCell, frame_width: TuiScale, frame_height: TuiSc
     } else if (existing.cell_type == .Hidden and cells[idx].cell_type != .Hidden) {
         // Hidden continuation replaced: clear the preceding Wide cell at N-1
         if (x > 0) {
-            const prev_idx = @as(usize, y) * frame_width + (x - 1);
+            const prev_idx = @as(usize, @intCast(y)) * @as(usize, @intCast(frame_width)) + @as(usize, @intCast(x - 1));
             if (cells[prev_idx].cell_type == .Wide) {
                 cells[prev_idx].char = ' ';
                 cells[prev_idx].cell_type = .Ascii;
@@ -480,8 +480,8 @@ inline fn writeCell(cells: []TuiCell, frame_width: TuiScale, frame_height: TuiSc
 }
 
 inline fn blendCellBg(cells: []TuiCell, state: *RasterizerState, x: TuiScale, y: TuiScale, color: Rgba, entity_id: u64) void {
-    if (x >= state.frame_width or y >= state.frame_height) return;
-    const idx = @as(usize, y) * state.frame_width + x;
+    if (x < 0 or y < 0 or x >= state.frame_width or y >= state.frame_height) return;
+    const idx = @as(usize, @intCast(y)) * @as(usize, @intCast(state.frame_width)) + @as(usize, @intCast(x));
     if (idx >= cells.len) return;
 
     var bg = color;
@@ -647,5 +647,6 @@ inline fn isWideCodepoint(cp: u32) bool {
 // ============ Binary Reading Helpers ============
 
 const readU16 = binary.readU16;
+const readI16 = binary.readI16;
 const readU32 = binary.readU32;
 const readU64 = binary.readU64;

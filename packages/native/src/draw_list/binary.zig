@@ -3,6 +3,10 @@ pub inline fn readU16(buf: []const u8, offset: usize) u16 {
         (@as(u16, buf[offset + 1]) << 8);
 }
 
+pub inline fn readI16(buf: []const u8, offset: usize) i16 {
+    return @bitCast(readU16(buf, offset));
+}
+
 pub inline fn readU32(buf: []const u8, offset: usize) u32 {
     return @as(u32, buf[offset]) |
         (@as(u32, buf[offset + 1]) << 8) |

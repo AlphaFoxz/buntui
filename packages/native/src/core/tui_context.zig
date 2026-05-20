@@ -102,8 +102,8 @@ inline fn detectPosixTermRect(context: *TuiContext) void {
         logger.logError("posix cannot call ioctl");
         return;
     }
-    context.cols = winsize.col;
-    context.rows = winsize.row;
+    context.cols = @intCast(winsize.col);
+    context.rows = @intCast(winsize.row);
 }
 
 test "screen_rect" {

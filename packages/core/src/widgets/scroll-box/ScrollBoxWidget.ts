@@ -279,7 +279,6 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
 
       const {x: childX, y: childY, width: childW, height: childH} = child.rect;
 
-      // Skip children entirely outside the viewport
       if (childY + childH <= viewport.y || childY >= viewport.y + viewport.height) {
         continue;
       }
@@ -288,31 +287,7 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
         continue;
       }
 
-      // Clamp negative coordinates to avoid U16 overflow in DrawList,
-      // then restore original rect after rendering. Viewport clip handles visual cropping.
-      const clampedX = Math.max(0, childX);
-      const clampedY = Math.max(0, childY);
-      const needsClamp = clampedX !== childX || clampedY !== childY;
-
-      if (needsClamp) {
-        child.updateRect({
-          x: clampedX,
-          y: clampedY,
-          width: childW - (clampedX - childX),
-          height: childH - (clampedY - childY),
-        });
-      }
-
       child.emitDrawCommands(buffer);
-
-      if (needsClamp) {
-        child.updateRect({
-          x: childX,
-          y: childY,
-          width: childW,
-          height: childH,
-        });
-      }
     }
 
     buffer.popClip();

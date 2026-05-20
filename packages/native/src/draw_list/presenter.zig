@@ -21,8 +21,8 @@ pub fn presentFrame(ctx: *tui_context.TuiContext, result: ParseResult) void {
 
     const writer: *Io.Writer = &std_io.writer.interface;
     const dirty = frame.dirty;
-    const width = frame.next_frame.width;
-    const height = frame.next_frame.height;
+    const width: usize = @intCast(frame.next_frame.width);
+    const height: usize = @intCast(frame.next_frame.height);
     const cells = frame.next_frame.cells;
 
     if (result.synchronized_update) {

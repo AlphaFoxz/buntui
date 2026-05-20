@@ -56,8 +56,8 @@ export class PointerManager {
 
             const mx = data.x - 1;
             const my = data.y - 1;
-            const newX = Math.max(0, mx - this.#dragOffsetX);
-            const newY = Math.max(0, my - this.#dragOffsetY);
+            const newX = mx - this.#dragOffsetX;
+            const newY = my - this.#dragOffsetY;
             dragTarget.updateRect({
               x: newX,
               y: newY,

@@ -12,6 +12,7 @@ const BUFFER_VERSION = cmd.BUFFER_VERSION;
 const CMD_HEADER_SIZE = cmd.CMD_HEADER_SIZE;
 const DrawCmd = cmd.DrawCmd;
 const readU16 = binary.readU16;
+const readI16 = binary.readI16;
 const readU32 = binary.readU32;
 const Rgba = @import("../ansi_util/style.zig").Rgba;
 
@@ -36,7 +37,7 @@ var raster_state: RasterizerState = undefined;
 var raster_initialized: bool = false;
 
 fn prescanBackground(buf: []const u8, buf_len: usize) void {
-    var pre_offset: usize = BUFFER_HEADER_SIZE;
+    var pre_offset = BUFFER_HEADER_SIZE;
     while (pre_offset + CMD_HEADER_SIZE <= buf_len) {
         const pre_cmd_type = readU16(buf, pre_offset);
         const pre_payload_len = readU32(buf, pre_offset + 4);
@@ -71,7 +72,7 @@ fn clearFrame() void {
 
 fn parseCommands(buf: []const u8, buf_len: usize) PostState {
     var post = PostState{};
-    var offset: usize = BUFFER_HEADER_SIZE;
+    var offset = BUFFER_HEADER_SIZE;
 
     while (offset + CMD_HEADER_SIZE <= buf_len) {
         const cmd_type = readU16(buf, offset);
@@ -93,8 +94,8 @@ fn parseCommands(buf: []const u8, buf_len: usize) PostState {
         switch (cmd_enum) {
             .SetCursor => {
                 if (payload.len >= 4) {
-                    post.cursor_x = readU16(payload, 0);
-                    post.cursor_y = readU16(payload, 2);
+                    post.cursor_x = @intCast(@max(0, readI16(payload, 0)));
+                    post.cursor_y = @intCast(@max(0, readI16(payload, 2)));
                 }
             },
             .ShowCursor => {

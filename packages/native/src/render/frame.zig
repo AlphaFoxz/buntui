@@ -45,7 +45,7 @@ fn resizeFrame(f: *TuiFrame, rows: TuiScale, cols: TuiScale) void {
         allocator.free(f.cells);
     }
 
-    const size = rows * cols;
+    const size = @as(usize, @intCast(rows)) * @as(usize, @intCast(cols));
     // Allocate without initializing — renderDrawList fills next_frame
     // immediately after checkScreenSize, and dirtyTrack naturally marks
     // everything dirty on the first frame after a resize.
@@ -62,7 +62,7 @@ fn resizeFrame(f: *TuiFrame, rows: TuiScale, cols: TuiScale) void {
 }
 
 pub fn checkScreenSize(ctx: *TuiContext) bool {
-    const size = ctx.rows * ctx.cols;
+    const size = @as(usize, @intCast(ctx.rows)) * @as(usize, @intCast(ctx.cols));
     var resized = false;
 
     if (ctx.cols != prev_frame.width or prev_frame.cells.len != size) {

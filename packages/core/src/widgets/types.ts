@@ -33,8 +33,8 @@ export type TuiWidgetComponentFlag = Enum<typeof TuiWidgetComponentFlag>;
  * @summary 64 bits = 8 bytes
  */
 export type TuiWidgetRect = {
-  x: U16;
-  y: U16;
+  x: I16;
+  y: I16;
   width: U16;
   height: U16;
 };
