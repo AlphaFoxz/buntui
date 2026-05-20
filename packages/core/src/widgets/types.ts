@@ -58,7 +58,7 @@ export type TuiWidgetStyle = {
 export type TuiFontStyleName = 'bold' | 'dim' | 'italic' | 'underline' | 'slowblink' | 'rapidblink' | 'reverse' | 'hidden' | 'crossedout' | 'fraktur' | 'overline';
 
 export const TuiFontStyleBit: Record<TuiFontStyleName, U16> = {
-  bold: Math.trunc(1),
+  bold: 1,
   dim: 1 << 1,
   italic: 1 << 2,
   underline: 1 << 3,
@@ -134,8 +134,7 @@ export type TuiWidgetBorder = {
  * │   │   ┃  │   │   ║  ┃   │   │  ║   │   │
  * ┕━━━┷━━━┛  ╘═══╧═══╝  ┖───┴───┘  ╙───┴───┘
  */
-export type {BorderStyle as TuiWidgetBorderStyle} from '../draw_list/types';
-export {BorderStyle} from '../draw_list/types';
+export type {BorderStyle} from '../draw_list/types';
 
 export type TuiBorderStyleName = 'none' | 'solid' | 'double' | 'rounded' | 'bold' | 'dashed' | 'dotted' | 'outsetbold' | 'outsetdouble';
 

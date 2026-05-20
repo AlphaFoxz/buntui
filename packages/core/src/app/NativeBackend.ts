@@ -4,7 +4,7 @@ import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import type {CStruct} from '../extern/types';
 import type {LogLevel} from '../extern/app/types';
 import TuiDataView from '../extern/TuiDataViewWrapper';
-import {LOGGER} from '../common/logger';
+import {LOGGER, logLevelToNumber} from '../common/logger';
 import {
   TuiEventType, KeyboardEvent, MouseEvent, WheelEvent, TermResizeEvent,
   type TuiEvent,
@@ -48,30 +48,8 @@ export class NativeBackend implements TuiBackend {
   #eventRunning = false;
 
   setupLogger(logFileDir: string, backendLogName: string, logLevel: LogLevel, clearLog: boolean): void {
-    let logLvl: number;
-    switch (logLevel) {
-      case 'debug': {
-        logLvl = 0;
-        break;
-      }
-
-      case 'info': {
-        logLvl = 1;
-        break;
-      }
-
-      case 'warning': {
-        logLvl = 2;
-        break;
-      }
-
-      case 'error': {
-        logLvl = 3;
-        break;
-      }
-    }
-
-    loadLib().setupLogger(toCstring(logFileDir), toCstring(backendLogName), logLvl, clearLog ? 1 : 0);
+    const logLevelValue = logLevelToNumber(logLevel);
+    loadLib().setupLogger(toCstring(logFileDir), toCstring(backendLogName), logLevelValue, clearLog ? 1 : 0);
   }
 
   startApp(): void {

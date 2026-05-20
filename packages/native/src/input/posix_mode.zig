@@ -21,8 +21,7 @@ pub const STD_HANDLE = enum(u32) {
 
 fn writeRawStdout(seq: []const u8) void {
     const stdout_handle = std.posix.STDOUT_FILENO;
-    const result = std.os.linux.write(stdout_handle, seq.ptr, seq.len);
-    // Silently ignore errors - if ANSI sequences don't write, it's not critical
+    const result = std.posix.system.write(stdout_handle, seq.ptr, seq.len);
     _ = result;
 }
 

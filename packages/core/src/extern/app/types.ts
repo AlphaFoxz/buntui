@@ -16,19 +16,3 @@ export type TuiSceneOptions = {
   bgHexRgb?: number | string | {r: number; g: number; b: number};
 };
 
-export const TuiRenderCommandType = {
-  Rect: 0,
-  Text: 1,
-} as const;
-export type TuiRenderCommandType = Enum<typeof TuiRenderCommandType>;
-
-export type TuiRenderCommand = {
-  type: TuiRenderCommandType;
-  style: number;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  text: string;
-};
-

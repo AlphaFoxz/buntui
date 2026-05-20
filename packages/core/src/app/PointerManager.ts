@@ -50,6 +50,7 @@ export class PointerManager {
           if (dragTarget) {
             if (!this.#isDragging) {
               this.#isDragging = true;
+              dragTarget.clearPositionPercentSpec();
               dragTarget.dispatch('dragstart', data);
             }
 

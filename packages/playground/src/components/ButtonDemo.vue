@@ -4,7 +4,7 @@
 </template>
 
 <script setup lang="ts">
-import { onTick } from '@buntui/core'
+import { onTick, LOGGER } from '@buntui/core'
 import { computed, ref } from '@vue/reactivity'
 import { onMounted, onUnmounted } from 'vue'
 
@@ -27,9 +27,9 @@ onTick(() => {
 })
 
 onMounted(() => {
-    console.log('组件已挂载')
+    LOGGER.logDebug('组件已挂载')
 })
 onUnmounted(() => {
-    console.log('组件已卸载')
+    LOGGER.logDebug('组件已卸载')
 })
 </script>

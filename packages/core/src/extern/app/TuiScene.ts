@@ -4,10 +4,11 @@ import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import type {MouseEvent} from '../../events/types';
 import {type TuiWidgetEntity} from '../../widgets/TuiWidgetEntity';
 import {getTheme} from '../../theme/provider';
+import type {Entity} from '../types';
 import {type TuiSceneOptions} from './types';
 import {TUI_CONTEXT_INSTANCE} from './TuiContext';
 
-export class TuiScene {
+export class TuiScene implements Entity {
   readonly #id: bigint;
   #visible: boolean;
   #bgRgba: number;
@@ -15,6 +16,7 @@ export class TuiScene {
   readonly #lifecycleHandlers = new Map<string, Array<() => void>>();
   readonly #tickHandlers: Array<(dt: number) => void> = [];
   #sortedCache: TuiWidgetEntity[] | undefined = undefined;
+  #sortedReverseCache: TuiWidgetEntity[] | undefined = undefined;
 
   constructor(options?: Partial<TuiSceneOptions>) {
     this.#id = genId();
@@ -105,8 +107,7 @@ export class TuiScene {
     const mx = rawEvent.x - 1;
     const my = rawEvent.y - 1;
 
-    const sorted = [...this.#widgets].toReversed().toSorted((a, b) => b.zIndex - a.zIndex);
-    for (const widget of sorted) {
+    for (const widget of this.#getSortedWidgetsReverse()) {
       if (widget.visible && widget.containsPoint(mx, my)) {
         return this.#deepHitTest(widget, mx, my);
       }
@@ -190,6 +191,7 @@ export class TuiScene {
 
   #invalidateCache(): void {
     this.#sortedCache = undefined;
+    this.#sortedReverseCache = undefined;
   }
 
   #getSortedWidgets(): TuiWidgetEntity[] {
@@ -197,10 +199,15 @@ export class TuiScene {
     return this.#sortedCache;
   }
 
+  #getSortedWidgetsReverse(): TuiWidgetEntity[] {
+    this.#sortedReverseCache ??= [...this.#widgets].toReversed().toSorted((a, b) => b.zIndex - a.zIndex);
+    return this.#sortedReverseCache;
+  }
+
   #deepHitTest(widget: TuiWidgetEntity, x: number, y: number): TuiWidgetEntity {
     const {children} = widget;
     if (children.length > 0) {
-      const sorted = [...children].toReversed().toSorted((a, b) => b.zIndex - a.zIndex);
+      const sorted = children.toSorted((a, b) => b.zIndex - a.zIndex);
       for (const child of sorted) {
         if (child.visible && child.containsPoint(x, y)) {
           return this.#deepHitTest(child, x, y);

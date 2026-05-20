@@ -25,6 +25,18 @@ function charIndexAtColumn(string_: string, column: number): number {
   return index;
 }
 
+const CHAR_CATEGORY_WORD = 0;
+const CHAR_CATEGORY_SPACE = 1;
+const CHAR_CATEGORY_PUNCT = 2;
+const CHAR_CATEGORY_CJK = 3;
+
+function charCategory(code: number): number {
+  if (code <= 0x20) return CHAR_CATEGORY_SPACE;
+  if ((code >= 0x4E00 && code <= 0x9FFF) || (code >= 0x3400 && code <= 0x4DBF) || (code >= 0x3000 && code <= 0x303F) || (code >= 0xFF00 && code <= 0xFFEF)) return CHAR_CATEGORY_CJK;
+  if ((code >= 0x21 && code <= 0x2F) || (code >= 0x3A && code <= 0x40) || (code >= 0x5B && code <= 0x60) || (code >= 0x7B && code <= 0x7E)) return CHAR_CATEGORY_PUNCT;
+  return CHAR_CATEGORY_WORD;
+}
+
 function getDefaultInputOptions(): InputWidgetOptions {
   const theme = getTheme();
   return {
@@ -198,24 +210,49 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
       return;
     }
 
+    if (event.ctrlKey && event.key === 'a') {
+      this.#handleSelectAll(event);
+      return;
+    }
+
     switch (event.key) {
       case 'Backspace': {
-        this.#handleBackspace();
+        if (event.ctrlKey) {
+          this.#handleWordBackspace();
+        } else {
+          this.#handleBackspace();
+        }
+
         break;
       }
 
       case 'Delete': {
-        this.#handleDelete();
+        if (event.ctrlKey) {
+          this.#handleWordDelete();
+        } else {
+          this.#handleDelete();
+        }
+
         break;
       }
 
       case 'ArrowLeft': {
-        this.#handleArrowLeft(event);
+        if (event.ctrlKey) {
+          this.#handleWordLeft(event);
+        } else {
+          this.#handleArrowLeft(event);
+        }
+
         break;
       }
 
       case 'ArrowRight': {
-        this.#handleArrowRight(event);
+        if (event.ctrlKey) {
+          this.#handleWordRight(event);
+        } else {
+          this.#handleArrowRight(event);
+        }
+
         break;
       }
 
@@ -226,11 +263,6 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
 
       case 'End': {
         this.#handleEnd(event);
-        break;
-      }
-
-      case 'a': {
-        this.#handleSelectAll(event);
         break;
       }
 
@@ -511,6 +543,50 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
     }
   }
 
+  #handleWordBackspace(): void {
+    if (this.#deleteSelection()) {
+      return;
+    }
+
+    if (this.#cursorPos <= 0) {
+      return;
+    }
+
+    let pos = this.#cursorPos;
+    const cat = charCategory(this.#value.charCodeAt(pos - 1));
+    pos--;
+    while (pos > 0 && charCategory(this.#value.charCodeAt(pos - 1)) === cat) {
+      pos--;
+    }
+
+    this.#value = this.#value.slice(0, pos) + this.#value.slice(this.#cursorPos);
+    this.#cursorPos = pos;
+    this.#clampScrollOffset();
+    this.dispatch('input', {value: this.#value});
+  }
+
+  #handleWordDelete(): void {
+    if (this.#deleteSelection()) {
+      return;
+    }
+
+    const {length} = this.#value;
+    if (this.#cursorPos >= length) {
+      return;
+    }
+
+    let pos = this.#cursorPos;
+    const cat = charCategory(this.#value.charCodeAt(pos));
+    pos++;
+    while (pos < length && charCategory(this.#value.charCodeAt(pos)) === cat) {
+      pos++;
+    }
+
+    this.#value = this.#value.slice(0, this.#cursorPos) + this.#value.slice(pos);
+    this.#clampScrollOffset();
+    this.dispatch('input', {value: this.#value});
+  }
+
   #handleBackspace(): void {
     if (this.#deleteSelection()) {
       return;
@@ -560,6 +636,41 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
       this.#cursorPos++;
       this.#clampScrollOffset();
     }
+  }
+
+  #handleWordLeft(event: KeyboardEvent): void {
+    this.#updateSelectionForMovement(event);
+    if (this.#cursorPos <= 0) {
+      return;
+    }
+
+    let pos = this.#cursorPos;
+    const cat = charCategory(this.#value.charCodeAt(pos - 1));
+    pos--;
+    while (pos > 0 && charCategory(this.#value.charCodeAt(pos - 1)) === cat) {
+      pos--;
+    }
+
+    this.#cursorPos = pos;
+    this.#clampScrollOffset();
+  }
+
+  #handleWordRight(event: KeyboardEvent): void {
+    this.#updateSelectionForMovement(event);
+    const {length} = this.#value;
+    if (this.#cursorPos >= length) {
+      return;
+    }
+
+    let pos = this.#cursorPos;
+    const cat = charCategory(this.#value.charCodeAt(pos));
+    pos++;
+    while (pos < length && charCategory(this.#value.charCodeAt(pos)) === cat) {
+      pos++;
+    }
+
+    this.#cursorPos = pos;
+    this.#clampScrollOffset();
   }
 
   #handleHome(event: KeyboardEvent): void {

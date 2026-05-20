@@ -4,6 +4,7 @@ import process from 'node:process';
 import {TuiEventType} from '../events/types';
 import {TUI_CONTEXT_INSTANCE} from '../extern/app/TuiContext';
 import {type LogLevel, type TuiAppOptions, type TuiSceneOptions} from '../extern/app/types';
+import type {Disposable} from '../extern/types';
 import {LOGGER} from '../common/logger';
 import {EVENT_BUS} from '../events';
 import TuiScene from '../extern/app/TuiScene';
@@ -23,7 +24,7 @@ import {runSetup} from './scene-context';
  */
 export type TuiSFCModule = Record<string, unknown>;
 
-export class TuiApp {
+export class TuiApp implements Disposable {
   readonly #debugMode: boolean;
   readonly #backend: TuiBackend;
   #scenes: TuiScene[] = [];
@@ -125,6 +126,14 @@ export class TuiApp {
     EVENT_BUS.stop();
     LOGGER.logInfo('TUI application stopped');
     LOGGER.deinit();
+  }
+
+  [Symbol.dispose](): void {
+    this.dispose();
+  }
+
+  async [Symbol.asyncDispose](): Promise<void> {
+    this.dispose();
   }
 
   stop() {
@@ -294,7 +303,7 @@ function formatArg(arg: unknown): string {
   return String(arg);
 }
 
-function onUnexceptExit(error: unknown) {
+function onUnexpectedExit(error: unknown) {
   const message = error instanceof Error
     ? (error.stack ?? error.message)
     : String(error);
@@ -304,14 +313,12 @@ function onUnexceptExit(error: unknown) {
   restoreConsole();
   flushConsole();
   setTimeout(() => {
-    if (appInstance) {
-      appInstance.dispose();
-      process.exit(1);
-    }
+    appInstance?.dispose();
+    process.exit(1);
   });
 }
 
-process.on('unhandledRejection', onUnexceptExit);
-process.on('uncaughtException', onUnexceptExit);
+process.on('unhandledRejection', onUnexpectedExit);
+process.on('uncaughtException', onUnexpectedExit);
 
 export default TuiApp;

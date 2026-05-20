@@ -477,8 +477,8 @@ fn getTerminalSize() !struct { rows: u16, cols: u16 } {
     const stdin_handle = std.posix.STDIN_FILENO;
     var size: std.posix.winsize = undefined;
 
-    const err = std.os.linux.ioctl(stdin_handle, std.os.linux.T.IOCGWINSZ, @intFromPtr(&size));
-    if (err != 0) {
+    const rc = std.posix.system.ioctl(stdin_handle, std.posix.T.IOCGWINSZ, @intFromPtr(&size));
+    if (rc != 0) {
         return error.IoctlFailed;
     }
 
@@ -500,8 +500,8 @@ fn checkAndEmitResize() void {
                 emitResizeEvent(term_rows, term_cols);
                 logger.logInfoFmt("终端调整大小: {}x{}", .{ term_cols, term_rows });
             }
-        } else |err| {
-            logger.logErrorFmt("获取终端大小失败: {}", .{err});
+        } else |e| {
+            logger.logErrorFmt("获取终端大小失败: {}", .{e});
         }
     }
 }

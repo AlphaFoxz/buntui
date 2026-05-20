@@ -420,6 +420,97 @@ describe('scroll behavior', () => {
   });
 });
 
+describe('Ctrl+Arrow word navigation', () => {
+  it('Ctrl+ArrowRight skips current word run', () => {
+    const input = createInput({value: 'hello world'});
+    input.handleKey(key({key: 'Home'}));
+    input.handleKey(key({key: 'ArrowRight', ctrlKey: true}));
+    input.handleKey(key({key: 'X'}));
+    expect(input.value).toBe('helloX world');
+  });
+
+  it('Ctrl+ArrowLeft skips previous word run', () => {
+    const input = createInput({value: 'hello world'});
+    input.handleKey(key({key: 'ArrowLeft', ctrlKey: true}));
+    input.handleKey(key({key: 'X'}));
+    expect(input.value).toBe('hello Xworld');
+  });
+
+  it('Ctrl+ArrowRight treats punctuation as its own segment', () => {
+    const input = createInput({value: 'foo,bar'});
+    input.handleKey(key({key: 'Home'}));
+    input.handleKey(key({key: 'ArrowRight', ctrlKey: true}));
+    input.handleKey(key({key: 'X'}));
+    expect(input.value).toBe('fooX,bar');
+  });
+
+  it('Ctrl+ArrowRight skips consecutive punctuation', () => {
+    const input = createInput({value: 'foo::bar'});
+    input.handleKey(key({key: 'Home'}));
+    input.handleKey(key({key: 'ArrowRight', ctrlKey: true}));
+    input.handleKey(key({key: 'ArrowRight', ctrlKey: true}));
+    input.handleKey(key({key: 'X'}));
+    expect(input.value).toBe('foo::Xbar');
+  });
+
+  it('Ctrl+ArrowRight groups consecutive CJK characters', () => {
+    const input = createInput({value: '你好,123'});
+    input.handleKey(key({key: 'Home'}));
+    input.handleKey(key({key: 'ArrowRight', ctrlKey: true}));
+    input.handleKey(key({key: 'X'}));
+    expect(input.value).toBe('你好X,123');
+  });
+
+  it('Ctrl+ArrowRight skips punctuation after CJK', () => {
+    const input = createInput({value: '你好,123'});
+    input.handleKey(key({key: 'Home'}));
+    input.handleKey(key({key: 'ArrowRight', ctrlKey: true}));
+    input.handleKey(key({key: 'ArrowRight', ctrlKey: true}));
+    input.handleKey(key({key: 'X'}));
+    expect(input.value).toBe('你好,X123');
+  });
+
+  it('Ctrl+ArrowLeft from within digits stops at segment start', () => {
+    const input = createInput({value: '你好,123'});
+    input.handleKey(key({key: 'ArrowLeft'}));
+    input.handleKey(key({key: 'ArrowLeft', ctrlKey: true}));
+    input.handleKey(key({key: 'X'}));
+    expect(input.value).toBe('你好,X123');
+  });
+
+  it('Ctrl+ArrowLeft skips back past punctuation to CJK', () => {
+    const input = createInput({value: '你好,123'});
+    input.handleKey(key({key: 'ArrowLeft'}));
+    input.handleKey(key({key: 'ArrowLeft', ctrlKey: true}));
+    input.handleKey(key({key: 'ArrowLeft', ctrlKey: true}));
+    input.handleKey(key({key: 'X'}));
+    expect(input.value).toBe('你好X,123');
+  });
+
+  it('Ctrl+ArrowLeft skips back past CJK to start', () => {
+    const input = createInput({value: '你好,123'});
+    input.handleKey(key({key: 'ArrowLeft'}));
+    input.handleKey(key({key: 'ArrowLeft', ctrlKey: true}));
+    input.handleKey(key({key: 'ArrowLeft', ctrlKey: true}));
+    input.handleKey(key({key: 'ArrowLeft', ctrlKey: true}));
+    input.handleKey(key({key: 'X'}));
+    expect(input.value).toBe('X你好,123');
+  });
+
+  it('Ctrl+ArrowRight at end does nothing', () => {
+    const input = createInput({value: 'abc'});
+    input.handleKey(key({key: 'ArrowRight', ctrlKey: true}));
+    expect(input.value).toBe('abc');
+  });
+
+  it('Ctrl+ArrowLeft at start does nothing', () => {
+    const input = createInput({value: 'abc'});
+    input.handleKey(key({key: 'Home'}));
+    input.handleKey(key({key: 'ArrowLeft', ctrlKey: true}));
+    expect(input.value).toBe('abc');
+  });
+});
+
 describe('edge cases', () => {
   it('ignores undefined key', () => {
     const input = createInput();

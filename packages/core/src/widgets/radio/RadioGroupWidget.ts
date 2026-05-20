@@ -36,6 +36,7 @@ export class RadioGroupWidget extends InteractiveWidget {
   #options: string[];
   #value: number;
   #hoveredIndex = -1;
+  #focusedIndex = -1;
 
   readonly #colorFgNormal: number;
   readonly #colorBgNormal: number;
@@ -118,22 +119,22 @@ export class RadioGroupWidget extends InteractiveWidget {
     }
 
     if (event.key === 'ArrowUp') {
-      if (this.#hoveredIndex <= 0) {
-        this.#hoveredIndex = this.#options.length - 1;
+      if (this.#focusedIndex <= 0) {
+        this.#focusedIndex = this.#options.length - 1;
       } else {
-        this.#hoveredIndex--;
+        this.#focusedIndex--;
       }
 
       return;
     }
 
     if (event.key === 'ArrowDown') {
-      this.#hoveredIndex = (this.#hoveredIndex + 1) % this.#options.length;
+      this.#focusedIndex = (this.#focusedIndex + 1) % this.#options.length;
       return;
     }
 
-    if ((event.key === 'Enter' || event.key === ' ') && this.#hoveredIndex >= 0) {
-      this.#select(this.#hoveredIndex);
+    if ((event.key === 'Enter' || event.key === ' ') && this.#focusedIndex >= 0) {
+      this.#select(this.#focusedIndex);
     }
   }
 
@@ -165,6 +166,10 @@ export class RadioGroupWidget extends InteractiveWidget {
 
     if (this.#hoveredIndex >= options.length) {
       this.#hoveredIndex = Math.max(0, options.length - 1);
+    }
+
+    if (this.#focusedIndex >= options.length) {
+      this.#focusedIndex = Math.max(0, options.length - 1);
     }
   }
 
@@ -200,11 +205,12 @@ export class RadioGroupWidget extends InteractiveWidget {
       const option = this.#options[i]!;
       const isSelected = i === this.#value;
       const isHovered = i === this.#hoveredIndex;
+      const isFocused = i === this.#focusedIndex;
       const rowY = y + i;
 
       const indicator = isSelected ? '(●)' : '( )';
-      const fg = isSelected ? this.#colorFgSelected : (isHovered ? this.#colorFgFocused : baseFg);
-      const bg = isSelected ? this.#colorBgSelected : (isHovered ? this.#colorBgFocused : 0x00_00_00_00);
+      const fg = isSelected ? this.#colorFgSelected : ((isHovered || isFocused) ? this.#colorFgFocused : baseFg);
+      const bg = isSelected ? this.#colorBgSelected : ((isHovered || isFocused) ? this.#colorBgFocused : 0x00_00_00_00);
 
       if (bg !== 0x00_00_00_00) {
         buffer.drawRect({

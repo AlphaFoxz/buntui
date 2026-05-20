@@ -9,35 +9,31 @@ pub var reader: std.Io.File.Reader = undefined;
 var readerInit: bool = false;
 
 var threaded: std.Io.Threaded = undefined;
+var threadedInit: bool = false;
+
+fn ensureThreaded() void {
+    if (!threadedInit) {
+        threadedInit = true;
+        threaded = std.Io.Threaded.init(
+            std.heap.c_allocator,
+            .{
+                .stack_size = 1024 * 1024,
+                .argv0 = undefined,
+            },
+        );
+    }
+}
 
 pub fn init() void {
     if (!writerInit) {
         writerInit = true;
-        if (!readerInit) {
-            threaded = std.Io.Threaded.init(
-                std.heap.c_allocator,
-                .{
-                    .stack_size = 1024 * 1024,
-                    .argv0 = undefined,
-                },
-            );
-            readerInit = true;
-        }
+        ensureThreaded();
         const io = threaded.io();
         writer = std.Io.File.writerStreaming(std.Io.File.stdout(), io, &writeBuf);
     }
     if (!readerInit) {
         readerInit = true;
-        if (!writerInit) {
-            threaded = std.Io.Threaded.init(
-                std.heap.c_allocator,
-                .{
-                    .stack_size = 1024 * 1024,
-                    .argv0 = undefined,
-                },
-            );
-            writerInit = true;
-        }
+        ensureThreaded();
         const io = threaded.io();
         reader = std.Io.File.readerStreaming(std.Io.File.stdin(), io, &readBuf);
     }

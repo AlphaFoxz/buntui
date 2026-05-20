@@ -13,8 +13,8 @@ export class TuiDataViewWrapper {
     this.#inner = new globalThis.DataView(buffer, byteOffset, byteLength);
   }
 
-  get dataView() {
-    return this.#inner;
+  get byteLength() {
+    return this.#inner.byteLength;
   }
 
   getFloat32(byteOffset: number, littleEndian?: boolean) {

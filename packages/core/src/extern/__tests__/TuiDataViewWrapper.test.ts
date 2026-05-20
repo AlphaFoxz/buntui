@@ -6,7 +6,7 @@ describe('basic wrapping', () => {
   it('wraps an ArrayBuffer', () => {
     const buffer = new ArrayBuffer(16);
     const dv = new TuiDataViewWrapper(buffer);
-    expect(dv.dataView.byteLength).toBe(16);
+    expect(dv.byteLength).toBe(16);
   });
 });
 

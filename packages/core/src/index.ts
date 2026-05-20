@@ -19,9 +19,7 @@ export type {
   TuiWidgetStyle,
   TuiWidgetBorder,
   TuiWidgetShadow,
-  TuiWidgetText,
   TuiWidgetComponentType,
-  TuiWidgetBorderStyle,
   TuiBorderStyleName,
   TuiWidgetSize,
   TuiWidgetPadding,
@@ -30,11 +28,9 @@ export type {
   TuiWidgetPercentSpec,
   TuiLayoutDirectionName,
   TuiLayoutAlignmentName,
-  TuiFontStyleName,
-  TuiFontStyleInput,
 } from './widgets/types';
 export {
-  TuiLayoutDirection, TuiLayoutAlignment, TuiFontStyleBit, resolveFontStyle, resolveBorderStyle,
+  TuiLayoutDirection, TuiLayoutAlignment, resolveFontStyle, resolveBorderStyle,
 } from './widgets/types';
 export {DrawListBuffer} from './draw_list/DrawListBuffer';
 export {createInputWidget, InputWidget} from './widgets/input/InputWidget';
@@ -56,7 +52,6 @@ export type {ProgressBarWidgetOptions} from './widgets/progress-bar/types';
 export {
   BorderSides, BorderStyle, CursorMode, resolveCursorMode,
 } from './draw_list/types';
-export type {CursorModeName} from './draw_list/types';
 export type {KeyboardEvent, MouseEvent} from './events/types';
 export {
   isPercent, resolvePercent, extractPercentSpec, resolveSizeValue,
@@ -66,4 +61,5 @@ export type {TuiTheme, TuiThemeColors, TuiThemeBorderStyle} from './theme/types'
 export {getTheme, setTheme} from './theme/provider';
 export {useTheme} from './theme/use-theme';
 export {onTick, onMounted, onUnmounted} from './app/composables';
+export {LOGGER} from './common/logger';
 export {runSetup} from './app/scene-context';

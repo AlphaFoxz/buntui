@@ -172,9 +172,8 @@ pub const FixedColor = packed struct {
         // 2. 灰度阶梯 (232-255)
         // 范围从 0x08 到 0xEE，步长为 10
         if (fixed >= 232) {
-            const v: u32 = @intCast((fixed - 232) * 10 + 8);
-            const result: u32 = 0;
-            return result | v << 24 | v << 16 | v << 8 | 0xFF;
+        const v: u32 = @intCast((fixed - 232) * 10 + 8);
+        return v << 24 | v << 16 | v << 8 | 0xFF;
         }
 
         // 3. 6x6x6 颜色立方体 (16-231)
@@ -192,7 +191,7 @@ pub const FixedColor = packed struct {
         // 对应值: 0, 95, 135, 175, 215, 255
         return mapCubeValues(r_idx, g_idx, b_idx);
     }
-    pub fn eql(self: GrayColor, other: anytype) bool {
+    pub fn eql(self: FixedColor, other: FixedColor) bool {
         return self.toU32() == other.toU32();
     }
     // 辅助函数：将 0-5 的立方体索引映射为 0-255 的颜色值
@@ -201,8 +200,10 @@ pub const FixedColor = packed struct {
         return val * 40 + 55;
     }
     inline fn mapCubeValues(r: u8, g: u8, b: u8) u32 {
-        const result: u32 = 0;
-        return result | @as(u32, r) * 40 + 55 << 24 | @as(u32, g) * 40 + 55 << 16 | @as(u32, b) * 40 + 55 << 8 | 0xFF;
+        const rv: u32 = mapCubeValue(r);
+        const gv: u32 = mapCubeValue(g);
+        const bv: u32 = mapCubeValue(b);
+        return rv << 24 | gv << 16 | bv << 8 | 0xFF;
     }
 };
 

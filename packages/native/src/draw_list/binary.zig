@@ -1,16 +1,16 @@
-pub fn readU16(buf: []const u8, offset: usize) u16 {
+pub inline fn readU16(buf: []const u8, offset: usize) u16 {
     return @as(u16, buf[offset]) |
         (@as(u16, buf[offset + 1]) << 8);
 }
 
-pub fn readU32(buf: []const u8, offset: usize) u32 {
+pub inline fn readU32(buf: []const u8, offset: usize) u32 {
     return @as(u32, buf[offset]) |
         (@as(u32, buf[offset + 1]) << 8) |
         (@as(u32, buf[offset + 2]) << 16) |
         (@as(u32, buf[offset + 3]) << 24);
 }
 
-pub fn readU64(buf: []const u8, offset: usize) u64 {
+pub inline fn readU64(buf: []const u8, offset: usize) u64 {
     return @as(u64, buf[offset]) |
         (@as(u64, buf[offset + 1]) << 8) |
         (@as(u64, buf[offset + 2]) << 16) |

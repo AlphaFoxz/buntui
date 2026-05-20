@@ -267,10 +267,13 @@ const Parser = struct {
         const unicode_char = record.uChar.UnicodeChar;
         const virtual_code = record.wVirtualKeyCode;
         const state = record.dwControlKeyState;
-        const is_ctrl = (state & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) != 0;
+        var is_ctrl = (state & (LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) != 0;
         const is_alt = (state & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)) != 0;
         const is_shift = (state & SHIFT_PRESSED) != 0;
         const is_repeat = record.wRepeatCount > 1;
+        if (unicode_char == 0x08 and virtual_code == 0 and !is_ctrl) {
+            is_ctrl = true;
+        }
 
         if (unicode_char == 0) {
             logger.logDebugFmt("特殊键 (VirtualKey: {})", .{virtual_code});

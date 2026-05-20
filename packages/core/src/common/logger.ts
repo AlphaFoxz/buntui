@@ -16,6 +16,26 @@ const LOG_LEVEL_INFO = 1;
 const LOG_LEVEL_WARNING = 2;
 const LOG_LEVEL_ERROR = 3;
 
+export function logLevelToNumber(level: LogLevel): number {
+  switch (level) {
+    case 'debug': {
+      return LOG_LEVEL_DEBUG;
+    }
+
+    case 'info': {
+      return LOG_LEVEL_INFO;
+    }
+
+    case 'warning': {
+      return LOG_LEVEL_WARNING;
+    }
+
+    case 'error': {
+      return LOG_LEVEL_ERROR;
+    }
+  }
+}
+
 let cachedTimestampString = '';
 let cachedTimestamp = 0;
 function timestampString() {
@@ -54,30 +74,9 @@ class LoggerImpl {
   #immediateId: ReturnType<typeof setImmediate> | undefined;
   async init(options: LoggerOptions) {
     this.#logFileDir = options.logFileDir;
-    const {logLevel} = options;
-    const {clearLog} = options;
+    const {logLevel, clearLog} = options;
     this.#logFile = path.resolve(this.#logFileDir, options.frontendLogName);
-    switch (logLevel) {
-      case 'debug': {
-        this.#logLevel = LOG_LEVEL_DEBUG;
-        break;
-      }
-
-      case 'info': {
-        this.#logLevel = LOG_LEVEL_INFO;
-        break;
-      }
-
-      case 'warning': {
-        this.#logLevel = LOG_LEVEL_WARNING;
-        break;
-      }
-
-      case 'error': {
-        this.#logLevel = LOG_LEVEL_ERROR;
-        break;
-      }
-    }
+    this.#logLevel = logLevelToNumber(logLevel);
 
     if (!fs.existsSync(this.#logFileDir)) {
       fs.mkdirSync(this.#logFileDir);

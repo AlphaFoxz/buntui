@@ -44,7 +44,7 @@ pub const RasterizerState = struct {
 // ============ Command Dispatch ============
 
 pub fn processCommand(state: *RasterizerState, cells: []TuiCell, command_type: u16, flags: u16, payload: []const u8) void {
-    const cmd_type: DrawCmd = @enumFromInt(command_type);
+    const cmd_type = cmd.drawCmdFromInt(command_type) orelse return;
     switch (cmd_type) {
         .SetBackground => rasterizeSetBackground(state, payload),
         .SetCursor => {}, // Handled after all commands in mod.zig
@@ -95,13 +95,13 @@ fn rasterizeSetEntityId(state: *RasterizerState, payload: []const u8) void {
 /// Compute the intersection of a rectangular region with the current clip,
 /// returning a ClipRect suitable for use as loop bounds. Returns an empty
 /// rect (width or height == 0) when the region is entirely clipped out.
-fn clipIntersect(clip: ClipRect, x: TuiScale, y: TuiScale, w: TuiScale, h: TuiScale) ClipRect {
+inline fn clipIntersect(clip: ClipRect, x: TuiScale, y: TuiScale, w: TuiScale, h: TuiScale) ClipRect {
     return clip.intersect(.{ .x = x, .y = y, .width = w, .height = h });
 }
 
 /// Intersect a single-row strip with the clip rect. Used for functions that
 /// iterate over a fixed row (e.g. border edges, text rendering).
-fn clipRow(clip: ClipRect, row: TuiScale, col_start: TuiScale, col_end: TuiScale) struct { start: TuiScale, end: TuiScale } {
+inline fn clipRow(clip: ClipRect, row: TuiScale, col_start: TuiScale, col_end: TuiScale) struct { start: TuiScale, end: TuiScale } {
     if (row < clip.y or row >= clip.y + clip.height) return .{ .start = col_start, .end = col_start };
     const cs = @max(col_start, clip.x);
     const ce = @min(col_end, clip.x + clip.width);
@@ -112,7 +112,7 @@ fn clipRow(clip: ClipRect, row: TuiScale, col_start: TuiScale, col_end: TuiScale
 
 /// Write a wide character cell and its Hidden continuation cell.
 /// The continuation cell is only written if next_col is within the clip.
-fn writeWidePair(
+inline fn writeWidePair(
     cells: []TuiCell,
     state: *RasterizerState,
     col: TuiScale,
@@ -152,7 +152,7 @@ fn rasterizeDrawRect(state: *RasterizerState, cells: []TuiCell, payload: []const
     const y = readU16(payload, 2);
     const w = readU16(payload, 4);
     const h = readU16(payload, 6);
-    const bg_rgba = Rgba.fromU32(readU32(payload, 8));
+    const fill_rgba = Rgba.fromU32(readU32(payload, 8));
     const fill_char = readU16(payload, 12);
     const font_style = readU16(payload, 14);
     const is_wide = flags.wide_char;
@@ -163,9 +163,6 @@ fn rasterizeDrawRect(state: *RasterizerState, cells: []TuiCell, payload: []const
 
     const col_step: TuiScale = if (is_wide) 2 else 1;
 
-    // Snap start column to the original Wide-grid alignment.
-    // Wide chars occupy pairs (x, x+1), (x+2, x+3), ... — if visible.x
-    // lands on a Hidden continuation cell, skip it to avoid misalignment.
     const aligned_x: TuiScale = if (is_wide and (visible.x - x) % 2 != 0) visible.x + 1 else visible.x;
 
     var row: TuiScale = visible.y;
@@ -173,12 +170,12 @@ fn rasterizeDrawRect(state: *RasterizerState, cells: []TuiCell, payload: []const
         var col: TuiScale = aligned_x;
         while (col < visible.x + visible.width) : (col += col_step) {
             if (is_wide) {
-                writeWidePair(cells, state, col, row, clip, fill_char, bg_rgba, bg_rgba, font_style);
+                writeWidePair(cells, state, col, row, clip, fill_char, fill_rgba, fill_rgba, font_style);
             } else {
                 writeCell(cells, state.frame_width, state.frame_height, col, row, .{
                     .entity_id = state.entity_id,
-                    .fg_rgba = bg_rgba,
-                    .bg_rgba = bg_rgba,
+                    .fg_rgba = fill_rgba,
+                    .bg_rgba = fill_rgba,
                     .char = fill_char,
                     .font_style = font_style,
                     .cell_type = .Ascii,
@@ -240,11 +237,11 @@ fn rasterizeDrawBorder(state: *RasterizerState, cells: []TuiCell, payload: []con
     const w = readU16(payload, 4);
     const h = readU16(payload, 6);
     const color_rgba = Rgba.fromU32(readU32(payload, 8));
-    const border_style = payload[12];
+    const border_style: cmd.BorderStyle = @enumFromInt(payload[12]);
     const sides = payload[13];
 
     if (w < 2 or h < 2) return;
-    if (border_style == 0) return;
+    if (border_style == .none) return;
 
     const clip = state.clip_stack.current();
     const chars = borderChars(border_style);
@@ -326,15 +323,8 @@ fn rasterizeDrawShadow(state: *RasterizerState, cells: []TuiCell, payload: []con
     while (row < visible.y + visible.height) : (row += 1) {
         var col: TuiScale = visible.x;
         while (col < visible.x + visible.width) : (col += 1) {
-            // Skip cells inside the source rectangle
             if (col >= x and col < x + w and row >= y and row < y + h) continue;
-
-            const idx = @as(usize, row) * state.frame_width + col;
-            if (idx >= cells.len) continue;
-
-            var cell_bg = cells[idx].bg_rgba;
-            cell_bg.alphaCompositing(shadow_color);
-            cells[idx].bg_rgba = cell_bg;
+            blendCellBg(cells, state, col, row, shadow_color, 0);
         }
     }
 }
@@ -355,13 +345,7 @@ fn rasterizeDrawFill(state: *RasterizerState, cells: []TuiCell, payload: []const
     while (row < visible.y + visible.height) : (row += 1) {
         var col: TuiScale = visible.x;
         while (col < visible.x + visible.width) : (col += 1) {
-            const idx = @as(usize, row) * state.frame_width + col;
-            if (idx >= cells.len) continue;
-
-            var cell_bg = cells[idx].bg_rgba;
-            cell_bg.alphaCompositing(fill_color);
-            cells[idx].bg_rgba = cell_bg;
-            cells[idx].entity_id = state.entity_id;
+            blendCellBg(cells, state, col, row, fill_color, state.entity_id);
         }
     }
 }
@@ -407,7 +391,7 @@ fn rasterizeDrawLine(state: *RasterizerState, cells: []TuiCell, payload: []const
     const length = readU16(payload, 4);
     const direction = readU16(payload, 6);
     const color_rgba = Rgba.fromU32(readU32(payload, 8));
-    const line_style = payload[12];
+    const line_style: cmd.LineStyle = @enumFromInt(payload[12]);
 
     const clip = state.clip_stack.current();
     const line_chars = lineChars(line_style);
@@ -424,7 +408,7 @@ fn rasterizeDrawLine(state: *RasterizerState, cells: []TuiCell, payload: []const
 
 // ============ Helpers ============
 
-fn writeCell(cells: []TuiCell, frame_width: TuiScale, frame_height: TuiScale, x: TuiScale, y: TuiScale, new_cell: TuiCell) void {
+inline fn writeCell(cells: []TuiCell, frame_width: TuiScale, frame_height: TuiScale, x: TuiScale, y: TuiScale, new_cell: TuiCell) void {
     if (x >= frame_width or y >= frame_height) return;
     const idx = @as(usize, y) * frame_width + x;
     if (idx >= cells.len) return;
@@ -495,7 +479,20 @@ fn writeCell(cells: []TuiCell, frame_width: TuiScale, frame_height: TuiScale, x:
     }
 }
 
-fn writeBorderCell(cells: []TuiCell, state: *RasterizerState, x: TuiScale, y: TuiScale, char: u16, color: Rgba) void {
+inline fn blendCellBg(cells: []TuiCell, state: *RasterizerState, x: TuiScale, y: TuiScale, color: Rgba, entity_id: u64) void {
+    if (x >= state.frame_width or y >= state.frame_height) return;
+    const idx = @as(usize, y) * state.frame_width + x;
+    if (idx >= cells.len) return;
+
+    var bg = color;
+    bg.alphaCompositing(cells[idx].bg_rgba);
+    cells[idx].bg_rgba = bg;
+    if (entity_id != 0) {
+        cells[idx].entity_id = entity_id;
+    }
+}
+
+inline fn writeBorderCell(cells: []TuiCell, state: *RasterizerState, x: TuiScale, y: TuiScale, char: u16, color: Rgba) void {
     writeCell(cells, state.frame_width, state.frame_height, x, y, .{
         .entity_id = state.entity_id,
         .fg_rgba = color,
@@ -522,102 +519,98 @@ const LineChars = struct {
     vertical: u16,
 };
 
-fn lineChars(style: u8) LineChars {
+fn lineChars(style: cmd.LineStyle) LineChars {
     return switch (style) {
-        0 => .{ // Thin
-            .horizontal = 0x2500, // ─
-            .vertical = 0x2502, // │
-        },
-        1 => .{ // Double
-            .horizontal = 0x2550, // ═
-            .vertical = 0x2551, // ║
-        },
-        2 => .{ // Bold
-            .horizontal = 0x2501, // ━
-            .vertical = 0x2503, // ┃
-        },
-        3 => .{ // Dashed
-            .horizontal = 0x2504, // ┄
-            .vertical = 0x2506, // ┆
-        },
-        4 => .{ // Dotted
-            .horizontal = 0x2508, // ┈
-            .vertical = 0x250A, // ┊
-        },
-        else => .{ // Fallback to thin
+        .thin => .{
             .horizontal = 0x2500,
             .vertical = 0x2502,
+        },
+        .double => .{
+            .horizontal = 0x2550,
+            .vertical = 0x2551,
+        },
+        .bold => .{
+            .horizontal = 0x2501,
+            .vertical = 0x2503,
+        },
+        .dashed => .{
+            .horizontal = 0x2504,
+            .vertical = 0x2506,
+        },
+        .dotted => .{
+            .horizontal = 0x2508,
+            .vertical = 0x250A,
         },
     };
 }
 
-fn borderChars(style: u8) BorderChars {
+fn borderChars(style: cmd.BorderStyle) BorderChars {
     return switch (style) {
-        1 => .{ // Solid
-            .top_left = 0x250C, // ┌
-            .top_right = 0x2510, // ┐
-            .bottom_left = 0x2514, // └
-            .bottom_right = 0x2518, // ┘
-            .horizontal = 0x2500, // ─
-            .vertical = 0x2502, // │
+        .solid => .{
+            .top_left = 0x250C,
+            .top_right = 0x2510,
+            .bottom_left = 0x2514,
+            .bottom_right = 0x2518,
+            .horizontal = 0x2500,
+            .vertical = 0x2502,
         },
-        2 => .{ // Double
-            .top_left = 0x2554, // ╔
-            .top_right = 0x2557, // ╗
-            .bottom_left = 0x255A, // ╚
-            .bottom_right = 0x255D, // ╝
-            .horizontal = 0x2550, // ═
-            .vertical = 0x2551, // ║
+        .double => .{
+            .top_left = 0x2554,
+            .top_right = 0x2557,
+            .bottom_left = 0x255A,
+            .bottom_right = 0x255D,
+            .horizontal = 0x2550,
+            .vertical = 0x2551,
         },
-        3 => .{ // Rounded
-            .top_left = 0x256D, // ╭
-            .top_right = 0x256E, // ╮
-            .bottom_left = 0x2570, // ╰
-            .bottom_right = 0x256F, // ╯
-            .horizontal = 0x2500, // ─
-            .vertical = 0x2502, // │
+        .rounded => .{
+            .top_left = 0x256D,
+            .top_right = 0x256E,
+            .bottom_left = 0x2570,
+            .bottom_right = 0x256F,
+            .horizontal = 0x2500,
+            .vertical = 0x2502,
         },
-        4 => .{ // Bold
-            .top_left = 0x250F, // ┏
-            .top_right = 0x2513, // ┓
-            .bottom_left = 0x2517, // ┗
-            .bottom_right = 0x251B, // ┛
-            .horizontal = 0x2501, // ━
-            .vertical = 0x2503, // ┃
+        .bold => .{
+            .top_left = 0x250F,
+            .top_right = 0x2513,
+            .bottom_left = 0x2517,
+            .bottom_right = 0x251B,
+            .horizontal = 0x2501,
+            .vertical = 0x2503,
         },
-        5 => .{ // Dashed
-            .top_left = 0x250C, // ┌
-            .top_right = 0x2510, // ┐
-            .bottom_left = 0x2514, // └
-            .bottom_right = 0x2518, // ┘
-            .horizontal = 0x2504, // ┄
-            .vertical = 0x2506, // ┆
+        .dashed => .{
+            .top_left = 0x250C,
+            .top_right = 0x2510,
+            .bottom_left = 0x2514,
+            .bottom_right = 0x2518,
+            .horizontal = 0x2504,
+            .vertical = 0x2506,
         },
-        6 => .{ // Dotted
-            .top_left = 0x250C, // ┌
-            .top_right = 0x2510, // ┐
-            .bottom_left = 0x2514, // └
-            .bottom_right = 0x2518, // ┘
-            .horizontal = 0x2508, // ┈
-            .vertical = 0x250A, // ┊
+        .dotted => .{
+            .top_left = 0x250C,
+            .top_right = 0x2510,
+            .bottom_left = 0x2514,
+            .bottom_right = 0x2518,
+            .horizontal = 0x2508,
+            .vertical = 0x250A,
         },
-        7 => .{ // OutsetBold
-            .top_left = 0x2514, // └ (swapped for outset effect)
-            .top_right = 0x2518, // ┘
-            .bottom_left = 0x250C, // ┌
-            .bottom_right = 0x2510, // ┐
-            .horizontal = 0x2501, // ━
-            .vertical = 0x2503, // ┃
+        .outset_bold => .{
+            .top_left = 0x2514,
+            .top_right = 0x2518,
+            .bottom_left = 0x250C,
+            .bottom_right = 0x2510,
+            .horizontal = 0x2501,
+            .vertical = 0x2503,
         },
-        8 => .{ // OutsetDouble
-            .top_left = 0x255A, // ╚ (swapped for outset effect)
-            .top_right = 0x255D, // ╝
-            .bottom_left = 0x2554, // ╔
-            .bottom_right = 0x2557, // ╗
-            .horizontal = 0x2550, // ═
-            .vertical = 0x2551, // ║
+        .outset_double => .{
+            .top_left = 0x255A,
+            .top_right = 0x255D,
+            .bottom_left = 0x2554,
+            .bottom_right = 0x2557,
+            .horizontal = 0x2550,
+            .vertical = 0x2551,
         },
-        else => .{ // Fallback to solid
+        .none => .{
             .top_left = 0x250C,
             .top_right = 0x2510,
             .bottom_left = 0x2514,
@@ -630,7 +623,7 @@ fn borderChars(style: u8) BorderChars {
 
 // ============ Codepoint Width ============
 
-fn isWideCodepoint(cp: u32) bool {
+inline fn isWideCodepoint(cp: u32) bool {
     if (cp < 0x1100) return false;
     // CJK Unified Ideographs
     if (cp >= 0x4E00 and cp <= 0x9FFF) return true;

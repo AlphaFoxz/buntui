@@ -122,7 +122,6 @@ export class DrawListBuffer {
   }): void {
     const encoded = textEncoder.encode(text);
     const textLength = encoded.length;
-    this.#ensureCapacity(CMD_HEADER_SIZE + 16 + textLength);
     this.#writeHeader(DrawCmd.DrawText, 0, 16 + textLength);
     const o = this.#cursor;
     this.#view.setUint16(o, x, true);
@@ -240,7 +239,6 @@ export class DrawListBuffer {
 
   setTitle(title: string): void {
     const encoded = textEncoder.encode(title);
-    this.#ensureCapacity(CMD_HEADER_SIZE + 2 + encoded.length);
     this.#writeHeader(DrawCmd.SetTitle, 0, 2 + encoded.length);
     this.#view.setUint16(this.#cursor, encoded.length, true);
     new Uint8Array(this.#buffer).set(encoded, this.#cursor + 2);
@@ -263,15 +261,12 @@ export class DrawListBuffer {
 
   // ============ Private ============
 
-  #ensureCapacity(needed: number): void {
-    if (this.#cursor + needed <= this.#buffer.byteLength) {
-      return;
+  #writeHeader(cmdType: number, flags: number, payloadLength: number): void {
+    const needed = CMD_HEADER_SIZE + payloadLength;
+    if (this.#cursor + needed > this.#buffer.byteLength) {
+      throw new Error(`DrawListBuffer overflow: need ${needed} bytes at cursor ${this.#cursor}, buffer size ${this.#buffer.byteLength}`);
     }
 
-    throw new Error(`DrawListBuffer overflow: need ${needed} bytes at cursor ${this.#cursor}, buffer size ${this.#buffer.byteLength}`);
-  }
-
-  #writeHeader(cmdType: number, flags: number, payloadLength: number): void {
     const offset = this.#cursor;
     this.#view.setUint16(offset, cmdType, true);
     this.#view.setUint16(offset + 2, flags, true);

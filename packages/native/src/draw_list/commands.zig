@@ -47,6 +47,37 @@ pub const DrawCmd = enum(u16) {
     EndSync = 0x0031,
 };
 
+pub fn drawCmdFromInt(value: u16) ?DrawCmd {
+    inline for (std.meta.fields(DrawCmd)) |field| {
+        if (field.value == value) {
+            return @enumFromInt(value);
+        }
+    }
+    return null;
+}
+
+// ============ Style Enums ============
+
+pub const BorderStyle = enum(u8) {
+    none = 0,
+    solid = 1,
+    double = 2,
+    rounded = 3,
+    bold = 4,
+    dashed = 5,
+    dotted = 6,
+    outset_bold = 7,
+    outset_double = 8,
+};
+
+pub const LineStyle = enum(u8) {
+    thin = 0,
+    double = 1,
+    bold = 2,
+    dashed = 3,
+    dotted = 4,
+};
+
 // ============ Payload Structs ============
 
 pub const SetBackgroundPayload = extern struct {

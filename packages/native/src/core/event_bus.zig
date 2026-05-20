@@ -79,7 +79,7 @@ const EventBus = struct {
         return &self.slots[idx];
     }
 
-    fn commit_read(self: *EventBus) void {
+    fn commitRead(self: *EventBus) void {
         const tail = self.tail.load(.monotonic);
         self.tail.store(tail + 1, .release);
     }
@@ -121,7 +121,7 @@ pub fn event_bus_poll() ?*const EventSlot {
 // 确认读取
 pub fn event_bus_commit() void {
     if (!initialized) return;
-    global_bus.commit_read();
+    global_bus.commitRead();
 }
 
 // 获取队列统计
@@ -166,7 +166,7 @@ test "EventBus commit_read advances tail" {
     var bus = EventBus.init();
     try bus.emit(1, "a");
     _ = bus.poll();
-    bus.commit_read();
+    bus.commitRead();
     // After commit, poll should return null (no more events)
     const slot = bus.poll();
     try std.testing.expect(slot == null);
@@ -182,14 +182,14 @@ test "EventBus FIFO order" {
     try std.testing.expectEqual(@as(u32, 1), s1.?.header.event_type);
     try std.testing.expectEqualStrings("first", s1.?.data[0..5]);
 
-    bus.commit_read();
+    bus.commitRead();
 
     const s2 = bus.poll();
     try std.testing.expect(s2 != null);
     try std.testing.expectEqual(@as(u32, 2), s2.?.header.event_type);
     try std.testing.expectEqualStrings("sec", s2.?.data[0..3]);
 
-    bus.commit_read();
+    bus.commitRead();
 }
 
 test "EventBus sequence increments per emit" {
@@ -200,12 +200,12 @@ test "EventBus sequence increments per emit" {
     const s1 = bus.poll();
     try std.testing.expectEqual(@as(u64, 0), s1.?.header.sequence);
 
-    bus.commit_read();
+    bus.commitRead();
 
     const s2 = bus.poll();
     try std.testing.expectEqual(@as(u64, 1), s2.?.header.sequence);
 
-    bus.commit_read();
+    bus.commitRead();
 }
 
 test "EventBus reject oversized payload" {

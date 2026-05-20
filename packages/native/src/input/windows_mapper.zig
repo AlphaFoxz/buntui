@@ -142,14 +142,6 @@ pub const VK_NUMPAD8 = 0x68;
 // 9
 pub const VK_NUMPAD9 = 0x69;
 
-pub const WindowsVirtualKeyCodes = enum(u16) {
-    Unidentified = 0x00,
-    Alt = 0x01,
-    CapsLock = 0x02,
-    Control = 0x03,
-    Meta = 0x04,
-};
-
 const VirtualKeyPair = struct {
     virtual_key: u16,
     name: []const u8,

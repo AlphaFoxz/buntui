@@ -49,6 +49,18 @@ export abstract class TuiWidgetEntity implements Mountable {
     this.#percentSpec = spec;
   }
 
+  clearPositionPercentSpec(): void {
+    if (!this.#percentSpec) {
+      return;
+    }
+
+    delete this.#percentSpec.x;
+    delete this.#percentSpec.y;
+    if (this.#percentSpec.width === undefined && this.#percentSpec.height === undefined) {
+      this.#percentSpec = undefined;
+    }
+  }
+
   resolveLayout(parentWidth: number, parentHeight: number): void {
     if (!this.#percentSpec) {
       return;
@@ -176,6 +188,7 @@ export abstract class TuiWidgetEntity implements Mountable {
   dispatch<E extends keyof TuiWidgetEventData>(eventType: E, data: TuiWidgetEventData[E]): void;
   dispatch(eventType: string, data: unknown): void;
   dispatch(eventType: string, data: unknown): void {
+    this.#propagationStopped = false;
     this.#dispatchInternal(eventType, data, false);
   }
 
