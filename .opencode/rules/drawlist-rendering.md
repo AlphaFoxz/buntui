@@ -25,7 +25,7 @@ Unknown command types are skipped (`payload_len` allows parser to advance past t
 
 | Range       | Category          | Examples                                          |
 |-------------|-------------------|---------------------------------------------------|
-| 0x00-0x0F   | Frame state       | SetBackground, SetCursor, PushClip, SetEntityId   |
+| 0x00-0x0F   | Frame state       | SetBackground, SetCursor, PushClip, PopClip, SetEntityId   |
 | 0x10-0x1F   | Drawing primitives| DrawRect, DrawText, DrawBorder, DrawShadow, DrawFill, DrawChar, DrawLine |
 | 0x20-0x2F   | Terminal control  | SetTitle, ShowCursor, HideCursor, SetCursorMode   |
 | 0x30-0x3F   | Sync update       | BeginSync, EndSync                                |
@@ -34,12 +34,12 @@ Unknown command types are skipped (`payload_len` allows parser to advance past t
 
 ## Key Files
 
-- **Zig**: `packages/native/src/draw_list/` — commands.zig, clip_stack.zig, rasterizer.zig, draw_list.zig
+- **Zig**: `packages/native/src/draw_list/` — commands.zig, clip_stack.zig, rasterizer.zig, draw_list.zig, parser.zig, presenter.zig, binary.zig
 - **TS**: `packages/core/src/draw_list/` — DrawListBuffer.ts (builder), types.ts (enums)
 - **FFI**: `renderDrawList(ctx, buf_ptr, buf_len)` in lib.zig + app/NativeBackend.ts
 
 ## Rendering Rules
 
 - TuiScene sorts widgets by `zIndex` ascending, iterates calling `emitDrawCommands` — painter's algorithm.
-- Scene wraps frame with `BeginSync`/`EndSync` and `HideCursor`.
+- Scene sets `buf.setSynchronizedUpdate(true)` (writes to buffer header flags byte, bit 0) and emits `HideCursor` as a draw command. `BeginSync`/`EndSync` enum values exist but are handled as no-ops by the Zig rasterizer — the synchronized update flag is communicated via the buffer header, not as separate commands.
 - Zig maintains a 32-deep clip rectangle stack. `PushClip` intersects with current clip. `PopClip` restores.

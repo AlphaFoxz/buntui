@@ -14,12 +14,13 @@ The compiler resolves template tags with a two-tier strategy:
 
 ```json
 {
-  ".": "./dist/index.js",
-  "./matrix": "./dist/matrix.js",
-  "./framerate": "./dist/framerate.js",
-  "./snake": "./dist/snake.js",
-  "./videoplayer": "./dist/videoplayer.js",
-  "./logger": "./dist/logger.js"
+  ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+  "./matrix": { "types": "./dist/matrix.d.ts", "default": "./dist/matrix.js" },
+  "./framerate": { "types": "./dist/framerate.d.ts", "default": "./dist/framerate.js" },
+  "./snake": { "types": "./dist/snake.d.ts", "default": "./dist/snake.js" },
+  "./videoplayer": { "types": "./dist/videoplayer.d.ts", "default": "./dist/videoplayer.js" },
+  "./logger": { "types": "./dist/logger.d.ts", "default": "./dist/logger.js" },
+  "./hmr-error-overlay": { "types": "./dist/hmr-error-overlay.d.ts", "default": "./dist/hmr-error-overlay.js" }
 }
 ```
 

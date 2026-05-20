@@ -8,12 +8,12 @@
 
 | Task | Command |
 |---|---|
-| Full build (all packages, topological order) | `bun run build` |
+| Full build (sync versions + topological build) | `bun run build` |
 | Dev server (playground + HMR) | `bun run dev` |
 | Run all TS tests | `bun run test:ts` |
 | Run all Zig tests | `bun run test:zig` |
 | Run a single TS test | `bun test packages/core/src/widgets/box/__tests__/BoxWidget.test.ts` |
-| Lint (xo, auto-fix) | `bun run check` |
+| Lint (xo, **auto-fix**) | `bun run check` |
 | Sync root version to all packages | `bun run sync` |
 | Build native only | `bun run --cwd ./packages/native build` |
 | Build core only | `bun run --cwd ./packages/core build` |
@@ -23,7 +23,7 @@ There is no dedicated typecheck script. TypeScript checking is done per-package 
 
 ## Build Order
 
-Build order is critical — `scripts/build.ts` does topological sort automatically:
+`bun run build` runs `sync` then `scripts/build.ts`, which does topological sort:
 **native → core → extensions → compiler → playground → buntui**
 
 Native must build first because `core` copies the shared library (`.dll`/`.dylib`/`.so`) from `packages/native-platforms/<platform>/` into `packages/core/src/utils/`. If you skip native, core's `sync` script warns but continues, and runtime FFI will fail.
@@ -36,7 +36,7 @@ packages/native-platforms/ Pre-built binaries: win32-x64, linux-x64, darwin-x64,
 packages/core/            TS runtime: widget system, FFI bindings, event bus, draw list
 packages/extensions/      Extra widgets with sub-path exports (matrix, snake, etc.)
 packages/compiler/        SFC compiler (.vue → TS) using Vue compiler-core
-packages/playground/      Demo app (bun --preload ./src/vue-plugin.ts src/dev.ts)
+packages/playground/      Demo app (bun --preload @buntui/compiler/vue-plugin src/dev.ts)
 packages/buntui/          Umbrella package re-exporting core + extensions
 packages/create-buntui/   CLI scaffolding tool (bunx create-buntui)
 ```
@@ -50,6 +50,7 @@ packages/create-buntui/   CLI scaffolding tool (bunx create-buntui)
 
 ## Linting (xo)
 
+`bun run check` runs `xo --fix` — it **auto-fixes** files in place.
 `xo.config.ts` enforces rules an agent might not guess:
 - **`DataView` is banned** — use `TuiDataViewWrapper` from `extern/TuiDataViewWrapper.ts`.
 - **`Buffer` is banned** — use `Uint8Array`.
@@ -88,4 +89,4 @@ Lock-free SPSC ring buffer. Zig emits binary events, TS polls/commits. Three-ste
 
 ## CI
 
-`.github/workflows/build-native.yml` cross-compiles the Zig native library for 4 targets (win32-x64, linux-x64, darwin-x64, darwin-arm64) using Zig 0.16.0 with `-Drelease=true`. Triggered on pushes touching `packages/native/src/**` or `build.zig*`.
+`.github/workflows/publish.yml` cross-compiles the Zig native library for 4 targets (win32-x64, linux-x64, darwin-x64, darwin-arm64) using Zig 0.16.0 with `-Drelease=true`, then publishes all packages to npm. Triggered on `v*` tag pushes and manual dispatch.

@@ -37,7 +37,7 @@ pub export fn event_bus_emit(event_type: u16, data_ptr: [*]const u8, len: usize)
 
 ## FFI Export Pattern
 
-All exported functions live in `src/lib.zig` as thin wrappers:
+Most exported functions live in `src/lib.zig` as thin wrappers that delegate to other modules:
 
 ```zig
 // lib.zig
@@ -46,7 +46,7 @@ pub export fn startApp() void {
 }
 ```
 
-The actual logic must be in a separate module. `lib.zig` only does delegation, never business logic.
+The actual logic must be in a separate module. `lib.zig` should only delegate, never contain business logic. **Exception**: the 5 ANSI utility exports at the bottom of `lib.zig` (`resetStyle`, `showCursor`, `hideCursor`, `clearScreen`, `drawText`) contain inline logic (std_io init + writer acquisition + ANSI output). These are not consumed by TS via FFI.
 
 ## Global State Pattern
 

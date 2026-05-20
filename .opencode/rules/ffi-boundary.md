@@ -23,7 +23,6 @@ This document defines the protocol for Zig/TypeScript FFI communication.
 
 ## Pointer Transfer
 
-- Pointer returns wrapped with `assertPtr()` on TS side
 - Struct pointers passed via `CStruct` interface (`readonly ptr: Pointer`)
 - Never pass raw `ArrayBuffer` or `Uint8Array` where `Pointer` is expected; use `ptr()` from `bun:ffi`
 
@@ -35,8 +34,11 @@ This document defines the protocol for Zig/TypeScript FFI communication.
 **Lifecycle**:
 - `setupLogger`, `startApp`, `stopApp`, `detectTermSize`
 
-**Event bus**:
+**Event bus** (TS-side FFI bindings exist only for `poll`/`commit`; `setup`, `emit`, and `stats` are Zig-internal):
 - `event_bus_setup`, `event_bus_emit`, `event_bus_poll`, `event_bus_commit`, `event_bus_stats`
+
+**ANSI utilities** (not consumed by TS via FFI; inline logic in lib.zig):
+- `resetStyle`, `showCursor`, `hideCursor`, `clearScreen`, `drawText`
 
 Event payloads are binary (not JSON). Event types: KeyboardEvent (1), MouseEvent (2), WheelEvent (3), TermResizeEvent (4).
 

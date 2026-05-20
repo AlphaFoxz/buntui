@@ -9,7 +9,7 @@ paths:
 
 # TypeScript Coding Rules
 
-Rules for writing TypeScript code in packages/core/, packages/compiler/, and packages/playground/.
+Rules for writing TypeScript code in packages/core/, packages/compiler/, packages/playground/, packages/extensions/, and packages/buntui/.
 
 ## XO Lint Restrictions
 
@@ -35,8 +35,8 @@ Use ECMAScript private fields (`#`) instead of TypeScript `private` keyword.
 
 ## Interfaces
 
-- **CStruct**: Objects passed to FFI as pointers (`readonly ptr: Pointer`).
-- **Mountable**: Widgets mounted to a scene (`mounted()` / `unmounted()`).
+- **CStruct**: Type alias for objects passed to FFI as pointers (`readonly ptr: Pointer`). Defined in `extern/types.ts`.
+- **Mountable**: Type alias for widgets mounted to a scene (`mounted()` / `unmounted()`). Defined in `extern/types.ts`.
 
 ## Type Imports
 
@@ -54,10 +54,9 @@ Each widget implements `emitDrawCommands(buf: DrawListBuffer)`:
 ```typescript
 override emitDrawCommands(buf: DrawListBuffer): void {
   const {x, y, width, height} = this.rect;
-  const {colorFg, colorBg} = this.color;
   buf.pushClip(x, y, width, height);
-  buf.drawRect(x, y, width, height, colorBg);
-  buf.drawText(x, y, this.text, colorFg, colorBg);
+  buf.drawRect({x, y, width, height, bgRgba: this.color.colorBg});
+  buf.drawText({x, y, text: this.text, fgRgba: this.color.colorFg, bgRgba: this.color.colorBg});
   buf.popClip();
 }
 ```
