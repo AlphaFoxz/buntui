@@ -100,21 +100,21 @@ function expandBorderShorthand(value: BorderShorthand): Border {
 
   switch (parts.length) {
     case 1: {
-      const v = parts[0] !== '0';
-      top = v;
-      right = v;
-      bottom = v;
-      left = v;
+      const isVertical = parts[0] !== '0';
+      top = isVertical;
+      right = isVertical;
+      bottom = isVertical;
+      left = isVertical;
       break;
     }
 
     case 2: {
-      const v = parts[0]! !== '0';
-      const h = parts[1]! !== '0';
-      top = v;
-      bottom = v;
-      right = h;
-      left = h;
+      const isVertical = parts[0]! !== '0';
+      const isHorizontal = parts[1]! !== '0';
+      top = isVertical;
+      bottom = isVertical;
+      right = isHorizontal;
+      left = isHorizontal;
       break;
     }
 
@@ -168,7 +168,7 @@ export class BoxWidget extends TuiWidgetEntity {
   #gap: U16;
   #align: TuiLayoutAlignment;
   #layoutDirty = false;
-  readonly #ownChildren: TuiWidgetEntity[] = [];
+  readonly #layoutChildren: TuiWidgetEntity[] = [];
 
   constructor(options: BoxWidgetOptions) {
     super();
@@ -341,16 +341,16 @@ export class BoxWidget extends TuiWidgetEntity {
 
   override addChild(child: TuiWidgetEntity): void {
     super.addChild(child);
-    this.#ownChildren.push(child);
+    this.#layoutChildren.push(child);
     this.#layoutDirty = true;
   }
 
   override removeChild(child: TuiWidgetEntity): void {
     // eslint-disable-next-line unicorn/prefer-dom-node-remove
     super.removeChild(child);
-    const index = this.#ownChildren.indexOf(child);
+    const index = this.#layoutChildren.indexOf(child);
     if (index !== -1) {
-      this.#ownChildren.splice(index, 1);
+      this.#layoutChildren.splice(index, 1);
     }
 
     this.#layoutDirty = true;
@@ -359,13 +359,13 @@ export class BoxWidget extends TuiWidgetEntity {
   // -- Intrinsic size --
 
   override intrinsicSize(): TuiWidgetSize | undefined {
-    if (this.#ownChildren.length === 0) {
+    if (this.#layoutChildren.length === 0) {
       return undefined;
     }
 
     let totalMain = 0;
     let maxCross = 0;
-    for (const child of this.#ownChildren) {
+    for (const child of this.#layoutChildren) {
       const intrinsic = child.intrinsicSize();
       if (!intrinsic) {
         return undefined;
@@ -379,7 +379,7 @@ export class BoxWidget extends TuiWidgetEntity {
       }
     }
 
-    const totalGaps = Math.max(0, this.#ownChildren.length - 1) * this.#gap;
+    const totalGaps = Math.max(0, this.#layoutChildren.length - 1) * this.#gap;
     totalMain += totalGaps;
 
     const hBorder = (this.#border.borderLeft ? 1 : 0) + (this.#border.borderRight ? 1 : 0);
@@ -493,7 +493,7 @@ export class BoxWidget extends TuiWidgetEntity {
   #computeLayout(): void {
     const direction = this.#direction;
 
-    const children = this.#ownChildren;
+    const children = this.#layoutChildren;
     if (children.length === 0) {
       this.#layoutDirty = false;
       return;

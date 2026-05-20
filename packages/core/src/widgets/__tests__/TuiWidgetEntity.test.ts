@@ -40,8 +40,8 @@ describe('default property values', () => {
     expect(createWidget().zIndex).toBe(0);
   });
 
-  it('refrenceCount defaults to 0', () => {
-    expect(createWidget().refrenceCount).toBe(0);
+  it('referenceCount defaults to 0', () => {
+    expect(createWidget().referenceCount).toBe(0);
   });
 
   it('rect defaults to zeros', () => {
@@ -171,20 +171,20 @@ describe('event system', () => {
 });
 
 describe('mounted / unmounted', () => {
-  it('mounted increments refrenceCount', () => {
+  it('mounted increments referenceCount', () => {
     const widget = createWidget();
     widget.mounted();
-    expect(widget.refrenceCount).toBe(1);
+    expect(widget.referenceCount).toBe(1);
     widget.mounted();
-    expect(widget.refrenceCount).toBe(2);
+    expect(widget.referenceCount).toBe(2);
   });
 
-  it('unmounted decrements refrenceCount', () => {
+  it('unmounted decrements referenceCount', () => {
     const widget = createWidget();
     widget.mounted();
     widget.mounted();
     widget.unmounted();
-    expect(widget.refrenceCount).toBe(1);
+    expect(widget.referenceCount).toBe(1);
   });
 
   it('unmounted clears event handlers when count reaches 0', () => {
@@ -223,7 +223,7 @@ describe('addChild / removeChild', () => {
     const parent = createWidget();
     const child = createWidget();
     parent.addChild(child);
-    expect(child.refrenceCount).toBe(1);
+    expect(child.referenceCount).toBe(1);
   });
 
   it('removeChild calls unmounted on child', () => {
@@ -231,14 +231,14 @@ describe('addChild / removeChild', () => {
     const child = createWidget();
     parent.addChild(child);
     parent.removeChild(child);
-    expect(child.refrenceCount).toBe(0);
+    expect(child.referenceCount).toBe(0);
   });
 
   it('removeChild with non-child does nothing', () => {
     const parent = createWidget();
     const child = createWidget();
     parent.removeChild(child);
-    expect(child.refrenceCount).toBe(0);
+    expect(child.referenceCount).toBe(0);
   });
 });
 

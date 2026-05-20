@@ -104,7 +104,7 @@ describe('native distribution consistency', () => {
     expect(match, 'native/index.ts binaryName should use `buntui.${suffix}`').not.toBeNull();
   });
 
-  it('build scripts produce filename that fetchDllPath can find via Bun.main', () => {
+  it('build scripts produce filename that resolveNativeLibPath can find via Bun.main', () => {
     const ffiSrc = fs.readFileSync(
       path.join(ROOT, 'packages', 'core', 'src', 'utils', 'ffi.ts'),
       'utf8',

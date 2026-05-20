@@ -19,7 +19,7 @@ export type {
   TuiWidgetStyle,
   TuiWidgetBorder,
   TuiWidgetShadow,
-  TuiWidgetComponentType,
+  TuiWidgetComponentFlag,
   TuiBorderStyleName,
   TuiWidgetSize,
   TuiWidgetPadding,

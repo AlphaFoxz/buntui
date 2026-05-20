@@ -97,17 +97,17 @@ describe('SharedStringArena', () => {
 });
 
 describe('FrameStringArena', () => {
-  it('allocates strings on next_frame', () => {
+  it('allocates strings on nextFrame', () => {
     const arena = new FrameStringArena(1024);
     const result = arena.allocString('test');
     expect(result.len).toBe(4);
-    expect(arena.next_frame.cursor).toBe(5);
+    expect(arena.nextFrame.cursor).toBe(5);
   });
 
-  it('does not affect prev_frame on allocation', () => {
+  it('does not affect prevFrame on allocation', () => {
     const arena = new FrameStringArena(1024);
     arena.allocString('test');
-    expect(arena.prev_frame.cursor).toBe(0);
+    expect(arena.prevFrame.cursor).toBe(0);
   });
 
   it('swap exchanges prev and next frames', () => {
@@ -115,15 +115,15 @@ describe('FrameStringArena', () => {
     arena.allocString('hello');
     arena.swap();
     // After swap, what was next (cursor=6) is now prev
-    expect(arena.prev_frame.cursor).toBe(6);
-    expect(arena.next_frame.cursor).toBe(0);
+    expect(arena.prevFrame.cursor).toBe(6);
+    expect(arena.nextFrame.cursor).toBe(0);
   });
 
-  it('reset clears next_frame cursor', () => {
+  it('reset clears nextFrame cursor', () => {
     const arena = new FrameStringArena(1024);
     arena.allocString('hello');
     arena.reset();
-    expect(arena.next_frame.cursor).toBe(0);
+    expect(arena.nextFrame.cursor).toBe(0);
   });
 
   it('supports double-buffer pattern: alloc → swap → reset → alloc', () => {
@@ -136,7 +136,7 @@ describe('FrameStringArena', () => {
 
     // Frame 2
     arena.allocString('frame2');
-    expect(arena.next_frame.cursor).toBe(7); // 'frame2' = 6 + 1
-    expect(arena.prev_frame.cursor).toBe(7); // 'frame1' = 6 + 1 from swap
+    expect(arena.nextFrame.cursor).toBe(7); // 'frame2' = 6 + 1
+    expect(arena.prevFrame.cursor).toBe(7); // 'frame1' = 6 + 1 from swap
   });
 });

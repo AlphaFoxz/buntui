@@ -52,17 +52,9 @@ function timestampString() {
   const minute = date.getMinutes();
   const second = date.getSeconds();
   cachedTimestamp = time;
-  cachedTimestampString = `[${year}-${fillZero(month)}-${fillZero(day)} ${fillZero(hour)}:${fillZero(minute)}:${fillZero(second)}]`;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  cachedTimestampString = `[${year}-${pad(month)}-${pad(day)} ${pad(hour)}:${pad(minute)}:${pad(second)}]`;
   return cachedTimestampString;
-}
-
-function fillZero(number_: number, length = 2) {
-  let string_ = number_.toString();
-  while (string_.length < length) {
-    string_ = '0' + string_;
-  }
-
-  return string_;
 }
 
 class LoggerImpl {

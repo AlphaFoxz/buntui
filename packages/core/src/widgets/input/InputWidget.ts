@@ -9,10 +9,10 @@ import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils
 import {getTheme} from '../../theme/provider';
 import type {InputWidgetOptions} from './types';
 
-function charIndexAtColumn(string_: string, column: number): number {
+function charIndexAtColumn(text: string, column: number): number {
   let width = 0;
   let index = 0;
-  for (const char of string_) {
+  for (const char of text) {
     const cw = charDisplayWidth(char);
     if (width + cw > column) {
       break;
@@ -31,9 +31,18 @@ const CHAR_CATEGORY_PUNCT = 2;
 const CHAR_CATEGORY_CJK = 3;
 
 function charCategory(code: number): number {
-  if (code <= 0x20) return CHAR_CATEGORY_SPACE;
-  if ((code >= 0x4E00 && code <= 0x9FFF) || (code >= 0x3400 && code <= 0x4DBF) || (code >= 0x3000 && code <= 0x303F) || (code >= 0xFF00 && code <= 0xFFEF)) return CHAR_CATEGORY_CJK;
-  if ((code >= 0x21 && code <= 0x2F) || (code >= 0x3A && code <= 0x40) || (code >= 0x5B && code <= 0x60) || (code >= 0x7B && code <= 0x7E)) return CHAR_CATEGORY_PUNCT;
+  if (code <= 0x20) {
+    return CHAR_CATEGORY_SPACE;
+  }
+
+  if ((code >= 0x4E_00 && code <= 0x9F_FF) || (code >= 0x34_00 && code <= 0x4D_BF) || (code >= 0x30_00 && code <= 0x30_3F) || (code >= 0xFF_00 && code <= 0xFF_EF)) {
+    return CHAR_CATEGORY_CJK;
+  }
+
+  if ((code >= 0x21 && code <= 0x2F) || (code >= 0x3A && code <= 0x40) || (code >= 0x5B && code <= 0x60) || (code >= 0x7B && code <= 0x7E)) {
+    return CHAR_CATEGORY_PUNCT;
+  }
+
   return CHAR_CATEGORY_WORD;
 }
 
@@ -553,9 +562,9 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
     }
 
     let pos = this.#cursorPos;
-    const cat = charCategory(this.#value.charCodeAt(pos - 1));
+    const cat = charCategory(this.#value.codePointAt(pos - 1)!);
     pos--;
-    while (pos > 0 && charCategory(this.#value.charCodeAt(pos - 1)) === cat) {
+    while (pos > 0 && charCategory(this.#value.codePointAt(pos - 1)!) === cat) {
       pos--;
     }
 
@@ -576,9 +585,9 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
     }
 
     let pos = this.#cursorPos;
-    const cat = charCategory(this.#value.charCodeAt(pos));
+    const cat = charCategory(this.#value.codePointAt(pos)!);
     pos++;
-    while (pos < length && charCategory(this.#value.charCodeAt(pos)) === cat) {
+    while (pos < length && charCategory(this.#value.codePointAt(pos)!) === cat) {
       pos++;
     }
 
@@ -645,9 +654,9 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
     }
 
     let pos = this.#cursorPos;
-    const cat = charCategory(this.#value.charCodeAt(pos - 1));
+    const cat = charCategory(this.#value.codePointAt(pos - 1)!);
     pos--;
-    while (pos > 0 && charCategory(this.#value.charCodeAt(pos - 1)) === cat) {
+    while (pos > 0 && charCategory(this.#value.codePointAt(pos - 1)!) === cat) {
       pos--;
     }
 
@@ -663,9 +672,9 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
     }
 
     let pos = this.#cursorPos;
-    const cat = charCategory(this.#value.charCodeAt(pos));
+    const cat = charCategory(this.#value.codePointAt(pos)!);
     pos++;
-    while (pos < length && charCategory(this.#value.charCodeAt(pos)) === cat) {
+    while (pos < length && charCategory(this.#value.codePointAt(pos)!) === cat) {
       pos++;
     }
 

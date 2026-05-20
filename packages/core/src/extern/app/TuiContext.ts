@@ -1,7 +1,7 @@
 import {type Pointer, ptr} from 'bun:ffi';
-import {useOffsetCounter} from '../../utils/ffi';
+import {createOffsetCalculator} from '../../utils/ffi';
 import type {CStruct} from '../types';
-import TuiDataView from '../TuiDataViewWrapper';
+import TuiDataViewWrapper from '../TuiDataViewWrapper';
 
 export const TuiResizeBehavior = {
   Fixed: 0,
@@ -9,7 +9,7 @@ export const TuiResizeBehavior = {
 } as const;
 export type TuiResizeBehavior = Enum<typeof TuiResizeBehavior>;
 
-const OFFSET_COUNTER = useOffsetCounter();
+const OFFSET_COUNTER = createOffsetCalculator();
 const OFFSETS = Object.freeze({
   tick: OFFSET_COUNTER.mark('u64'),
   x: OFFSET_COUNTER.mark('u16'),
@@ -21,12 +21,12 @@ const OFFSETS = Object.freeze({
 });
 export class TuiContext implements CStruct {
   readonly #ptr: Pointer;
-  readonly #dataView: TuiDataView;
+  readonly #dataView: TuiDataViewWrapper;
 
   constructor() {
     const buffer = new ArrayBuffer(OFFSET_COUNTER.currentOffset);
     this.#ptr = ptr(buffer);
-    const dataView = new TuiDataView(buffer);
+    const dataView = new TuiDataViewWrapper(buffer);
     this.#dataView = dataView;
     dataView.setBigUint64(OFFSETS.tick, 0n, true);
     dataView.setUint16(OFFSETS.x, 0, true);

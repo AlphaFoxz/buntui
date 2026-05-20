@@ -38,50 +38,50 @@ export class SharedStringArena {
     this.#cursor = 0;
   }
 
-  allocString(string_: string) {
+  allocString(text: string) {
     const remaining = this.#size - this.#cursor;
     if (remaining <= 1) {
       throw new Error('FrameArena: out of memory');
     }
 
-    const dest = this.#buffer.subarray(this.#cursor, this.#size - 1); // 留一个位置给 \0
+    const dest = this.#buffer.subarray(this.#cursor, this.#size - 1);
 
-    const {written} = this.#encoder.encodeInto(string_, dest);
+    const {written} = this.#encoder.encodeInto(text, dest);
 
     this.#buffer[this.#cursor + written] = 0;
 
     const stringPtr = ptrOffset(this.#ptr, this.#cursor);
-    const stringLength = written; // Zig slice 长度不包含 \0
+    const stringLength = written;
 
     this.#cursor += written + 1;
     return {ptr: stringPtr, len: stringLength};
   }
 }
 export class FrameStringArena {
-  readonly #prev_frame: SharedStringArena;
-  readonly #next_frame: SharedStringArena;
+  readonly #prevFrame: SharedStringArena;
+  readonly #nextFrame: SharedStringArena;
   constructor(size: number = 1024 * 1024) {
-    this.#prev_frame = new SharedStringArena(size);
-    this.#next_frame = new SharedStringArena(size);
+    this.#prevFrame = new SharedStringArena(size);
+    this.#nextFrame = new SharedStringArena(size);
   }
 
-  get prev_frame() {
-    return this.#prev_frame;
+  get prevFrame() {
+    return this.#prevFrame;
   }
 
-  get next_frame() {
-    return this.#next_frame;
+  get nextFrame() {
+    return this.#nextFrame;
   }
 
   swap() {
-    this.#prev_frame.swap(this.#next_frame);
+    this.#prevFrame.swap(this.#nextFrame);
   }
 
-  allocString(string_: string) {
-    return this.#next_frame.allocString(string_);
+  allocString(text: string) {
+    return this.#nextFrame.allocString(text);
   }
 
   reset() {
-    this.#next_frame.reset();
+    this.#nextFrame.reset();
   }
 }

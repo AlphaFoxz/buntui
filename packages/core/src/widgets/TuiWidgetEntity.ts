@@ -32,7 +32,7 @@ export type TuiWidgetEventData = {
 type WidgetEventHandler = (data: unknown) => void;
 
 export abstract class TuiWidgetEntity implements Mountable {
-  #refrenceCount = 0;
+  #referenceCount = 0;
   #draggable = false;
   #visible = true;
   #parent: TuiWidgetEntity | null = null;
@@ -89,8 +89,8 @@ export abstract class TuiWidgetEntity implements Mountable {
     }
   }
 
-  get refrenceCount() {
-    return this.#refrenceCount;
+  get referenceCount() {
+    return this.#referenceCount;
   }
 
   get draggable(): boolean {
@@ -201,12 +201,12 @@ export abstract class TuiWidgetEntity implements Mountable {
   }
 
   mounted() {
-    this.#refrenceCount++;
+    this.#referenceCount++;
   }
 
   unmounted(): void {
-    this.#refrenceCount--;
-    if (this.#refrenceCount <= 0) {
+    this.#referenceCount--;
+    if (this.#referenceCount <= 0) {
       this.#eventHandlers.clear();
     }
   }

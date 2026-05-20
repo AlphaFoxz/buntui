@@ -117,7 +117,7 @@ describe('mount / unmount', () => {
     const scene = new TuiScene();
     const widget = createWidget();
     scene.mount(widget);
-    expect(widget.refrenceCount).toBe(1);
+    expect(widget.referenceCount).toBe(1);
   });
 
   it('mount returns the scene for chaining', () => {
@@ -131,7 +131,7 @@ describe('mount / unmount', () => {
     const widget = createWidget();
     scene.mount(widget);
     scene.unmount(widget);
-    expect(widget.refrenceCount).toBe(0);
+    expect(widget.referenceCount).toBe(0);
   });
 
   it('unmount returns the scene for chaining', () => {
@@ -147,7 +147,7 @@ describe('mount / unmount', () => {
     const widget = createWidget();
     scene.unmount(widget);
     // TuiScene.unmount calls widget.unmounted() regardless of membership
-    expect(widget.refrenceCount).toBe(-1);
+    expect(widget.referenceCount).toBe(-1);
   });
 });
 
@@ -203,8 +203,8 @@ describe('clearWidgets', () => {
     scene.mount(w1);
     scene.mount(w2);
     scene.clearWidgets();
-    expect(w1.refrenceCount).toBe(0);
-    expect(w2.refrenceCount).toBe(0);
+    expect(w1.referenceCount).toBe(0);
+    expect(w2.referenceCount).toBe(0);
   });
 
   it('scene has no widgets after clear', () => {
@@ -223,8 +223,8 @@ describe('destroy', () => {
     scene.mount(w1);
     scene.mount(w2);
     scene.destroy();
-    expect(w1.refrenceCount).toBe(0);
-    expect(w2.refrenceCount).toBe(0);
+    expect(w1.referenceCount).toBe(0);
+    expect(w2.referenceCount).toBe(0);
   });
 
   it('clears tick handlers', () => {

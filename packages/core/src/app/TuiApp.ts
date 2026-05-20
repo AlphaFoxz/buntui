@@ -65,13 +65,13 @@ export class TuiApp implements Disposable {
 
     if (this.#debugMode) {
       EVENT_BUS.on(TuiEventType.KeyboardEvent, data => {
-        LOGGER.logDebug(`按键事件：${JSON.stringify(data)}`);
+        LOGGER.logDebug(`keyboard event: ${JSON.stringify(data)}`);
       });
       EVENT_BUS.on(TuiEventType.WheelEvent, data => {
-        LOGGER.logDebug(`鼠标滚轮事件：${JSON.stringify(data)}`);
+        LOGGER.logDebug(`wheel event: ${JSON.stringify(data)}`);
       });
       EVENT_BUS.on(TuiEventType.MouseEvent, data => {
-        LOGGER.logDebug(`鼠标事件：${JSON.stringify(data)}`);
+        LOGGER.logDebug(`mouse event: ${JSON.stringify(data)}`);
       });
     }
 
@@ -148,10 +148,10 @@ export class TuiApp implements Disposable {
   createScene<T extends TuiSFCModule>(module: T, options?: Partial<TuiSceneOptions>): TuiScene {
     const scene = new TuiScene(options);
 
-    const module_ = module as Record<string, unknown>;
-    if (typeof module_.setup === 'function') {
+    const moduleRecord = module as Record<string, unknown>;
+    if (typeof moduleRecord.setup === 'function') {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-      const setup = module_.setup as (scene: TuiScene) => (() => void) | void;
+      const setup = moduleRecord.setup as (scene: TuiScene) => (() => void) | void;
       const cleanup = runSetup(scene, () => setup(scene));
       this.#cleanups.set(scene.id, cleanup);
     }

@@ -12,7 +12,7 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
   readonly #rect: TuiWidgetRect;
   #scrollOffsetY = 0;
   #layoutDirty = true;
-  readonly #ownChildren: TuiWidgetEntity[] = [];
+  readonly #layoutChildren: TuiWidgetEntity[] = [];
   readonly #innerBox: BoxWidget;
 
   readonly #gap: number;
@@ -236,16 +236,16 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
 
   override addChild(child: TuiWidgetEntity): void {
     super.addChild(child);
-    this.#ownChildren.push(child);
+    this.#layoutChildren.push(child);
     this.#layoutDirty = true;
   }
 
   override removeChild(child: TuiWidgetEntity): void {
     // eslint-disable-next-line unicorn/prefer-dom-node-remove
     super.removeChild(child);
-    const index = this.#ownChildren.indexOf(child);
+    const index = this.#layoutChildren.indexOf(child);
     if (index !== -1) {
-      this.#ownChildren.splice(index, 1);
+      this.#layoutChildren.splice(index, 1);
     }
 
     this.#layoutDirty = true;
@@ -272,7 +272,7 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
     const viewport = this.#computeViewport();
     buffer.pushClip(viewport.x, viewport.y, viewport.width, viewport.height);
 
-    for (const child of this.#ownChildren) {
+    for (const child of this.#layoutChildren) {
       if (!child.visible) {
         continue;
       }
@@ -342,12 +342,12 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
 
   #computeContentHeight(): number {
     let total = 0;
-    for (const child of this.#ownChildren) {
+    for (const child of this.#layoutChildren) {
       const intrinsic = child.intrinsicSize();
       total += intrinsic?.height ?? child.rect.height;
     }
 
-    total += Math.max(0, this.#ownChildren.length - 1) * this.#gap;
+    total += Math.max(0, this.#layoutChildren.length - 1) * this.#gap;
     return total;
   }
 
@@ -357,7 +357,7 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
   }
 
   #computeLayout(): void {
-    const children = this.#ownChildren;
+    const children = this.#layoutChildren;
     if (children.length === 0) {
       this.#layoutDirty = false;
       return;

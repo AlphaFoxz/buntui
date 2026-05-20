@@ -1,4 +1,4 @@
-import TuiDataView from '../extern/TuiDataViewWrapper';
+import TuiDataViewWrapper from '../extern/TuiDataViewWrapper';
 
 // Modifier bitmask — must match Zig core/event_payloads.zig
 const MOD_SHIFT = 0x01;
@@ -34,7 +34,7 @@ export class KeyboardEvent {
   readonly charCode: number;
 
   constructor(buffer: ArrayBuffer) {
-    const view = new TuiDataView(buffer);
+    const view = new TuiDataViewWrapper(buffer);
     const modifiers = view.getUint8(0);
     this.charCode = view.getUint16(1, true);
     const keyLength = view.getUint8(3);
@@ -69,7 +69,7 @@ export class MouseEvent {
   readonly metaKey: boolean;
 
   constructor(buffer: ArrayBuffer) {
-    const view = new TuiDataView(buffer);
+    const view = new TuiDataViewWrapper(buffer);
     const modifiers = view.getUint8(0);
     const flags = view.getUint8(1);
     this.shiftKey = (modifiers & MOD_SHIFT) === MOD_SHIFT;
@@ -91,7 +91,7 @@ export class WheelEvent extends MouseEvent {
 
   constructor(buffer: ArrayBuffer) {
     super(buffer);
-    const view = new TuiDataView(buffer);
+    const view = new TuiDataViewWrapper(buffer);
     this.wheelDeltaY = view.getInt8(8);
   }
 }
@@ -101,7 +101,7 @@ export class TermResizeEvent {
   readonly cols: number;
 
   constructor(buffer: ArrayBuffer) {
-    const view = new TuiDataView(buffer);
+    const view = new TuiDataViewWrapper(buffer);
     this.rows = view.getUint16(0, true);
     this.cols = view.getUint16(2, true);
   }

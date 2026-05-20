@@ -24,19 +24,19 @@ export function charDisplayWidth(char: string): number {
   return 1;
 }
 
-export function stringDisplayWidth(string_: string): number {
+export function stringDisplayWidth(text: string): number {
   let width = 0;
-  for (const char of string_) {
+  for (const char of text) {
     width += charDisplayWidth(char);
   }
 
   return width;
 }
 
-export function truncateToWidth(string_: string, maxWidth: number): string {
+export function truncateToWidth(text: string, maxWidth: number): string {
   let width = 0;
   let index = 0;
-  for (const char of string_) {
+  for (const char of text) {
     const cw = charDisplayWidth(char);
     if (width + cw > maxWidth) {
       break;
@@ -46,5 +46,5 @@ export function truncateToWidth(string_: string, maxWidth: number): string {
     index++;
   }
 
-  return string_.slice(0, index);
+  return text.slice(0, index);
 }

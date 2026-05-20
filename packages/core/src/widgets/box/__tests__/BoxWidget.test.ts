@@ -197,7 +197,7 @@ describe('child management', () => {
     const box = createBoxWith();
     const child = createChild('hi', 5, 1);
     box.addChild(child);
-    expect(child.refrenceCount).toBe(1);
+    expect(child.referenceCount).toBe(1);
   });
 
   it('removeChild removes child widget', () => {
@@ -205,14 +205,14 @@ describe('child management', () => {
     const child = createChild('hi', 5, 1);
     box.addChild(child);
     box.removeChild(child);
-    expect(child.refrenceCount).toBe(0);
+    expect(child.referenceCount).toBe(0);
   });
 
   it('removeChild with non-child does nothing', () => {
     const box = createBoxWith();
     const child = createChild('hi', 5, 1);
     box.removeChild(child);
-    expect(child.refrenceCount).toBe(0);
+    expect(child.referenceCount).toBe(0);
   });
 });
 

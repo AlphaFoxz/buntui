@@ -1,7 +1,7 @@
 /**
  * @summary 32 bits = 4 bytes
  */
-export const TuiWidgetComponentType = {
+export const TuiWidgetComponentFlag = {
   /**
    * @see TuiWidgetRect
    */
@@ -27,7 +27,7 @@ export const TuiWidgetComponentType = {
    */
   Text: 0x00_20,
 } as const;
-export type TuiWidgetComponentType = Enum<typeof TuiWidgetComponentType>;
+export type TuiWidgetComponentFlag = Enum<typeof TuiWidgetComponentFlag>;
 
 /*
  * @summary 64 bits = 8 bytes

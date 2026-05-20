@@ -11,7 +11,7 @@ export function setDllPath(p: string) {
   dllPath = p;
 }
 
-export function fetchDllPath(): string {
+export function resolveNativeLibPath(): string {
   if (dllPath) {
     return dllPath;
   }
@@ -69,7 +69,7 @@ export function assertPtr(ptr: Pointer | null): Pointer {
 }
 
 export type OffsetCounterOptions = {arch?: 64 | 32};
-export function useOffsetCounter(options: OffsetCounterOptions = {}) {
+export function createOffsetCalculator(options: OffsetCounterOptions = {}) {
   const arch = options.arch ?? 64;
   const pointerSize = arch === 64 ? 8 : 4;
   let currentOffset = 0;
@@ -92,10 +92,8 @@ export function useOffsetCounter(options: OffsetCounterOptions = {}) {
 
     const alignment = Math.min(bytes, pointerSize);
 
-    // 计算 padding：当前偏移对齐值的余数
     const padding = (alignment - (currentOffset % alignment)) % alignment;
 
-    // 跳过 padding 字节
     currentOffset += padding;
 
     const offset = currentOffset;
@@ -116,8 +114,8 @@ export function useOffsetCounter(options: OffsetCounterOptions = {}) {
 }
 
 const encoder = new TextEncoder('utf-8');
-export function toCstring(string_: string): Uint8Array {
-  const bytes = encoder.encode(string_);
+export function toCstring(text: string): Uint8Array {
+  const bytes = encoder.encode(text);
   const out = new Uint8Array(bytes.length + 1);
   out.set(bytes);
   out[bytes.length] = 0; // Null terminator

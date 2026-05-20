@@ -1,9 +1,9 @@
 import {it, expect} from 'bun:test';
 import stringWidth from 'string-width';
-import {useOffsetCounter} from '../ffi';
+import {createOffsetCalculator} from '../ffi';
 
 it('offsetCounter x32', () => {
-  const counter = useOffsetCounter({arch: 32});
+  const counter = createOffsetCalculator({arch: 32});
   expect(counter.currentOffset).toBe(0);
 
   expect(counter.mark('pointer')).toBe(0);
@@ -23,7 +23,7 @@ it('offsetCounter x32', () => {
 });
 
 it('offsetCounter x32 with alignment padding', () => {
-  const counter = useOffsetCounter({arch: 32});
+  const counter = createOffsetCalculator({arch: 32});
 
   expect(counter.mark('u8')).toBe(0);
   expect(counter.currentOffset).toBe(1);
@@ -45,7 +45,7 @@ it('offsetCounter x32 with alignment padding', () => {
 });
 
 it('offsetCounter x64', () => {
-  const counter = useOffsetCounter();
+  const counter = createOffsetCalculator();
   expect(counter.currentOffset).toBe(0);
 
   expect(counter.mark('pointer')).toBe(0);
@@ -65,7 +65,7 @@ it('offsetCounter x64', () => {
 });
 
 it('offsetCounter x64 with alignment padding', () => {
-  const counter = useOffsetCounter({arch: 64});
+  const counter = createOffsetCalculator({arch: 64});
 
   expect(counter.mark('u8')).toBe(0);
   expect(counter.currentOffset).toBe(1);

@@ -27,18 +27,18 @@ it('FrameStringArena', () => {
   const en = arena.allocString('Hello World!');
   const readEn = cToString(en.ptr, en.len);
   expect(readEn).toBe('Hello World!');
-  expect(arena.prev_frame.cursor).toBe(0);
-  expect(arena.next_frame.cursor).toBe(13);
+  expect(arena.prevFrame.cursor).toBe(0);
+  expect(arena.nextFrame.cursor).toBe(13);
   arena.swap();
-  expect(arena.prev_frame.cursor).toBe(13);
-  expect(arena.next_frame.cursor).toBe(0);
+  expect(arena.prevFrame.cursor).toBe(13);
+  expect(arena.nextFrame.cursor).toBe(0);
   arena.reset();
   const cn = arena.allocString('你好世界');
   const readCn = cToString(cn.ptr, cn.len);
   expect(readCn).toBe('你好世界');
-  expect(arena.prev_frame.cursor).toBe(13);
-  expect(arena.next_frame.cursor).toBe(13);
+  expect(arena.prevFrame.cursor).toBe(13);
+  expect(arena.nextFrame.cursor).toBe(13);
   arena.reset();
-  expect(arena.next_frame.cursor).toBe(0);
+  expect(arena.nextFrame.cursor).toBe(0);
 });
 

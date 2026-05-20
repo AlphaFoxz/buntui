@@ -82,7 +82,7 @@ describe('child management', () => {
     const sb = createScrollBox();
     const child = createBox({height: 5});
     sb.addChild(child);
-    expect(child.refrenceCount).toBe(1);
+    expect(child.referenceCount).toBe(1);
   });
 
   it('removeChild removes children', () => {
@@ -90,7 +90,7 @@ describe('child management', () => {
     const child = createBox({height: 5});
     sb.addChild(child);
     sb.removeChild(child);
-    expect(child.refrenceCount).toBe(0);
+    expect(child.referenceCount).toBe(0);
   });
 });
 

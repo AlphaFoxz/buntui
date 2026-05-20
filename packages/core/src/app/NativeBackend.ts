@@ -1,9 +1,9 @@
 import {dlopen, FFIType, toArrayBuffer} from 'bun:ffi';
-import {fetchDllPath, toCstring} from '../utils/ffi';
+import {resolveNativeLibPath, toCstring} from '../utils/ffi';
 import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import type {CStruct} from '../extern/types';
 import type {LogLevel} from '../extern/app/types';
-import TuiDataView from '../extern/TuiDataViewWrapper';
+import TuiDataViewWrapper from '../extern/TuiDataViewWrapper';
 import {LOGGER, logLevelToNumber} from '../common/logger';
 import {
   TuiEventType, KeyboardEvent, MouseEvent, WheelEvent, TermResizeEvent,
@@ -19,7 +19,7 @@ const schemaRegistry = new Map<number, new (buffer: ArrayBuffer) => TuiEvent>([
 ]);
 
 function createFfiSymbols() {
-  return dlopen(fetchDllPath(), {
+  return dlopen(resolveNativeLibPath(), {
     setupLogger: {
       returns: FFIType.void,
       args: [FFIType.cstring, FFIType.cstring, FFIType.u8, FFIType.u8],
@@ -82,19 +82,20 @@ export class NativeBackend implements TuiBackend {
       if (slotPtr !== null) {
         try {
           const headerBuf = toArrayBuffer(slotPtr, 0, 16);
-          const headerView = new TuiDataView(headerBuf);
+          const headerView = new TuiDataViewWrapper(headerBuf);
           const eventType = headerView.getUint32(0, true);
           const payloadLength = headerView.getUint32(4, true);
 
           const payloadBuf = toArrayBuffer(slotPtr, 16, payloadLength);
 
-          const SCHEMA_CLASS = schemaRegistry.get(eventType);
-          if (!SCHEMA_CLASS) {
+          const schemaClass = schemaRegistry.get(eventType);
+          if (!schemaClass) {
             LOGGER.logWarning(`Unknown event type: ${eventType}`);
             throw new Error(`Unknown event type: ${eventType}`);
           }
 
-          const event = new SCHEMA_CLASS(payloadBuf);
+          // eslint-disable-next-line new-cap -- schema class from registry
+          const event = new schemaClass(payloadBuf);
           handler(eventType, event);
         } catch (error) {
           LOGGER.logError(`Event parse error: ${formatError(error)}`);

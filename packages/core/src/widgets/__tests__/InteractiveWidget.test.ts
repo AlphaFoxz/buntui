@@ -144,11 +144,11 @@ describe('unmounted', () => {
     expect(blurred).toBe(false);
   });
 
-  it('calls super.unmounted to decrement refrenceCount', () => {
+  it('calls super.unmounted to decrement referenceCount', () => {
     const widget = new TestInteractive();
     widget.mounted();
     widget.mounted();
     widget.unmounted();
-    expect(widget.refrenceCount).toBe(1);
+    expect(widget.referenceCount).toBe(1);
   });
 });
