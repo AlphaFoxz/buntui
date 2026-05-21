@@ -257,8 +257,11 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- narrowed by typeof check above
       onReload(mod.setup as (scene: unknown) => void);
+    } catch (error) {
+      const enriched = await probeChildErrors(error, file, compiledCache, childTemporaryMap, temporaryDir, baseDir);
+      throw enriched;
     } finally {
-      await Bun.file(temporaryFile).unlink();
+      await Bun.file(temporaryFile).unlink().catch(ignoreCleanupError);
     }
   }
 
@@ -354,4 +357,159 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
       childTemporaryMap.clear();
     },
   };
+}
+
+type PositionData = {
+  line: number;
+  lineText: string;
+};
+
+function extractPosition(error: unknown): PositionData | undefined {
+  if (typeof error !== 'object' || error === null || !('position' in error)) {
+    return undefined;
+  }
+
+  const pos = (error).position;
+  if (typeof pos === 'object' && pos !== null) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+    const p = pos as Record<string, unknown>;
+    if (typeof p.line === 'number' && typeof p.lineText === 'string') {
+      return {line: p.line, lineText: p.lineText};
+    }
+  }
+
+  return undefined;
+}
+
+function findLineByText(vueSource: string, lineText: string): number | undefined {
+  const trimmed = lineText.trim();
+  if (trimmed.length === 0) {
+    return undefined;
+  }
+
+  const lines = vueSource.split('\n');
+  for (const [i, line] of lines.entries()) {
+    if (line.trim() === trimmed) {
+      return i + 1;
+    }
+  }
+
+  for (const [i, line] of lines.entries()) {
+    if (line.includes(trimmed)) {
+      return i + 1;
+    }
+  }
+
+  return undefined;
+}
+
+function mapGenLineToVueLine(vueSource: string, genCode: string, genLine: number): number | undefined {
+  const genLines = genCode.split('\n');
+
+  let setupIdx = -1;
+  for (const [i, genLine_] of genLines.entries()) {
+    if (genLine_?.includes('export function setup(__scene)')) {
+      setupIdx = i;
+      break;
+    }
+  }
+
+  if (setupIdx === -1) {
+    return undefined;
+  }
+
+  const bodyStartGen = setupIdx + 1;
+  const bodyLineIdx = genLine - 1 - bodyStartGen;
+  if (bodyLineIdx < 0) {
+    return undefined;
+  }
+
+  const vueLines = vueSource.split('\n');
+  let scriptTagIdx = -1;
+  for (const [i, vueLine] of vueLines.entries()) {
+    if (/<script\s+setup/v.test(vueLine)) {
+      scriptTagIdx = i;
+      break;
+    }
+  }
+
+  if (scriptTagIdx === -1) {
+    return undefined;
+  }
+
+  let importCount = 0;
+  for (let i = scriptTagIdx + 1; i < vueLines.length; i++) {
+    const trimmed = vueLines[i]!.trimStart();
+    if (trimmed.startsWith('import ') || trimmed.startsWith('import{')) {
+      importCount++;
+    } else {
+      break;
+    }
+  }
+
+  const bodyStartVue = scriptTagIdx + 1 + importCount;
+  return bodyStartVue + bodyLineIdx + 1;
+}
+
+async function probeChildErrors(
+  originalError: unknown,
+  rootFile: string,
+  compiledCache: Map<string, string>,
+  childTemporaryMap: Map<string, string>,
+  temporaryDir: string,
+  baseDir: string,
+): Promise<Error> {
+  for (const [vueFile] of childTemporaryMap) {
+    const genCode = compiledCache.get(vueFile);
+    if (!genCode) {
+      continue;
+    }
+
+    const probeTemporary = path.join(temporaryDir, `_hmr_probe_${temporaryCounter++}.ts`);
+    // eslint-disable-next-line no-await-in-loop
+    await Bun.write(probeTemporary, genCode);
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await import(probeTemporary);
+    } catch (probeError) {
+      // eslint-disable-next-line no-await-in-loop
+      await Bun.file(probeTemporary).unlink().catch(ignoreCleanupError);
+      return enrichWithVueLocation(probeError, vueFile, genCode, baseDir);
+    }
+
+    // eslint-disable-next-line no-await-in-loop
+    await Bun.file(probeTemporary).unlink().catch(ignoreCleanupError);
+  }
+
+  const rootRelPath = path.relative(baseDir, rootFile).replaceAll('\\', '/');
+  const rootMessage = originalError instanceof Error ? originalError.message : String(originalError);
+  return new Error(`${rootRelPath}\n${rootMessage}`);
+}
+
+function enrichWithVueLocation(probeError: unknown, vueFile: string, genCode: string, baseDir: string): Error {
+  const vueRelPath = path.relative(baseDir, vueFile).replaceAll('\\', '/');
+  const pos = extractPosition(probeError);
+  const message = probeError instanceof Error
+    ? probeError.message
+    : (typeof probeError === 'object' && probeError !== null && 'message' in probeError
+
+      ? String((probeError).message)
+      : String(probeError));
+
+  try {
+    const vueSource = readFileSync(vueFile, 'utf-8');
+
+    if (pos) {
+      const vueLine = findLineByText(vueSource, pos.lineText) ?? mapGenLineToVueLine(vueSource, genCode, pos.line);
+      if (vueLine) {
+        const vueLines = vueSource.split('\n');
+        const sourceLine = vueLines[vueLine - 1]?.trim() ?? '';
+        return new Error(`${vueRelPath}:${vueLine}\n  ${sourceLine}\n${message}`);
+      }
+    }
+  } catch {
+    // Can't read .vue source
+  }
+
+  return new Error(`${vueRelPath}\n${message}`);
 }

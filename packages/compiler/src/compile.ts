@@ -28,36 +28,49 @@ type ScriptAnalysis = {
 
 export function compile(source: string, options?: CompileOptions): CompileResult {
   const filename = options?.filename ?? 'anonymous.tui.vue';
-  const descriptor = parse(source, {filename});
 
-  if (!descriptor.template) {
-    return {
-      code: '// No template block found',
-      imports: [],
-      descriptor,
-    };
+  try {
+    const descriptor = parse(source, {filename});
+
+    if (!descriptor.template) {
+      return {
+        code: '// No template block found',
+        imports: [],
+        descriptor,
+      };
+    }
+
+    const templateAst = baseParse(descriptor.template.content);
+
+    const registry = options?.registry ?? CORE_REGISTRY;
+    const analysis = analyzeScript(descriptor, filename, registry);
+
+    const renderRoot = transform(templateAst, {
+      ...options?.transform,
+      registry,
+      components: analysis.componentMap,
+      widgetImports: analysis.widgetImportMap,
+    });
+
+    const codegenResult = generate(renderRoot, {
+      ...options?.codegen,
+      scriptBody: analysis.scriptBody.length > 0 ? analysis.scriptBody : undefined,
+    });
+
+    const coreModuleId = options?.codegen?.coreModuleId ?? '@buntui/core';
+
+    return assembleOutput(codegenResult, analysis.scriptImports, descriptor, templateAst, coreModuleId);
+  } catch (error) {
+    if (!(error instanceof Error)) {
+      throw new Error(`${filename} - ${String(error)}`, {cause: error});
+    }
+
+    if (!error.message.includes(filename)) {
+      error.message = `${filename} - ${error.message}`;
+    }
+
+    throw error;
   }
-
-  const templateAst = baseParse(descriptor.template.content);
-
-  const registry = options?.registry ?? CORE_REGISTRY;
-  const analysis = analyzeScript(descriptor, filename, registry);
-
-  const renderRoot = transform(templateAst, {
-    ...options?.transform,
-    registry,
-    components: analysis.componentMap,
-    widgetImports: analysis.widgetImportMap,
-  });
-
-  const codegenResult = generate(renderRoot, {
-    ...options?.codegen,
-    scriptBody: analysis.scriptBody.length > 0 ? analysis.scriptBody : undefined,
-  });
-
-  const coreModuleId = options?.codegen?.coreModuleId ?? '@buntui/core';
-
-  return assembleOutput(codegenResult, analysis.scriptImports, descriptor, templateAst, coreModuleId);
 }
 
 function analyzeScript(

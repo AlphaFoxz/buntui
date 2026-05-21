@@ -35,6 +35,9 @@ export abstract class InteractiveWidget extends TuiWidgetEntity implements Focus
 
   setDisabled(value: boolean): void {
     this.#disabled = value;
+    if (this.#disabled && this.#focused) {
+      this.blur();
+    }
   }
 
   setTabIndex(value: number | undefined): void {

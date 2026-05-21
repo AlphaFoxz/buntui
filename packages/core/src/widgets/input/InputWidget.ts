@@ -180,6 +180,9 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
 
   setReadonly(value: boolean): void {
     this.#isReadonly = value;
+    if (this.#isReadonly && this.#focused) {
+      this.blur();
+    }
   }
 
   updateValue(newValue: string): void {

@@ -15,6 +15,10 @@ export class FocusManager {
 
   start(onUnfocusedKey?: (event: KeyboardEvent) => void): void {
     this.#keyHandler = (data: KeyboardEvent) => {
+      if (this.#focusedWidget && !this.#focusedWidget.acceptsFocus) {
+        this.#focusedWidget = undefined;
+      }
+
       if (data.key === 'Tab' && !data.ctrlKey && !data.altKey && !data.metaKey) {
         this.#navigateFocus(data.shiftKey ? -1 : 1);
         return;
@@ -78,18 +82,24 @@ export class FocusManager {
       return;
     }
 
-    if (!this.#focusedWidget) {
-      this.focusWidget(direction === 1 ? list[0]! : list.at(-1)!);
-      return;
+    let startIndex: number;
+    if (this.#focusedWidget) {
+      const currentIndex = list.indexOf(this.#focusedWidget);
+      if (currentIndex === -1) {
+        startIndex = direction === 1 ? 0 : list.length - 1;
+      } else {
+        startIndex = (currentIndex + direction + list.length) % list.length;
+      }
+    } else {
+      startIndex = direction === 1 ? 0 : list.length - 1;
     }
 
-    const currentIndex = list.indexOf(this.#focusedWidget);
-    if (currentIndex === -1) {
-      this.focusWidget(direction === 1 ? list[0]! : list.at(-1)!);
-      return;
+    for (let i = 0; i < list.length; i++) {
+      const index = (startIndex + (direction * i) + list.length) % list.length;
+      if (list[index]!.acceptsFocus) {
+        this.focusWidget(list[index]!);
+        return;
+      }
     }
-
-    const nextIndex = (currentIndex + direction + list.length) % list.length;
-    this.focusWidget(list[nextIndex]!);
   }
 }

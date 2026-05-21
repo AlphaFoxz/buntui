@@ -18,7 +18,6 @@ export class TuiScene implements Entity {
   readonly #tickHandlers: Array<(dt: number) => void> = [];
   #sortedCache: TuiWidgetEntity[] | undefined = undefined;
   #sortedReverseCache: TuiWidgetEntity[] | undefined = undefined;
-  #focusableCache: ReadonlyArray<TuiWidgetEntity & Focusable> | undefined = undefined;
 
   constructor(options?: Partial<TuiSceneOptions>) {
     this.#id = genId();
@@ -119,8 +118,7 @@ export class TuiScene implements Entity {
   }
 
   getFocusableWidgets(): ReadonlyArray<TuiWidgetEntity & Focusable> {
-    this.#focusableCache ??= this.#buildFocusableList();
-    return this.#focusableCache;
+    return this.#buildFocusableList();
   }
 
   clearWidgets() {
@@ -199,7 +197,6 @@ export class TuiScene implements Entity {
   #invalidateCache(): void {
     this.#sortedCache = undefined;
     this.#sortedReverseCache = undefined;
-    this.#focusableCache = undefined;
   }
 
   #getSortedWidgets(): TuiWidgetEntity[] {
@@ -252,6 +249,10 @@ export class TuiScene implements Entity {
   }
 
   #collectFocusable(widget: TuiWidgetEntity, out: Array<TuiWidgetEntity & Focusable>): void {
+    if (!widget.visible) {
+      return;
+    }
+
     if (isFocusable(widget) && widget.acceptsFocus) {
       out.push(widget);
     }
