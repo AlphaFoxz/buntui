@@ -65,7 +65,15 @@ export function transform(root: RootNode, options?: TransformOptions): TuiRender
       const listBlock = processListBlock(node, ctx);
       children.push(listBlock);
       i++;
+    } else if (node.type === NodeTypes.ELEMENT && node.tag === 'template') {
+      const fragment = processFragment(node, ctx);
+      children.push(...fragment);
+      i++;
     } else {
+      if (node.type === NodeTypes.ELEMENT) {
+        checkOrphanDirective(node);
+      }
+
       const transformed = transformNode(node, ctx);
       if (transformed) {
         children.push(transformed);
@@ -139,7 +147,14 @@ function transformElement(
     } else if (child.type === NodeTypes.ELEMENT && findDirective(child, 'for')) {
       children.push(processListBlock(child, ctx));
       childIdx++;
+    } else if (child.type === NodeTypes.ELEMENT && child.tag === 'template') {
+      children.push(...processFragment(child, ctx));
+      childIdx++;
     } else {
+      if (child.type === NodeTypes.ELEMENT) {
+        checkOrphanDirective(child);
+      }
+
       const transformed = transformNode(child, ctx);
       if (transformed) {
         children.push(transformed);
@@ -266,8 +281,7 @@ function applyModifier(mod: string, raw: string): string {
 }
 
 function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string): DirectiveResult[] | undefined {
-  // Skip v-if / v-else-if / v-else — handled by processConditionalChain
-  if (dir.name === 'if' || dir.name === 'else-if' || dir.name === 'else') {
+  if (dir.name === 'if' || dir.name === 'else-if' || dir.name === 'else' || dir.name === 'for') {
     return undefined;
   }
 
@@ -295,9 +309,23 @@ function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string)
     }
 
     const expression = dir.exp.content;
-    const config = (tag !== undefined && Object.hasOwn(V_MODEL_TAG_CONFIG, tag))
-      ? V_MODEL_TAG_CONFIG[tag]!
-      : V_MODEL_DEFAULT_CONFIG;
+
+    if (!/^[a-zA-Z_$][\w$]*(\.[a-zA-Z_$][\w$]*)*$/v.test(expression)) {
+      throw new Error(`v-model expression must be a simple identifier or member expression at ${dir.loc.start.line}:${dir.loc.start.column}`);
+    }
+
+    const argName = dir.arg?.type === NodeTypes.SIMPLE_EXPRESSION
+      ? camelize(dir.arg.content)
+      : undefined;
+
+    let config: {prop: string; event: string; payloadKey: string};
+    if (argName) {
+      config = {prop: argName, event: `update:${argName}`, payloadKey: argName};
+    } else if (tag !== undefined && Object.hasOwn(V_MODEL_TAG_CONFIG, tag)) {
+      config = V_MODEL_TAG_CONFIG[tag]!;
+    } else {
+      config = V_MODEL_DEFAULT_CONFIG;
+    }
 
     // Build the assignment value, applying modifiers in order
     let valueExpr = `$event.${config.payloadKey}`;
@@ -379,6 +407,18 @@ function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string)
   }];
 }
 
+function checkOrphanDirective(node: ElementNode): void {
+  const elseIf = findDirective(node, 'else-if');
+  if (elseIf) {
+    throw new Error(`v-else-if has no matching v-if at ${elseIf.loc.start.line}:${elseIf.loc.start.column}`);
+  }
+
+  const vElse = findDirective(node, 'else');
+  if (vElse) {
+    throw new Error(`v-else has no matching v-if at ${vElse.loc.start.line}:${vElse.loc.start.column}`);
+  }
+}
+
 function findDirective(node: ElementNode, name: string): DirectiveNode | undefined {
   for (const prop of node.props) {
     if (prop.type === NodeTypes.DIRECTIVE && prop.name === name) {
@@ -396,6 +436,9 @@ function processConditionalChain(
   ctx: TransformContext,
 ): {block: TuiConditionalBlock; nextIndex: number} {
   const vIfDir = findDirective(firstElement, 'if')!;
+  if (!vIfDir.exp) {
+    throw new Error(`v-if requires an expression at ${firstElement.loc.start.line}:${firstElement.loc.start.column}`);
+  }
 
   const consequentWidget = transformElement(firstElement, ctx);
   const block: TuiConditionalBlock = {
@@ -457,6 +500,42 @@ function parseForExpression(exp: string): {itemVar: string; indexVar?: string; l
   }
 
   return {itemVar: match[3]!, listExpression: match[4]!.trim()};
+}
+
+function processFragment(
+  node: ElementNode,
+  ctx: TransformContext,
+): TuiRenderNode[] {
+  const result: TuiRenderNode[] = [];
+  const childNodes = node.children as readonly TemplateChildNode[];
+  let i = 0;
+  while (i < childNodes.length) {
+    const child = childNodes[i]!;
+    if (child.type === NodeTypes.ELEMENT && findDirective(child, 'if')) {
+      const {block, nextIndex} = processConditionalChain(child, childNodes, i, ctx);
+      result.push(block);
+      i = nextIndex;
+    } else if (child.type === NodeTypes.ELEMENT && findDirective(child, 'for')) {
+      result.push(processListBlock(child, ctx));
+      i++;
+    } else if (child.type === NodeTypes.ELEMENT && child.tag === 'template') {
+      result.push(...processFragment(child, ctx));
+      i++;
+    } else {
+      if (child.type === NodeTypes.ELEMENT) {
+        checkOrphanDirective(child);
+      }
+
+      const transformed = transformNode(child, ctx);
+      if (transformed) {
+        result.push(transformed);
+      }
+
+      i++;
+    }
+  }
+
+  return result;
 }
 
 function processListBlock(

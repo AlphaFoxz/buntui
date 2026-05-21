@@ -464,7 +464,7 @@ const CONDITION_KEYWORDS = new Set([
 
 function wrapConditionExpr(expr: string): string {
   return expr.replaceAll(
-    /'[^']*'|"[^"]*"|\b([a-zA-Z_$][\w$]*)\b/gv,
+    /`[^`]*`|'[^']*'|"[^"]*"|\b([a-zA-Z_$][\w$]*)\b/gv,
     (match, ident: string | undefined, offset: number) => {
       if (ident === undefined) {
         return match; // String literal

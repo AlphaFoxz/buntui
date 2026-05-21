@@ -1,7 +1,8 @@
 <template>
     <ScrollBox :x="1" :y="3" width="95%" :height="9" :colorBg="'rgba(0,0,0,0)'">
-        <template v-for="(item, index) in 20">
+        <template>
             <Text
+                v-for="(item, index) in 20"
                 :x="1"
                 :y="4 + index"
                 :colorFg="'rgba(249,226,175,1)'"

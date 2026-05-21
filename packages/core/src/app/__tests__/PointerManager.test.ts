@@ -368,6 +368,47 @@ describe('PointerManager', () => {
       expect(widget.rect.x).toBe(-1);
       expect(widget.rect.y).toBe(-1);
     });
+
+    it('dispatches update:x when x changes during drag', () => {
+      ctx = createTestSetup();
+      const widget = new TrackableDraggableWidget();
+      widget.setDraggable(true);
+      ctx.mountWidget(widget);
+
+      ctx.emitMouse({button: 0, x: 5, y: 5});
+      ctx.emitMouse({buttons: 1, x: 10, y: 5});
+
+      const updateX = widget.dispatched.filter(d => d.event === 'update:x');
+      expect(updateX.length).toBeGreaterThan(0);
+      expect(updateX[0]!.data).toEqual({x: 5});
+    });
+
+    it('dispatches update:y when y changes during drag', () => {
+      ctx = createTestSetup();
+      const widget = new TrackableDraggableWidget();
+      widget.setDraggable(true);
+      ctx.mountWidget(widget);
+
+      ctx.emitMouse({button: 0, x: 5, y: 5});
+      ctx.emitMouse({buttons: 1, x: 5, y: 10});
+
+      const updateY = widget.dispatched.filter(d => d.event === 'update:y');
+      expect(updateY.length).toBeGreaterThan(0);
+      expect(updateY[0]!.data).toEqual({y: 5});
+    });
+
+    it('does not dispatch update:x when x stays the same', () => {
+      ctx = createTestSetup();
+      const widget = new TrackableDraggableWidget();
+      widget.setDraggable(true);
+      ctx.mountWidget(widget);
+
+      ctx.emitMouse({button: 0, x: 5, y: 5});
+      ctx.emitMouse({buttons: 1, x: 5, y: 10});
+
+      const updateX = widget.dispatched.filter(d => d.event === 'update:x');
+      expect(updateX).toHaveLength(0);
+    });
   });
 
   describe('no scene', () => {

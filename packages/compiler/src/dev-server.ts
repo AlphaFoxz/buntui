@@ -26,14 +26,14 @@ export type DevServerOptions = {
   debounceMs?: number;
 };
 
-const VUE_IMPORT_RE = /import\s+\w+\s+from\s+['"]([^'"]+\.vue)['"]/gv;
+export const VUE_IMPORT_RE = /import\s+\w+\s+from\s+['"]([^'"]+\.vue)['"]/gv;
 
 let temporaryCounter = 0;
 
 /**
  * Recursively discover all .vue files in the import chain starting from `entryPath`.
  */
-function discoverVueFiles(entryPath: string): string[] {
+export function discoverVueFiles(entryPath: string): string[] {
   const visited = new Set<string>();
   const queue: string[] = [entryPath];
   const files: string[] = [];
@@ -67,7 +67,7 @@ function discoverVueFiles(entryPath: string): string[] {
 /**
  * Find the original .vue import path string used in compiled code for a given resolved path.
  */
-function findVueImportPath(compiledCode: string, resolvedPath: string, baseDir: string): string | undefined {
+export function findVueImportPath(compiledCode: string, resolvedPath: string, baseDir: string): string | undefined {
   for (const match of compiledCode.matchAll(VUE_IMPORT_RE)) {
     const importPath = match[1]!;
     const candidate = path.resolve(baseDir, importPath);
@@ -79,7 +79,7 @@ function findVueImportPath(compiledCode: string, resolvedPath: string, baseDir: 
   return undefined;
 }
 
-function replaceImportPath(code: string, original: string, replacement: string): string {
+export function replaceImportPath(code: string, original: string, replacement: string): string {
   const normalized = replacement.replaceAll('\\', '/');
   return code
     .replaceAll(`'${original}'`, `'${normalized}'`)
@@ -89,7 +89,7 @@ function replaceImportPath(code: string, original: string, replacement: string):
 // eslint-disable-next-line @typescript-eslint/no-empty-function, @stylistic/curly-newline -- cleanup callback
 const ignoreCleanupError = (): void => {};
 
-function cleanupStaleTemporaryFiles(dir: string): void {
+export function cleanupStaleTemporaryFiles(dir: string): void {
   try {
     for (const entry of readdirSync(dir)) {
       if (entry.startsWith('_hmr_') && entry.endsWith('.ts')) {

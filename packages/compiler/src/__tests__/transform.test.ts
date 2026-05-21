@@ -264,6 +264,34 @@ describe('transform', () => {
     it('throws when v-model has no expression', () => {
       expect(() => parseTemplate('<Input v-model/>')).toThrow('v-model requires an expression');
     });
+
+    it('uses argument as prop name with update: event', () => {
+      const root = parseTemplate('<Box v-model:title="title"/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.dynamicProps.some(p => p.name === 'title' && p.expression === 'title')).toBe(true);
+      expect(widget.events.some(e => e.event === 'update:title' && e.handler.includes('title.value = $event.title'))).toBe(true);
+    });
+
+    it('argument overrides per-tag config', () => {
+      const root = parseTemplate('<Checkbox v-model:label="name"/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.dynamicProps.some(p => p.name === 'label')).toBe(true);
+      expect(widget.events.some(e => e.event === 'update:label')).toBe(true);
+    });
+
+    it('camelizes kebab-case argument', () => {
+      const root = parseTemplate('<Box v-model:bg-color="color"/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.dynamicProps.some(p => p.name === 'bgColor')).toBe(true);
+      expect(widget.events.some(e => e.event === 'update:bgColor')).toBe(true);
+    });
+
+    it('argument works with modifiers', () => {
+      const root = parseTemplate('<Input v-model:title.trim="name"/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.dynamicProps.some(p => p.name === 'title')).toBe(true);
+      expect(widget.events.some(e => e.event === 'update:title' && e.handler.includes('.trim()'))).toBe(true);
+    });
   });
 
   describe('v-show', () => {
@@ -348,6 +376,70 @@ describe('transform', () => {
       expect(list.type).toBe('TuiListBlock');
       expect(list.itemVar).toBe('item');
       expect(list.body[0]!.type).toBe('TuiConditionalBlock');
+    });
+  });
+
+  describe('edge cases: v-for directly on widget (no template wrapper)', () => {
+    it('does not leak v-for as dynamic prop', () => {
+      const root = parseTemplate('<Text v-for="item in items" :value="item"/>');
+      expect(root.children).toHaveLength(1);
+      const list = asList(root.children[0]!);
+      expect(list.type).toBe('TuiListBlock');
+      expect(list.itemVar).toBe('item');
+      const widget = asWidget(list.body[0]!);
+      expect(widget.dynamicProps.some(p => p.name === 'for')).toBe(false);
+      expect(widget.dynamicProps.some(p => p.name === 'value')).toBe(true);
+    });
+  });
+
+  describe('edge cases: bare <template> fragment (no v-if/v-for)', () => {
+    it('flattens template children into parent', () => {
+      const root = parseTemplate('<template><Box x="1"/><Text value="hi"/></template>');
+      expect(root.children).toHaveLength(2);
+      expect(asWidget(root.children[0]!).tag).toBe('Box');
+      expect(asWidget(root.children[1]!).tag).toBe('Text');
+    });
+
+    it('flattens nested template fragments', () => {
+      const root = parseTemplate('<template><template><Box/></template></template>');
+      expect(root.children).toHaveLength(1);
+      expect(asWidget(root.children[0]!).tag).toBe('Box');
+    });
+
+    it('flattens template inside widget children', () => {
+      const root = parseTemplate('<ScrollBox><template><Text value="a"/><Text value="b"/></template></ScrollBox>');
+      const scroll = asWidget(root.children[0]!);
+      expect(scroll.children).toHaveLength(2);
+      expect(asWidget(scroll.children[0]!).tag).toBe('Text');
+      expect(asWidget(scroll.children[1]!).tag).toBe('Text');
+    });
+  });
+
+  describe('error paths: directive validation', () => {
+    it('throws on v-for without expression', () => {
+      expect(() => parseTemplate('<Text v-for/>')).toThrow('v-for requires an expression');
+    });
+
+    it('throws on v-if without expression', () => {
+      expect(() => parseTemplate('<Box v-if/>')).toThrow('v-if requires an expression');
+    });
+
+    it('throws on orphan v-else-if without preceding v-if', () => {
+      expect(() => parseTemplate('<Box v-else-if="b"/>')).toThrow('v-else-if has no matching v-if');
+    });
+
+    it('throws on orphan v-else without preceding v-if', () => {
+      expect(() => parseTemplate('<Box v-else/>')).toThrow('v-else has no matching v-if');
+    });
+
+    it('throws on v-model with function call expression', () => {
+      expect(() => parseTemplate('<Input v-model="fn()"/>')).toThrow('v-model expression must be a simple identifier or member expression');
+    });
+
+    it('accepts v-model with member expression (a.b)', () => {
+      const root = parseTemplate('<Input v-model="state.name"/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.dynamicProps.some(p => p.name === 'value' && p.expression === 'state.name')).toBe(true);
     });
   });
 });

@@ -460,8 +460,53 @@ describe('codegen', () => {
       const root = makeRoot([widget], [], new Set(['createBox']));
       const result = gen(root);
       expect(result.code).toContain('unref(state)');
-      // .isActive should NOT be wrapped
       expect(result.code).not.toContain('unref(isActive)');
+    });
+
+    it('wraps identifiers in ternary expressions', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'visible', expression: 'flag ? a : b', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createBox']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(flag) ? unref(a) : unref(b)');
+    });
+
+    it('wraps function call identifiers', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'visible', expression: 'fn()', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createBox']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(fn)()');
+    });
+
+    it('wraps array identifiers but not numeric indices', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'visible', expression: 'arr[0]', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createBox']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(arr)[0]');
+    });
+
+    it('wraps identifiers in numeric comparisons but not number literals', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'visible', expression: 'count > 0', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createBox']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(count) > 0');
+    });
+
+    it('preserves template literal strings without wrapping content', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'visible', expression: 'name === `admin`', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createBox']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(name) === `admin`');
+      expect(result.code).not.toContain('unref(admin)');
     });
   });
 

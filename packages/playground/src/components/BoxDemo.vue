@@ -141,7 +141,7 @@
 
     <Box
         draggable
-        :x="1"
+        v-model:x="dx"
         :y="19"
         width="48%"
         :height="7"
@@ -175,7 +175,7 @@
 
     <Box
         draggable
-        :x="1"
+        :x="dx"
         :y="27"
         width="48%"
         :height="7"
@@ -244,4 +244,6 @@ const text4 = ref('Right click me!')
 function handleContextmenu() {
     text4.value = 'Right clicked!'
 }
+
+const dx = ref(1)
 </script>

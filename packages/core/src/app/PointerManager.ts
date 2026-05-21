@@ -58,10 +58,21 @@ export class PointerManager {
             const my = data.y - 1;
             const newX = mx - this.#dragOffsetX;
             const newY = my - this.#dragOffsetY;
+            const oldX = dragTarget.rect.x;
+            const oldY = dragTarget.rect.y;
             dragTarget.updateRect({
               x: newX,
               y: newY,
             });
+
+            if (newX !== oldX) {
+              dragTarget.dispatch('update:x', {x: newX});
+            }
+
+            if (newY !== oldY) {
+              dragTarget.dispatch('update:y', {y: newY});
+            }
+
             dragTarget.dispatch('drag', data);
           } else {
             this.#pressTarget.dispatch('mousemove', data);

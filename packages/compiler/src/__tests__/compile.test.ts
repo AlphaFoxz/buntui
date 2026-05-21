@@ -119,6 +119,20 @@ describe('compile', () => {
       expect(result.code).toContain('unref(active)');
       expect(result.code).toContain('$event.checked');
     });
+
+    it('generates named v-model with update: event', () => {
+      const result = compile('<template><Box v-model:title="pageTitle"/></template>');
+      expect(result.code).toContain('unref(pageTitle)');
+      expect(result.code).toContain('pageTitle.value = $event.title');
+      expect(result.code).toContain(".on('update:title'");
+    });
+
+    it('named v-model overrides per-tag config', () => {
+      const result = compile('<template><Checkbox v-model:label="name"/></template>');
+      expect(result.code).toContain('unref(name)');
+      expect(result.code).toContain('name.value = $event.label');
+      expect(result.code).toContain(".on('update:label'");
+    });
   });
 
   describe('props and events', () => {
@@ -216,6 +230,20 @@ describe('compile', () => {
       const result = compile(sfc);
       expect(result.code).toContain('const msg = ref("hello");');
       expect(result.code).toContain('effect(() => {');
+    });
+
+    it('passes through computed declarations and uses unref for bindings', () => {
+      const sfc = '<template><Text :value="label"/></template>'
+        + '<script setup lang="ts">'
+        + 'import {ref, computed} from "@vue/reactivity";\n'
+        + 'const count = ref(0);\n'
+        + 'const label = computed(() => `Count: ${count.value}`);'
+        + '</script>';
+      const result = compile(sfc);
+      expect(result.code).toContain('const count = ref(0);');
+      expect(result.code).toContain('const label = computed(() => `Count: ${count.value}`);');
+      expect(result.code).toContain('unref(label)');
+      expect(result.code).toContain('import {ref, computed} from "@vue/reactivity"');
     });
   });
 

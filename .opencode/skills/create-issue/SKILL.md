@@ -25,7 +25,7 @@ Create a bilingual GitHub issue with appropriate labels.
     - Phase 5 — Ecosystem
     - Triage — Issues to prioritize
 
-4. Draft the issue body in **bilingual format**:
+4. Draft the issue with **English title** and **bilingual body**:
 
     ```
     [English description]
