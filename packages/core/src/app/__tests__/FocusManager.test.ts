@@ -49,10 +49,10 @@ class FocusableWidget extends TuiWidgetEntity implements Focusable {
   }
 }
 
-function keyEvent(key: string): KeyboardEvent {
+function keyEvent(key: string, shiftKey = false): KeyboardEvent {
   return {
     key,
-    shiftKey: false,
+    shiftKey,
     ctrlKey: false,
     altKey: false,
     metaKey: false,
@@ -67,7 +67,7 @@ describe('FocusManager', () => {
   const registeredHandlers: Array<{type: number; fn: (data: unknown) => void}> = [];
 
   beforeEach(() => {
-    manager = new FocusManager();
+    manager = new FocusManager(() => undefined);
     EVENT_BUS.attach(backend);
     EVENT_BUS.start();
   });
@@ -211,6 +211,98 @@ describe('FocusManager', () => {
       const widget = new FocusableWidget();
       manager.focusWidget(widget);
       expect(manager.focusedWidget).toBe(widget);
+    });
+  });
+
+  describe('Tab / Shift+Tab focus navigation', () => {
+    let widgets: FocusableWidget[];
+    let tabManager: FocusManager;
+
+    beforeEach(() => {
+      widgets = [new FocusableWidget(), new FocusableWidget(), new FocusableWidget()];
+      const list = widgets as Array<TuiWidgetEntity & Focusable>;
+      tabManager = new FocusManager(() => ({
+        getFocusableWidgets: () => list,
+      } as any));
+      tabManager.start();
+    });
+
+    afterEach(() => {
+      tabManager.stop();
+    });
+
+    it('Tab with no focus focuses first widget', () => {
+      backend.emit(TuiEventType.KeyboardEvent, keyEvent('Tab'));
+      expect(tabManager.focusedWidget).toBe(widgets[0]);
+    });
+
+    it('Shift+Tab with no focus focuses last widget', () => {
+      backend.emit(TuiEventType.KeyboardEvent, keyEvent('Tab', true));
+      expect(tabManager.focusedWidget).toBe(widgets[2]);
+    });
+
+    it('Tab moves to next widget', () => {
+      tabManager.focusWidget(widgets[0]!);
+      backend.emit(TuiEventType.KeyboardEvent, keyEvent('Tab'));
+      expect(tabManager.focusedWidget).toBe(widgets[1]);
+    });
+
+    it('Tab wraps from last to first', () => {
+      tabManager.focusWidget(widgets[2]!);
+      backend.emit(TuiEventType.KeyboardEvent, keyEvent('Tab'));
+      expect(tabManager.focusedWidget).toBe(widgets[0]);
+    });
+
+    it('Shift+Tab moves to previous widget', () => {
+      tabManager.focusWidget(widgets[2]!);
+      backend.emit(TuiEventType.KeyboardEvent, keyEvent('Tab', true));
+      expect(tabManager.focusedWidget).toBe(widgets[1]);
+    });
+
+    it('Shift+Tab wraps from first to last', () => {
+      tabManager.focusWidget(widgets[0]!);
+      backend.emit(TuiEventType.KeyboardEvent, keyEvent('Tab', true));
+      expect(tabManager.focusedWidget).toBe(widgets[2]);
+    });
+
+    it('Tab with single widget wraps to itself', () => {
+      const single = [new FocusableWidget()] as Array<TuiWidgetEntity & Focusable>;
+      const singleManager = new FocusManager(() => ({
+        getFocusableWidgets: () => single,
+      } as any));
+      singleManager.start();
+
+      singleManager.focusWidget(single[0]!);
+      backend.emit(TuiEventType.KeyboardEvent, keyEvent('Tab'));
+      expect(singleManager.focusedWidget).toBe(single[0]);
+
+      singleManager.stop();
+    });
+
+    it('Tab with no focusable widgets does nothing', () => {
+      const emptyManager = new FocusManager(() => ({
+        getFocusableWidgets: () => [],
+      } as any));
+      emptyManager.start();
+
+      backend.emit(TuiEventType.KeyboardEvent, keyEvent('Tab'));
+      expect(emptyManager.focusedWidget).toBeUndefined();
+
+      emptyManager.stop();
+    });
+
+    it('Tab does not reach focused widget handleKey', () => {
+      tabManager.focusWidget(widgets[0]!);
+      backend.emit(TuiEventType.KeyboardEvent, keyEvent('Tab'));
+      expect(widgets[0]!.keyEvents).toHaveLength(0);
+      expect(widgets[1]!.keyEvents).toHaveLength(0);
+    });
+
+    it('Tab when focused widget not in list focuses first', () => {
+      const orphan = new FocusableWidget();
+      tabManager.focusWidget(orphan);
+      backend.emit(TuiEventType.KeyboardEvent, keyEvent('Tab'));
+      expect(tabManager.focusedWidget).toBe(widgets[0]);
     });
   });
 });

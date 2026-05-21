@@ -34,6 +34,11 @@ function getDefaultButtonOptions(): Required<ButtonWidgetOptions> {
     borderColorFocused: theme.colors.borderFocused,
     borderStyleFocused: theme.borderStyle.focused,
 
+    colorFgHovered: theme.colors.text,
+    colorBgHovered: theme.colors.surfaceHover,
+    borderColorHovered: theme.colors.border,
+    borderStyleHovered: theme.borderStyle.normal,
+
     colorFgPressed: theme.colors.text,
     colorBgPressed: theme.colors.surfacePressed,
     borderColorPressed: theme.colors.borderFocused,
@@ -53,6 +58,7 @@ export class ButtonWidget extends InteractiveWidget {
   #value: string;
 
   #pressed = false;
+  #hovered = false;
 
   readonly #colors: ColorScheme<ButtonColors>;
 
@@ -75,6 +81,12 @@ export class ButtonWidget extends InteractiveWidget {
         bg: parseColor(resolved.colorBgFocused),
         borderColor: parseColor(resolved.borderColorFocused),
         borderStyle: resolveBorderStyle(resolved.borderStyleFocused),
+      },
+      hovered: {
+        fg: parseColor(resolved.colorFgHovered),
+        bg: parseColor(resolved.colorBgHovered),
+        borderColor: parseColor(resolved.borderColorHovered),
+        borderStyle: resolveBorderStyle(resolved.borderStyleHovered),
       },
       pressed: {
         fg: parseColor(resolved.colorFgPressed),
@@ -105,10 +117,23 @@ export class ButtonWidget extends InteractiveWidget {
 
       this.#pressed = false;
     });
+
+    this.on('mouseover', () => {
+      if (this.disabled) {
+        return;
+      }
+
+      this.#hovered = true;
+    });
+
+    this.on('mouseout', () => {
+      this.#hovered = false;
+    });
   }
 
   override blur(): void {
     this.#pressed = false;
+    this.#hovered = false;
     super.blur();
   }
 
@@ -155,6 +180,7 @@ export class ButtonWidget extends InteractiveWidget {
     const colors = resolveColorState(this.#colors, {
       disabled: this.disabled,
       pressed: this.#pressed,
+      hovered: this.#hovered,
       focused: this.focused,
     });
 

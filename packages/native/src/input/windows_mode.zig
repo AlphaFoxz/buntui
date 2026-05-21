@@ -87,6 +87,7 @@ pub fn switchMouseInputMode() void {
 
 pub fn switchDefaultInputMode() void {
     const stdin_handle = GetStdHandle(@intFromEnum(STD_HANDLE.INPUT_HANDLE)).?;
+
     // Disable VT mouse tracking before restoring console mode
     writeRawStdout("\x1b[?1003l\x1b[?1006l");
 

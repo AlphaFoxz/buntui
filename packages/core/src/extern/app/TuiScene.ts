@@ -2,6 +2,7 @@ import {genId} from '../../utils/genId';
 import {rgbToRgba} from '../../utils/styles';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import type {MouseEvent} from '../../events/types';
+import {isFocusable, type Focusable} from '../../widgets/Focusable';
 import {type TuiWidgetEntity} from '../../widgets/TuiWidgetEntity';
 import {getTheme} from '../../theme/provider';
 import type {Entity} from '../types';
@@ -17,6 +18,7 @@ export class TuiScene implements Entity {
   readonly #tickHandlers: Array<(dt: number) => void> = [];
   #sortedCache: TuiWidgetEntity[] | undefined = undefined;
   #sortedReverseCache: TuiWidgetEntity[] | undefined = undefined;
+  #focusableCache: ReadonlyArray<TuiWidgetEntity & Focusable> | undefined = undefined;
 
   constructor(options?: Partial<TuiSceneOptions>) {
     this.#id = genId();
@@ -116,6 +118,11 @@ export class TuiScene implements Entity {
     return undefined;
   }
 
+  getFocusableWidgets(): ReadonlyArray<TuiWidgetEntity & Focusable> {
+    this.#focusableCache ??= this.#buildFocusableList();
+    return this.#focusableCache;
+  }
+
   clearWidgets() {
     for (const widget of this.#widgets) {
       widget.unmounted();
@@ -192,6 +199,7 @@ export class TuiScene implements Entity {
   #invalidateCache(): void {
     this.#sortedCache = undefined;
     this.#sortedReverseCache = undefined;
+    this.#focusableCache = undefined;
   }
 
   #getSortedWidgets(): TuiWidgetEntity[] {
@@ -216,6 +224,41 @@ export class TuiScene implements Entity {
     }
 
     return widget;
+  }
+
+  #buildFocusableList(): Array<TuiWidgetEntity & Focusable> {
+    const result: Array<TuiWidgetEntity & Focusable> = [];
+    for (const widget of this.#widgets) {
+      this.#collectFocusable(widget, result);
+    }
+
+    return result.toSorted((a, b) => {
+      const aIndex = a.tabIndex;
+      const bIndex = b.tabIndex;
+      if (aIndex !== undefined && bIndex !== undefined) {
+        return aIndex - bIndex;
+      }
+
+      if (aIndex !== undefined) {
+        return -1;
+      }
+
+      if (bIndex !== undefined) {
+        return 1;
+      }
+
+      return 0;
+    });
+  }
+
+  #collectFocusable(widget: TuiWidgetEntity, out: Array<TuiWidgetEntity & Focusable>): void {
+    if (isFocusable(widget) && widget.acceptsFocus) {
+      out.push(widget);
+    }
+
+    for (const child of widget.children) {
+      this.#collectFocusable(child, out);
+    }
   }
 }
 

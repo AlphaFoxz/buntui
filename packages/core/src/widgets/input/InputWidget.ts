@@ -91,6 +91,7 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
   #scrollOffset = 0;
   #selectionAnchor: number | undefined;
   #isSelecting = false;
+  #tabIndex: number | undefined;
 
   constructor(options: InputWidgetOptions = {}) {
     super();
@@ -190,6 +191,14 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
 
   get acceptsFocus(): boolean {
     return !this.#isReadonly;
+  }
+
+  get tabIndex(): number | undefined {
+    return this.#tabIndex;
+  }
+
+  setTabIndex(value: number | undefined): void {
+    this.#tabIndex = value;
   }
 
   focus(): void {

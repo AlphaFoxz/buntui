@@ -181,8 +181,21 @@ export class PointerManager {
     this.resetState();
   }
 
-  /** Clear hover/drag state — called on scene switch to avoid stale references. */
   resetState(): void {
+    if (this.#hoverTarget) {
+      this.#hoverTarget.dispatch('mouseout', {
+        button: undefined,
+        buttons: undefined,
+        x: 0,
+        y: 0,
+        isRelease: false,
+        shiftKey: false,
+        ctrlKey: false,
+        altKey: false,
+        metaKey: false,
+      });
+    }
+
     this.#pressTarget = undefined;
     this.#dragTarget = undefined;
     this.#hoverTarget = undefined;

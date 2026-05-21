@@ -84,6 +84,10 @@ pub fn switchMouseInputMode() void {
     enableOutputVtProcessing();
     // Enable VT mouse tracking: any-event tracking + SGR extended format
     writeRawStdout("\x1b[?1003h\x1b[?1006h");
+    // Enable modifyOtherKeys level 2: Ctrl+letter keys produce distinct
+    // escape sequences (e.g. Ctrl+I -> \e[27;5;105~) instead of raw control
+    // bytes that clash with Tab/Enter/Backspace.
+    writeRawStdout("\x1b[>4;2m");
     logger.logInfo("Terminal switched to mouse mode");
 }
 
@@ -92,6 +96,8 @@ pub fn switchDefaultInputMode() void {
 
     // Disable VT mouse tracking before restoring terminal mode
     writeRawStdout("\x1b[?1003l\x1b[?1006l");
+    // Disable modifyOtherKeys
+    writeRawStdout("\x1b[>4;0m");
 
     if (original_termios_saved) {
         // Restore original terminal attributes

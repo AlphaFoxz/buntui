@@ -14,6 +14,12 @@ export type ButtonWidgetOptions = {
   borderColorNormal?: TuiColor;
   borderStyleNormal?: TuiBorderStyleName;
 
+  // Hovered state (mouseover)
+  colorFgHovered?: TuiColor;
+  colorBgHovered?: TuiColor;
+  borderColorHovered?: TuiColor;
+  borderStyleHovered?: TuiBorderStyleName;
+
   // Focused state
   colorFgFocused?: TuiColor;
   colorBgFocused?: TuiColor;

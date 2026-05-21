@@ -5,9 +5,14 @@ import {TuiWidgetEntity} from './TuiWidgetEntity';
 export abstract class InteractiveWidget extends TuiWidgetEntity implements Focusable {
   #focused = false;
   #disabled = false;
+  #tabIndex: number | undefined;
 
   get acceptsFocus(): boolean {
     return !this.#disabled;
+  }
+
+  get tabIndex(): number | undefined {
+    return this.#tabIndex;
   }
 
   get focused(): boolean {
@@ -30,6 +35,10 @@ export abstract class InteractiveWidget extends TuiWidgetEntity implements Focus
 
   setDisabled(value: boolean): void {
     this.#disabled = value;
+  }
+
+  setTabIndex(value: number | undefined): void {
+    this.#tabIndex = value;
   }
 
   override unmounted(): void {

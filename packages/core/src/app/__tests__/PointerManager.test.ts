@@ -118,7 +118,7 @@ function createTestSetup() {
   };
 
   const backend = new MockBackend();
-  const focusManager = new FocusManager();
+  const focusManager = new FocusManager(() => mockScene as any);
   const pointerManager = new PointerManager(() => mockScene as any, focusManager);
 
   EVENT_BUS.attach(backend);

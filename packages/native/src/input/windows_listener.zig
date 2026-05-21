@@ -88,6 +88,14 @@ pub extern "kernel32" fn WaitForSingleObject(
     dwMilliseconds: u32,
 ) callconv(.winapi) u32;
 
+extern "user32" fn GetAsyncKeyState(vKey: i32) callconv(.winapi) i16;
+
+fn isCtrlPhysicallyHeld() bool {
+    const VK_CONTROL: i32 = 0x11;
+    const state = GetAsyncKeyState(VK_CONTROL);
+    return (@as(u16, @bitCast(state)) & 0x8000) != 0;
+}
+
 const RIGHT_ALT_PRESSED = 0x0001;
 const LEFT_ALT_PRESSED = 0x0002;
 const RIGHT_CTRL_PRESSED = 0x0004;
@@ -291,8 +299,10 @@ const Parser = struct {
             const key_name = vk_name orelse mapper.unicodeToKeyName(unicode_char);
 
             // Ctrl+letter: 0x01-0x1A maps to Ctrl+A through Ctrl+Z.
-            // VT input mode may not set CTRL in dwControlKeyState, so infer it.
-            if (unicode_char >= 0x01 and unicode_char <= 0x1A and std.mem.eql(u8, key_name, "Unidentified")) {
+            // VT input mode rewrites VK codes and strips Ctrl from
+            // dwControlKeyState, so we use GetAsyncKeyState to detect
+            // the physical Ctrl key.
+            if (unicode_char >= 0x01 and unicode_char <= 0x1A and (std.mem.eql(u8, key_name, "Unidentified") or isCtrlPhysicallyHeld())) {
                 var letter_buf = [_]u8{0};
                 letter_buf[0] = @as(u8, @intCast(unicode_char - 0x01 + 'a'));
                 logger.logDebugFmt("Ctrl+字母: {s}", .{letter_buf[0..]});

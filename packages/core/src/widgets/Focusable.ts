@@ -3,6 +3,7 @@ import type {TuiWidgetEntity} from './TuiWidgetEntity';
 
 export type Focusable = {
   readonly acceptsFocus: boolean;
+  readonly tabIndex?: number;
   focus(): void;
   blur(): void;
   handleKey(event: KeyboardEvent): void;

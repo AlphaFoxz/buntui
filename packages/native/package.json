@@ -25,6 +25,7 @@
     },
     "scripts": {
         "build": "zig build && bun run ./scripts/copy-binary.ts",
-        "zig-test": "zig test src/tests.zig -lc"
+        "zig-test": "zig test src/tests.zig -lc",
+        "zig-test-posix": "zig test src/input/posix_listener.zig -lc"
     }
 }

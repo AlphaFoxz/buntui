@@ -7,7 +7,7 @@ export const ENTRY = 'App.vue';
 
 export function run(devOptions: {logFilePath?: string} = {}) {
   const app = createApp({
-    logLevel: 'info',
+    logLevel: 'debug',
     clearLog: true,
     debugMode: true,
     tickRate: 120,

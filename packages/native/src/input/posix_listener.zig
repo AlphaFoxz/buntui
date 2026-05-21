@@ -101,6 +101,38 @@ inline fn emitResizeEvent(rows: u16, cols: u16) void {
     );
 }
 
+fn keyCodeToKeyName(code: u16) []const u8 {
+    switch (code) {
+        0x08 => return "Backspace",
+        0x09 => return "Tab",
+        0x0D => return "Enter",
+        0x1B => return "Escape",
+        0x20 => return " ",
+        0x7F => return "Backspace",
+        else => {},
+    }
+    if (code >= 0x41 and code <= 0x5A) {
+        const names = [_][]const u8{
+            "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+            "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+        };
+        return names[code - 0x41];
+    }
+    if (code >= 0x61 and code <= 0x7A) {
+        const names = [_][]const u8{
+            "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+            "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
+        };
+        return names[code - 0x61];
+    }
+    if (code >= 0x30 and code <= 0x39) {
+        const names = [_][]const u8{ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+        return names[code - 0x30];
+    }
+    logger.logDebugFmt("未知 key code: {}", .{code});
+    return "Unidentified";
+}
+
 const Parser = struct {
     state: InputState = .Normal,
     buffer: [64]u8 = undefined,
@@ -141,6 +173,24 @@ const Parser = struct {
                     self.utf8_expected = byte_count;
                     self.utf8_received = 1;
                     self.state = .Utf8Sequence;
+                } else if (byte == 0x09) {
+                    emitKeyboardEvent(
+                        buildModifiers(false, false, false, false, false),
+                        byte,
+                        "Tab",
+                    );
+                } else if (byte == 0x0D) {
+                    emitKeyboardEvent(
+                        buildModifiers(false, false, false, false, false),
+                        byte,
+                        "Enter",
+                    );
+                } else if (byte == 0x08 or byte == 0x7F) {
+                    emitKeyboardEvent(
+                        buildModifiers(false, false, false, false, false),
+                        byte,
+                        "Backspace",
+                    );
                 } else if (byte < 32) {
                     // Control character (Ctrl+A through Ctrl+Z, etc.)
                     var letter_buf = [_]u8{0};
@@ -361,42 +411,71 @@ const Parser = struct {
         const final_char = content[content.len - 1];
         const params = content[0 .. content.len - 1];
 
+        // Split params into individual values
+        var param_buf: [8]u16 = .{0} ** 8;
+        var param_count: usize = 0;
+        if (params.len > 0) {
+            var iter = std.mem.splitScalar(u8, params, ';');
+            while (iter.next()) |p| {
+                if (param_count >= param_buf.len) break;
+                param_buf[param_count] = std.fmt.parseInt(u16, p, 10) catch 0;
+                param_count += 1;
+            }
+        }
+
+        // Decode modifier from a CSI param value (1=none, 2=shift, 3=alt, 4=shift+alt, 5=ctrl, etc.)
+        const decodeModifiers = struct {
+            fn call(mod_num: u16) struct { shift: bool, alt: bool, ctrl: bool } {
+                return .{
+                    .shift = mod_num == 2 or mod_num == 4 or mod_num == 6 or mod_num == 8,
+                    .alt = mod_num == 3 or mod_num == 4 or mod_num == 7 or mod_num == 8,
+                    .ctrl = mod_num == 5 or mod_num == 6 or mod_num == 7 or mod_num == 8,
+                };
+            }
+        }.call;
+
+        // Format 2: \e[KEY;MODu  (xterm modifyOtherKeys format with 'u' terminator)
+        if (final_char == 'u' and param_count >= 2) {
+            const key_code = param_buf[0];
+            const mods = decodeModifiers(param_buf[1]);
+            const kn = keyCodeToKeyName(key_code);
+            if (!std.mem.eql(u8, kn, "Unidentified")) {
+                logger.logDebugFmt("modifyOtherKeys(u): {s}", .{kn});
+                emitKeyboardEvent(
+                    buildModifiers(mods.shift, mods.alt, mods.ctrl, false, false),
+                    key_code,
+                    kn,
+                );
+            }
+            return;
+        }
+
+        // Format 1: \e[27;MOD;KEY~  (xterm modifyOtherKeys format with '~' terminator)
+        if (final_char == '~' and param_count >= 3 and param_buf[0] == 27) {
+            const mods = decodeModifiers(param_buf[1]);
+            const key_code = param_buf[2];
+            const kn = keyCodeToKeyName(key_code);
+            if (!std.mem.eql(u8, kn, "Unidentified")) {
+                logger.logDebugFmt("modifyOtherKeys(~): {s}", .{kn});
+                emitKeyboardEvent(
+                    buildModifiers(mods.shift, mods.alt, mods.ctrl, false, false),
+                    key_code,
+                    kn,
+                );
+            }
+            return;
+        }
+
+        // Standard CSI parsing (arrow keys, function keys, etc.)
+        const param1: u16 = if (param_count > 0) param_buf[0] else 0;
         var mod_shift: bool = false;
         var mod_alt: bool = false;
         var mod_ctrl: bool = false;
-        var param1: u16 = 0;
-
-        if (params.len > 0) {
-            var iter = std.mem.splitScalar(u8, params, ';');
-            if (iter.next()) |p1| {
-                param1 = std.fmt.parseInt(u16, p1, 10) catch 0;
-            }
-            if (iter.next()) |p2| {
-                const mod_num = std.fmt.parseInt(u8, p2, 10) catch 1;
-                switch (mod_num) {
-                    2 => mod_shift = true,
-                    3 => mod_alt = true,
-                    4 => {
-                        mod_shift = true;
-                        mod_alt = true;
-                    },
-                    5 => mod_ctrl = true,
-                    6 => {
-                        mod_shift = true;
-                        mod_ctrl = true;
-                    },
-                    7 => {
-                        mod_alt = true;
-                        mod_ctrl = true;
-                    },
-                    8 => {
-                        mod_shift = true;
-                        mod_alt = true;
-                        mod_ctrl = true;
-                    },
-                    else => {},
-                }
-            }
+        if (param_count >= 2) {
+            const mods = decodeModifiers(param_buf[1]);
+            mod_shift = mods.shift;
+            mod_alt = mods.alt;
+            mod_ctrl = mods.ctrl;
         }
 
         const key_name: []const u8 = blk: {
@@ -603,5 +682,283 @@ pub fn stop() void {
         should_stop.store(true, .release);
         thread.join();
         thread_started = false;
+    }
+}
+
+test "keyCodeToKeyName maps control characters" {
+    try std.testing.expectEqualStrings("Backspace", keyCodeToKeyName(0x08));
+    try std.testing.expectEqualStrings("Tab", keyCodeToKeyName(0x09));
+    try std.testing.expectEqualStrings("Enter", keyCodeToKeyName(0x0D));
+    try std.testing.expectEqualStrings("Escape", keyCodeToKeyName(0x1B));
+    try std.testing.expectEqualStrings("Backspace", keyCodeToKeyName(0x7F));
+}
+
+test "keyCodeToKeyName maps letters" {
+    try std.testing.expectEqualStrings("A", keyCodeToKeyName(0x41));
+    try std.testing.expectEqualStrings("Z", keyCodeToKeyName(0x5A));
+    try std.testing.expectEqualStrings("a", keyCodeToKeyName(0x61));
+    try std.testing.expectEqualStrings("z", keyCodeToKeyName(0x7A));
+    try std.testing.expectEqualStrings("I", keyCodeToKeyName(0x49));
+    try std.testing.expectEqualStrings("i", keyCodeToKeyName(0x69));
+}
+
+test "keyCodeToKeyName maps digits" {
+    try std.testing.expectEqualStrings("0", keyCodeToKeyName(0x30));
+    try std.testing.expectEqualStrings("9", keyCodeToKeyName(0x39));
+}
+
+test "keyCodeToKeyName returns Unidentified for unknown" {
+    try std.testing.expectEqualStrings("Unidentified", keyCodeToKeyName(0x01));
+    try std.testing.expectEqualStrings("Unidentified", keyCodeToKeyName(0x80));
+}
+
+test "Parser: Tab byte 0x09 produces key Tab" {
+    event_bus.event_bus_setup();
+    defer event_bus.event_bus_stats(); // drain
+
+    var parser: Parser = .{};
+    parser.processByte(0x09);
+
+    const slot = event_bus.event_bus_poll();
+    try std.testing.expect(slot != null);
+    if (slot) |s| {
+        const modifiers = s[0];
+        const key_len: u8 = @intCast(@min(s[3], 236));
+        const key = s[4 .. 4 + key_len];
+        try std.testing.expect(modifiers == 0);
+        try std.testing.expectEqualStrings("Tab", key);
+        event_bus.event_bus_commit();
+    }
+}
+
+test "Parser: Enter byte 0x0D produces key Enter" {
+    event_bus.event_bus_setup();
+    defer event_bus.event_bus_stats();
+
+    var parser: Parser = .{};
+    parser.processByte(0x0D);
+
+    const slot = event_bus.event_bus_poll();
+    try std.testing.expect(slot != null);
+    if (slot) |s| {
+        const modifiers = s[0];
+        const key_len: u8 = @intCast(@min(s[3], 236));
+        const key = s[4 .. 4 + key_len];
+        try std.testing.expect(modifiers == 0);
+        try std.testing.expectEqualStrings("Enter", key);
+        event_bus.event_bus_commit();
+    }
+}
+
+test "Parser: Backspace byte 0x08 produces key Backspace" {
+    event_bus.event_bus_setup();
+    defer event_bus.event_bus_stats();
+
+    var parser: Parser = .{};
+    parser.processByte(0x08);
+
+    const slot = event_bus.event_bus_poll();
+    try std.testing.expect(slot != null);
+    if (slot) |s| {
+        const key_len: u8 = @intCast(@min(s[3], 236));
+        const key = s[4 .. 4 + key_len];
+        try std.testing.expectEqualStrings("Backspace", key);
+        event_bus.event_bus_commit();
+    }
+}
+
+test "Parser: Ctrl+letter (0x01-0x07) produces Ctrl modifier" {
+    event_bus.event_bus_setup();
+    defer event_bus.event_bus_stats();
+
+    var parser: Parser = .{};
+    // Ctrl+A = 0x01
+    parser.processByte(0x01);
+
+    const slot = event_bus.event_bus_poll();
+    try std.testing.expect(slot != null);
+    if (slot) |s| {
+        const modifiers = s[0];
+        const key_len: u8 = @intCast(@min(s[3], 236));
+        const key = s[4 .. 4 + key_len];
+        try std.testing.expect(modifiers & payloads.MOD_CTRL != 0);
+        try std.testing.expectEqualStrings("A", key);
+        event_bus.event_bus_commit();
+    }
+}
+
+test "Parser: Ctrl+J (0x0A) is NOT Enter, produces Ctrl+J" {
+    event_bus.event_bus_setup();
+    defer event_bus.event_bus_stats();
+
+    var parser: Parser = .{};
+    // 0x0A = Ctrl+J (line feed), should be distinct from Enter (0x0D)
+    parser.processByte(0x0A);
+
+    const slot = event_bus.event_bus_poll();
+    try std.testing.expect(slot != null);
+    if (slot) |s| {
+        const modifiers = s[0];
+        const key_len: u8 = @intCast(@min(s[3], 236));
+        const key = s[4 .. 4 + key_len];
+        try std.testing.expect(modifiers & payloads.MOD_CTRL != 0);
+        try std.testing.expectEqualStrings("J", key);
+        event_bus.event_bus_commit();
+    }
+}
+
+test "Parser: modifyOtherKeys format 2 (u terminator) Ctrl+I" {
+    event_bus.event_bus_setup();
+    defer event_bus.event_bus_stats();
+
+    var parser: Parser = .{};
+    // \e[105;5u = Ctrl+I via modifyOtherKeys format 2
+    const seq = "\x1b[105;5u";
+    for (seq) |byte| {
+        parser.processByte(byte);
+    }
+
+    const slot = event_bus.event_bus_poll();
+    try std.testing.expect(slot != null);
+    if (slot) |s| {
+        const modifiers = s[0];
+        const char_code = std.mem.readInt(u16, s[1..3], .little);
+        const key_len: u8 = @intCast(@min(s[3], 236));
+        const key = s[4 .. 4 + key_len];
+        try std.testing.expect(modifiers & payloads.MOD_CTRL != 0);
+        try std.testing.expect(char_code == 105); // 'i' ASCII code
+        try std.testing.expectEqualStrings("i", key);
+        event_bus.event_bus_commit();
+    }
+}
+
+test "Parser: modifyOtherKeys format 1 (~ terminator) Ctrl+I" {
+    event_bus.event_bus_setup();
+    defer event_bus.event_bus_stats();
+
+    var parser: Parser = .{};
+    // \e[27;5;105~ = Ctrl+I via modifyOtherKeys format 1
+    const seq = "\x1b[27;5;105~";
+    for (seq) |byte| {
+        parser.processByte(byte);
+    }
+
+    const slot = event_bus.event_bus_poll();
+    try std.testing.expect(slot != null);
+    if (slot) |s| {
+        const modifiers = s[0];
+        const char_code = std.mem.readInt(u16, s[1..3], .little);
+        const key_len: u8 = @intCast(@min(s[3], 236));
+        const key = s[4 .. 4 + key_len];
+        try std.testing.expect(modifiers & payloads.MOD_CTRL != 0);
+        try std.testing.expect(char_code == 105);
+        try std.testing.expectEqualStrings("i", key);
+        event_bus.event_bus_commit();
+    }
+}
+
+test "Parser: modifyOtherKeys Ctrl+Shift+I" {
+    event_bus.event_bus_setup();
+    defer event_bus.event_bus_stats();
+
+    var parser: Parser = .{};
+    // \e[105;6u = Ctrl+Shift+I
+    const seq = "\x1b[105;6u";
+    for (seq) |byte| {
+        parser.processByte(byte);
+    }
+
+    const slot = event_bus.event_bus_poll();
+    try std.testing.expect(slot != null);
+    if (slot) |s| {
+        const modifiers = s[0];
+        const key_len: u8 = @intCast(@min(s[3], 236));
+        const key = s[4 .. 4 + key_len];
+        try std.testing.expect(modifiers & payloads.MOD_CTRL != 0);
+        try std.testing.expect(modifiers & payloads.MOD_SHIFT != 0);
+        try std.testing.expectEqualStrings("i", key);
+        event_bus.event_bus_commit();
+    }
+}
+
+test "Parser: modifyOtherKeys Alt+Enter" {
+    event_bus.event_bus_setup();
+    defer event_bus.event_bus_stats();
+
+    var parser: Parser = .{};
+    // \e[13;3u = Alt+Enter
+    const seq = "\x1b[13;3u";
+    for (seq) |byte| {
+        parser.processByte(byte);
+    }
+
+    const slot = event_bus.event_bus_poll();
+    try std.testing.expect(slot != null);
+    if (slot) |s| {
+        const modifiers = s[0];
+        const key_len: u8 = @intCast(@min(s[3], 236));
+        const key = s[4 .. 4 + key_len];
+        try std.testing.expect(modifiers & payloads.MOD_ALT != 0);
+        try std.testing.expectEqualStrings("Enter", key);
+        event_bus.event_bus_commit();
+    }
+}
+
+test "Parser: Tab (0x09) and Ctrl+I (modifyOtherKeys) are distinct" {
+    event_bus.event_bus_setup();
+    defer event_bus.event_bus_stats();
+
+    var parser: Parser = .{};
+
+    // First: raw Tab byte
+    parser.processByte(0x09);
+    const tab_slot = event_bus.event_bus_poll();
+    try std.testing.expect(tab_slot != null);
+    if (tab_slot) |s| {
+        const modifiers = s[0];
+        const key_len: u8 = @intCast(@min(s[3], 236));
+        const key = s[4 .. 4 + key_len];
+        try std.testing.expect(modifiers == 0); // No modifiers for Tab
+        try std.testing.expectEqualStrings("Tab", key);
+        event_bus.event_bus_commit();
+    }
+
+    // Second: Ctrl+I via modifyOtherKeys
+    const seq = "\x1b[105;5u";
+    for (seq) |byte| {
+        parser.processByte(byte);
+    }
+    const ctrl_i_slot = event_bus.event_bus_poll();
+    try std.testing.expect(ctrl_i_slot != null);
+    if (ctrl_i_slot) |s| {
+        const modifiers = s[0];
+        const key_len: u8 = @intCast(@min(s[3], 236));
+        const key = s[4 .. 4 + key_len];
+        try std.testing.expect(modifiers & payloads.MOD_CTRL != 0); // Ctrl modifier
+        try std.testing.expectEqualStrings("i", key); // 'i' not 'Tab'
+        event_bus.event_bus_commit();
+    }
+}
+
+test "Parser: standard CSI arrow keys still work" {
+    event_bus.event_bus_setup();
+    defer event_bus.event_bus_stats();
+
+    var parser: Parser = .{};
+    // \e[A = ArrowUp
+    const seq = "\x1b[A";
+    for (seq) |byte| {
+        parser.processByte(byte);
+    }
+
+    const slot = event_bus.event_bus_poll();
+    try std.testing.expect(slot != null);
+    if (slot) |s| {
+        const modifiers = s[0];
+        const key_len: u8 = @intCast(@min(s[3], 236));
+        const key = s[4 .. 4 + key_len];
+        try std.testing.expect(modifiers == 0);
+        try std.testing.expectEqualStrings("ArrowUp", key);
+        event_bus.event_bus_commit();
     }
 }

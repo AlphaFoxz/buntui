@@ -518,6 +518,64 @@ function buildEventHandler(eventBinding: TuiEventBinding): string {
   return `($event) => { ${body} }`;
 }
 
+function buildUnmountTreeLines(tree: WidgetTree): string[] {
+  const lines: string[] = [];
+  if (tree.root.isComponent) {
+    lines.push(
+      `    if (${tree.root.varName}) {`,
+      `      ${tree.root.varName}();`,
+      `      ${tree.root.varName} = null;`,
+    );
+  } else {
+    lines.push(
+      `    if (${tree.root.varName}) {`,
+      `      __scene.unmount(${tree.root.varName});`,
+      `      ${tree.root.varName} = null;`,
+    );
+  }
+
+  for (const d of tree.descendants) {
+    if (d.isComponent) {
+      lines.push(`      ${d.varName}();`);
+    }
+
+    lines.push(`      ${d.varName} = null;`);
+  }
+
+  lines.push('    }');
+  return lines;
+}
+
+function buildMountTreeLines(tree: WidgetTree): string[] {
+  const lines: string[] = [`    if (!${tree.root.varName}) {`, `      ${tree.root.varName} = ${tree.root.createLine};`];
+
+  for (const d of tree.descendants) {
+    lines.push(`      ${d.varName} = ${d.createLine};`);
+  }
+
+  for (const addLine of tree.addChildLines) {
+    lines.push(`      ${addLine}`);
+  }
+
+  for (const eventLine of tree.root.eventLines) {
+    lines.push(`      ${eventLine}`);
+  }
+
+  for (const d of tree.descendants) {
+    for (const eventLine of d.eventLines) {
+      lines.push(`      ${eventLine}`);
+    }
+  }
+
+  if (tree.root.isComponent) {
+    lines.push('    }');
+  } else {
+    lines.push(`      __scene.mount(${tree.root.varName});`, '    }');
+  }
+
+  return lines;
+}
+
 function generateConditional(block: TuiConditionalBlock, index: number): NodeGenResult {
   const branches = flattenConditional(block);
   const lines: string[] = [];
@@ -558,34 +616,7 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
 
     // Mount this branch's widgets (root + descendants)
     for (const tree of branchTrees[i]!) {
-      effectLines.push(`    if (!${tree.root.varName}) {`, `      ${tree.root.varName} = ${tree.root.createLine};`);
-      for (const d of tree.descendants) {
-        effectLines.push(`      ${d.varName} = ${d.createLine};`);
-      }
-
-      // Add children to parents
-      for (const addLine of tree.addChildLines) {
-        effectLines.push(`      ${addLine}`);
-      }
-
-      // Events for root
-      for (const eventLine of tree.root.eventLines) {
-        effectLines.push(`      ${eventLine}`);
-      }
-
-      // Events for descendants
-      for (const d of tree.descendants) {
-        for (const eventLine of d.eventLines) {
-          effectLines.push(`      ${eventLine}`);
-        }
-      }
-
-      // Components return a cleanup function and mount internally — skip scene.mount
-      if (tree.root.isComponent) {
-        effectLines.push('    }');
-      } else {
-        effectLines.push(`      __scene.mount(${tree.root.varName});`, '    }');
-      }
+      effectLines.push(...buildMountTreeLines(tree));
     }
 
     // Unmount other branches' widgets
@@ -595,30 +626,7 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
       }
 
       for (const tree of branchTrees[j]!) {
-        // Components: call cleanup function returned by setup()
-        if (tree.root.isComponent) {
-          effectLines.push(
-            `    if (${tree.root.varName}) {`,
-            `      ${tree.root.varName}();`,
-            `      ${tree.root.varName} = null;`,
-          );
-        } else {
-          effectLines.push(
-            `    if (${tree.root.varName}) {`,
-            `      __scene.unmount(${tree.root.varName});`,
-            `      ${tree.root.varName} = null;`,
-          );
-        }
-
-        for (const d of tree.descendants) {
-          if (d.isComponent) {
-            effectLines.push(`      ${d.varName}();`);
-          }
-
-          effectLines.push(`      ${d.varName} = null;`);
-        }
-
-        effectLines.push('    }');
+        effectLines.push(...buildUnmountTreeLines(tree));
       }
     }
 
@@ -631,29 +639,7 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
     effectLines.push(' else {');
     for (const trees of branchTrees) {
       for (const tree of trees) {
-        if (tree.root.isComponent) {
-          effectLines.push(
-            `    if (${tree.root.varName}) {`,
-            `      ${tree.root.varName}();`,
-            `      ${tree.root.varName} = null;`,
-          );
-        } else {
-          effectLines.push(
-            `    if (${tree.root.varName}) {`,
-            `      __scene.unmount(${tree.root.varName});`,
-            `      ${tree.root.varName} = null;`,
-          );
-        }
-
-        for (const d of tree.descendants) {
-          if (d.isComponent) {
-            effectLines.push(`      ${d.varName}();`);
-          }
-
-          effectLines.push(`      ${d.varName} = null;`);
-        }
-
-        effectLines.push('    }');
+        effectLines.push(...buildUnmountTreeLines(tree));
       }
     }
 

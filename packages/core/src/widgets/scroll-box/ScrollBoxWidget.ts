@@ -25,6 +25,7 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
   #dragScrolling = false;
   #dragStartY = 0;
   #dragStartOffset = 0;
+  #tabIndex: number | undefined;
 
   constructor(options: ScrollBoxWidgetOptions) {
     super();
@@ -104,6 +105,14 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
 
   get acceptsFocus(): boolean {
     return true;
+  }
+
+  get tabIndex(): number | undefined {
+    return this.#tabIndex;
+  }
+
+  setTabIndex(value: number | undefined): void {
+    this.#tabIndex = value;
   }
 
   // -- Focusable --

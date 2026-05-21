@@ -29,7 +29,7 @@ export class TuiApp implements Disposable {
   readonly #backend: TuiBackend;
   #scenes: TuiScene[] = [];
   #currentScene: TuiScene | undefined = undefined;
-  readonly #focusManager = new FocusManager();
+  readonly #focusManager: FocusManager;
   readonly #pointerManager: PointerManager;
   readonly #renderLoop: RenderLoop;
   readonly #cleanups = new Map<bigint, () => void>();
@@ -52,6 +52,7 @@ export class TuiApp implements Disposable {
     });
 
     const getScene = () => this.#currentScene;
+    this.#focusManager = new FocusManager(getScene);
     this.#pointerManager = new PointerManager(getScene, this.#focusManager);
     this.#renderLoop = new RenderLoop(getScene, this.#backend, {
       tickRate: options?.tickRate,
@@ -111,6 +112,10 @@ export class TuiApp implements Disposable {
 
   blurWidget(): void {
     this.#focusManager.blurWidget();
+  }
+
+  getFocusableWidgets(): ReturnType<FocusManager['getFocusableWidgets']> {
+    return this.#focusManager.getFocusableWidgets();
   }
 
   dispose() {
