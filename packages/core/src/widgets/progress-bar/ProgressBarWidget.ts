@@ -127,8 +127,8 @@ export class ProgressBarWidget extends InteractiveWidget {
     this.#showPercentage = value;
   }
 
-  handleKey(event: KeyboardEvent): void {
-    this.dispatchKeyEvent(event);
+  override handleActiveKey(_event: KeyboardEvent): void {
+    void _event;
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {

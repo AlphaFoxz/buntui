@@ -12,10 +12,14 @@ export type InputWidgetOptions = {
   value?: string;
   borderColorUnfocused?: TuiColor;
   borderColorFocused?: TuiColor;
+  borderColorDisabled?: TuiColor;
   borderStyle?: TuiBorderStyleName;
   maxLength?: number;
   selectionBgColor?: TuiColor;
   selectionFgColor?: TuiColor;
   label?: string;
   readonly?: boolean;
+  disabled?: boolean;
+  colorFgDisabled?: TuiColor;
+  colorBgDisabled?: TuiColor;
 };

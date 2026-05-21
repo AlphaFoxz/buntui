@@ -61,7 +61,6 @@ export class SwitchWidget extends InteractiveWidget {
   readonly #rect: TuiWidgetRect;
   #label: string;
   #checked: boolean;
-  #hovered = false;
 
   readonly #colors: ColorScheme<SwitchColors>;
 
@@ -105,23 +104,7 @@ export class SwitchWidget extends InteractiveWidget {
     };
 
     this.on('click', () => {
-      if (this.disabled) {
-        return;
-      }
-
       this.#toggle();
-    });
-
-    this.on('mouseover', () => {
-      if (this.disabled) {
-        return;
-      }
-
-      this.#hovered = true;
-    });
-
-    this.on('mouseout', () => {
-      this.#hovered = false;
     });
   }
 
@@ -137,17 +120,7 @@ export class SwitchWidget extends InteractiveWidget {
     return this.#rect;
   }
 
-  handleKey(event: KeyboardEvent): void {
-    if (this.disabled) {
-      return;
-    }
-
-    if (event.key === undefined) {
-      return;
-    }
-
-    this.dispatchKeyEvent(event);
-
+  override handleActiveKey(event: KeyboardEvent): void {
     if (event.key === 'Enter' || event.key === ' ') {
       this.#toggle();
     }
@@ -176,7 +149,7 @@ export class SwitchWidget extends InteractiveWidget {
     const colors = resolveColorState(this.#colors, {
       disabled: this.disabled,
       focused: this.focused,
-      hovered: this.#hovered,
+      hovered: this.hovered,
     });
     const textY = y + Math.floor(height / 2);
 

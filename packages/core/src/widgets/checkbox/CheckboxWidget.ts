@@ -41,7 +41,6 @@ export class CheckboxWidget extends InteractiveWidget {
   readonly #rect: TuiWidgetRect;
   #label: string;
   #checked: boolean;
-  #hovered = false;
 
   readonly #colors: ColorScheme<CheckboxColors>;
 
@@ -73,23 +72,7 @@ export class CheckboxWidget extends InteractiveWidget {
     };
 
     this.on('click', () => {
-      if (this.disabled) {
-        return;
-      }
-
       this.#toggle();
-    });
-
-    this.on('mouseover', () => {
-      if (this.disabled) {
-        return;
-      }
-
-      this.#hovered = true;
-    });
-
-    this.on('mouseout', () => {
-      this.#hovered = false;
     });
   }
 
@@ -105,17 +88,7 @@ export class CheckboxWidget extends InteractiveWidget {
     return this.#rect;
   }
 
-  handleKey(event: KeyboardEvent): void {
-    if (this.disabled) {
-      return;
-    }
-
-    if (event.key === undefined) {
-      return;
-    }
-
-    this.dispatchKeyEvent(event);
-
+  override handleActiveKey(event: KeyboardEvent): void {
     if (event.key === 'Enter' || event.key === ' ') {
       this.#toggle();
     }
@@ -144,7 +117,7 @@ export class CheckboxWidget extends InteractiveWidget {
     const {fg, bg} = resolveColorState(this.#colors, {
       disabled: this.disabled,
       focused: this.focused,
-      hovered: this.#hovered,
+      hovered: this.hovered,
     });
 
     buffer.drawRect({

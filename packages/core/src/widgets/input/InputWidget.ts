@@ -2,8 +2,7 @@ import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent, type MouseEvent} from '../../events/types';
 import {BorderSides, resolveCursorMode} from '../../draw_list/types';
 import {resolveBorderStyle, type TuiWidgetRect} from '../types';
-import {TuiWidgetEntity} from '../TuiWidgetEntity';
-import type {Focusable} from '../Focusable';
+import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
 import {getTheme} from '../../theme/provider';
@@ -59,15 +58,20 @@ function getDefaultInputOptions(): InputWidgetOptions {
     colorBg: theme.colors.surface,
     borderColorUnfocused: theme.colors.border,
     borderColorFocused: theme.colors.borderFocused,
+    borderColorDisabled: theme.colors.border,
     borderStyle: theme.borderStyle.normal,
     maxLength: 0,
     selectionBgColor: theme.colors.selectionBg,
     selectionFgColor: theme.colors.selectionFg,
+    label: '',
     readonly: false,
+    disabled: false,
+    colorFgDisabled: theme.colors.textMuted,
+    colorBgDisabled: theme.colors.surfaceDisabled,
   };
 }
 
-export class InputWidget extends TuiWidgetEntity implements Focusable {
+export class InputWidget extends InteractiveWidget {
   #x: number;
   #y: number;
   #width: number;
@@ -77,21 +81,22 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
   readonly #colorBg: number;
   readonly #borderColorUnfocused: number;
   readonly #borderColorFocused: number;
+  readonly #borderColorDisabled: number;
   readonly #borderStyle: number;
   readonly #maxLength: number;
   readonly #placeholder: string;
   readonly #selectionBgColor: number;
   readonly #selectionFgColor: number;
   readonly #label: string;
+  readonly #colorFgDisabled: number;
+  readonly #colorBgDisabled: number;
   #isReadonly: boolean;
 
   #value: string;
   #cursorPos = 0;
-  #focused = false;
   #scrollOffset = 0;
   #selectionAnchor: number | undefined;
   #isSelecting = false;
-  #tabIndex: number | undefined;
 
   constructor(options: InputWidgetOptions = {}) {
     super();
@@ -105,15 +110,19 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
     this.#colorBg = parseColor(resolved.colorBg ?? 0x1E_1E_2E_FF);
     this.#borderColorUnfocused = parseColor(resolved.borderColorUnfocused ?? 0x45_47_5A_FF);
     this.#borderColorFocused = parseColor(resolved.borderColorFocused ?? 0x89_B4_FA_FF);
+    this.#borderColorDisabled = parseColor(resolved.borderColorDisabled ?? 0x45_47_5A_FF);
     this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
     this.#maxLength = resolved.maxLength ?? 0;
     this.#placeholder = resolved.placeholder ?? '';
     this.#selectionBgColor = parseColor(resolved.selectionBgColor ?? 0x26_4F_78_FF);
     this.#selectionFgColor = parseColor(resolved.selectionFgColor ?? 0xFF_FF_FF_FF);
     this.#label = resolved.label ?? '';
+    this.#colorFgDisabled = parseColor(resolved.colorFgDisabled ?? 0x6C_70_86_FF);
+    this.#colorBgDisabled = parseColor(resolved.colorBgDisabled ?? 0x1E_1E_2E_FF);
     this.#isReadonly = resolved.readonly ?? false;
     this.#value = resolved.value ?? '';
     this.#cursorPos = this.#value.length;
+    this.setDisabled(resolved.disabled ?? false);
 
     this.on('mousedown', mouseData => {
       const targetPos = this.#posFromMouse(mouseData);
@@ -180,9 +189,6 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
 
   setReadonly(value: boolean): void {
     this.#isReadonly = value;
-    if (this.#isReadonly && this.#focused) {
-      this.blur();
-    }
   }
 
   updateValue(newValue: string): void {
@@ -192,66 +198,50 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
     this.#clampScrollOffset();
   }
 
-  get acceptsFocus(): boolean {
-    return !this.#isReadonly;
+  override get acceptsFocus(): boolean {
+    return super.acceptsFocus;
   }
 
-  get tabIndex(): number | undefined {
-    return this.#tabIndex;
-  }
-
-  setTabIndex(value: number | undefined): void {
-    this.#tabIndex = value;
-  }
-
-  focus(): void {
-    this.#focused = true;
-    this.dispatch('focus', undefined);
-  }
-
-  blur(): void {
-    this.#focused = false;
+  override blur(): void {
     this.#selectionAnchor = undefined;
-    this.dispatch('blur', undefined);
+    super.blur();
   }
 
-  handleKey(event: KeyboardEvent): void {
-    if (this.#isReadonly) {
+  override handleActiveKey(event: KeyboardEvent): void {
+    const key = event.key!;
+    if (key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      if (!this.#isReadonly) {
+        this.#handleCharInput(key);
+      }
+
       return;
     }
 
-    if (event.key === undefined) {
-      return;
-    }
-
-    this.dispatchKeyEvent(event);
-
-    if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
-      this.#handleCharInput(event.key);
-      return;
-    }
-
-    if (event.ctrlKey && event.key === 'a') {
+    if (event.ctrlKey && key === 'a') {
       this.#handleSelectAll(event);
       return;
     }
 
-    switch (event.key) {
+    switch (key) {
       case 'Backspace': {
-        if (event.ctrlKey) {
-          this.#handleWordBackspace();
-        } else {
-          this.#handleBackspace();
+        if (!this.#isReadonly) {
+          if (event.ctrlKey) {
+            this.#handleWordBackspace();
+          } else {
+            this.#handleBackspace();
+          }
         }
 
         break;
       }
 
       case 'Delete': {
-        if (event.ctrlKey) {
-          this.#handleWordDelete();
-        } else {
-          this.#handleDelete();
+        if (!this.#isReadonly) {
+          if (event.ctrlKey) {
+            this.#handleWordDelete();
+          } else {
+            this.#handleDelete();
+          }
         }
 
         break;
@@ -329,13 +319,15 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
 
     buffer.pushClip(this.#x, this.#y, this.#width, this.#height);
 
-    // Background
+    const colorFg = this.disabled ? this.#colorFgDisabled : this.#colorFg;
+    const colorBg = this.disabled ? this.#colorBgDisabled : this.#colorBg;
+
     buffer.drawRect({
       x: this.#x,
       y: this.#y,
       width: this.#width,
       height: this.#height,
-      bgRgba: this.#colorBg,
+      bgRgba: colorBg,
     });
 
     // Text content or placeholder
@@ -354,7 +346,7 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
           x: textX,
           y: textY,
           text: visibleText,
-          fgRgba: this.#colorFg,
+          fgRgba: colorFg,
           bgRgba: 0x00_00_00_00,
         });
       } else {
@@ -362,7 +354,6 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
         const segEnd = Math.min(range.end, visibleEnd);
         let drawX = textX;
 
-        // Before selection
         if (segStart > this.#scrollOffset) {
           const seg1 = this.#value.slice(this.#scrollOffset, segStart);
           const clipped1 = truncateToWidth(seg1, visibleWidth - (drawX - textX));
@@ -370,13 +361,12 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
             x: drawX,
             y: textY,
             text: clipped1,
-            fgRgba: this.#colorFg,
+            fgRgba: colorFg,
             bgRgba: 0x00_00_00_00,
           });
           drawX += stringDisplayWidth(clipped1);
         }
 
-        // Selected portion
         if (segEnd > segStart) {
           const remainingWidth = visibleWidth - (drawX - textX);
           const seg2 = this.#value.slice(segStart, segEnd);
@@ -391,7 +381,6 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
           drawX += stringDisplayWidth(clipped2);
         }
 
-        // After selection
         if (segEnd < visibleEnd) {
           const remainingWidth = visibleWidth - (drawX - textX);
           if (remainingWidth > 0) {
@@ -401,7 +390,7 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
               x: drawX,
               y: textY,
               text: clipped3,
-              fgRgba: this.#colorFg,
+              fgRgba: colorFg,
               bgRgba: 0x00_00_00_00,
             });
           }
@@ -419,7 +408,9 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
 
     // Border
     if (this.#borderStyle !== 0) {
-      const borderColor = this.#focused ? this.#borderColorFocused : this.#borderColorUnfocused;
+      const borderColor = this.disabled
+        ? this.#borderColorDisabled
+        : (this.focused ? this.#borderColorFocused : this.#borderColorUnfocused);
       buffer.drawBorder({
         x: this.#x,
         y: this.#y,
@@ -437,14 +428,14 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
           x: this.#x + 1,
           y: this.#y,
           text: clippedLabel,
-          fgRgba: this.#colorFg,
-          bgRgba: this.#colorBg,
+          fgRgba: colorFg,
+          bgRgba: colorBg,
         });
       }
     }
 
     // Cursor
-    if (this.#focused) {
+    if (this.focused && !this.disabled) {
       const textBeforeCursor = this.#value.slice(this.#scrollOffset, this.#cursorPos);
       const cursorX = textX + stringDisplayWidth(textBeforeCursor);
       buffer.setCursor(cursorX, textY);
@@ -462,13 +453,6 @@ export class InputWidget extends TuiWidgetEntity implements Focusable {
       width: this.#width,
       height: this.#height,
     };
-  }
-
-  override unmounted(): void {
-    super.unmounted();
-    if (this.#focused) {
-      this.blur();
-    }
   }
 
   getSelection(): {start: number; end: number; text: string} | undefined {

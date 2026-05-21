@@ -58,7 +58,6 @@ export class ButtonWidget extends InteractiveWidget {
   #value: string;
 
   #pressed = false;
-  #hovered = false;
 
   readonly #colors: ColorScheme<ButtonColors>;
 
@@ -103,51 +102,20 @@ export class ButtonWidget extends InteractiveWidget {
     };
 
     this.on('mousedown', () => {
-      if (this.disabled) {
-        return;
-      }
-
       this.#pressed = true;
     });
 
     this.on('mouseup', () => {
-      if (this.disabled) {
-        return;
-      }
-
       this.#pressed = false;
-    });
-
-    this.on('mouseover', () => {
-      if (this.disabled) {
-        return;
-      }
-
-      this.#hovered = true;
-    });
-
-    this.on('mouseout', () => {
-      this.#hovered = false;
     });
   }
 
   override blur(): void {
     this.#pressed = false;
-    this.#hovered = false;
     super.blur();
   }
 
-  handleKey(event: KeyboardEvent): void {
-    if (this.disabled) {
-      return;
-    }
-
-    if (event.key === undefined) {
-      return;
-    }
-
-    this.dispatchKeyEvent(event);
-
+  override handleActiveKey(event: KeyboardEvent): void {
     if (event.key === 'Enter' || event.key === ' ') {
       this.dispatch('click', undefined);
     }
@@ -180,7 +148,7 @@ export class ButtonWidget extends InteractiveWidget {
     const colors = resolveColorState(this.#colors, {
       disabled: this.disabled,
       pressed: this.#pressed,
-      hovered: this.#hovered,
+      hovered: this.hovered,
       focused: this.focused,
     });
 

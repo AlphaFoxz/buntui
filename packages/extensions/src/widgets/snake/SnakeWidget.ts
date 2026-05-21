@@ -100,11 +100,8 @@ export class SnakeWidget extends widgets.InteractiveWidget {
     };
   }
 
-  handleKey(event: KeyboardEvent): void {
-    const {key} = event;
-    if (!key) {
-      return;
-    }
+  override handleActiveKey(event: KeyboardEvent): void {
+    const key = event.key!;
 
     if (this.#state === 'idle') {
       if (key === ' ') {
@@ -124,7 +121,6 @@ export class SnakeWidget extends widgets.InteractiveWidget {
       return;
     }
 
-    // Gameover
     if (key === ' ') {
       this.#startGame();
     } else if (key === 'Escape') {

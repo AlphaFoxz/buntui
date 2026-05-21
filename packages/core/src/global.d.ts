@@ -95,6 +95,10 @@ type TuiInputProps = {
   selectionBgColor?: TuiColor;
   selectionFgColor?: TuiColor;
   readonly?: boolean;
+  disabled?: boolean;
+  colorFgDisabled?: TuiColor;
+  colorBgDisabled?: TuiColor;
+  borderColorDisabled?: TuiColor;
 };
 
 type TuiButtonProps = {

@@ -124,11 +124,8 @@ export class VideoPlayerWidget extends widgets.InteractiveWidget {
     };
   }
 
-  handleKey(event: KeyboardEvent): void {
-    const {key} = event;
-    if (!key) {
-      return;
-    }
+  override handleActiveKey(event: KeyboardEvent): void {
+    const key = event.key!;
 
     if (key === ' ') {
       switch (this.#playerState) {

@@ -2,13 +2,13 @@ import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
 import {parseColor} from '../../utils/color';
 import {getTheme} from '../../theme/provider';
-import type {Focusable} from '../Focusable';
 import type {TuiWidgetRect, TuiWidgetSize} from '../types';
-import {TuiWidgetEntity} from '../TuiWidgetEntity';
+import {InteractiveWidget} from '../InteractiveWidget';
+import type {TuiWidgetEntity} from '../TuiWidgetEntity';
 import {type BoxWidget, createBox} from '../box/BoxWidget';
 import type {ScrollBoxWidgetOptions} from './types';
 
-export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
+export class ScrollBoxWidget extends InteractiveWidget {
   readonly #rect: TuiWidgetRect;
   #scrollOffsetY = 0;
   #layoutDirty = true;
@@ -21,11 +21,9 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
   readonly #scrollbarColor: number;
   readonly #scrollbarTrackColor: number;
 
-  #focused = false;
   #dragScrolling = false;
   #dragStartY = 0;
   #dragStartOffset = 0;
-  #tabIndex: number | undefined;
 
   constructor(options: ScrollBoxWidgetOptions) {
     super();
@@ -103,48 +101,11 @@ export class ScrollBoxWidget extends TuiWidgetEntity implements Focusable {
     return this.#maxScrollOffset();
   }
 
-  get acceptsFocus(): boolean {
-    return true;
-  }
-
-  get tabIndex(): number | undefined {
-    return this.#tabIndex;
-  }
-
-  setTabIndex(value: number | undefined): void {
-    this.#tabIndex = value;
-  }
-
-  // -- Focusable --
-
-  focus(): void {
-    this.#focused = true;
-    this.dispatch('focus', undefined);
-  }
-
-  blur(): void {
-    this.#focused = false;
-    this.dispatch('blur', undefined);
-  }
-
-  override unmounted(): void {
-    if (this.#focused) {
-      this.blur();
-    }
-
-    super.unmounted();
-  }
-
-  handleKey(event: KeyboardEvent): void {
-    if (event.key === undefined) {
-      return;
-    }
-
-    this.dispatchKeyEvent(event);
-
+  override handleActiveKey(event: KeyboardEvent): void {
+    const key = event.key!;
     const viewport = this.#computeViewport();
 
-    switch (event.key) {
+    switch (key) {
       case 'ArrowUp': {
         this.scrollBy(-1);
         break;

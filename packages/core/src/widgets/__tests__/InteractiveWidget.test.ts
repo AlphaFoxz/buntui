@@ -4,13 +4,12 @@ import type {KeyboardEvent} from '../../events/types';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 
 class TestInteractive extends InteractiveWidget {
-  handleKeyCalls: KeyboardEvent[] = [];
+  handleActiveKeyCalls: KeyboardEvent[] = [];
 
   override emitDrawCommands(_buf: DrawListBuffer): void {}
 
-  override handleKey(event: KeyboardEvent): void {
-    this.handleKeyCalls.push(event);
-    this.dispatchKeyEvent(event);
+  override handleActiveKey(event: KeyboardEvent): void {
+    this.handleActiveKeyCalls.push(event);
   }
 }
 
@@ -96,8 +95,8 @@ describe('handleKey', () => {
     const widget = new TestInteractive();
     const event = key({key: 'Enter'});
     widget.handleKey(event);
-    expect(widget.handleKeyCalls).toHaveLength(1);
-    expect(widget.handleKeyCalls[0]).toBe(event);
+    expect(widget.handleActiveKeyCalls).toHaveLength(1);
+    expect(widget.handleActiveKeyCalls[0]).toBe(event);
   });
 });
 

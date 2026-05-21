@@ -73,10 +73,6 @@ export class SelectButtonWidget extends InteractiveWidget {
     this.#colorFgSeparator = parseColor(resolved.colorFgSeparator);
 
     this.on('mousedown', mouseData => {
-      if (this.disabled) {
-        return;
-      }
-
       const index = this.#hitTestOption(mouseData.x);
       if (index >= 0) {
         this.#select(index);
@@ -84,18 +80,10 @@ export class SelectButtonWidget extends InteractiveWidget {
     });
 
     this.on('mousemove', mouseData => {
-      if (this.disabled) {
-        return;
-      }
-
       this.#hoveredIndex = this.#hitTestOption(mouseData.x);
     });
 
     this.on('mouseover', mouseData => {
-      if (this.disabled) {
-        return;
-      }
-
       this.#hoveredIndex = this.#hitTestOption(mouseData.x);
     });
 
@@ -109,17 +97,7 @@ export class SelectButtonWidget extends InteractiveWidget {
     super.blur();
   }
 
-  handleKey(event: KeyboardEvent): void {
-    if (this.disabled) {
-      return;
-    }
-
-    if (event.key === undefined) {
-      return;
-    }
-
-    this.dispatchKeyEvent(event);
-
+  override handleActiveKey(event: KeyboardEvent): void {
     if (this.#options.length === 0 || this.#selectedIndex < 0) {
       return;
     }
