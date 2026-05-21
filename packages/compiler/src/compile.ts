@@ -104,7 +104,8 @@ function splitScript(content: string): {scriptImports: string[]; scriptBody: str
       continue;
     }
 
-    if (line.trimStart().startsWith('import ')) {
+    const trimmed = line.trimStart();
+    if (trimmed.startsWith('import ') || trimmed.startsWith('import{')) {
       scriptImports.push(line);
       if (line.includes('{') && !line.includes('}')) {
         inMultilineImport = true;

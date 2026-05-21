@@ -296,8 +296,8 @@ describe('codegen', () => {
       };
       const root = makeRoot([block], [], new Set(['createBox', 'createTextWidget']));
       const result = gen(root);
-      expect(result.code).toMatch(/let _box\d+ = null/);
-      expect(result.code).toMatch(/let _text\d+ = null/);
+      expect(result.code).toMatch(/let __box\d+ = null/);
+      expect(result.code).toMatch(/let __text\d+ = null/);
     });
   });
 

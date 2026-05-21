@@ -611,6 +611,10 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
         }
 
         for (const d of tree.descendants) {
+          if (d.isComponent) {
+            effectLines.push(`      ${d.varName}();`);
+          }
+
           effectLines.push(`      ${d.varName} = null;`);
         }
 
@@ -642,6 +646,10 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
         }
 
         for (const d of tree.descendants) {
+          if (d.isComponent) {
+            effectLines.push(`      ${d.varName}();`);
+          }
+
           effectLines.push(`      ${d.varName} = null;`);
         }
 
@@ -793,7 +801,7 @@ function generateList(node: TuiListBlock, index: number, parentVar?: string): No
 }
 
 function getWidgetVarName(node: TuiWidgetCall, index: number): string {
-  return `_${node.tag.toLowerCase()}${index}`;
+  return `__${node.tag.toLowerCase()}${index}`;
 }
 
 function hasDynamicBindings(root: TuiRenderRoot): boolean {

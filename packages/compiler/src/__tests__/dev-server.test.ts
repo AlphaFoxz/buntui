@@ -2,6 +2,7 @@ import {describe, it, expect, beforeEach, afterEach} from 'bun:test';
 import path from 'node:path';
 import fs from 'node:fs';
 import {
+  createDevServer,
   discoverVueFiles,
   findVueImportPath,
   replaceImportPath,
@@ -187,5 +188,245 @@ describe('cleanupStaleTemporaryFiles', () => {
     writeFile(root, '');
     cleanupStaleTemporaryFiles(TMP);
     expect(fs.existsSync(root)).toBe(false);
+  });
+});
+
+function wait(ms: number): Promise<void> {
+  return new Promise(resolve => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function waitFor(predicate: () => boolean, timeoutMs = 5000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error('Timeout waiting for condition'));
+    }, timeoutMs);
+    const check = () => {
+      if (predicate()) {
+        clearTimeout(timeout);
+        resolve();
+      } else {
+        setTimeout(check, 50);
+      }
+    };
+
+    check();
+  });
+}
+
+const ITMP = path.join(TMP, 'integration');
+const DEBOUNCE = 80;
+
+function touch(filePath: string): void {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  fs.writeFileSync(filePath, content, 'utf-8');
+}
+
+describe('createDevServer integration', () => {
+  let activeServer: ReturnType<typeof createDevServer> | undefined;
+
+  beforeEach(() => {
+    rmrf(ITMP);
+    mkdirp(ITMP);
+  });
+
+  afterEach(() => {
+    activeServer?.close();
+    activeServer = undefined;
+    rmrf(ITMP);
+  });
+
+  it('calls onReload with setup function on first load', async () => {
+    const entry = path.join(ITMP, 'App.vue');
+    writeFile(entry, '<template><Box/></template>');
+
+    let receivedSetup: ((scene: unknown) => void) | undefined;
+    activeServer = createDevServer({
+      file: entry,
+      tempDir: ITMP,
+      debounceMs: DEBOUNCE,
+      onClear() {},
+      onReload(setup) {
+        receivedSetup = setup;
+      },
+      onError(error) {
+        throw error;
+      },
+    });
+
+    await wait(50);
+    touch(entry);
+
+    await waitFor(() => typeof receivedSetup === 'function');
+
+    expect(typeof receivedSetup).toBe('function');
+  });
+
+  it('calls onClear before onReload', async () => {
+    const entry = path.join(ITMP, 'App.vue');
+    writeFile(entry, '<template><Box/></template>');
+
+    let cleared = false;
+    let clearBeforeReload = false;
+    activeServer = createDevServer({
+      file: entry,
+      tempDir: ITMP,
+      debounceMs: DEBOUNCE,
+      onClear() {
+        cleared = true;
+      },
+      onReload() {
+        clearBeforeReload = cleared;
+      },
+      onError(error) {
+        throw error;
+      },
+    });
+
+    await wait(50);
+    touch(entry);
+
+    await waitFor(() => clearBeforeReload);
+
+    expect(clearBeforeReload).toBe(true);
+  });
+
+  it('calls onError when SFC has compile error', async () => {
+    const entry = path.join(ITMP, 'App.vue');
+    writeFile(entry, '<template><Box/></template>');
+
+    let reloadCount = 0;
+    let lastError: Error | undefined;
+    activeServer = createDevServer({
+      file: entry,
+      tempDir: ITMP,
+      debounceMs: DEBOUNCE,
+      onClear() {},
+      onReload() {
+        reloadCount++;
+      },
+      onError(error) {
+        lastError = error;
+      },
+    });
+
+    await wait(50);
+    touch(entry);
+
+    await waitFor(() => reloadCount >= 1);
+
+    writeFile(entry, '<template><UnknownTag/></template>');
+
+    await waitFor(() => lastError !== undefined);
+
+    expect(lastError!.message).toContain('Unknown component');
+  });
+
+  it('reloads incrementally when child .vue file changes', async () => {
+    const entry = path.join(ITMP, 'App.vue');
+    const child = path.join(ITMP, 'Child.vue');
+
+    writeFile(child, '<template><Box/></template>');
+    writeFile(entry, [
+      '<template><Child/></template>',
+      '<script setup>import Child from "./Child.vue"</script>',
+    ].join('\n'));
+
+    let reloadCount = 0;
+    activeServer = createDevServer({
+      file: entry,
+      tempDir: ITMP,
+      debounceMs: DEBOUNCE,
+      onClear() {},
+      onReload() {
+        reloadCount++;
+      },
+      onError(error) {
+        throw error;
+      },
+    });
+
+    await wait(50);
+    touch(entry);
+
+    await waitFor(() => reloadCount >= 1);
+
+    writeFile(child, '<template><Text value="updated"/></template>');
+
+    await waitFor(() => reloadCount >= 2);
+
+    expect(reloadCount).toBeGreaterThanOrEqual(2);
+  });
+
+  it('stops watching after close()', async () => {
+    const entry = path.join(ITMP, 'App.vue');
+    writeFile(entry, '<template><Box/></template>');
+
+    let reloadCount = 0;
+    activeServer = createDevServer({
+      file: entry,
+      tempDir: ITMP,
+      debounceMs: DEBOUNCE,
+      onClear() {},
+      onReload() {
+        reloadCount++;
+      },
+      onError(error) {
+        throw error;
+      },
+    });
+
+    await wait(50);
+    touch(entry);
+
+    await waitFor(() => reloadCount >= 1);
+
+    activeServer.close();
+    activeServer = undefined;
+
+    writeFile(entry, '<template><Text value="after-close"/></template>');
+    await wait(DEBOUNCE + 300);
+
+    expect(reloadCount).toBe(1);
+  });
+
+  it('creates and cleans up child temp files', async () => {
+    const entry = path.join(ITMP, 'App.vue');
+    const child = path.join(ITMP, 'Child.vue');
+
+    writeFile(child, '<template><Box/></template>');
+    writeFile(entry, [
+      '<template><Child/></template>',
+      '<script setup>import Child from "./Child.vue"</script>',
+    ].join('\n'));
+
+    let loaded = false;
+    activeServer = createDevServer({
+      file: entry,
+      tempDir: ITMP,
+      debounceMs: DEBOUNCE,
+      onClear() {},
+      onReload() {
+        loaded = true;
+      },
+      onError(error) {
+        throw error;
+      },
+    });
+
+    await wait(50);
+    touch(entry);
+
+    await waitFor(() => loaded);
+
+    const tempFiles = fs.readdirSync(ITMP).filter(f => f.startsWith('_hmr_'));
+    expect(tempFiles.length).toBeGreaterThan(0);
+
+    activeServer.close();
+    activeServer = undefined;
+
+    const remaining = fs.readdirSync(ITMP).filter(f => f.startsWith('_hmr_'));
+    expect(remaining.length).toBe(0);
   });
 });

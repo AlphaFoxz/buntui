@@ -311,6 +311,55 @@ describe('compile', () => {
       );
       expect(result.code).toContain('createBox');
     });
+
+    it('handles multi-line import with complex destructuring', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>'
+        + 'import {\n'
+        + '  ref,\n'
+        + '  computed,\n'
+        + '  watch,\n'
+        + '} from "vue";\n'
+        + 'const count = ref(0);'
+        + '</script>',
+      );
+      expect(result.code).toContain('import {');
+      expect(result.code).toContain('  ref,');
+      expect(result.code).toContain('  computed,');
+      expect(result.code).toContain('  watch,');
+      expect(result.code).toContain('const count = ref(0);');
+      const setupIdx = result.code.indexOf('export function setup');
+      const importIdx = result.code.indexOf('import {');
+      expect(importIdx).toBeLessThan(setupIdx);
+    });
+
+    it('preserves dynamic import() in body', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>'
+        + 'const mod = import("./foo");'
+        + '</script>',
+      );
+      const setupIdx = result.code.indexOf('export function setup');
+      const dynamicImportIdx = result.code.indexOf('import("./foo")');
+      expect(dynamicImportIdx).toBeGreaterThan(setupIdx);
+      expect(result.code).toContain('import("./foo")');
+    });
+
+    it('handles import type as top-level import', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>'
+        + 'import type { Foo } from "bar";\n'
+        + 'const x = 1;'
+        + '</script>',
+      );
+      const setupIdx = result.code.indexOf('export function setup');
+      const typeImportIdx = result.code.indexOf('import type { Foo }');
+      expect(typeImportIdx).toBeLessThan(setupIdx);
+      expect(result.code).toContain('const x = 1;');
+    });
   });
 
   describe('widget tag-named imports', () => {
@@ -372,6 +421,55 @@ describe('compile', () => {
       );
       expect(result.code).toContain('CompA.setup(__scene)');
       expect(result.code).toContain('CompB.setup(__scene)');
+    });
+  });
+
+  describe('edge cases: .vue component under v-if', () => {
+    it('generates cleanup call for component in v-if branch', () => {
+      const result = compile(
+        '<template><CompA v-if="show"/></template>'
+        + '<script setup>import CompA from "./CompA.vue";</script>',
+      );
+      expect(result.code).toContain('__runSetup(__scene, () => CompA.setup(__scene))');
+      expect(result.code).toMatch(/_compa0\(\)/);
+      expect(result.code).toContain('_compa0 = null');
+    });
+
+    it('generates cleanup for component in v-if with widget v-else', () => {
+      const result = compile(
+        '<template><CompA v-if="show"/><Text v-else/></template>'
+        + '<script setup>import CompA from "./CompA.vue";</script>',
+      );
+      expect(result.code).toContain('__runSetup(__scene, () => CompA.setup(__scene))');
+      expect(result.code).toMatch(/_compa0\(\)/);
+      expect(result.code).toContain('createTextWidget');
+    });
+  });
+
+  describe('edge cases: .vue component under v-for', () => {
+    it('generates loop with component setup call', () => {
+      const result = compile(
+        '<template><CompA v-for="item in items"/></template>'
+        + '<script setup>import CompA from "./CompA.vue";</script>',
+      );
+      expect(result.code).toContain('for (const item of items)');
+      expect(result.code).toContain('CompA.setup(__scene)');
+    });
+  });
+
+  describe('edge cases: nested .vue components with cleanup', () => {
+    it('calls cleanup for descendant component in v-if branch', () => {
+      const result = compile(
+        '<template><CompA v-if="show"><CompB/></CompA></template>'
+        + '<script setup>'
+        + 'import CompA from "./CompA.vue";\n'
+        + 'import CompB from "./CompB.vue";\n'
+        + '</script>',
+      );
+      expect(result.code).toContain('__runSetup(__scene, () => CompA.setup(__scene))');
+      expect(result.code).toContain('__runSetup(__scene, () => CompB.setup(__scene))');
+      expect(result.code).toMatch(/_compa0\(\)/);
+      expect(result.code).toMatch(/_compb1\(\)/);
     });
   });
 
