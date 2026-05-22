@@ -482,4 +482,29 @@ describe('compile', () => {
       expect(result.code).toContain('const x = 1;');
     });
   });
+
+  describe('template ref', () => {
+    it('generates ref assignment from ref attribute', () => {
+      const result = compile('<template><Input ref="inputRef"/></template>');
+      expect(result.code).toContain('inputRef.value = __input0;');
+      expect(result.code).not.toContain('ref:');
+    });
+
+    it('works with useTemplateRef from vue', () => {
+      const result = compile(
+        '<template><Input ref="inputRef"/></template>'
+        + '<script setup>import {useTemplateRef} from "vue";\nconst inputRef = useTemplateRef("inputRef");</script>',
+      );
+      expect(result.code).toContain('inputRef.value = __input0;');
+      expect(result.imports.some(i => i.includes('useTemplateRef') && i.includes('@buntui/core'))).toBe(true);
+    });
+
+    it('works with plain ref from @vue/reactivity', () => {
+      const result = compile(
+        '<template><Input ref="myInput"/></template>'
+        + '<script setup>import {ref} from "@vue/reactivity";\nconst myInput = ref();</script>',
+      );
+      expect(result.code).toContain('myInput.value = __input0;');
+    });
+  });
 });

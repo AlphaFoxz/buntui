@@ -3,6 +3,7 @@ import {EVENT_BUS} from '../events';
 import type {TuiScene} from '../extern/app/TuiScene';
 import type {TuiWidgetEntity} from '../widgets/TuiWidgetEntity';
 import type {Focusable} from '../widgets/Focusable';
+import {InteractiveWidget} from '../widgets/InteractiveWidget';
 
 export class FocusManager {
   #focusedWidget: (TuiWidgetEntity & Focusable) | undefined;
@@ -14,6 +15,10 @@ export class FocusManager {
   }
 
   start(onUnfocusedKey?: (event: KeyboardEvent) => void): void {
+    InteractiveWidget.setFocusRequestCallback(widget => {
+      this.focusWidget(widget);
+    });
+
     this.#keyHandler = (data: KeyboardEvent) => {
       if (this.#focusedWidget && !this.#focusedWidget.acceptsFocus) {
         this.#focusedWidget = undefined;
@@ -36,6 +41,8 @@ export class FocusManager {
   }
 
   stop(): void {
+    InteractiveWidget.setFocusRequestCallback(undefined);
+
     if (this.#keyHandler) {
       EVENT_BUS.off(TuiEventType.KeyboardEvent, this.#keyHandler);
       this.#keyHandler = undefined;

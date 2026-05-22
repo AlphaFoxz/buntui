@@ -32,9 +32,9 @@ Baseline: each core widget is compared against its closest HTML equivalent to id
 
 **Affected file:** `packages/core/src/widgets/input/InputWidget.ts`
 
-### Input: `select()` / `setSelectionRange()` API
+~~### Input: `select()` / `setSelectionRange()` API~~
 
-HTML inputs expose `select()` (select all) and `setSelectionRange(start, end, direction)` as imperative methods. Currently only Ctrl+A provides select-all, and there is no way to programmatically set a selection range.
+~~HTML inputs expose `select()` (select all) and `setSelectionRange(start, end, direction)` as imperative methods. Currently only Ctrl+A provides select-all, and there is no way to programmatically set a selection range.~~ Implemented: `select()` and `setSelectionRange(start, end)` on InputWidget.
 
 **Affected file:** `packages/core/src/widgets/input/InputWidget.ts`
 
@@ -50,15 +50,15 @@ HTML inputs expose `select()` (select all) and `setSelectionRange(start, end, di
 
 ~~**Affected file:** `packages/core/src/widgets/select-button/SelectButtonWidget.ts`~~
 
-### ScrollBox: `scroll` event dispatch
+~~### ScrollBox: `scroll` event dispatch~~
 
-No event is fired when scroll offset changes. External code cannot react to scroll position changes.
+~~No event is fired when scroll offset changes. External code cannot react to scroll position changes.~~ Implemented: `scroll` event dispatched with `{scrollOffsetY, maxScrollY}` whenever offset changes.
 
 **Affected file:** `packages/core/src/widgets/scroll-box/ScrollBoxWidget.ts`
 
-### ScrollBox: `scrollIntoView(child)` method
+~~### ScrollBox: `scrollIntoView(child)` method~~
 
-No way to scroll a specific child into the visible viewport. Essential for programmatic navigation (e.g., "scroll to active item").
+~~No way to scroll a specific child into the visible viewport. Essential for programmatic navigation (e.g., "scroll to active item").~~ Implemented: `scrollIntoView(child)` scrolls the minimum amount to make the child fully visible. No-op if already visible or not a child.
 
 **Affected file:** `packages/core/src/widgets/scroll-box/ScrollBoxWidget.ts`
 
@@ -66,23 +66,23 @@ No way to scroll a specific child into the visible viewport. Essential for progr
 
 ## P2 — UX Polish
 
-### Input: Password mode
+### ~~Input: Password mode~~
 
-Missing `type="password"` equivalent where characters are masked (e.g., displayed as `•` or `*`).
+~~Missing `type="password"` equivalent where characters are masked (e.g., displayed as `•` or `*`).~~ Implemented: `type: 'password'` option masks all characters as `•` (U+2022) in the display. Internal value, selection, clipboard, and undo/redo all work on the actual text.
 
 **Affected file:** `packages/core/src/widgets/input/InputWidget.ts`
 
-### Checkbox: Indeterminate state
+### ~~Checkbox: Indeterminate state~~
 
-Missing a third visual state (`[-]` or similar) representing "neither checked nor unchecked." HTML exposes this via `element.indeterminate = true`.
+~~Missing a third visual state (`[-]` or similar) representing "neither checked nor unchecked." HTML exposes this via `element.indeterminate = true`.~~ Implemented: `indeterminate` option/property shows `[-]` indicator. Toggle from indeterminate → checked (matching HTML behavior). `change` event includes `{checked, indeterminate}`.
 
 **Affected file:** `packages/core/src/widgets/checkbox/CheckboxWidget.ts`
 
-### ProgressBar: Indeterminate animation
+### ~~Progress: Indeterminate animation~~
 
-When value is unknown, HTML `<progress>` shows an animated sliding bar. Currently ProgressBar has no such state.
+~~When value is unknown, HTML `<progress>` shows an animated sliding bar. Currently Progress has no such state.~~ Implemented: omitting `value` (or `value: undefined`) activates indeterminate mode — a 30%-width fill bar slides back and forth, matching HTML `<progress>` behavior where no `value` attribute = indeterminate.
 
-**Affected file:** `packages/core/src/widgets/progress-bar/ProgressBarWidget.ts`
+**Affected file:** `packages/core/src/widgets/progress/ProgressWidget.ts`
 
 ### ScrollBox: Horizontal scrolling
 

@@ -188,6 +188,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
     if (clamped !== this.#scrollOffsetY) {
       this.#scrollOffsetY = clamped;
       this.#layoutDirty = true;
+      this.dispatch('scroll', {scrollOffsetY: clamped, maxScrollY: this.#maxScrollOffset()});
     }
   }
 
@@ -201,6 +202,32 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
   scrollBy(delta: number): void {
     this.scrollTo(this.#scrollOffsetY + delta);
+  }
+
+  scrollIntoView(child: TuiWidgetEntity): void {
+    const index = this.#layoutChildren.indexOf(child);
+    if (index === -1) {
+      return;
+    }
+
+    const viewport = this.#computeViewport();
+    let childTop = 0;
+    for (let i = 0; i < index; i++) {
+      const c = this.#layoutChildren[i]!;
+      const intrinsic = c.intrinsicSize();
+      childTop += (intrinsic?.height ?? c.rect.height) + this.#gap;
+    }
+
+    const c = this.#layoutChildren[index]!;
+    const intrinsic = c.intrinsicSize();
+    const childHeight = intrinsic?.height ?? c.rect.height;
+    const childBottom = childTop + childHeight;
+
+    if (childTop < this.#scrollOffsetY) {
+      this.scrollTo(childTop);
+    } else if (childBottom > this.#scrollOffsetY + viewport.height) {
+      this.scrollTo(childBottom - viewport.height);
+    }
   }
 
   // -- Update methods --

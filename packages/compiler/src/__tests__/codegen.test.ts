@@ -554,4 +554,37 @@ describe('codegen', () => {
       expect(result.code).toContain('setVisible');
     });
   });
+
+  describe('template ref', () => {
+    it('generates ref assignment when refName is set', () => {
+      const root = makeRoot(
+        [makeWidget({refName: 'inputRef'})],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain('inputRef.value = __box0;');
+    });
+
+    it('does not pass ref as constructor prop', () => {
+      const root = makeRoot(
+        [makeWidget({refName: 'inputRef', props: [{type: 'TuiStaticProp', name: 'value', value: 'hello'}]})],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain('value: "hello"');
+      expect(result.code).not.toContain('ref:');
+    });
+
+    it('no ref assignment when refName is undefined', () => {
+      const root = makeRoot(
+        [makeWidget()],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).not.toContain('.value = __box0;');
+    });
+  });
 });

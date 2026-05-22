@@ -4,7 +4,7 @@
 
 The compiler resolves template tags with a two-tier strategy:
 
-1. **Core widgets** — resolved via `CORE_REGISTRY` (`compiler/src/runtime-helpers.ts`). Tags `<Box>`, `<Text>`, `<Input>`, `<Button>`, `<Checkbox>`, `<RadioGroup>`, `<SelectButton>`, `<Switch>`, `<ScrollBox>`, `<ProgressBar>` map to creator functions from `@buntui/core`. The codegen auto-generates the import.
+1. **Core widgets** — resolved via `CORE_REGISTRY` (`compiler/src/runtime-helpers.ts`). Tags `<Box>`, `<Text>`, `<Input>`, `<Button>`, `<Checkbox>`, `<RadioGroup>`, `<SelectButton>`, `<Switch>`, `<ScrollBox>`, `<Progress>` map to creator functions from `@buntui/core`. The codegen auto-generates the import.
 
 2. **Extension/custom widgets** — resolved via explicit imports in `<script setup>`. The compiler detects any PascalCase default or named import that is NOT in the registry and treats it as a widget creator. Without the import, the tag throws `Unknown component` at compile time.
 

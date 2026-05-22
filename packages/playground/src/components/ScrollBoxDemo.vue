@@ -1,5 +1,5 @@
 <template>
-    <ScrollBox :x="1" :y="3" width="95%" :height="9" :colorBg="'rgba(0,0,0,0)'">
+    <ScrollBox :x="1" :y="3" width="95%" :height="9" :colorBg="'rgba(0,0,0,0)'" @scroll="handleScroll">
         <template>
             <Text
                 v-for="(item, index) in 20"
@@ -12,4 +12,8 @@
     </ScrollBox>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+function handleScroll(event: TuiScrollEvent) {
+    console.log(JSON.stringify(event))
+}
+</script>

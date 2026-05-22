@@ -9,7 +9,7 @@
     <InputDemo v-if="currentTab === 'Input'" />
     <RadioDemo v-if="currentTab === 'Radio'" />
     <ScrollBoxDemo v-if="currentTab === 'ScrollBox'" />
-    <ProgressBarDemo v-if="currentTab === 'ProgressBar'" />
+    <ProgressDemo v-if="currentTab === 'Progress'" />
     <SwitchDemo v-if="currentTab === 'Switch'" />
     <TextDemo v-show="currentTab === 'Text'" />
 
@@ -27,7 +27,7 @@ import BoxDemo from './components/BoxDemo.vue'
 import ButtonDemo from './components/ButtonDemo.vue'
 import CheckboxDemo from './components/CheckboxDemo.vue'
 import InputDemo from './components/InputDemo.vue'
-import ProgressBarDemo from './components/ProgressBarDemo.vue'
+import ProgressDemo from './components/ProgressDemo.vue'
 import RadioDemo from './components/RadioDemo.vue'
 import ScrollBoxDemo from './components/ScrollBoxDemo.vue'
 import SwitchDemo from './components/SwitchDemo.vue'
@@ -38,7 +38,7 @@ const tabOptions = ref([
     'Button',
     'Checkbox',
     'Input',
-    'ProgressBar',
+    'Progress',
     'Radio',
     'Switch',
     'ScrollBox',

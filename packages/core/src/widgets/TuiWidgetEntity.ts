@@ -9,6 +9,14 @@ import type {
   TuiWidgetSize,
 } from './types';
 
+export type TuiInputEventData = {value: string};
+export type TuiSubmitEventData = {value: string};
+export type TuiClipboardEventData = {text: string};
+export type TuiUndoEventData = {value: string};
+export type TuiRedoEventData = {value: string};
+export type TuiScrollEventData = {scrollOffsetY: number; maxScrollY: number};
+export type TuiChangeEventData = {checked: boolean} | {value: number; label: string} | {value: string; label: string};
+
 export type TuiWidgetEventData = {
   click: MouseEvent;
   mousedown: MouseEvent;
@@ -24,14 +32,15 @@ export type TuiWidgetEventData = {
   key: KeyboardEvent;
   focus: undefined;
   blur: undefined;
-  input: {value: string};
-  submit: {value: string};
-  copy: {text: string};
-  cut: {text: string};
-  paste: {text: string};
-  undo: {value: string};
-  redo: {value: string};
-  change: {checked: boolean} | {value: number; label: string} | {value: string; label: string};
+  input: TuiInputEventData;
+  submit: TuiSubmitEventData;
+  copy: TuiClipboardEventData;
+  cut: TuiClipboardEventData;
+  paste: TuiClipboardEventData;
+  undo: TuiUndoEventData;
+  redo: TuiRedoEventData;
+  scroll: TuiScrollEventData;
+  change: TuiChangeEventData;
 };
 
 type WidgetEventHandler = (data: unknown) => void;

@@ -60,6 +60,7 @@ const FLAG_PROP_MAP: Record<string, string> = {
   draggable: 'setDraggable',
   disabled: 'setDisabled',
   checked: 'setChecked',
+  indeterminate: 'setIndeterminate',
   readonly: 'setReadonly',
   label: 'setLabel',
   tabs: 'setOptions',
@@ -333,6 +334,10 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
   // Generate event handler registrations
   for (const eventBinding of node.events) {
     lines.push(`${varName}.on('${eventBinding.event}', ${buildEventHandler(eventBinding)});`);
+  }
+
+  if (node.refName) {
+    lines.push(`${node.refName}.value = ${varName};`);
   }
 
   // Generate children and add them to the parent widget

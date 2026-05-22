@@ -14,10 +14,11 @@ function key(options: Partial<KeyboardEvent> & {key: string}): KeyboardEvent {
   };
 }
 
-function createCheckbox(options?: {label?: string; checked?: boolean; disabled?: boolean; x?: number; y?: number; width?: number; height?: number}) {
+function createCheckbox(options?: {label?: string; checked?: boolean; indeterminate?: boolean; disabled?: boolean; x?: number; y?: number; width?: number; height?: number}) {
   return new CheckboxWidget({
     label: options?.label ?? 'Option',
     checked: options?.checked ?? false,
+    indeterminate: options?.indeterminate ?? false,
     disabled: options?.disabled ?? false,
     x: options?.x ?? 0,
     y: options?.y ?? 0,
@@ -220,5 +221,88 @@ describe('unmounted', () => {
     cb.focus();
     cb.unmounted();
     expect(blurred).toBe(true);
+  });
+});
+
+describe('indeterminate state', () => {
+  it('defaults to not indeterminate', () => {
+    const cb = createCheckbox();
+    expect(cb.indeterminate).toBe(false);
+  });
+
+  it('can be set via constructor', () => {
+    const cb = createCheckbox({indeterminate: true});
+    expect(cb.indeterminate).toBe(true);
+  });
+
+  it('indeterminate with checked false', () => {
+    const cb = createCheckbox({checked: false, indeterminate: true});
+    expect(cb.indeterminate).toBe(true);
+    expect(cb.checked).toBe(false);
+  });
+
+  it('toggle from indeterminate goes to checked true', () => {
+    const cb = createCheckbox({indeterminate: true});
+    cb.dispatch('click', undefined);
+    expect(cb.indeterminate).toBe(false);
+    expect(cb.checked).toBe(true);
+  });
+
+  it('toggle from indeterminate via keyboard', () => {
+    const cb = createCheckbox({indeterminate: true});
+    cb.handleKey(key({key: ' '}));
+    expect(cb.indeterminate).toBe(false);
+    expect(cb.checked).toBe(true);
+  });
+
+  it('toggle dispatches change with indeterminate field', () => {
+    const cb = createCheckbox({indeterminate: true});
+    const changes: unknown[] = [];
+    cb.on('change', data => changes.push(data));
+    cb.dispatch('click', undefined);
+    expect(changes).toHaveLength(1);
+    expect((changes[0] as Record<string, unknown>).checked).toBe(true);
+    expect((changes[0] as Record<string, unknown>).indeterminate).toBe(false);
+  });
+
+  it('normal toggle also dispatches indeterminate field', () => {
+    const cb = createCheckbox({checked: false});
+    const changes: unknown[] = [];
+    cb.on('change', data => changes.push(data));
+    cb.dispatch('click', undefined);
+    expect((changes[0] as Record<string, unknown>).indeterminate).toBe(false);
+  });
+
+  it('setChecked does not clear indeterminate', () => {
+    const cb = createCheckbox({indeterminate: true});
+    cb.setChecked(true);
+    expect(cb.indeterminate).toBe(true);
+    expect(cb.checked).toBe(true);
+  });
+
+  it('setIndeterminate toggles state', () => {
+    const cb = createCheckbox();
+    expect(cb.indeterminate).toBe(false);
+    cb.setIndeterminate(true);
+    expect(cb.indeterminate).toBe(true);
+    cb.setIndeterminate(false);
+    expect(cb.indeterminate).toBe(false);
+  });
+
+  it('setIndeterminate does not change checked', () => {
+    const cb = createCheckbox({checked: true});
+    cb.setIndeterminate(true);
+    expect(cb.checked).toBe(true);
+    expect(cb.indeterminate).toBe(true);
+  });
+
+  it('full cycle: indeterminate -> checked -> unchecked', () => {
+    const cb = createCheckbox({indeterminate: true});
+    cb.dispatch('click', undefined);
+    expect(cb.checked).toBe(true);
+    expect(cb.indeterminate).toBe(false);
+    cb.dispatch('click', undefined);
+    expect(cb.checked).toBe(false);
+    expect(cb.indeterminate).toBe(false);
   });
 });

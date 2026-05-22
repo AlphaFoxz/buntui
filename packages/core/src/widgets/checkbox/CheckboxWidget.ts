@@ -21,6 +21,7 @@ function getDefaultCheckboxOptions(): Required<CheckboxWidgetOptions> {
     height: 1,
     label: '',
     checked: false,
+    indeterminate: false,
     disabled: false,
 
     colorFgNormal: theme.colors.text,
@@ -41,6 +42,7 @@ export class CheckboxWidget extends InteractiveWidget {
   readonly #rect: TuiWidgetRect;
   #label: string;
   #checked: boolean;
+  #indeterminate: boolean;
 
   readonly #colors: ColorScheme<CheckboxColors>;
 
@@ -50,6 +52,7 @@ export class CheckboxWidget extends InteractiveWidget {
     this.#rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
     this.#label = resolved.label;
     this.#checked = resolved.checked;
+    this.#indeterminate = resolved.indeterminate ?? false;
     this.setDisabled(resolved.disabled);
 
     this.#colors = {
@@ -80,6 +83,10 @@ export class CheckboxWidget extends InteractiveWidget {
     return this.#checked;
   }
 
+  get indeterminate(): boolean {
+    return this.#indeterminate;
+  }
+
   get label(): string {
     return this.#label;
   }
@@ -96,6 +103,10 @@ export class CheckboxWidget extends InteractiveWidget {
 
   setChecked(value: boolean): void {
     this.#checked = value;
+  }
+
+  setIndeterminate(value: boolean): void {
+    this.#indeterminate = value;
   }
 
   setLabel(text: string): void {
@@ -128,7 +139,7 @@ export class CheckboxWidget extends InteractiveWidget {
       bgRgba: bg,
     });
 
-    const indicator = this.#checked ? '[✓]' : '[ ]';
+    const indicator = this.#indeterminate ? '[-]' : (this.#checked ? '[✓]' : '[ ]');
     const textY = y + Math.floor(height / 2);
     buffer.drawText({
       x,
@@ -157,8 +168,14 @@ export class CheckboxWidget extends InteractiveWidget {
   }
 
   #toggle(): void {
-    this.#checked = !this.#checked;
-    this.dispatch('change', {checked: this.#checked});
+    if (this.#indeterminate) {
+      this.#indeterminate = false;
+      this.#checked = true;
+    } else {
+      this.#checked = !this.#checked;
+    }
+
+    this.dispatch('change', {checked: this.#checked, indeterminate: this.#indeterminate});
   }
 }
 

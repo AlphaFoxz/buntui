@@ -18,5 +18,5 @@ export {createSwitchWidget, SwitchWidget} from './switch_/SwitchWidget';
 export type {SwitchWidgetOptions} from './switch_/types';
 export {createScrollBoxWidget, ScrollBoxWidget} from './scroll-box/ScrollBoxWidget';
 export type {ScrollBoxWidgetOptions} from './scroll-box/types';
-export {createProgressBarWidget, ProgressBarWidget} from './progress-bar/ProgressBarWidget';
-export type {ProgressBarWidgetOptions} from './progress-bar/types';
+export {createProgressWidget, ProgressWidget} from './progress/ProgressWidget';
+export type {ProgressWidgetOptions} from './progress/types';

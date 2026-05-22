@@ -18,3 +18,7 @@ export function onMounted(callback: () => void): void {
 export function onUnmounted(callback: () => void): void {
   trackInScope(callback);
 }
+
+export function useTemplateRef<T = unknown>(_: string): {value: T | null} {
+  return {value: null};
+}

@@ -1,5 +1,5 @@
 import {it, expect, describe} from 'bun:test';
-import {onTick, onMounted, onUnmounted} from '../composables';
+import {onTick, onMounted, onUnmounted, useTemplateRef} from '../composables';
 import {runSetup, getCurrentScene} from '../scene-context';
 import {TuiScene} from '../../extern/app/TuiScene';
 
@@ -114,5 +114,22 @@ describe('onUnmounted', () => {
       onUnmounted(() => { called = true; });
     });
     expect(called).toBe(false);
+  });
+});
+
+describe('useTemplateRef', () => {
+  it('returns a ref with null initial value', () => {
+    runSetup(new TuiScene(), () => {
+      const r = useTemplateRef('myRef');
+      expect(r.value).toBeNull();
+    });
+  });
+
+  it('can be assigned a value', () => {
+    runSetup(new TuiScene(), () => {
+      const r = useTemplateRef<{kind: string}>('myRef');
+      r.value = {kind: 'widget'};
+      expect(r.value!.kind).toBe('widget');
+    });
   });
 });

@@ -172,7 +172,7 @@ function analyzeImportsFromAst(
   return {componentMap, widgetImportMap};
 }
 
-const BUNTUI_LIFECYCLE_HOOKS = new Set(['onMounted', 'onUnmounted', 'onTick']);
+const BUNTUI_LIFECYCLE_HOOKS = new Set(['onMounted', 'onUnmounted', 'onTick', 'useTemplateRef']);
 
 function assembleOutput(
   codegenResult: CodegenResult,

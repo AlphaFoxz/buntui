@@ -96,6 +96,7 @@ export class InputWidget extends InteractiveWidget {
   #isReadonly: boolean;
 
   #value: string;
+  readonly #password: boolean;
   #cursorPos = 0;
   #scrollOffset = 0;
   #selectionAnchor: number | undefined;
@@ -129,6 +130,7 @@ export class InputWidget extends InteractiveWidget {
     this.#colorFgDisabled = parseColor(resolved.colorFgDisabled ?? 0x6C_70_86_FF);
     this.#colorBgDisabled = parseColor(resolved.colorBgDisabled ?? 0x1E_1E_2E_FF);
     this.#isReadonly = resolved.readonly ?? false;
+    this.#password = (resolved.type ?? 'text') === 'password';
     this.#value = resolved.value ?? '';
     this.#cursorPos = this.#value.length;
     this.setDisabled(resolved.disabled ?? false);
@@ -376,7 +378,8 @@ export class InputWidget extends InteractiveWidget {
     if (this.#value.length > 0) {
       const range = this.#getSelectionRange();
       const textFromScroll = this.#value.slice(this.#scrollOffset);
-      const visibleText = truncateToWidth(textFromScroll, visibleWidth);
+      const maskedFromScroll = this.#maskText(textFromScroll);
+      const visibleText = truncateToWidth(maskedFromScroll, visibleWidth);
       const visibleEnd = this.#scrollOffset + [...visibleText].length;
 
       if (range === undefined) {
@@ -393,8 +396,8 @@ export class InputWidget extends InteractiveWidget {
         let drawX = textX;
 
         if (segStart > this.#scrollOffset) {
-          const seg1 = this.#value.slice(this.#scrollOffset, segStart);
-          const clipped1 = truncateToWidth(seg1, visibleWidth - (drawX - textX));
+          const seg1Masked = this.#maskText(this.#value.slice(this.#scrollOffset, segStart));
+          const clipped1 = truncateToWidth(seg1Masked, visibleWidth - (drawX - textX));
           buffer.drawText({
             x: drawX,
             y: textY,
@@ -407,8 +410,8 @@ export class InputWidget extends InteractiveWidget {
 
         if (segEnd > segStart) {
           const remainingWidth = visibleWidth - (drawX - textX);
-          const seg2 = this.#value.slice(segStart, segEnd);
-          const clipped2 = truncateToWidth(seg2, remainingWidth);
+          const seg2Masked = this.#maskText(this.#value.slice(segStart, segEnd));
+          const clipped2 = truncateToWidth(seg2Masked, remainingWidth);
           buffer.drawText({
             x: drawX,
             y: textY,
@@ -422,8 +425,8 @@ export class InputWidget extends InteractiveWidget {
         if (segEnd < visibleEnd) {
           const remainingWidth = visibleWidth - (drawX - textX);
           if (remainingWidth > 0) {
-            const seg3 = this.#value.slice(segEnd, visibleEnd);
-            const clipped3 = truncateToWidth(seg3, remainingWidth);
+            const seg3Masked = this.#maskText(this.#value.slice(segEnd, visibleEnd));
+            const clipped3 = truncateToWidth(seg3Masked, remainingWidth);
             buffer.drawText({
               x: drawX,
               y: textY,
@@ -474,7 +477,7 @@ export class InputWidget extends InteractiveWidget {
 
     // Cursor
     if (this.focused && !this.disabled) {
-      const textBeforeCursor = this.#value.slice(this.#scrollOffset, this.#cursorPos);
+      const textBeforeCursor = this.#maskText(this.#value.slice(this.#scrollOffset, this.#cursorPos));
       const cursorX = textX + stringDisplayWidth(textBeforeCursor);
       buffer.setCursor(cursorX, textY);
       buffer.setCursorMode(resolveCursorMode('blinking-ibeam'));
@@ -504,6 +507,32 @@ export class InputWidget extends InteractiveWidget {
       end: range.end,
       text: this.#value.slice(range.start, range.end),
     };
+  }
+
+  select(): void {
+    this.#selectionAnchor = 0;
+    this.#cursorPos = this.#value.length;
+    this.#clampScrollOffset();
+  }
+
+  setSelectionRange(start: number, end: number): void {
+    const a = Math.max(0, Math.min(start, this.#value.length));
+    const b = Math.max(0, Math.min(end, this.#value.length));
+    this.#selectionAnchor = Math.min(a, b);
+    this.#cursorPos = Math.max(a, b);
+    this.#clampScrollOffset();
+  }
+
+  #maskText(text: string): string {
+    if (!this.#password) {
+      return text;
+    }
+
+    return '\u2022'.repeat([...text].length);
+  }
+
+  #displaySlice(start: number, end?: number): string {
+    return this.#maskText(this.#value.slice(start, end));
   }
 
   #getSelectionRange(): {start: number; end: number} | undefined {
@@ -540,23 +569,19 @@ export class InputWidget extends InteractiveWidget {
       this.#scrollOffset = this.#cursorPos;
     }
 
-    const textBeforeCursor = this.#value.slice(this.#scrollOffset, this.#cursorPos);
-    const cursorRelativeWidth = stringDisplayWidth(textBeforeCursor);
+    const cursorRelativeWidth = stringDisplayWidth(this.#displaySlice(this.#scrollOffset, this.#cursorPos));
     if (cursorRelativeWidth >= visibleWidth) {
       while (this.#scrollOffset < this.#cursorPos) {
         this.#scrollOffset++;
-        const testText = this.#value.slice(this.#scrollOffset, this.#cursorPos);
-        if (stringDisplayWidth(testText) < visibleWidth) {
+        if (stringDisplayWidth(this.#displaySlice(this.#scrollOffset, this.#cursorPos)) < visibleWidth) {
           break;
         }
       }
     }
 
-    // Scroll back when text shrinks and there's unused visible space
     while (this.#scrollOffset > 0) {
       const candidateOffset = this.#scrollOffset - 1;
-      const textFromCandidate = this.#value.slice(candidateOffset);
-      if (stringDisplayWidth(textFromCandidate) <= visibleWidth) {
+      if (stringDisplayWidth(this.#displaySlice(candidateOffset)) <= visibleWidth) {
         this.#scrollOffset = candidateOffset;
       } else {
         break;
@@ -566,10 +591,10 @@ export class InputWidget extends InteractiveWidget {
 
   #posFromMouse(data: MouseEvent): number {
     const innerX = data.x - this.#x - 1;
-    const textFromScroll = this.#value.slice(this.#scrollOffset);
+    const displayed = this.#displaySlice(this.#scrollOffset);
     return Math.max(0, Math.min(
       this.#value.length,
-      this.#scrollOffset + charIndexAtColumn(textFromScroll, innerX),
+      this.#scrollOffset + charIndexAtColumn(displayed, innerX),
     ));
   }
 

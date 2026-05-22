@@ -840,6 +840,50 @@ describe('clipboard support', () => {
   });
 });
 
+describe('select() / setSelectionRange()', () => {
+  it('select() selects all text', () => {
+    const input = createInput({value: 'hello world'});
+    input.select();
+    const sel = input.getSelection();
+    expect(sel).toBeDefined();
+    expect(sel!.start).toBe(0);
+    expect(sel!.end).toBe(11);
+    expect(sel!.text).toBe('hello world');
+  });
+
+  it('setSelectionRange selects a range', () => {
+    const input = createInput({value: 'hello world'});
+    input.setSelectionRange(2, 7);
+    const sel = input.getSelection();
+    expect(sel).toBeDefined();
+    expect(sel!.start).toBe(2);
+    expect(sel!.end).toBe(7);
+    expect(sel!.text).toBe('llo w');
+  });
+
+  it('setSelectionRange clamps to valid range', () => {
+    const input = createInput({value: 'hi'});
+    input.setSelectionRange(-5, 100);
+    const sel = input.getSelection();
+    expect(sel!.start).toBe(0);
+    expect(sel!.end).toBe(2);
+  });
+
+  it('setSelectionRange normalizes reversed range', () => {
+    const input = createInput({value: 'hello'});
+    input.setSelectionRange(4, 1);
+    const sel = input.getSelection();
+    expect(sel!.start).toBe(1);
+    expect(sel!.end).toBe(4);
+  });
+
+  it('select() on empty value results in no selection', () => {
+    const input = createInput({value: ''});
+    input.select();
+    expect(input.getSelection()).toBeUndefined();
+  });
+});
+
 describe('undo/redo', () => {
   describe('Ctrl+Z (undo)', () => {
     it('undoes a character insertion', () => {
@@ -1081,5 +1125,97 @@ describe('undo/redo', () => {
       input.handleKey(key({key: 'z', ctrlKey: true}));
       expect(input.value.length).toBe(10);
     });
+  });
+});
+
+describe('password mode', () => {
+  it('stores actual value', () => {
+    const input = new InputWidget({value: 'secret', type: 'password'});
+    expect(input.value).toBe('secret');
+  });
+
+  it('allows typing characters', () => {
+    const input = new InputWidget({type: 'password'});
+    input.handleKey(key({key: 'a'}));
+    input.handleKey(key({key: 'b'}));
+    expect(input.value).toBe('ab');
+  });
+
+  it('allows backspace', () => {
+    const input = new InputWidget({value: 'abc', type: 'password'});
+    input.handleKey(key({key: 'Backspace'}));
+    expect(input.value).toBe('ab');
+  });
+
+  it('allows selection', () => {
+    const input = new InputWidget({value: 'hello', type: 'password'});
+    input.handleKey(key({key: 'a', ctrlKey: true}));
+    const sel = input.getSelection();
+    expect(sel).toBeDefined();
+    expect(sel!.text).toBe('hello');
+  });
+
+  it('allows copy', () => {
+    const clipboard = new MockClipboard();
+    const prev = setClipboard(clipboard);
+    try {
+      const input = new InputWidget({value: 'secret', type: 'password'});
+      input.handleKey(key({key: 'a', ctrlKey: true}));
+      input.handleKey(key({key: 'c', ctrlKey: true}));
+      expect(clipboard.read()).toBe('secret');
+    } finally {
+      setClipboard(prev);
+    }
+  });
+
+  it('allows cut and paste', () => {
+    const clipboard = new MockClipboard();
+    const prev = setClipboard(clipboard);
+    try {
+      const input = new InputWidget({value: 'hello', type: 'password'});
+      input.handleKey(key({key: 'Home'}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'x', ctrlKey: true}));
+      expect(input.value).toBe('llo');
+      expect(clipboard.read()).toBe('he');
+      input.handleKey(key({key: 'End'}));
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('llohe');
+    } finally {
+      setClipboard(prev);
+    }
+  });
+
+  it('allows undo/redo', () => {
+    const input = new InputWidget({value: 'abc', type: 'password'});
+    input.handleKey(key({key: 'Backspace'}));
+    expect(input.value).toBe('ab');
+    input.handleKey(key({key: 'z', ctrlKey: true}));
+    expect(input.value).toBe('abc');
+    input.handleKey(key({key: 'y', ctrlKey: true}));
+    expect(input.value).toBe('ab');
+  });
+
+  it('defaults to text mode', () => {
+    const input = new InputWidget({value: 'hello'});
+    expect(input.value).toBe('hello');
+  });
+
+  it('allows navigation in password mode', () => {
+    const input = new InputWidget({value: 'abc', type: 'password'});
+    input.handleKey(key({key: 'Home'}));
+    input.handleKey(key({key: 'ArrowRight'}));
+    input.handleKey(key({key: 'X'}));
+    expect(input.value).toBe('aXbc');
+  });
+
+  it('respects maxLength in password mode', () => {
+    const input = new InputWidget({type: 'password', maxLength: 3});
+    input.handleKey(key({key: 'a'}));
+    input.handleKey(key({key: 'b'}));
+    input.handleKey(key({key: 'c'}));
+    input.handleKey(key({key: 'd'}));
+    expect(input.value).toBe('abc');
   });
 });

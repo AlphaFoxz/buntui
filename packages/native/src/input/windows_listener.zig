@@ -536,6 +536,10 @@ const Parser = struct {
                 'D' => break :blk mapper.VK_LEFT,
                 'H' => break :blk mapper.VK_HOME,
                 'F' => break :blk mapper.VK_END,
+                'Z' => {
+                    mod_shift = true;
+                    break :blk mapper.VK_TAB;
+                },
                 '~' => {
                     switch (param1) {
                         2 => break :blk mapper.VK_INSERT,

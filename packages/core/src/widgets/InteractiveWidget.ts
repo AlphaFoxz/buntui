@@ -3,9 +3,15 @@ import type {Focusable} from './Focusable';
 import {TuiWidgetEntity} from './TuiWidgetEntity';
 
 export abstract class InteractiveWidget extends TuiWidgetEntity implements Focusable {
+  static setFocusRequestCallback(cb: ((widget: InteractiveWidget) => void) | undefined): void {
+    InteractiveWidget.#focusRequestCallback = cb;
+  }
+
   static readonly #BLOCKED_WHEN_DISABLED = new Set([
     'click', 'mousedown', 'mouseup', 'mouseover', 'mousemove', 'contextmenu',
   ]);
+
+  static #focusRequestCallback: ((widget: InteractiveWidget) => void) | undefined;
 
   #focused = false;
   #disabled = false;
@@ -43,6 +49,14 @@ export abstract class InteractiveWidget extends TuiWidgetEntity implements Focus
   }
 
   focus(): void {
+    if (this.#focused) {
+      return;
+    }
+
+    if (InteractiveWidget.#focusRequestCallback) {
+      InteractiveWidget.#focusRequestCallback(this);
+    }
+
     this.#focused = true;
     this.dispatch('focus', undefined);
   }

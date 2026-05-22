@@ -11,6 +11,9 @@ export {rgbToRgba, withAlpha} from './utils/styles';
 export {parseColor} from './utils/color';
 export type {TuiColor} from './utils/color';
 export {TuiWidgetEntity} from './widgets/TuiWidgetEntity';
+export type {
+  TuiWidgetEventData, TuiInputEventData, TuiSubmitEventData, TuiClipboardEventData, TuiUndoEventData, TuiRedoEventData, TuiScrollEventData, TuiChangeEventData,
+} from './widgets/TuiWidgetEntity';
 export type {Focusable} from './widgets/Focusable';
 export {TUI_CONTEXT_INSTANCE} from './extern/app/TuiContext';
 export type {
@@ -47,8 +50,8 @@ export {createSwitchWidget, SwitchWidget} from './widgets/switch_/SwitchWidget';
 export type {SwitchWidgetOptions} from './widgets/switch_/types';
 export {createScrollBoxWidget, ScrollBoxWidget} from './widgets/scroll-box/ScrollBoxWidget';
 export type {ScrollBoxWidgetOptions} from './widgets/scroll-box/types';
-export {createProgressBarWidget, ProgressBarWidget} from './widgets/progress-bar/ProgressBarWidget';
-export type {ProgressBarWidgetOptions} from './widgets/progress-bar/types';
+export {createProgressWidget, ProgressWidget} from './widgets/progress/ProgressWidget';
+export type {ProgressWidgetOptions} from './widgets/progress/types';
 export {
   BorderSides, BorderStyle, CursorMode, resolveCursorMode,
 } from './draw_list/types';
@@ -60,6 +63,8 @@ export {defineTheme, catppuccinMocha} from './theme/themes';
 export type {TuiTheme, TuiThemeColors, TuiThemeBorderStyle} from './theme/types';
 export {getTheme, setTheme} from './theme/provider';
 export {useTheme} from './theme/use-theme';
-export {onTick, onMounted, onUnmounted} from './app/composables';
+export {
+  onTick, onMounted, onUnmounted, useTemplateRef,
+} from './app/composables';
 export {LOGGER} from './common/logger';
 export {runSetup} from './app/scene-context';

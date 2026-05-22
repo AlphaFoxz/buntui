@@ -134,6 +134,13 @@ function transformElement(
     }
   }
 
+  let refName: string | undefined;
+  const refIndex = props.findIndex(p => p.name === 'ref');
+  if (refIndex !== -1) {
+    refName = props[refIndex]!.value;
+    props.splice(refIndex, 1);
+  }
+
   // Transform children recursively
   const children: TuiRenderNode[] = [];
   let childIdx = 0;
@@ -176,6 +183,7 @@ function transformElement(
       dynamicProps,
       events,
       children,
+      refName,
       loc: node.loc,
     };
   }
@@ -192,6 +200,7 @@ function transformElement(
       dynamicProps,
       events,
       children,
+      refName,
       loc: node.loc,
     };
   }
@@ -213,6 +222,7 @@ function transformElement(
     dynamicProps,
     events,
     children,
+    refName,
     loc: node.loc,
   };
 }

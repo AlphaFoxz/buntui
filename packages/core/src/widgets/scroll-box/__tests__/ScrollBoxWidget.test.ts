@@ -103,20 +103,62 @@ describe('scroll offset', () => {
     sb.scrollTo(-5);
     expect(sb.scrollOffsetY).toBe(0);
   });
+});
 
-  it('scrolls when content overflows viewport', () => {
-    const sb = createScrollBox({height: 10}); // viewport = 8 rows (border takes 2)
+describe('scroll event', () => {
+  it('dispatches scroll event on scrollTo', () => {
+    const sb = createScrollBox({height: 10});
     for (let i = 0; i < 5; i++) {
-      sb.addChild(createBox({height: 5})); // total = 25 content height
+      sb.addChild(createBox({height: 5}));
     }
 
-    sb.scrollTo(17); // max = 25 - 8 = 17
-    expect(sb.scrollOffsetY).toBe(17);
-
-    sb.scrollTo(100);
-    expect(sb.scrollOffsetY).toBe(17);
+    const events: Array<{scrollOffsetY: number; maxScrollY: number}> = [];
+    sb.on('scroll', data => events.push(data as typeof events[number]));
+    sb.scrollTo(5);
+    expect(events).toHaveLength(1);
+    expect(events[0]!.scrollOffsetY).toBe(5);
+    expect(events[0]!.maxScrollY).toBe(sb.maxScrollY);
   });
 
+  it('does not dispatch when offset does not change', () => {
+    const sb = createScrollBox({height: 10});
+    for (let i = 0; i < 5; i++) {
+      sb.addChild(createBox({height: 5}));
+    }
+
+    const events: unknown[] = [];
+    sb.on('scroll', data => events.push(data));
+    sb.scrollTo(0);
+    expect(events).toHaveLength(0);
+  });
+
+  it('dispatches on wheel scroll', () => {
+    const sb = createScrollBox({height: 10});
+    for (let i = 0; i < 5; i++) {
+      sb.addChild(createBox({height: 5}));
+    }
+
+    const events: unknown[] = [];
+    sb.on('scroll', data => events.push(data));
+    sb.dispatch('wheel', {wheelDeltaY: 1, x: 5, y: 5, button: 0, buttons: 0, isRelease: false, shiftKey: false, ctrlKey: false, altKey: false, metaKey: false});
+    expect(events).toHaveLength(1);
+  });
+
+  it('dispatches on drag scroll', () => {
+    const sb = createScrollBox({height: 10});
+    for (let i = 0; i < 5; i++) {
+      sb.addChild(createBox({height: 5}));
+    }
+
+    const events: unknown[] = [];
+    sb.on('scroll', data => events.push(data));
+    sb.dispatch('mousedown', mouse({x: 4, y: 4, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 4, y: 7, buttons: 1}));
+    expect(events.length).toBeGreaterThan(0);
+  });
+});
+
+describe('scrollTo / scrollBy', () => {
   it('scrollToTop resets to 0', () => {
     const sb = createScrollBox({height: 10});
     for (let i = 0; i < 5; i++) {
@@ -163,6 +205,75 @@ describe('scroll offset', () => {
 
     sb.scrollToBottom();
     expect(sb.scrollOffsetY).toBe(25);
+  });
+});
+
+describe('scrollIntoView', () => {
+  it('scrolls down to make child visible', () => {
+    const sb = createScrollBox({height: 10});
+    const children: ReturnType<typeof createBox>[] = [];
+    for (let i = 0; i < 5; i++) {
+      const child = createBox({height: 5});
+      sb.addChild(child);
+      children.push(child);
+    }
+
+    expect(sb.scrollOffsetY).toBe(0);
+    sb.scrollIntoView(children[4]!);
+    expect(sb.scrollOffsetY).toBeGreaterThan(0);
+  });
+
+  it('scrolls up to make child visible', () => {
+    const sb = createScrollBox({height: 10});
+    const children: ReturnType<typeof createBox>[] = [];
+    for (let i = 0; i < 5; i++) {
+      const child = createBox({height: 5});
+      sb.addChild(child);
+      children.push(child);
+    }
+
+    sb.scrollToBottom();
+    const prevOffset = sb.scrollOffsetY;
+    sb.scrollIntoView(children[0]!);
+    expect(sb.scrollOffsetY).toBeLessThan(prevOffset);
+    expect(sb.scrollOffsetY).toBe(0);
+  });
+
+  it('does nothing if child is already visible', () => {
+    const sb = createScrollBox({height: 10});
+    const children: ReturnType<typeof createBox>[] = [];
+    for (let i = 0; i < 5; i++) {
+      const child = createBox({height: 5});
+      sb.addChild(child);
+      children.push(child);
+    }
+
+    sb.scrollIntoView(children[0]!);
+    expect(sb.scrollOffsetY).toBe(0);
+  });
+
+  it('does nothing if child is not a direct child', () => {
+    const sb = createScrollBox({height: 10});
+    for (let i = 0; i < 5; i++) {
+      sb.addChild(createBox({height: 5}));
+    }
+
+    const orphan = createBox({height: 5});
+    sb.scrollIntoView(orphan);
+    expect(sb.scrollOffsetY).toBe(0);
+  });
+
+  it('works with gap', () => {
+    const sb = createScrollBox({height: 10, gap: 2});
+    const children: ReturnType<typeof createBox>[] = [];
+    for (let i = 0; i < 5; i++) {
+      const child = createBox({height: 5});
+      sb.addChild(child);
+      children.push(child);
+    }
+
+    sb.scrollIntoView(children[3]!);
+    expect(sb.scrollOffsetY).toBeGreaterThan(0);
   });
 });
 

@@ -12,7 +12,7 @@ describe('RUNTIME_HELPERS', () => {
     expect(RUNTIME_HELPERS.CREATE_SELECT_BUTTON).toBe('createSelectButtonWidget');
     expect(RUNTIME_HELPERS.CREATE_SWITCH).toBe('createSwitchWidget');
     expect(RUNTIME_HELPERS.CREATE_SCROLL_BOX).toBe('createScrollBoxWidget');
-    expect(RUNTIME_HELPERS.CREATE_PROGRESS_BAR).toBe('createProgressBarWidget');
+    expect(RUNTIME_HELPERS.CREATE_PROGRESS).toBe('createProgressWidget');
   });
 
   it('has app helper', () => {
@@ -37,7 +37,7 @@ describe('CORE_REGISTRY', () => {
     expect(CORE_REGISTRY.SelectButton).toEqual({creator: 'createSelectButtonWidget', module: '@buntui/core'});
     expect(CORE_REGISTRY.Switch).toEqual({creator: 'createSwitchWidget', module: '@buntui/core'});
     expect(CORE_REGISTRY.ScrollBox).toEqual({creator: 'createScrollBoxWidget', module: '@buntui/core'});
-    expect(CORE_REGISTRY.ProgressBar).toEqual({creator: 'createProgressBarWidget', module: '@buntui/core'});
+    expect(CORE_REGISTRY.Progress).toEqual({creator: 'createProgressWidget', module: '@buntui/core'});
   });
 
   it('does not contain extension tags', () => {

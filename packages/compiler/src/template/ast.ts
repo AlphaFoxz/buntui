@@ -20,6 +20,8 @@ export type TuiWidgetCall = {
   events: TuiEventBinding[];
   /** Children (nested widgets) */
   children: TuiRenderNode[];
+  /** Template ref name from ref="xxx" attribute */
+  refName?: string;
   /** Source location for error reporting */
   loc: SourceLocation;
 };

@@ -13,7 +13,7 @@ export const RUNTIME_HELPERS = {
   CREATE_SELECT_BUTTON: 'createSelectButtonWidget',
   CREATE_SWITCH: 'createSwitchWidget',
   CREATE_SCROLL_BOX: 'createScrollBoxWidget',
-  CREATE_PROGRESS_BAR: 'createProgressBarWidget',
+  CREATE_PROGRESS: 'createProgressWidget',
 
   // App & scene
   CREATE_APP: 'createApp',
@@ -47,5 +47,5 @@ export const CORE_REGISTRY: TuiComponentRegistry = {
   SelectButton: {creator: RUNTIME_HELPERS.CREATE_SELECT_BUTTON, module: '@buntui/core'},
   Switch: {creator: RUNTIME_HELPERS.CREATE_SWITCH, module: '@buntui/core'},
   ScrollBox: {creator: RUNTIME_HELPERS.CREATE_SCROLL_BOX, module: '@buntui/core'},
-  ProgressBar: {creator: RUNTIME_HELPERS.CREATE_PROGRESS_BAR, module: '@buntui/core'},
+  Progress: {creator: RUNTIME_HELPERS.CREATE_PROGRESS, module: '@buntui/core'},
 };

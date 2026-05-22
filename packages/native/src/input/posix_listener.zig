@@ -514,6 +514,10 @@ const Parser = struct {
                 'D' => break :blk "ArrowLeft",
                 'H' => break :blk "Home",
                 'F' => break :blk "End",
+                'Z' => {
+                    mod_shift = true;
+                    break :blk "Tab";
+                },
                 '~' => {
                     switch (param1) {
                         2 => break :blk "Insert",

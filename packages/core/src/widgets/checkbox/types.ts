@@ -8,6 +8,7 @@ export type CheckboxWidgetOptions = {
   height?: TuiSizeValue;
   label?: string;
   checked?: boolean;
+  indeterminate?: boolean;
   disabled?: boolean;
 
   // Normal state
