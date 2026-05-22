@@ -76,8 +76,8 @@ export class MouseEvent {
     this.ctrlKey = (modifiers & MOD_CTRL) === MOD_CTRL;
     this.altKey = (modifiers & MOD_ALT) === MOD_ALT;
     this.metaKey = (modifiers & MOD_META) === MOD_META;
-    this.x = view.getUint16(4, true);
-    this.y = view.getUint16(6, true);
+    this.x = view.getUint16(4, true) - 1;
+    this.y = view.getUint16(6, true) - 1;
     this.button = (flags & HAS_BUTTON) === HAS_BUTTON ? view.getUint8(2) : undefined;
     this.buttons = (flags & HAS_BUTTONS) === HAS_BUTTONS ? view.getUint8(3) : undefined;
     this.isRelease = (flags & IS_RELEASE) === IS_RELEASE;

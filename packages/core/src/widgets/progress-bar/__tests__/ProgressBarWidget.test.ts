@@ -36,7 +36,7 @@ describe('construction', () => {
     expect(pb.label).toBe('');
     expect(pb.showPercentage).toBe(true);
     expect(pb.disabled).toBe(false);
-    expect(pb.acceptsFocus).toBe(true);
+    expect(pb.acceptsFocus).toBe(false);
     const r = pb.rect;
     expect(r.width).toBe(30);
     expect(r.height).toBe(1);
@@ -122,12 +122,12 @@ describe('updateShowPercentage', () => {
 describe('disabled state', () => {
   it('setDisabled changes state', () => {
     const pb = createProgressBar();
-    expect(pb.acceptsFocus).toBe(true);
+    expect(pb.acceptsFocus).toBe(false);
     pb.setDisabled(true);
     expect(pb.disabled).toBe(true);
     expect(pb.acceptsFocus).toBe(false);
     pb.setDisabled(false);
-    expect(pb.acceptsFocus).toBe(true);
+    expect(pb.acceptsFocus).toBe(false);
   });
 });
 

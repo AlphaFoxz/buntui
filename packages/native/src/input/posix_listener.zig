@@ -138,6 +138,7 @@ const Parser = struct {
     buffer: [64]u8 = undefined,
     buf_idx: usize = 0,
     pending_esc_modifiers: u8 = 0,
+    pending_alt: bool = false,
     // UTF-8 sequence tracking
     utf8_buffer: [4]u8 = undefined,
     utf8_expected: u8 = 0,
@@ -222,7 +223,7 @@ const Parser = struct {
 
                         // Emit keyboard event with the full UTF-8 sequence
                         emitKeyboardEvent(
-                            buildModifiers(false, false, false, false, false),
+                            buildModifiers(false, self.pending_alt, false, false, false),
                             @intCast(codepoint),
                             self.utf8_buffer[0..self.utf8_expected],
                         );
@@ -244,8 +245,35 @@ const Parser = struct {
                     self.state = .CsiReceived;
                 } else if (byte == 'O') {
                     self.state = .Ss3Received;
+                } else if (byte >= 32 and byte < 127) {
+                    // Alt + printable ASCII
+                    var char_buf: [4]u8 = undefined;
+                    const char_len = std.unicode.utf8Encode(@as(u21, byte), &char_buf) catch 0;
+                    emitKeyboardEvent(
+                        buildModifiers(false, true, false, false, false),
+                        byte,
+                        char_buf[0..char_len],
+                    );
+                    self.reset();
+                } else if (byte > 0 and byte < 32) {
+                    // Alt + Ctrl + letter
+                    var letter_buf = [_]u8{0};
+                    letter_buf[0] = @as(u8, @intCast(byte + 0x40));
+                    emitKeyboardEvent(
+                        buildModifiers(false, true, true, false, false),
+                        byte,
+                        letter_buf[0..],
+                    );
+                    self.reset();
+                } else if (byte >= 128) {
+                    // Alt + UTF-8: collect multi-byte sequence
+                    const byte_count: u8 = if (byte >= 0xF0) 4 else if (byte >= 0xE0) 3 else if (byte >= 0xC0) 2 else 1;
+                    self.utf8_buffer[0] = byte;
+                    self.utf8_expected = byte_count;
+                    self.utf8_received = 1;
+                    self.pending_alt = true;
+                    self.state = .Utf8Sequence;
                 } else {
-                    // Standalone ESC key
                     emitKeyboardEvent(self.pending_esc_modifiers, 0x1B, "Escape");
                     self.reset();
                 }
@@ -543,6 +571,7 @@ const Parser = struct {
         self.buf_idx = 0;
         self.utf8_expected = 0;
         self.utf8_received = 0;
+        self.pending_alt = false;
     }
 };
 

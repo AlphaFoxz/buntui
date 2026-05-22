@@ -3,7 +3,6 @@ import type {KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
-import {type ColorScheme, resolveColorState} from '../color-scheme';
 import {getTheme} from '../../theme/provider';
 import type {ProgressBarWidgetOptions} from './types';
 
@@ -26,15 +25,9 @@ function getDefaultProgressBarOptions(): Required<ProgressBarWidgetOptions> {
     label: '',
     showPercentage: true,
     disabled: false,
-
     colorTrackNormal: theme.colors.progressTrack,
     colorFillNormal: theme.colors.progressFill,
     colorTextNormal: theme.colors.text,
-
-    colorTrackFocused: theme.colors.surfaceHover,
-    colorFillFocused: theme.colors.accentHover,
-    colorTextFocused: theme.colors.text,
-
     colorTrackDisabled: theme.colors.surface,
     colorFillDisabled: theme.colors.border,
     colorTextDisabled: theme.colors.textMuted,
@@ -49,7 +42,8 @@ export class ProgressBarWidget extends InteractiveWidget {
   #label: string;
   #showPercentage: boolean;
 
-  readonly #colors: ColorScheme<ProgressBarColors>;
+  readonly #colorsNormal: ProgressBarColors;
+  readonly #colorsDisabled: ProgressBarColors;
 
   constructor(options: ProgressBarWidgetOptions = {}) {
     super();
@@ -62,23 +56,20 @@ export class ProgressBarWidget extends InteractiveWidget {
     this.#showPercentage = resolved.showPercentage;
     this.setDisabled(resolved.disabled);
 
-    this.#colors = {
-      normal: {
-        track: parseColor(resolved.colorTrackNormal),
-        fill: parseColor(resolved.colorFillNormal),
-        text: parseColor(resolved.colorTextNormal),
-      },
-      focused: {
-        track: parseColor(resolved.colorTrackFocused),
-        fill: parseColor(resolved.colorFillFocused),
-        text: parseColor(resolved.colorTextFocused),
-      },
-      disabled: {
-        track: parseColor(resolved.colorTrackDisabled),
-        fill: parseColor(resolved.colorFillDisabled),
-        text: parseColor(resolved.colorTextDisabled),
-      },
+    this.#colorsNormal = {
+      track: parseColor(resolved.colorTrackNormal),
+      fill: parseColor(resolved.colorFillNormal),
+      text: parseColor(resolved.colorTextNormal),
     };
+    this.#colorsDisabled = {
+      track: parseColor(resolved.colorTrackDisabled),
+      fill: parseColor(resolved.colorFillDisabled),
+      text: parseColor(resolved.colorTextDisabled),
+    };
+  }
+
+  override get acceptsFocus(): boolean {
+    return false;
   }
 
   get value(): number {
@@ -139,10 +130,7 @@ export class ProgressBarWidget extends InteractiveWidget {
 
     buffer.pushClip(x, y, width, height);
 
-    const colors = resolveColorState(this.#colors, {
-      disabled: this.disabled,
-      focused: this.focused,
-    });
+    const colors = this.disabled ? this.#colorsDisabled : this.#colorsNormal;
 
     const textY = y + Math.floor(height / 2);
 

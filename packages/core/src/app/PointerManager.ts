@@ -54,8 +54,8 @@ export class PointerManager {
               dragTarget.dispatch('dragstart', data);
             }
 
-            const mx = data.x - 1;
-            const my = data.y - 1;
+            const mx = data.x;
+            const my = data.y;
             const newX = mx - this.#dragOffsetX;
             const newY = my - this.#dragOffsetY;
             const oldX = dragTarget.rect.x;
@@ -109,8 +109,8 @@ export class PointerManager {
           // Find nearest draggable ancestor for drag operations
           this.#dragTarget = hitTarget.closest(w => w.draggable);
           if (this.#dragTarget) {
-            this.#dragOffsetX = (data.x - 1) - this.#dragTarget.rect.x;
-            this.#dragOffsetY = (data.y - 1) - this.#dragTarget.rect.y;
+            this.#dragOffsetX = data.x - this.#dragTarget.rect.x;
+            this.#dragOffsetY = data.y - this.#dragTarget.rect.y;
           }
 
           // Find nearest focusable ancestor

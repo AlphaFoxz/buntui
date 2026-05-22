@@ -26,6 +26,11 @@ export type TuiWidgetEventData = {
   blur: undefined;
   input: {value: string};
   submit: {value: string};
+  copy: {text: string};
+  cut: {text: string};
+  paste: {text: string};
+  undo: {value: string};
+  redo: {value: string};
   change: {checked: boolean} | {value: number; label: string} | {value: string; label: string};
 };
 

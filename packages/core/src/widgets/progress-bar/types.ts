@@ -13,17 +13,10 @@ export type ProgressBarWidgetOptions = {
   showPercentage?: boolean;
   disabled?: boolean;
 
-  // Normal state
   colorTrackNormal?: TuiColor;
   colorFillNormal?: TuiColor;
   colorTextNormal?: TuiColor;
 
-  // Focused state
-  colorTrackFocused?: TuiColor;
-  colorFillFocused?: TuiColor;
-  colorTextFocused?: TuiColor;
-
-  // Disabled state
   colorTrackDisabled?: TuiColor;
   colorFillDisabled?: TuiColor;
   colorTextDisabled?: TuiColor;

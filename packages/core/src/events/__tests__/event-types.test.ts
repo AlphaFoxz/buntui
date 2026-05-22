@@ -153,8 +153,8 @@ describe('MouseEvent', () => {
     const event = new MouseEvent(buf);
     expect(event.button).toBe(0);
     expect(event.buttons).toBeUndefined();
-    expect(event.x).toBe(23);
-    expect(event.y).toBe(45);
+    expect(event.x).toBe(22);
+    expect(event.y).toBe(44);
     expect(event.isRelease).toBe(false);
     expect(event.shiftKey).toBe(false);
   });
@@ -193,8 +193,8 @@ describe('MouseEvent', () => {
     expect(event.altKey).toBe(false);
   });
 
-  it('parses zero position', () => {
-    const buf = buildMousePayload(0, HAS_BUTTON, 0, 0, 0, 0);
+  it('parses minimum SGR position (1,1) as (0,0)', () => {
+    const buf = buildMousePayload(0, HAS_BUTTON, 0, 0, 1, 1);
     const event = new MouseEvent(buf);
     expect(event.x).toBe(0);
     expect(event.y).toBe(0);
@@ -217,8 +217,8 @@ describe('WheelEvent', () => {
   it('inherits MouseEvent fields', () => {
     const buf = buildWheelPayload(MOD_CTRL, HAS_BUTTON, 1, 0, 23, 45, -1);
     const event = new WheelEvent(buf);
-    expect(event.x).toBe(23);
-    expect(event.y).toBe(45);
+    expect(event.x).toBe(22);
+    expect(event.y).toBe(44);
     expect(event.ctrlKey).toBe(true);
     expect(event.button).toBe(1);
   });

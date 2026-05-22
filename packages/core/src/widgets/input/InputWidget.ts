@@ -6,6 +6,7 @@ import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
 import {getTheme} from '../../theme/provider';
+import {getClipboard} from '../../clipboard';
 import type {InputWidgetOptions} from './types';
 
 function charIndexAtColumn(text: string, column: number): number {
@@ -53,6 +54,7 @@ function getDefaultInputOptions(): InputWidgetOptions {
     width: 32,
     height: 3,
     placeholder: '',
+    placeholderColorFg: theme.colors.textMuted,
     value: '',
     colorFg: theme.colors.text,
     colorBg: theme.colors.surface,
@@ -85,6 +87,7 @@ export class InputWidget extends InteractiveWidget {
   readonly #borderStyle: number;
   readonly #maxLength: number;
   readonly #placeholder: string;
+  readonly #placeholderColorFg: number;
   readonly #selectionBgColor: number;
   readonly #selectionFgColor: number;
   readonly #label: string;
@@ -97,6 +100,11 @@ export class InputWidget extends InteractiveWidget {
   #scrollOffset = 0;
   #selectionAnchor: number | undefined;
   #isSelecting = false;
+  #clickCount = 0;
+  #lastClickTime = 0;
+  #lastClickPos = -1;
+  readonly #undoStack: Array<{value: string; cursorPos: number; selectionAnchor: number | undefined}> = [];
+  readonly #redoStack: Array<{value: string; cursorPos: number; selectionAnchor: number | undefined}> = [];
 
   constructor(options: InputWidgetOptions = {}) {
     super();
@@ -114,6 +122,7 @@ export class InputWidget extends InteractiveWidget {
     this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
     this.#maxLength = resolved.maxLength ?? 0;
     this.#placeholder = resolved.placeholder ?? '';
+    this.#placeholderColorFg = parseColor(resolved.placeholderColorFg ?? 0x6C_70_86_FF);
     this.#selectionBgColor = parseColor(resolved.selectionBgColor ?? 0x26_4F_78_FF);
     this.#selectionFgColor = parseColor(resolved.selectionFgColor ?? 0xFF_FF_FF_FF);
     this.#label = resolved.label ?? '';
@@ -125,7 +134,37 @@ export class InputWidget extends InteractiveWidget {
     this.setDisabled(resolved.disabled ?? false);
 
     this.on('mousedown', mouseData => {
+      if (this.disabled) {
+        return;
+      }
+
       const targetPos = this.#posFromMouse(mouseData);
+      const now = Date.now();
+      if (now - this.#lastClickTime < 300 && targetPos === this.#lastClickPos) {
+        this.#clickCount++;
+      } else {
+        this.#clickCount = 1;
+      }
+
+      this.#lastClickTime = now;
+      this.#lastClickPos = targetPos;
+
+      if (this.#clickCount >= 3) {
+        this.#selectionAnchor = 0;
+        this.#cursorPos = this.#value.length;
+        this.#isSelecting = true;
+        this.#clampScrollOffset();
+        return;
+      }
+
+      if (this.#clickCount === 2) {
+        const [start, end] = this.#wordRangeAt(targetPos);
+        this.#selectionAnchor = start;
+        this.#cursorPos = end;
+        this.#isSelecting = true;
+        this.#clampScrollOffset();
+        return;
+      }
 
       if (mouseData.shiftKey) {
         if (this.#selectionAnchor === undefined) {
@@ -149,7 +188,7 @@ export class InputWidget extends InteractiveWidget {
         return;
       }
 
-      const mouse0 = mouseData.x - 1;
+      const mouse0 = mouseData.x;
       const textX = this.#x + 1;
       const textEndX = this.#x + this.#width - 1;
 
@@ -217,8 +256,7 @@ export class InputWidget extends InteractiveWidget {
       return;
     }
 
-    if (event.ctrlKey && key === 'a') {
-      this.#handleSelectAll(event);
+    if (event.ctrlKey && this.#handleCtrlKey(key, event)) {
       return;
     }
 
@@ -401,7 +439,7 @@ export class InputWidget extends InteractiveWidget {
         x: textX,
         y: textY,
         text: this.#placeholder.slice(0, visibleWidth),
-        fgRgba: 0x6C_70_86_FF,
+        fgRgba: this.#placeholderColorFg,
         bgRgba: 0x00_00_00_00,
       });
     }
@@ -527,7 +565,7 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #posFromMouse(data: MouseEvent): number {
-    const innerX = (data.x - 1) - this.#x - 1;
+    const innerX = data.x - this.#x - 1;
     const textFromScroll = this.#value.slice(this.#scrollOffset);
     return Math.max(0, Math.min(
       this.#value.length,
@@ -535,8 +573,30 @@ export class InputWidget extends InteractiveWidget {
     ));
   }
 
+  #wordRangeAt(pos: number): [number, number] {
+    const {length} = this.#value;
+    if (length === 0) {
+      return [0, 0];
+    }
+
+    const clamped = Math.min(pos, length - 1);
+    let start = clamped;
+    let end = clamped;
+    const cat = charCategory(this.#value.codePointAt(clamped)!);
+    while (start > 0 && charCategory(this.#value.codePointAt(start - 1)!) === cat) {
+      start--;
+    }
+
+    while (end < length && charCategory(this.#value.codePointAt(end)!) === cat) {
+      end++;
+    }
+
+    return [start, end];
+  }
+
   #handleCharInput(key: string): void {
     if (this.#maxLength === 0 || this.#value.length < this.#maxLength || this.#getSelectionRange() !== undefined) {
+      this.#pushUndo();
       this.#deleteSelection();
       if (this.#maxLength === 0 || this.#value.length < this.#maxLength) {
         this.#value = this.#value.slice(0, this.#cursorPos) + key + this.#value.slice(this.#cursorPos);
@@ -549,7 +609,9 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #handleWordBackspace(): void {
-    if (this.#deleteSelection()) {
+    if (this.#getSelectionRange() !== undefined) {
+      this.#pushUndo();
+      this.#deleteSelection();
       return;
     }
 
@@ -557,6 +619,7 @@ export class InputWidget extends InteractiveWidget {
       return;
     }
 
+    this.#pushUndo();
     let pos = this.#cursorPos;
     const cat = charCategory(this.#value.codePointAt(pos - 1)!);
     pos--;
@@ -571,7 +634,9 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #handleWordDelete(): void {
-    if (this.#deleteSelection()) {
+    if (this.#getSelectionRange() !== undefined) {
+      this.#pushUndo();
+      this.#deleteSelection();
       return;
     }
 
@@ -580,6 +645,7 @@ export class InputWidget extends InteractiveWidget {
       return;
     }
 
+    this.#pushUndo();
     let pos = this.#cursorPos;
     const cat = charCategory(this.#value.codePointAt(pos)!);
     pos++;
@@ -593,11 +659,14 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #handleBackspace(): void {
-    if (this.#deleteSelection()) {
+    if (this.#getSelectionRange() !== undefined) {
+      this.#pushUndo();
+      this.#deleteSelection();
       return;
     }
 
     if (this.#cursorPos > 0) {
+      this.#pushUndo();
       this.#value = this.#value.slice(0, this.#cursorPos - 1) + this.#value.slice(this.#cursorPos);
       this.#cursorPos--;
       this.#clampScrollOffset();
@@ -606,11 +675,14 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #handleDelete(): void {
-    if (this.#deleteSelection()) {
+    if (this.#getSelectionRange() !== undefined) {
+      this.#pushUndo();
+      this.#deleteSelection();
       return;
     }
 
     if (this.#cursorPos < this.#value.length) {
+      this.#pushUndo();
       this.#value = this.#value.slice(0, this.#cursorPos) + this.#value.slice(this.#cursorPos + 1);
       this.#clampScrollOffset();
       this.dispatch('input', {value: this.#value});
@@ -704,6 +776,148 @@ export class InputWidget extends InteractiveWidget {
     } else {
       this.#selectionAnchor = undefined;
     }
+  }
+
+  #handleCtrlKey(key: string, event: KeyboardEvent): boolean {
+    if (key === 'a') {
+      this.#handleSelectAll(event);
+      return true;
+    }
+
+    if (key === 'c') {
+      this.#handleCopy();
+      return true;
+    }
+
+    if (key === 'z') {
+      if (!this.#isReadonly) {
+        this.#handleUndo();
+      }
+
+      return true;
+    }
+
+    if (key === 'y') {
+      if (!this.#isReadonly) {
+        this.#handleRedo();
+      }
+
+      return true;
+    }
+
+    if (key === 'v') {
+      if (!this.#isReadonly) {
+        this.#handlePaste();
+      }
+
+      return true;
+    }
+
+    if (key === 'x') {
+      if (!this.#isReadonly) {
+        this.#handleCut();
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
+  #handleCopy(): void {
+    const sel = this.getSelection();
+    if (sel === undefined) {
+      return;
+    }
+
+    getClipboard().write(sel.text);
+    this.dispatch('copy', {text: sel.text});
+  }
+
+  #handleCut(): void {
+    const sel = this.getSelection();
+    if (sel === undefined) {
+      return;
+    }
+
+    this.#pushUndo();
+    getClipboard().write(sel.text);
+    this.#deleteSelection();
+    this.dispatch('cut', {text: sel.text});
+  }
+
+  #handlePaste(): void {
+    const text = getClipboard().read();
+    if (text.length === 0) {
+      return;
+    }
+
+    this.#pushUndo();
+    this.#deleteSelection();
+
+    if (this.#maxLength > 0 && this.#value.length >= this.#maxLength) {
+      return;
+    }
+
+    const available = this.#maxLength === 0 ? text.length : this.#maxLength - this.#value.length;
+    const toInsert = text.slice(0, available);
+
+    this.#value = this.#value.slice(0, this.#cursorPos) + toInsert + this.#value.slice(this.#cursorPos);
+    this.#cursorPos += [...toInsert].length;
+    this.#clampScrollOffset();
+    this.dispatch('paste', {text: toInsert});
+    this.dispatch('input', {value: this.#value});
+  }
+
+  #pushUndo(): void {
+    if (this.#undoStack.length >= 100) {
+      this.#undoStack.shift();
+    }
+
+    this.#undoStack.push({
+      value: this.#value,
+      cursorPos: this.#cursorPos,
+      selectionAnchor: this.#selectionAnchor,
+    });
+    this.#redoStack.length = 0;
+  }
+
+  #handleUndo(): void {
+    if (this.#undoStack.length === 0) {
+      return;
+    }
+
+    this.#redoStack.push({
+      value: this.#value,
+      cursorPos: this.#cursorPos,
+      selectionAnchor: this.#selectionAnchor,
+    });
+    const snapshot = this.#undoStack.pop()!;
+    this.#value = snapshot.value;
+    this.#cursorPos = snapshot.cursorPos;
+    this.#selectionAnchor = snapshot.selectionAnchor;
+    this.#clampScrollOffset();
+    this.dispatch('undo', {value: this.#value});
+    this.dispatch('input', {value: this.#value});
+  }
+
+  #handleRedo(): void {
+    if (this.#redoStack.length === 0) {
+      return;
+    }
+
+    this.#undoStack.push({
+      value: this.#value,
+      cursorPos: this.#cursorPos,
+      selectionAnchor: this.#selectionAnchor,
+    });
+    const snapshot = this.#redoStack.pop()!;
+    this.#value = snapshot.value;
+    this.#cursorPos = snapshot.cursorPos;
+    this.#selectionAnchor = snapshot.selectionAnchor;
+    this.#clampScrollOffset();
+    this.dispatch('redo', {value: this.#value});
+    this.dispatch('input', {value: this.#value});
   }
 }
 

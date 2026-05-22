@@ -315,44 +315,121 @@ describe('drag scroll', () => {
 
   it('dragging down scrolls content up', () => {
     const sb = createScrollable();
-    sb.dispatch('mousedown', mouse({x: 5, y: 5, button: 0}));
-    sb.dispatch('mousemove', mouse({x: 5, y: 8, buttons: 1}));
+    sb.dispatch('mousedown', mouse({x: 4, y: 4, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 4, y: 7, buttons: 1}));
     expect(sb.scrollOffsetY).toBe(3);
   });
 
   it('dragging up scrolls content down', () => {
     const sb = createScrollable();
     sb.scrollTo(5);
-    sb.dispatch('mousedown', mouse({x: 5, y: 8, button: 0}));
-    sb.dispatch('mousemove', mouse({x: 5, y: 5, buttons: 1}));
+    sb.dispatch('mousedown', mouse({x: 4, y: 7, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 4, y: 4, buttons: 1}));
     expect(sb.scrollOffsetY).toBe(2);
   });
 
   it('mouseup stops drag scrolling', () => {
     const sb = createScrollable();
-    sb.dispatch('mousedown', mouse({x: 5, y: 5, button: 0}));
-    sb.dispatch('mouseup', mouse({x: 5, y: 5, button: 0, isRelease: true}));
-    sb.dispatch('mousemove', mouse({x: 5, y: 10, buttons: 1}));
+    sb.dispatch('mousedown', mouse({x: 4, y: 4, button: 0}));
+    sb.dispatch('mouseup', mouse({x: 4, y: 4, button: 0, isRelease: true}));
+    sb.dispatch('mousemove', mouse({x: 4, y: 9, buttons: 1}));
     expect(sb.scrollOffsetY).toBe(0);
   });
 
   it('mousemove without buttons stops drag scrolling', () => {
     const sb = createScrollable();
-    sb.dispatch('mousedown', mouse({x: 5, y: 5, button: 0}));
-    sb.dispatch('mousemove', mouse({x: 5, y: 10, buttons: 0}));
+    sb.dispatch('mousedown', mouse({x: 4, y: 4, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 4, y: 9, buttons: 0}));
     expect(sb.scrollOffsetY).toBe(0);
   });
 
   it('clamps drag scroll to valid range', () => {
     const sb = createScrollable();
-    sb.dispatch('mousedown', mouse({x: 5, y: 5, button: 0}));
-    sb.dispatch('mousemove', mouse({x: 5, y: 50, buttons: 1}));
+    sb.dispatch('mousedown', mouse({x: 4, y: 4, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 4, y: 49, buttons: 1}));
     expect(sb.scrollOffsetY).toBe(sb.maxScrollY);
   });
 
   it('does not scroll on mousemove without prior mousedown', () => {
     const sb = createScrollable();
-    sb.dispatch('mousemove', mouse({x: 5, y: 10, buttons: 1}));
+    sb.dispatch('mousemove', mouse({x: 4, y: 9, buttons: 1}));
+    expect(sb.scrollOffsetY).toBe(0);
+  });
+});
+
+describe('scrollbar thumb drag', () => {
+  // Geometry (0-based): viewport y=1, height=8, scrollbarX=18
+  // thumbSize=3, scrollableRange=5, maxScroll=17
+  function createScrollable(): ScrollBoxWidget {
+    const sb = createScrollBox({height: 10});
+    for (let i = 0; i < 5; i++) {
+      sb.addChild(createBox({height: 5}));
+    }
+
+    return sb;
+  }
+
+  it('dragging thumb down scrolls proportionally', () => {
+    const sb = createScrollable();
+    sb.dispatch('mousedown', mouse({x: 18, y: 1, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 18, y: 6, buttons: 1}));
+    expect(sb.scrollOffsetY).toBe(17);
+  });
+
+  it('dragging thumb partially scrolls partially', () => {
+    const sb = createScrollable();
+    sb.dispatch('mousedown', mouse({x: 18, y: 1, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 18, y: 3, buttons: 1}));
+    expect(sb.scrollOffsetY).toBe(7);
+  });
+
+  it('mouseup stops thumb dragging', () => {
+    const sb = createScrollable();
+    sb.dispatch('mousedown', mouse({x: 18, y: 1, button: 0}));
+    sb.dispatch('mouseup', mouse({x: 18, y: 1, button: 0, isRelease: true}));
+    sb.dispatch('mousemove', mouse({x: 18, y: 6, buttons: 1}));
+    expect(sb.scrollOffsetY).toBe(0);
+  });
+
+  it('mousemove without buttons stops thumb dragging', () => {
+    const sb = createScrollable();
+    sb.dispatch('mousedown', mouse({x: 18, y: 1, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 18, y: 6, buttons: 0}));
+    expect(sb.scrollOffsetY).toBe(0);
+  });
+
+  it('clicking track above thumb scrolls page up', () => {
+    const sb = createScrollable();
+    sb.scrollTo(10);
+    sb.dispatch('mousedown', mouse({x: 18, y: 1, button: 0}));
+    expect(sb.scrollOffsetY).toBe(10 - 8);
+  });
+
+  it('clicking track below thumb scrolls page down', () => {
+    const sb = createScrollable();
+    sb.dispatch('mousedown', mouse({x: 18, y: 5, button: 0}));
+    expect(sb.scrollOffsetY).toBe(8);
+  });
+
+  it('clicking on content area does not trigger thumb drag', () => {
+    const sb = createScrollable();
+    sb.dispatch('mousedown', mouse({x: 4, y: 1, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 4, y: 6, buttons: 1}));
+    expect(sb.scrollOffsetY).toBe(5);
+  });
+
+  it('thumb drag clamps to valid range', () => {
+    const sb = createScrollable();
+    sb.dispatch('mousedown', mouse({x: 18, y: 1, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 18, y: 49, buttons: 1}));
+    expect(sb.scrollOffsetY).toBe(sb.maxScrollY);
+  });
+
+  it('thumb drag does not scroll when content fits viewport', () => {
+    const sb = createScrollBox({height: 10});
+    sb.addChild(createBox({height: 5}));
+    sb.dispatch('mousedown', mouse({x: 18, y: 1, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 18, y: 6, buttons: 1}));
     expect(sb.scrollOffsetY).toBe(0);
   });
 });

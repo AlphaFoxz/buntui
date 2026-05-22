@@ -96,6 +96,12 @@ fn isCtrlPhysicallyHeld() bool {
     return (@as(u16, @bitCast(state)) & 0x8000) != 0;
 }
 
+fn isShiftPhysicallyHeld() bool {
+    const VK_SHIFT: i32 = 0x10;
+    const state = GetAsyncKeyState(VK_SHIFT);
+    return (@as(u16, @bitCast(state)) & 0x8000) != 0;
+}
+
 const RIGHT_ALT_PRESSED = 0x0001;
 const LEFT_ALT_PRESSED = 0x0002;
 const RIGHT_CTRL_PRESSED = 0x0004;
@@ -246,9 +252,20 @@ const Parser = struct {
                     self.buffer[self.buf_idx] = ascii;
                     self.buf_idx += 1;
                 } else {
-                    emitKeyboardEvent(self.pending_esc_modifiers, 0x1B, "Escape");
+                    // Alt+key: non-VK_ESCAPE 0x1B + non-sequence char is
+                    // always Alt+key in VT input mode.  VT mode may strip
+                    // all modifiers from dwControlKeyState, so we set Alt
+                    // unconditionally and use physical key state for Shift/Ctrl.
+                    var modified = record;
+                    modified.dwControlKeyState |= LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED;
+                    if (isShiftPhysicallyHeld()) {
+                        modified.dwControlKeyState |= SHIFT_PRESSED;
+                    }
+                    if (isCtrlPhysicallyHeld()) {
+                        modified.dwControlKeyState |= LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED;
+                    }
                     self.reset();
-                    self.processEvent(record);
+                    self.handleNormalKey(modified);
                 }
             },
             .CsiReceived => {
@@ -302,12 +319,12 @@ const Parser = struct {
             // VT input mode rewrites VK codes and strips Ctrl from
             // dwControlKeyState, so we use GetAsyncKeyState to detect
             // the physical Ctrl key.
-            if (unicode_char >= 0x01 and unicode_char <= 0x1A and (std.mem.eql(u8, key_name, "Unidentified") or isCtrlPhysicallyHeld())) {
+            if (unicode_char >= 0x01 and unicode_char <= 0x1A and std.mem.eql(u8, key_name, "Unidentified") and isCtrlPhysicallyHeld()) {
                 var letter_buf = [_]u8{0};
                 letter_buf[0] = @as(u8, @intCast(unicode_char - 0x01 + 'a'));
                 logger.logDebugFmt("Ctrl+字母: {s}", .{letter_buf[0..]});
                 emitKeyboardEvent(
-                    buildModifiers(is_shift, is_alt, true, false, is_repeat),
+                    buildModifiers(isShiftPhysicallyHeld(), is_alt, true, false, is_repeat),
                     unicode_char,
                     letter_buf[0..],
                 );

@@ -85,6 +85,7 @@ type TuiInputProps = {
   colorFg?: TuiColor;
   colorBg?: TuiColor;
   placeholder?: string;
+  placeholderColorFg?: TuiColor;
   value?: string;
   modelValue?: string;
   label?: string;
@@ -257,9 +258,6 @@ type TuiProgressBarProps = {
   colorTrackNormal?: TuiColor;
   colorFillNormal?: TuiColor;
   colorTextNormal?: TuiColor;
-  colorTrackFocused?: TuiColor;
-  colorFillFocused?: TuiColor;
-  colorTextFocused?: TuiColor;
   colorTrackDisabled?: TuiColor;
   colorFillDisabled?: TuiColor;
   colorTextDisabled?: TuiColor;

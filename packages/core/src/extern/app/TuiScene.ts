@@ -105,8 +105,8 @@ export class TuiScene implements Entity {
   }
 
   hitTest(rawEvent: MouseEvent): TuiWidgetEntity | undefined {
-    const mx = rawEvent.x - 1;
-    const my = rawEvent.y - 1;
+    const mx = rawEvent.x;
+    const my = rawEvent.y;
 
     for (const widget of this.#getSortedWidgetsReverse()) {
       if (widget.visible && widget.containsPoint(mx, my)) {

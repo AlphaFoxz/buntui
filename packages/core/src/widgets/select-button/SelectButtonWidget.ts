@@ -111,6 +111,16 @@ export class SelectButtonWidget extends InteractiveWidget {
     if (event.key === 'ArrowRight') {
       const newIdx = (this.#selectedIndex + 1) % this.#options.length;
       this.#select(newIdx);
+      return;
+    }
+
+    if (event.key === 'Home') {
+      this.#select(0);
+      return;
+    }
+
+    if (event.key === 'End') {
+      this.#select(this.#options.length - 1);
     }
   }
 

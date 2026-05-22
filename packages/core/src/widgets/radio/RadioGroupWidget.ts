@@ -65,7 +65,7 @@ export class RadioGroupWidget extends InteractiveWidget {
     this.#colorBgSelected = parseColor(resolved.colorBgSelected);
 
     this.on('mousedown', mouseData => {
-      const innerY = (mouseData.y - 1) - this.#rect.y;
+      const innerY = mouseData.y - this.#rect.y;
       if (innerY >= 0 && innerY < this.#options.length) {
         this.#hoveredIndex = innerY;
         this.#select(this.#hoveredIndex);
@@ -73,14 +73,14 @@ export class RadioGroupWidget extends InteractiveWidget {
     });
 
     this.on('mouseover', mouseData => {
-      const innerY = (mouseData.y - 1) - this.#rect.y;
+      const innerY = mouseData.y - this.#rect.y;
       if (innerY >= 0 && innerY < this.#options.length) {
         this.#hoveredIndex = innerY;
       }
     });
 
     this.on('mousemove', mouseData => {
-      const innerY = (mouseData.y - 1) - this.#rect.y;
+      const innerY = mouseData.y - this.#rect.y;
       if (innerY >= 0 && innerY < this.#options.length) {
         this.#hoveredIndex = innerY;
       }
@@ -108,6 +108,16 @@ export class RadioGroupWidget extends InteractiveWidget {
 
     if (event.key === 'ArrowDown') {
       this.#focusedIndex = (this.#focusedIndex + 1) % this.#options.length;
+      return;
+    }
+
+    if (event.key === 'Home') {
+      this.#focusedIndex = 0;
+      return;
+    }
+
+    if (event.key === 'End') {
+      this.#focusedIndex = this.#options.length - 1;
       return;
     }
 

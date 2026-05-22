@@ -25,6 +25,10 @@ export class ScrollBoxWidget extends InteractiveWidget {
   #dragStartY = 0;
   #dragStartOffset = 0;
 
+  #thumbDragging = false;
+  #thumbDragStartY = 0;
+  #thumbDragStartOffset = 0;
+
   constructor(options: ScrollBoxWidgetOptions) {
     super();
     this.#rect = this.initRect(options.x, options.y, options.width, options.height, {width: 20, height: 10});
@@ -63,12 +67,46 @@ export class ScrollBoxWidget extends InteractiveWidget {
     });
 
     this.on('mousedown', data => {
-      this.#dragScrolling = true;
-      this.#dragStartY = data.y;
-      this.#dragStartOffset = this.#scrollOffsetY;
+      const thumb = this.#scrollbarThumbGeometry();
+      if (data.x === thumb?.x && data.y >= thumb.trackY && data.y < thumb.trackY + thumb.trackHeight) {
+        if (data.y >= thumb.thumbY && data.y < thumb.thumbY + thumb.thumbSize) {
+          this.#thumbDragging = true;
+          this.#thumbDragStartY = data.y;
+          this.#thumbDragStartOffset = this.#scrollOffsetY;
+        } else if (data.y < thumb.thumbY) {
+          this.scrollBy(-this.#computeViewport().height);
+        } else {
+          this.scrollBy(this.#computeViewport().height);
+        }
+      } else {
+        this.#dragScrolling = true;
+        this.#dragStartY = data.y;
+        this.#dragStartOffset = this.#scrollOffsetY;
+      }
     });
 
     this.on('mousemove', data => {
+      if (this.#thumbDragging) {
+        if ((data.buttons ?? 0) === 0) {
+          this.#thumbDragging = false;
+          return;
+        }
+
+        const delta = data.y - this.#thumbDragStartY;
+        const maxScroll = this.#maxScrollOffset();
+        const viewport = this.#computeViewport();
+        const contentHeight = this.#computeContentHeight();
+        const thumbRatio = viewport.height / contentHeight;
+        const thumbSize = Math.max(1, Math.round(thumbRatio * viewport.height));
+        const scrollableRange = viewport.height - thumbSize;
+
+        if (scrollableRange > 0) {
+          this.scrollTo(this.#thumbDragStartOffset + Math.round((delta / scrollableRange) * maxScroll));
+        }
+
+        return;
+      }
+
       if (!this.#dragScrolling) {
         return;
       }
@@ -84,6 +122,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
     this.on('mouseup', () => {
       this.#dragScrolling = false;
+      this.#thumbDragging = false;
     });
   }
 
@@ -359,6 +398,34 @@ export class ScrollBoxWidget extends InteractiveWidget {
         bgRgba: 0x00_00_00_00,
       });
     }
+  }
+
+  #scrollbarThumbGeometry(): {x: number; trackY: number; trackHeight: number; thumbY: number; thumbSize: number} | undefined {
+    const maxScroll = this.#maxScrollOffset();
+    if (maxScroll === 0 && !this.#alwaysShowScrollbar) {
+      return undefined;
+    }
+
+    const viewport = this.#computeViewport();
+    const contentHeight = this.#computeContentHeight();
+    if (contentHeight <= 0) {
+      return undefined;
+    }
+
+    const thumbRatio = viewport.height / contentHeight;
+    const thumbSize = Math.max(1, Math.round(thumbRatio * viewport.height));
+    const scrollableRange = viewport.height - thumbSize;
+    const thumbOffset = maxScroll > 0
+      ? Math.round((this.#scrollOffsetY / maxScroll) * scrollableRange)
+      : 0;
+
+    return {
+      x: viewport.x + viewport.width,
+      trackY: viewport.y,
+      trackHeight: viewport.height,
+      thumbY: viewport.y + thumbOffset,
+      thumbSize,
+    };
   }
 }
 

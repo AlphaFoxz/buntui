@@ -4,31 +4,31 @@ Baseline: each core widget is compared against its closest HTML equivalent to id
 
 ## Design Issues
 
-### ProgressBar should not be focusable
+### ~~ProgressBar should not be focusable~~
 
-HTML `<progress>` is not interactive. Currently `ProgressBarWidget` extends `InteractiveWidget`, making it part of the Tab order with no meaningful keyboard behavior (`handleActiveKey` is a no-op). It should likely extend `TuiWidgetEntity` directly or have `acceptsFocus = false` by default.
+~~HTML `<progress>` is not interactive. Currently `ProgressBarWidget` extends `InteractiveWidget`, making it part of the Tab order with no meaningful keyboard behavior (`handleActiveKey` is a no-op). It should likely extend `TuiWidgetEntity` directly or have `acceptsFocus = false` by default.~~
 
-**Affected file:** `packages/core/src/widgets/progress-bar/ProgressBarWidget.ts`
+~~**Affected file:** `packages/core/src/widgets/progress-bar/ProgressBarWidget.ts`~~
 
 ---
 
 ## P1 — Core Interaction Gaps
 
-### Input: Clipboard support
+~~### Input: Clipboard support~~
 
-Missing Ctrl+C (copy), Ctrl+V (paste), Ctrl+X (cut). These are fundamental text editing operations.
+~~Missing Ctrl+C (copy), Ctrl+V (paste), Ctrl+X (cut). These are fundamental text editing operations.~~
 
-**Affected file:** `packages/core/src/widgets/input/InputWidget.ts`
+~~**Affected file:** `packages/core/src/widgets/input/InputWidget.ts`~~
 
-### Input: Undo/Redo
+~~### Input: Undo/Redo~~
 
-Missing Ctrl+Z (undo), Ctrl+Y / Ctrl+Shift+Z (redo). Standard text editing expectation.
+~~Missing Ctrl+Z (undo), Ctrl+Y / Ctrl+Shift+Z (redo). Standard text editing expectation.~~
 
-**Affected file:** `packages/core/src/widgets/input/InputWidget.ts`
+~~**Affected file:** `packages/core/src/widgets/input/InputWidget.ts`~~
 
-### Input: Double-click to select word, triple-click to select all
+~~### Input: Double-click to select word, triple-click to select all~~
 
-HTML `<input>` supports double-click to select the word under cursor and triple-click to select all text.
+~~HTML `<input>` supports double-click to select the word under cursor and triple-click to select all text.~~ Implemented: double-click selects word via `#wordRangeAt()`, triple-click selects all. Click count tracked by time (300ms) and position.
 
 **Affected file:** `packages/core/src/widgets/input/InputWidget.ts`
 
@@ -38,17 +38,17 @@ HTML inputs expose `select()` (select all) and `setSelectionRange(start, end, di
 
 **Affected file:** `packages/core/src/widgets/input/InputWidget.ts`
 
-### RadioGroup: Home/End keys
+~~### RadioGroup: Home/End keys~~
 
-ArrowUp/Down wrap around, but Home/End to jump to first/last option are missing. Standard arrow-key navigation complement.
+~~ArrowUp/Down wrap around, but Home/End to jump to first/last option are missing. Standard arrow-key navigation complement.~~
 
-**Affected file:** `packages/core/src/widgets/radio/RadioGroupWidget.ts`
+~~**Affected file:** `packages/core/src/widgets/radio/RadioGroupWidget.ts`~~
 
-### SelectButton: Home/End keys
+~~### SelectButton: Home/End keys~~
 
-Same as RadioGroup — ArrowLeft/Right cycle, but Home/End for first/last are missing.
+~~Same as RadioGroup — ArrowLeft/Right cycle, but Home/End for first/last are missing.~~
 
-**Affected file:** `packages/core/src/widgets/select-button/SelectButtonWidget.ts`
+~~**Affected file:** `packages/core/src/widgets/select-button/SelectButtonWidget.ts`~~
 
 ### ScrollBox: `scroll` event dispatch
 
@@ -90,11 +90,11 @@ Currently vertical-only. Missing `overflow-x` equivalent for horizontal scroll.
 
 **Affected file:** `packages/core/src/widgets/scroll-box/ScrollBoxWidget.ts`
 
-### ScrollBox: Scrollbar thumb drag
+~~### ScrollBox: Scrollbar thumb drag~~
 
-Clicking/dragging the scrollbar thumb should jump/scroll to the corresponding position. Currently only mouse wheel and content-area drag-scroll work.
+~~Clicking/dragging the scrollbar thumb should jump/scroll to the corresponding position. Currently only mouse wheel and content-area drag-scroll work.~~
 
-**Affected file:** `packages/core/src/widgets/scroll-box/ScrollBoxWidget.ts`
+~~**Affected file:** `packages/core/src/widgets/scroll-box/ScrollBoxWidget.ts`~~
 
 ---
 
@@ -120,6 +120,6 @@ No distinction between keyboard-triggered focus and click-triggered focus. HTML 
 
 No global keyboard shortcut attribute. Would need a scene-level shortcut registry.
 
-### Input: `placeholder` style customization
+### ~~Input: `placeholder` style customization~~
 
-Placeholder color is hardcoded to `0x6C_70_86_FF`. Should be configurable via options.
+~~Placeholder color was hardcoded to `0x6C_70_86_FF`. Now configurable via `placeholderColorFg` option (defaults to `theme.colors.textMuted`).~~

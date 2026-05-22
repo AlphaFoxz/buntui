@@ -94,6 +94,38 @@ describe('keyboard navigation', () => {
     expect(radio.value).toBe(0);
   });
 
+  it('Home jumps to first option', () => {
+    const radio = createRadio();
+    radio.handleKey(key({key: 'ArrowDown'})); // 0
+    radio.handleKey(key({key: 'ArrowDown'})); // 1
+    radio.handleKey(key({key: 'ArrowDown'})); // 2
+    radio.handleKey(key({key: 'Home'}));
+    radio.handleKey(key({key: 'Enter'}));
+    expect(radio.value).toBe(0);
+  });
+
+  it('End jumps to last option', () => {
+    const radio = createRadio();
+    radio.handleKey(key({key: 'ArrowDown'})); // 0
+    radio.handleKey(key({key: 'End'}));
+    radio.handleKey(key({key: 'Enter'}));
+    expect(radio.value).toBe(2);
+  });
+
+  it('Home on empty options does nothing', () => {
+    const radio = createRadio({options: []});
+    radio.handleKey(key({key: 'Home'}));
+    radio.handleKey(key({key: 'Enter'}));
+    expect(radio.value).toBe(-1);
+  });
+
+  it('End on empty options does nothing', () => {
+    const radio = createRadio({options: []});
+    radio.handleKey(key({key: 'End'}));
+    radio.handleKey(key({key: 'Enter'}));
+    expect(radio.value).toBe(-1);
+  });
+
   it('does nothing with empty options', () => {
     const radio = createRadio({options: []});
     radio.handleKey(key({key: 'ArrowDown'}));
@@ -153,8 +185,7 @@ describe('keyboard selection', () => {
 describe('mouse selection', () => {
   it('click selects item by y position', () => {
     const radio = createRadio({x: 5, y: 5, height: 3});
-    // Click on second option: y=7 → innerY = (7-1) - 5 = 1
-    radio.dispatch('mousedown', mouse({x: 7, y: 7}));
+    radio.dispatch('mousedown', mouse({x: 6, y: 6}));
     expect(radio.value).toBe(1);
     expect(radio.selectedLabel).toBe('Green');
   });
@@ -163,7 +194,7 @@ describe('mouse selection', () => {
     const radio = createRadio({x: 5, y: 5, height: 3});
     const changes: unknown[] = [];
     radio.on('change', data => changes.push(data));
-    radio.dispatch('mousedown', mouse({x: 7, y: 6}));
+    radio.dispatch('mousedown', mouse({x: 6, y: 5}));
     expect(changes).toHaveLength(1);
     expect((changes[0] as Record<string, unknown>).value).toBe(0);
     expect((changes[0] as Record<string, unknown>).label).toBe('Red');
@@ -171,13 +202,13 @@ describe('mouse selection', () => {
 
   it('click outside option range does nothing', () => {
     const radio = createRadio({x: 5, y: 5, height: 5});
-    radio.dispatch('mousedown', mouse({x: 7, y: 9})); // innerY=3, only 3 options (0-2)
+    radio.dispatch('mousedown', mouse({x: 6, y: 8})); // innerY=3, only 3 options (0-2)
     expect(radio.value).toBe(-1);
   });
 
   it('disabled widget ignores click', () => {
     const radio = createRadio({disabled: true, x: 5, y: 5});
-    radio.dispatch('mousedown', mouse({x: 7, y: 6}));
+    radio.dispatch('mousedown', mouse({x: 6, y: 5}));
     expect(radio.value).toBe(-1);
   });
 });

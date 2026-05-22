@@ -156,8 +156,7 @@ describe('hitTest', () => {
     const scene = new TuiScene();
     const widget = createWidget({x: 0, y: 0, width: 10, height: 5});
     scene.mount(widget);
-    // MouseEvent uses 1-based SGR coordinates, hitTest converts to 0-based
-    const result = scene.hitTest(mouseEvent(5, 3)); // 1-based → 0-based (4, 2)
+    const result = scene.hitTest(mouseEvent(4, 2));
     expect(result).toBe(widget);
   });
 
@@ -165,7 +164,7 @@ describe('hitTest', () => {
     const scene = new TuiScene();
     const widget = createWidget({x: 0, y: 0, width: 10, height: 5});
     scene.mount(widget);
-    const result = scene.hitTest(mouseEvent(20, 20));
+    const result = scene.hitTest(mouseEvent(19, 19));
     expect(result).toBeUndefined();
   });
 

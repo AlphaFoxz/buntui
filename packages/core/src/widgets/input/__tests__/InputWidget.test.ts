@@ -1,6 +1,8 @@
-import {it, expect, describe} from 'bun:test';
+import {it, expect, describe, beforeEach, afterEach} from 'bun:test';
 import {InputWidget} from '../InputWidget';
 import type {KeyboardEvent, MouseEvent} from '../../../events/types';
+import {setClipboard} from '../../../clipboard';
+import type {ClipboardProvider} from '../../../clipboard/types';
 
 function key(options: Partial<KeyboardEvent> & {key: string}): KeyboardEvent {
   return {
@@ -350,8 +352,7 @@ describe('updateValue', () => {
 describe('mouse click', () => {
   it('click positions cursor at the clicked column', () => {
     const input = createInput({value: 'hello', x: 5, y: 5});
-    // innerX = (8 - 1) - 5 - 1 = 1 → char index 1
-    input.dispatch('mousedown', mouse({x: 8, y: 6}));
+    input.dispatch('mousedown', mouse({x: 7, y: 5}));
     input.handleKey(key({key: 'X'}));
     expect(input.value).toBe('hXello');
   });
@@ -360,20 +361,65 @@ describe('mouse click', () => {
     const input = createInput({value: 'hello'});
     input.handleKey(key({key: 'a', ctrlKey: true}));
     expect(input.getSelection()).toBeDefined();
-    input.dispatch('mousedown', mouse({x: 8, y: 6}));
+    input.dispatch('mousedown', mouse({x: 7, y: 5}));
     expect(input.getSelection()).toBeUndefined();
   });
 
   it('shift-click extends selection from cursor', () => {
     const input = createInput({value: 'hello', x: 5, y: 5});
-    // Click at col 1 → cursor at index 1
-    input.dispatch('mousedown', mouse({x: 8, y: 6}));
-    // Shift-click at col 4 → extend selection from 1 to 4
-    input.dispatch('mousedown', mouse({x: 11, y: 6, shiftKey: true}));
+    input.dispatch('mousedown', mouse({x: 7, y: 5}));
+    input.dispatch('mousedown', mouse({x: 10, y: 5, shiftKey: true}));
     const sel = input.getSelection();
     expect(sel).toBeDefined();
     expect(sel!.start).toBe(1);
     expect(sel!.end).toBe(4);
+  });
+
+  it('double-click selects word', () => {
+    const input = createInput({value: 'hello world', x: 5, y: 5});
+    input.dispatch('mousedown', mouse({x: 8, y: 5}));
+    input.dispatch('mousedown', mouse({x: 8, y: 5}));
+    const sel = input.getSelection();
+    expect(sel).toBeDefined();
+    expect(sel!.start).toBe(0);
+    expect(sel!.end).toBe(5);
+  });
+
+  it('double-click selects word at mid-character position', () => {
+    const input = createInput({value: 'hello world', x: 5, y: 5});
+    input.dispatch('mousedown', mouse({x: 12, y: 5}));
+    input.dispatch('mousedown', mouse({x: 12, y: 5}));
+    const sel = input.getSelection();
+    expect(sel).toBeDefined();
+    expect(sel!.start).toBe(6);
+    expect(sel!.end).toBe(11);
+  });
+
+  it('triple-click selects all', () => {
+    const input = createInput({value: 'hello world', x: 5, y: 5});
+    input.dispatch('mousedown', mouse({x: 8, y: 5}));
+    input.dispatch('mousedown', mouse({x: 8, y: 5}));
+    input.dispatch('mousedown', mouse({x: 8, y: 5}));
+    const sel = input.getSelection();
+    expect(sel).toBeDefined();
+    expect(sel!.start).toBe(0);
+    expect(sel!.end).toBe(11);
+  });
+
+  it('click after timeout resets to single click', () => {
+    const input = createInput({value: 'hello', x: 5, y: 5});
+    const originalNow = Date.now;
+    let currentTime = 0;
+    Date.now = () => currentTime;
+    try {
+      currentTime = 0;
+      input.dispatch('mousedown', mouse({x: 7, y: 5}));
+      currentTime = 500;
+      input.dispatch('mousedown', mouse({x: 7, y: 5}));
+      expect(input.getSelection()).toBeUndefined();
+    } finally {
+      Date.now = originalNow;
+    }
   });
 });
 
@@ -542,5 +588,498 @@ describe('edge cases', () => {
     expect(r.y).toBe(20);
     expect(r.width).toBe(30);
     expect(r.height).toBe(5);
+  });
+});
+
+class MockClipboard {
+  #content = '';
+
+  read(): string {
+    return this.#content;
+  }
+
+  write(text: string): void {
+    this.#content = text;
+  }
+}
+
+describe('clipboard support', () => {
+  let clipboard: MockClipboard;
+  let previousClipboard: ClipboardProvider;
+
+  beforeEach(() => {
+    clipboard = new MockClipboard();
+    previousClipboard = setClipboard(clipboard);
+  });
+
+  afterEach(() => {
+    setClipboard(previousClipboard);
+  });
+
+  describe('Ctrl+C (copy)', () => {
+    it('copies selected text to clipboard', () => {
+      const input = createInput({value: 'hello'});
+      input.handleKey(key({key: 'a', ctrlKey: true}));
+      input.handleKey(key({key: 'c', ctrlKey: true}));
+      expect(clipboard.read()).toBe('hello');
+    });
+
+    it('copies partial selection', () => {
+      const input = createInput({value: 'hello'});
+      input.handleKey(key({key: 'Home'}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'c', ctrlKey: true}));
+      expect(clipboard.read()).toBe('he');
+    });
+
+    it('does nothing without selection', () => {
+      const input = createInput({value: 'hello'});
+      input.handleKey(key({key: 'c', ctrlKey: true}));
+      expect(clipboard.read()).toBe('');
+    });
+
+    it('dispatches copy event', () => {
+      const input = createInput({value: 'hello'});
+      const events: unknown[] = [];
+      input.on('copy', data => events.push(data));
+      input.handleKey(key({key: 'a', ctrlKey: true}));
+      input.handleKey(key({key: 'c', ctrlKey: true}));
+      expect(events).toHaveLength(1);
+      expect((events[0] as Record<string, string>).text).toBe('hello');
+    });
+
+    it('does not modify value', () => {
+      const input = createInput({value: 'hello'});
+      input.handleKey(key({key: 'a', ctrlKey: true}));
+      input.handleKey(key({key: 'c', ctrlKey: true}));
+      expect(input.value).toBe('hello');
+    });
+  });
+
+  describe('Ctrl+X (cut)', () => {
+    it('cuts selected text to clipboard', () => {
+      const input = createInput({value: 'hello'});
+      input.handleKey(key({key: 'Home'}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'x', ctrlKey: true}));
+      expect(clipboard.read()).toBe('he');
+      expect(input.value).toBe('llo');
+    });
+
+    it('cuts all text with Ctrl+A then Ctrl+X', () => {
+      const input = createInput({value: 'hello'});
+      input.handleKey(key({key: 'a', ctrlKey: true}));
+      input.handleKey(key({key: 'x', ctrlKey: true}));
+      expect(clipboard.read()).toBe('hello');
+      expect(input.value).toBe('');
+    });
+
+    it('does nothing without selection', () => {
+      const input = createInput({value: 'hello'});
+      input.handleKey(key({key: 'x', ctrlKey: true}));
+      expect(clipboard.read()).toBe('');
+      expect(input.value).toBe('hello');
+    });
+
+    it('dispatches cut event', () => {
+      const input = createInput({value: 'hello'});
+      const events: unknown[] = [];
+      input.on('cut', data => events.push(data));
+      input.handleKey(key({key: 'a', ctrlKey: true}));
+      input.handleKey(key({key: 'x', ctrlKey: true}));
+      expect(events).toHaveLength(1);
+      expect((events[0] as Record<string, string>).text).toBe('hello');
+    });
+
+    it('dispatches input event', () => {
+      const input = createInput({value: 'hello'});
+      const events: unknown[] = [];
+      input.on('input', data => events.push(data));
+      input.handleKey(key({key: 'a', ctrlKey: true}));
+      input.handleKey(key({key: 'x', ctrlKey: true}));
+      expect(events).toHaveLength(1);
+      expect((events[0] as Record<string, string>).value).toBe('');
+    });
+
+    it('respects readonly mode', () => {
+      const input = new InputWidget({value: 'hello', readonly: true});
+      input.handleKey(key({key: 'a', ctrlKey: true}));
+      input.handleKey(key({key: 'x', ctrlKey: true}));
+      expect(clipboard.read()).toBe('');
+      expect(input.value).toBe('hello');
+    });
+  });
+
+  describe('Ctrl+V (paste)', () => {
+    it('pastes text at cursor position', () => {
+      const input = createInput({value: 'ab'});
+      input.handleKey(key({key: 'ArrowLeft'}));
+      clipboard.write('XY');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('aXYb');
+    });
+
+    it('pastes at beginning', () => {
+      const input = createInput({value: 'hello'});
+      input.handleKey(key({key: 'Home'}));
+      clipboard.write('say ');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('say hello');
+    });
+
+    it('pastes at end', () => {
+      const input = createInput({value: 'hello'});
+      clipboard.write(' world');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('hello world');
+    });
+
+    it('replaces selection then pastes', () => {
+      const input = createInput({value: 'hello world'});
+      input.handleKey(key({key: 'Home'}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      clipboard.write('goodbye');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('goodbye world');
+    });
+
+    it('does nothing when clipboard is empty', () => {
+      const input = createInput({value: 'hello'});
+      clipboard.write('');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('hello');
+    });
+
+    it('respects maxLength', () => {
+      const input = createInput({value: 'ab', maxLength: 5});
+      clipboard.write('cdefgh');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('abcde');
+    });
+
+    it('does not paste when at maxLength', () => {
+      const input = createInput({value: 'abc', maxLength: 3});
+      clipboard.write('X');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('abc');
+    });
+
+    it('pastes after deleting selection even at maxLength', () => {
+      const input = createInput({value: 'abc', maxLength: 3});
+      input.handleKey(key({key: 'a', ctrlKey: true}));
+      clipboard.write('XY');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('XY');
+    });
+
+    it('dispatches paste event', () => {
+      const input = createInput({value: 'ab'});
+      clipboard.write('X');
+      const events: unknown[] = [];
+      input.on('paste', data => events.push(data));
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(events).toHaveLength(1);
+      expect((events[0] as Record<string, string>).text).toBe('X');
+    });
+
+    it('dispatches input event', () => {
+      const input = createInput({value: 'ab'});
+      clipboard.write('X');
+      const events: unknown[] = [];
+      input.on('input', data => events.push(data));
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(events).toHaveLength(1);
+      expect((events[0] as Record<string, string>).value).toBe('abX');
+    });
+
+    it('respects readonly mode', () => {
+      const input = new InputWidget({value: 'hello', readonly: true});
+      clipboard.write('world');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('hello');
+    });
+
+    it('handles multi-byte characters', () => {
+      const input = createInput({value: 'ab'});
+      clipboard.write('你好');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('ab你好');
+    });
+  });
+
+  describe('cut-copy-paste round trip', () => {
+    it('cut from one position and paste at another', () => {
+      const input = createInput({value: 'hello world'});
+      input.handleKey(key({key: 'Home'}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'x', ctrlKey: true}));
+      expect(input.value).toBe(' world');
+      input.handleKey(key({key: 'End'}));
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe(' worldhello');
+    });
+
+    it('copy does not remove text, paste inserts copy', () => {
+      const input = createInput({value: 'abc'});
+      input.handleKey(key({key: 'a', ctrlKey: true}));
+      input.handleKey(key({key: 'c', ctrlKey: true}));
+      input.handleKey(key({key: 'End'}));
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('abcabc');
+    });
+  });
+});
+
+describe('undo/redo', () => {
+  describe('Ctrl+Z (undo)', () => {
+    it('undoes a character insertion', () => {
+      const input = createInput();
+      input.handleKey(key({key: 'a'}));
+      input.handleKey(key({key: 'b'}));
+      expect(input.value).toBe('ab');
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('a');
+    });
+
+    it('undoes multiple insertions step by step', () => {
+      const input = createInput();
+      input.handleKey(key({key: 'a'}));
+      input.handleKey(key({key: 'b'}));
+      input.handleKey(key({key: 'c'}));
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('ab');
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('a');
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('');
+    });
+
+    it('undoes backspace', () => {
+      const input = createInput({value: 'abc'});
+      input.handleKey(key({key: 'Backspace'}));
+      expect(input.value).toBe('ab');
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('abc');
+    });
+
+    it('undoes delete', () => {
+      const input = createInput({value: 'abc'});
+      input.handleKey(key({key: 'Home'}));
+      input.handleKey(key({key: 'Delete'}));
+      expect(input.value).toBe('bc');
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('abc');
+    });
+
+    it('undoes selection deletion', () => {
+      const input = createInput({value: 'hello'});
+      input.handleKey(key({key: 'Home'}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'Backspace'}));
+      expect(input.value).toBe('llo');
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('hello');
+    });
+
+    it('undoes Ctrl+Backspace (word delete)', () => {
+      const input = createInput({value: 'hello world'});
+      input.handleKey(key({key: 'Backspace', ctrlKey: true}));
+      expect(input.value).toBe('hello ');
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('hello world');
+    });
+
+    it('undoes Ctrl+Delete (word delete forward)', () => {
+      const input = createInput({value: 'hello world'});
+      input.handleKey(key({key: 'Home'}));
+      input.handleKey(key({key: 'Delete', ctrlKey: true}));
+      expect(input.value).toBe(' world');
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('hello world');
+    });
+
+    it('restores cursor position', () => {
+      const input = createInput();
+      input.handleKey(key({key: 'a'}));
+      input.handleKey(key({key: 'b'}));
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      input.handleKey(key({key: 'X'}));
+      expect(input.value).toBe('aX');
+    });
+
+    it('restores selection', () => {
+      const input = createInput({value: 'hello'});
+      input.handleKey(key({key: 'a', ctrlKey: true}));
+      input.handleKey(key({key: 'Backspace'}));
+      expect(input.value).toBe('');
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      const sel = input.getSelection();
+      expect(sel).toBeDefined();
+      expect(sel!.text).toBe('hello');
+    });
+
+    it('does nothing when undo stack is empty', () => {
+      const input = createInput({value: 'hello'});
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('hello');
+    });
+
+    it('is blocked in readonly mode', () => {
+      const input = new InputWidget({value: 'hello', readonly: true});
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('hello');
+    });
+
+    it('dispatches undo event', () => {
+      const input = createInput();
+      input.handleKey(key({key: 'a'}));
+      const events: unknown[] = [];
+      input.on('undo', data => events.push(data));
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(events).toHaveLength(1);
+      expect((events[0] as Record<string, string>).value).toBe('');
+    });
+
+    it('clears redo stack on new edit after undo', () => {
+      const input = createInput();
+      input.handleKey(key({key: 'a'}));
+      input.handleKey(key({key: 'b'}));
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('a');
+      input.handleKey(key({key: 'c'}));
+      input.handleKey(key({key: 'y', ctrlKey: true}));
+      expect(input.value).toBe('ac');
+    });
+  });
+
+  describe('Ctrl+Y (redo)', () => {
+    it('redoes an undone character insertion', () => {
+      const input = createInput();
+      input.handleKey(key({key: 'a'}));
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('');
+      input.handleKey(key({key: 'y', ctrlKey: true}));
+      expect(input.value).toBe('a');
+    });
+
+    it('redoes multiple steps', () => {
+      const input = createInput();
+      input.handleKey(key({key: 'a'}));
+      input.handleKey(key({key: 'b'}));
+      input.handleKey(key({key: 'c'}));
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('a');
+      input.handleKey(key({key: 'y', ctrlKey: true}));
+      expect(input.value).toBe('ab');
+      input.handleKey(key({key: 'y', ctrlKey: true}));
+      expect(input.value).toBe('abc');
+    });
+
+    it('does nothing when redo stack is empty', () => {
+      const input = createInput({value: 'hello'});
+      input.handleKey(key({key: 'y', ctrlKey: true}));
+      expect(input.value).toBe('hello');
+    });
+
+    it('is blocked in readonly mode', () => {
+      const input = new InputWidget({value: 'hello', readonly: true});
+      input.handleKey(key({key: 'y', ctrlKey: true}));
+      expect(input.value).toBe('hello');
+    });
+
+    it('dispatches redo event', () => {
+      const input = createInput();
+      input.handleKey(key({key: 'a'}));
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      const events: unknown[] = [];
+      input.on('redo', data => events.push(data));
+      input.handleKey(key({key: 'y', ctrlKey: true}));
+      expect(events).toHaveLength(1);
+      expect((events[0] as Record<string, string>).value).toBe('a');
+    });
+
+    it('pushes redo state back to undo on undo-after-redo', () => {
+      const input = createInput();
+      input.handleKey(key({key: 'a'}));
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      input.handleKey(key({key: 'y', ctrlKey: true}));
+      expect(input.value).toBe('a');
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('');
+    });
+  });
+
+  describe('undo/redo with clipboard operations', () => {
+    let clipboard: MockClipboard;
+    let previousClipboard: ClipboardProvider;
+
+    beforeEach(() => {
+      clipboard = new MockClipboard();
+      previousClipboard = setClipboard(clipboard);
+    });
+
+    afterEach(() => {
+      setClipboard(previousClipboard);
+    });
+
+    it('undoes cut', () => {
+      const input = createInput({value: 'hello'});
+      input.handleKey(key({key: 'Home'}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'ArrowRight', shiftKey: true}));
+      input.handleKey(key({key: 'x', ctrlKey: true}));
+      expect(input.value).toBe('llo');
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('hello');
+    });
+
+    it('undoes paste', () => {
+      const input = createInput({value: 'ab'});
+      clipboard.write('XY');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('abXY');
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('ab');
+    });
+
+    it('redoes paste', () => {
+      const input = createInput({value: 'ab'});
+      clipboard.write('XY');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('ab');
+      input.handleKey(key({key: 'y', ctrlKey: true}));
+      expect(input.value).toBe('abXY');
+    });
+  });
+
+  describe('undo stack limit', () => {
+    it('caps at 100 entries', () => {
+      const input = createInput();
+      for (let i = 0; i < 110; i++) {
+        input.handleKey(key({key: 'a'}));
+      }
+
+      expect(input.value.length).toBe(110);
+      for (let i = 0; i < 100; i++) {
+        input.handleKey(key({key: 'z', ctrlKey: true}));
+      }
+
+      expect(input.value.length).toBe(10);
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value.length).toBe(10);
+    });
   });
 });

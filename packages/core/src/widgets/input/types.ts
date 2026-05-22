@@ -9,6 +9,7 @@ export type InputWidgetOptions = {
   colorFg?: TuiColor;
   colorBg?: TuiColor;
   placeholder?: string;
+  placeholderColorFg?: TuiColor;
   value?: string;
   borderColorUnfocused?: TuiColor;
   borderColorFocused?: TuiColor;

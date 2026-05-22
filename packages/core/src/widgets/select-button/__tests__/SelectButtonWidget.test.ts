@@ -112,6 +112,52 @@ describe('keyboard navigation', () => {
     expect(bar.value).toBe('Tab3');
   });
 
+  it('Home selects first option', () => {
+    const bar = createSelectButton({value: 'Tab3'});
+    bar.handleKey(key({key: 'Home'}));
+    expect(bar.value).toBe('Tab1');
+  });
+
+  it('End selects last option', () => {
+    const bar = createSelectButton();
+    bar.handleKey(key({key: 'End'}));
+    expect(bar.value).toBe('Tab3');
+  });
+
+  it('Home dispatches change event', () => {
+    const bar = createSelectButton({value: 'Tab2'});
+    const changes: unknown[] = [];
+    bar.on('change', data => changes.push(data));
+    bar.handleKey(key({key: 'Home'}));
+    expect(changes).toHaveLength(1);
+    expect((changes[0] as Record<string, unknown>).value).toBe('Tab1');
+  });
+
+  it('End dispatches change event', () => {
+    const bar = createSelectButton();
+    const changes: unknown[] = [];
+    bar.on('change', data => changes.push(data));
+    bar.handleKey(key({key: 'End'}));
+    expect(changes).toHaveLength(1);
+    expect((changes[0] as Record<string, unknown>).value).toBe('Tab3');
+  });
+
+  it('Home does not dispatch change when already on first', () => {
+    const bar = createSelectButton({value: 'Tab1'});
+    const changes: unknown[] = [];
+    bar.on('change', data => changes.push(data));
+    bar.handleKey(key({key: 'Home'}));
+    expect(changes).toHaveLength(0);
+  });
+
+  it('End does not dispatch change when already on last', () => {
+    const bar = createSelectButton({value: 'Tab3'});
+    const changes: unknown[] = [];
+    bar.on('change', data => changes.push(data));
+    bar.handleKey(key({key: 'End'}));
+    expect(changes).toHaveLength(0);
+  });
+
   it('does nothing with empty options', () => {
     const bar = createSelectButton({options: []});
     bar.handleKey(key({key: 'ArrowRight'}));
