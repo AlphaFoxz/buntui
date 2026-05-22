@@ -119,6 +119,10 @@ declare global {
     colorBgNormal?: TuiColor;
     borderColorNormal?: TuiColor;
     borderStyleNormal?: TuiBorderStyle;
+    colorFgHovered?: TuiColor;
+    colorBgHovered?: TuiColor;
+    borderColorHovered?: TuiColor;
+    borderStyleHovered?: TuiBorderStyle;
     colorFgFocused?: TuiColor;
     colorBgFocused?: TuiColor;
     borderColorFocused?: TuiColor;
