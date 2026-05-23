@@ -15,7 +15,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
   readonly #layoutChildren: TuiWidgetEntity[] = [];
   readonly #innerBox: BoxWidget;
 
-  readonly #gap: number;
+  #gap: number;
   readonly #scrollSpeed: number;
   readonly #alwaysShowScrollbar: boolean;
   readonly #scrollbarColor: number;
@@ -265,6 +265,11 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
   updatePadding(padding: Parameters<BoxWidget['updatePadding']>[0]): void {
     this.#innerBox.updatePadding(padding);
+    this.#layoutDirty = true;
+  }
+
+  updateGap(gap: number): void {
+    this.#gap = gap;
     this.#layoutDirty = true;
   }
 

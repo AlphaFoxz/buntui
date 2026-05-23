@@ -68,15 +68,15 @@ describe('compile', () => {
   });
 
   describe('v-for', () => {
-    it('generates for-of loop for array iteration', () => {
+    it('generates for-of loop with unref for array iteration', () => {
       const result = compile('<template><Text v-for="item in items" :value="item"/></template>');
-      expect(result.code).toContain('for (const item of items)');
+      expect(result.code).toContain('for (const item of unref(items))');
       expect(result.code).toContain('createTextWidget');
     });
 
-    it('generates entries() loop for indexed iteration', () => {
+    it('generates entries() loop with unref for indexed iteration', () => {
       const result = compile('<template><Text v-for="(item, i) in items"/></template>');
-      expect(result.code).toContain('items.entries()');
+      expect(result.code).toContain('unref(items).entries()');
     });
 
     it('generates numeric range loop', () => {
@@ -106,6 +106,16 @@ describe('compile', () => {
       const result = compile('<template><Input v-model="query"/></template>');
       expect(result.code).toContain('unref(query)');
       expect(result.code).toContain('query.value = $event.value');
+    });
+
+    it('generates ref index access assignment for array v-model', () => {
+      const result = compile('<template><Input v-model="values[index]"/></template>');
+      expect(result.code).toContain('values.value[index] = $event.value');
+    });
+
+    it('generates direct assignment for member expression v-model', () => {
+      const result = compile('<template><Input v-model="state.name"/></template>');
+      expect(result.code).toContain('state.name = $event.value');
     });
 
     it('generates checked binding for Checkbox', () => {
@@ -220,7 +230,7 @@ describe('compile', () => {
         + '</template>';
       const result = compile(sfc);
       expect(result.code).toContain('createScrollBox');
-      expect(result.code).toContain('for (const [index, item] of items.entries())');
+      expect(result.code).toContain('for (const [index, item] of unref(items).entries())');
       expect(result.code).toContain('createTextWidget');
     });
 
@@ -452,7 +462,7 @@ describe('compile', () => {
         '<template><CompA v-for="item in items"/></template>'
         + '<script setup>import CompA from "./CompA.vue";</script>',
       );
-      expect(result.code).toContain('for (const item of items)');
+      expect(result.code).toContain('for (const item of unref(items))');
       expect(result.code).toContain('CompA.setup(__scene)');
     });
   });

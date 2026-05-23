@@ -89,7 +89,7 @@ export class InputWidget extends InteractiveWidget {
   readonly #placeholderColorFg: number;
   readonly #selectionBgColor: number;
   readonly #selectionFgColor: number;
-  readonly #label: string;
+  #label: string;
   #isReadonly: boolean;
 
   #value: string;
@@ -237,6 +237,10 @@ export class InputWidget extends InteractiveWidget {
 
   setReadonly(value: boolean): void {
     this.#isReadonly = value;
+  }
+
+  setLabel(value: string): void {
+    this.#label = value;
   }
 
   updateValue(newValue: string): void {

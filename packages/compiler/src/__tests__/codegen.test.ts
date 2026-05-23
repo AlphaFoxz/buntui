@@ -312,7 +312,7 @@ describe('codegen', () => {
       };
       const root = makeRoot([list], [], new Set(['createBox']));
       const result = gen(root);
-      expect(result.code).toContain('for (const item of items) {');
+      expect(result.code).toContain('for (const item of unref(items)) {');
     });
 
     it('generates entries() loop for array with index', () => {
@@ -326,7 +326,7 @@ describe('codegen', () => {
       };
       const root = makeRoot([list], [], new Set(['createBox']));
       const result = gen(root);
-      expect(result.code).toContain('for (const [idx, item] of items.entries()) {');
+      expect(result.code).toContain('for (const [idx, item] of unref(items).entries()) {');
     });
 
     it('generates numeric range loop', () => {

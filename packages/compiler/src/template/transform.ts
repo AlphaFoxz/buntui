@@ -290,6 +290,81 @@ function applyModifier(mod: string, raw: string): string {
   return raw;
 }
 
+function isValidModelExpression(expr: string): boolean {
+  let i = 0;
+  if (i >= expr.length || !/[a-zA-Z_$]/v.test(expr[i]!)) {
+    return false;
+  }
+
+  while (i < expr.length && /[\w$]/v.test(expr[i]!)) {
+    i++;
+  }
+
+  while (i < expr.length) {
+    if (expr[i] === '.') {
+      i++;
+      if (i >= expr.length || !/[a-zA-Z_$]/v.test(expr[i]!)) {
+        return false;
+      }
+
+      while (i < expr.length && /[\w$]/v.test(expr[i]!)) {
+        i++;
+      }
+    } else if (expr[i] === '[') {
+      i++;
+      let depth = 1;
+      while (i < expr.length && depth > 0) {
+        const ch = expr[i]!;
+        switch (ch) {
+          case '[': {
+            depth++;
+
+            break;
+          }
+
+          case ']': {
+            depth--;
+
+            break;
+          }
+
+          case '\'':
+          case '"': {
+            i++;
+            while (i < expr.length && expr[i] !== ch) {
+              if (expr[i] === '\\') {
+                i++;
+              }
+
+              i++;
+            }
+
+            if (i >= expr.length) {
+              return false;
+            }
+
+            break;
+          }
+
+          default: {
+            break;
+          }
+        }
+
+        i++;
+      }
+
+      if (depth !== 0) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string): DirectiveResult[] | undefined {
   if (dir.name === 'if' || dir.name === 'else-if' || dir.name === 'else' || dir.name === 'for') {
     return undefined;
@@ -320,7 +395,7 @@ function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string)
 
     const expression = dir.exp.content;
 
-    if (!/^[a-zA-Z_$][\w$]*(\.[a-zA-Z_$][\w$]*)*$/v.test(expression)) {
+    if (!isValidModelExpression(expression)) {
       throw new Error(`v-model expression must be a simple identifier or member expression at ${dir.loc.start.line}:${dir.loc.start.column}`);
     }
 
@@ -346,9 +421,17 @@ function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string)
     }
 
     const isSimpleIdentifier = /^[a-zA-Z_$][\w$]*$/v.test(expression);
-    const assignment = isSimpleIdentifier
-      ? `${expression}.value = ${valueExpr}`
-      : `${expression} = ${valueExpr}`;
+    const refIndexMatch = /^[a-zA-Z_$][\w$]*(\[)/v.exec(expression);
+    let assignment: string;
+    if (isSimpleIdentifier) {
+      assignment = `${expression}.value = ${valueExpr}`;
+    } else if (refIndexMatch) {
+      const root = refIndexMatch[0].slice(0, -1);
+      const rest = expression.slice(root.length);
+      assignment = `${root}.value${rest} = ${valueExpr}`;
+    } else {
+      assignment = `${expression} = ${valueExpr}`;
+    }
 
     return [
       {

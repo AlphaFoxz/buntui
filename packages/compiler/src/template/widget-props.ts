@@ -38,7 +38,6 @@ export const FLAG_PROP_MAP: Record<string, string> = {
   tabs: 'setOptions',
   options: 'setOptions',
   visible: 'setVisible',
-  hijack: 'hijackConsole',
 };
 
-export const BOOLEAN_FLAGS = new Set(['disabled', 'checked', 'readonly', 'draggable', 'hijack']);
+export const BOOLEAN_FLAGS = new Set(['disabled', 'checked', 'readonly', 'draggable']);

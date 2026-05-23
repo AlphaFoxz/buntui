@@ -6,6 +6,7 @@ import type {TuiBackend, TuiBackendEventHandler} from '../TuiBackend';
 import type {Focusable} from '../../widgets/Focusable';
 import {TuiWidgetEntity} from '../../widgets/TuiWidgetEntity';
 import type {DrawListBuffer as DLB} from '../../draw_list/DrawListBuffer';
+import {ScrollBoxWidget} from '../../widgets/scroll-box/ScrollBoxWidget';
 
 class MockBackend implements TuiBackend {
   #handler: TuiBackendEventHandler | undefined;
@@ -33,8 +34,20 @@ class FocusableWidget extends TuiWidgetEntity implements Focusable {
   focused = false;
   acceptsFocus = true;
   readonly keyEvents: KeyboardEvent[] = [];
+  readonly #intrinsicHeight: number;
+
+  constructor(intrinsicHeight?: number) {
+    super();
+    this.#intrinsicHeight = intrinsicHeight ?? 0;
+  }
 
   override emitDrawCommands(_buf: DLB): void {}
+
+  override intrinsicSize() {
+    return this.#intrinsicHeight > 0
+      ? {width: this.rect.width, height: this.#intrinsicHeight}
+      : undefined;
+  }
 
   focus(): void {
     this.focused = true;
@@ -303,6 +316,76 @@ describe('FocusManager', () => {
       tabManager.focusWidget(orphan);
       backend.emit(TuiEventType.KeyboardEvent, keyEvent('Tab'));
       expect(tabManager.focusedWidget).toBe(widgets[0]);
+    });
+  });
+
+  describe('scroll-into-view on focus', () => {
+    it('scrolls ScrollBox ancestor when focusing a child widget', () => {
+      const sb = new ScrollBoxWidget({
+        x: 0, y: 0, width: 20, height: 10,
+        borderStyle: 'solid',
+        borderTop: true, borderRight: true, borderBottom: true, borderLeft: true,
+      });
+
+      const children: FocusableWidget[] = [];
+      for (let i = 0; i < 5; i++) {
+        const child = new FocusableWidget(5);
+        sb.addChild(child);
+        children.push(child);
+      }
+
+      const list = children as Array<TuiWidgetEntity & Focusable>;
+      const mgr = new FocusManager(() => ({getFocusableWidgets: () => list} as any));
+      mgr.start();
+
+      expect(sb.scrollOffsetY).toBe(0);
+      mgr.focusWidget(children[4]!);
+      expect(sb.scrollOffsetY).toBeGreaterThan(0);
+
+      mgr.stop();
+    });
+
+    it('does not throw for widget without ScrollBox ancestor', () => {
+      const standalone = new FocusableWidget();
+      const list = [standalone] as Array<TuiWidgetEntity & Focusable>;
+      const mgr = new FocusManager(() => ({getFocusableWidgets: () => list} as any));
+      mgr.start();
+
+      expect(() => mgr.focusWidget(standalone)).not.toThrow();
+      expect(standalone.focused).toBe(true);
+
+      mgr.stop();
+    });
+
+    it('scrolls into view via Tab navigation', () => {
+      const sb = new ScrollBoxWidget({
+        x: 0, y: 0, width: 20, height: 10,
+        borderStyle: 'solid',
+        borderTop: true, borderRight: true, borderBottom: true, borderLeft: true,
+      });
+
+      const children: FocusableWidget[] = [];
+      for (let i = 0; i < 5; i++) {
+        const child = new FocusableWidget(5);
+        sb.addChild(child);
+        children.push(child);
+      }
+
+      const list = children as Array<TuiWidgetEntity & Focusable>;
+      const mgr = new FocusManager(() => ({getFocusableWidgets: () => list} as any));
+      mgr.start();
+
+      mgr.focusWidget(children[0]!);
+      expect(sb.scrollOffsetY).toBe(0);
+
+      for (let i = 1; i < 5; i++) {
+        backend.emit(TuiEventType.KeyboardEvent, keyEvent('Tab'));
+      }
+
+      expect(mgr.focusedWidget).toBe(children[4]);
+      expect(sb.scrollOffsetY).toBeGreaterThan(0);
+
+      mgr.stop();
     });
   });
 });

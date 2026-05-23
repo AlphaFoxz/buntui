@@ -584,10 +584,10 @@ function generateList(node: TuiListBlock, index: number, parentVar?: string): No
     }
   } else if (node.indexVar) {
     // Array with index: entries() yields [index, value]
-    lines.push(`for (const [${node.indexVar}, ${node.itemVar}] of ${node.listExpression}.entries()) {`);
+    lines.push(`for (const [${node.indexVar}, ${node.itemVar}] of ${wrapExpr(node.listExpression)}.entries()) {`);
   } else {
     // Array without index
-    lines.push(`for (const ${node.itemVar} of ${node.listExpression}) {`);
+    lines.push(`for (const ${node.itemVar} of ${wrapExpr(node.listExpression)}) {`);
   }
 
   let nextIndex = index;

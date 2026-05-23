@@ -441,5 +441,23 @@ describe('transform', () => {
       const widget = asWidget(root.children[0]!);
       expect(widget.dynamicProps.some(p => p.name === 'value' && p.expression === 'state.name')).toBe(true);
     });
+
+    it('accepts v-model with index access expression (a[i])', () => {
+      const root = parseTemplate('<Input v-model="values[index]"/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.dynamicProps.some(p => p.name === 'value' && p.expression === 'values[index]')).toBe(true);
+      expect(widget.events.some(e => e.event === 'input' && e.handler.includes('values.value[index]'))).toBe(true);
+    });
+
+    it('accepts v-model with chained access (a.b[i].c)', () => {
+      const root = parseTemplate('<Input v-model="state.items[0].name"/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.dynamicProps.some(p => p.name === 'value' && p.expression === 'state.items[0].name')).toBe(true);
+      expect(widget.events.some(e => e.event === 'input' && e.handler.includes('state.items[0].name'))).toBe(true);
+    });
+
+    it('throws on v-model with operator expression', () => {
+      expect(() => parseTemplate('<Input v-model="a + b"/>')).toThrow('v-model expression must be a simple identifier or member expression');
+    });
   });
 });

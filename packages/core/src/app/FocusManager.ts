@@ -4,6 +4,7 @@ import type {TuiScene} from '../extern/app/TuiScene';
 import type {TuiWidgetEntity} from '../widgets/TuiWidgetEntity';
 import type {Focusable} from '../widgets/Focusable';
 import {InteractiveWidget} from '../widgets/InteractiveWidget';
+import {ScrollBoxWidget} from '../widgets/scroll-box/ScrollBoxWidget';
 
 export class FocusManager {
   #focusedWidget: (TuiWidgetEntity & Focusable) | undefined;
@@ -66,6 +67,7 @@ export class FocusManager {
 
     this.#focusedWidget = widget;
     widget.focus();
+    this.#scrollIntoView(widget);
   }
 
   blurWidget(): void {
@@ -81,6 +83,17 @@ export class FocusManager {
 
   getFocusableWidgets(): ReadonlyArray<TuiWidgetEntity & Focusable> {
     return this.#getScene()?.getFocusableWidgets() ?? [];
+  }
+
+  #scrollIntoView(widget: TuiWidgetEntity): void {
+    let ancestor = widget.parent;
+    while (ancestor) {
+      if (ancestor instanceof ScrollBoxWidget) {
+        ancestor.scrollIntoView(widget);
+      }
+
+      ancestor = ancestor.parent;
+    }
   }
 
   #navigateFocus(direction: 1 | -1): void {
