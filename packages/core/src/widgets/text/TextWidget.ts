@@ -37,8 +37,8 @@ export class TextWidget extends TuiWidgetEntity {
   #value: string;
 
   readonly #overflow: TextOverflow;
-  readonly #scrollSpeed: number;
-  readonly #scrollPauseMs: number;
+  #scrollSpeed: number;
+  #scrollPauseMs: number;
   #scrollOffset = 0;
   #pauseRemaining = 0;
   #waitingReset = false;
@@ -113,6 +113,14 @@ export class TextWidget extends TuiWidgetEntity {
     this.#pauseRemaining = 0;
     this.#waitingReset = false;
     this.#firstRender = true;
+  }
+
+  setScrollSpeed(value: number) {
+    this.#scrollSpeed = value;
+  }
+
+  setScrollPauseMs(value: number) {
+    this.#scrollPauseMs = value;
   }
 
   override intrinsicSize(): TuiWidgetSize | undefined {

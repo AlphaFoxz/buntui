@@ -25,6 +25,7 @@ Do not propagate Zig error unions across FFI. Use the helpers in `core/error.zig
 - `outOfMemory()` -> logs error, exits with code 101
 - `unsupportedOS()` -> logs error, exits with code 102
 - `osApiError(msg)` -> logs error with message, exits with code 103
+- `osApiErrorFmt(fmt, args)` -> logs formatted error with message, exits with code 103
 
 Inside FFI export wrappers, catch errors and return C-compatible status codes:
 ```zig
@@ -46,7 +47,9 @@ pub export fn startApp() void {
 }
 ```
 
-The actual logic must be in a separate module. `lib.zig` should only delegate, never contain business logic. **Exception**: the 5 ANSI utility exports at the bottom of `lib.zig` (`resetStyle`, `showCursor`, `hideCursor`, `clearScreen`, `drawText`) contain inline logic (std_io init + writer acquisition + ANSI output). These are not consumed by TS via FFI.
+The actual logic must be in a separate module. `lib.zig` should only delegate, never contain business logic. **Exceptions**:
+- `setupLogger` performs inline C-string-to-Zig-string conversion (`alloc.dupe`) before delegating to `logger.load()`.
+- The 5 ANSI utility exports at the bottom of `lib.zig` (`resetStyle`, `showCursor`, `hideCursor`, `clearScreen`, `drawText`) contain inline init+writer boilerplate and delegate actual ANSI output to the `ansi_util` module. These are not consumed by TS via FFI.
 
 ## Global State Pattern
 

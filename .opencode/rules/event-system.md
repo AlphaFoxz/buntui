@@ -116,7 +116,7 @@ _ = event_bus.event_bus_emit_bytes(
 );
 ```
 
-Return codes: `0` = success, `-1` = not initialized, `-2` = queue full or event too large.
+Return codes: `0` = success, `-1` = not initialized, `-2` = event too large (exceeds 240-byte slot capacity). A full queue causes the producer to block (spin-wait) rather than returning an error.
 
 ## Known Issues
 

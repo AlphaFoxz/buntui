@@ -1,4 +1,5 @@
 import type {SourceLocation} from '@vue/compiler-core';
+import type {PropHandler} from '../runtime-helpers';
 
 /**
  * TUI widget creation call in the generated render function.
@@ -22,6 +23,8 @@ export type TuiWidgetCall = {
   children: TuiRenderNode[];
   /** Template ref name from ref="xxx" attribute */
   refName?: string;
+  /** Per-widget prop → handler mappings from registry (undefined for unregistered widgets) */
+  propHandlers?: Record<string, PropHandler>;
   /** Source location for error reporting */
   loc: SourceLocation;
 };

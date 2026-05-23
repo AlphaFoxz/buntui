@@ -167,19 +167,19 @@ describe('update methods', () => {
     expect(box.padding.paddingLeft).toBe(2);
   });
 
-  it('updateDirection changes direction', () => {
+  it('setDirection changes direction', () => {
     const box = createBoxWith();
-    box.updateDirection('horizontal');
+    box.setDirection('horizontal');
   });
 
-  it('updateGap changes gap', () => {
+  it('setGap changes gap', () => {
     const box = createBoxWith();
-    box.updateGap(3 as U16);
+    box.setGap(3 as U16);
   });
 
-  it('updateAlign changes alignment', () => {
+  it('setAlign changes alignment', () => {
     const box = createBoxWith();
-    box.updateAlign('center');
+    box.setAlign('center');
   });
 });
 
@@ -237,7 +237,7 @@ describe('intrinsicSize', () => {
 
   it('returns size for horizontal layout with children', () => {
     const box = createBoxWith();
-    box.updateDirection('horizontal');
+    box.setDirection('horizontal');
     box.addChild(createChild('ab', 2, 1));
     box.addChild(createChild('abcde', 5, 1));
     const size = box.intrinsicSize();
@@ -248,7 +248,7 @@ describe('intrinsicSize', () => {
 
   it('includes gap in intrinsic size', () => {
     const box = createBoxWith();
-    box.updateGap(2 as U16);
+    box.setGap(2 as U16);
     box.addChild(createChild('ab', 2, 1));
     box.addChild(createChild('cd', 2, 1));
     const size = box.intrinsicSize();

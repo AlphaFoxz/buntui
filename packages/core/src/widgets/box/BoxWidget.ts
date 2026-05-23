@@ -322,17 +322,17 @@ export class BoxWidget extends TuiWidgetEntity {
     this.#layoutDirty = true;
   }
 
-  updateDirection(direction: TuiLayoutDirectionName): void {
+  setDirection(direction: TuiLayoutDirectionName): void {
     this.#direction = resolveLayoutDirection(direction);
     this.#layoutDirty = true;
   }
 
-  updateGap(gap: U16): void {
+  setGap(gap: U16): void {
     this.#gap = gap;
     this.#layoutDirty = true;
   }
 
-  updateAlign(align: TuiLayoutAlignmentName): void {
+  setAlign(align: TuiLayoutAlignmentName): void {
     this.#align = resolveLayoutAlignment(align);
     this.#layoutDirty = true;
   }

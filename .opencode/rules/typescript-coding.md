@@ -19,7 +19,7 @@ These are enforced by `xo.config.ts` but listed here for clarity:
 - **Never** use `Buffer`. Use `Uint8Array`.
 - **Never** use `object` as a type. Use `Record<string, unknown>`.
 - **Never** use empty array type `[]`. Always specify the element type: `SomeType[]`.
-- Variable names: `camelCase` or `UPPER_CASE`. Leading/trailing underscores allowed.
+- Variable names: `camelCase`, `PascalCase`, or `UPPER_CASE`. Leading/trailing underscores allowed.
 - Filenames: `kebab-case`, `camelCase`, or `PascalCase` are all acceptable.
 - Indentation: 2 spaces.
 - Bitwise operators: allowed (`no-bitwise` is off).

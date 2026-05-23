@@ -17,9 +17,9 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
   #gap: number;
   readonly #scrollSpeed: number;
-  readonly #alwaysShowScrollbar: boolean;
-  readonly #scrollbarColor: number;
-  readonly #scrollbarTrackColor: number;
+  #alwaysShowScrollbar: boolean;
+  #scrollbarColor: number;
+  #scrollbarTrackColor: number;
 
   #dragScrolling = false;
   #dragStartY = 0;
@@ -268,9 +268,21 @@ export class ScrollBoxWidget extends InteractiveWidget {
     this.#layoutDirty = true;
   }
 
-  updateGap(gap: number): void {
+  setGap(gap: number): void {
     this.#gap = gap;
     this.#layoutDirty = true;
+  }
+
+  setAlwaysShowScrollbar(value: boolean): void {
+    this.#alwaysShowScrollbar = value;
+  }
+
+  setScrollbarColor(value: number): void {
+    this.#scrollbarColor = parseColor(value);
+  }
+
+  setScrollbarTrackColor(value: number): void {
+    this.#scrollbarTrackColor = parseColor(value);
   }
 
   // -- Child management --

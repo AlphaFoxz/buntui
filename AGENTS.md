@@ -59,7 +59,7 @@ packages/create-buntui/   CLI scaffolding tool (bunx create-buntui)
 - **No `no-bitwise`** — bitwise operators are allowed.
 - 2-space indentation.
 - ECMAScript `#` private fields, not TypeScript `private` keyword.
-- Variable names: `camelCase` or `UPPER_CASE`. Filenames: `kebab-case`, `camelCase`, or `PascalCase`.
+- Variable names: `camelCase`, `PascalCase`, or `UPPER_CASE`. Filenames: `kebab-case`, `camelCase`, or `PascalCase`.
 - Test files (`*.test.ts`) and `.vue` files are excluded from lint.
 
 ## Architecture Quick Reference
@@ -86,6 +86,9 @@ Lock-free SPSC ring buffer. Zig emits binary events, TS polls/commits. Three-ste
 - **Zig 0.16 Windows**: `BOOL` is an enum — compare with `.FALSE`/`.TRUE`, not integers. Declare Win32 functions as `extern "kernel32"` directly.
 - **Zig error handling**: Never propagate error unions across FFI. Use status codes in exports, `core/error.zig` helpers for fatal errors.
 - **No comments in code** unless explicitly requested.
+- **Widget method naming** (`set*` vs `update*`):
+  - `set*` — direct scalar assignment with minimal side-effects. Accepts a single value (boolean, string, number, array). Examples: `setDisabled`, `setVisible`, `setChecked`, `setLabel`, `setGap`, `setAlign`, `setDirection`, `setMax`, `setOptions`.
+  - `update*` — structured `Partial<T>` merge and/or complex value transformation with cascading side-effects. Compiler batches multiple fields targeting the same method into one call. Examples: `updateRect`, `updateColor`, `updateBorder`, `updateShadow`, `updatePadding`, `updateStyle`, `updateValue`.
 
 ## CI
 

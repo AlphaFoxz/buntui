@@ -1,6 +1,7 @@
 import {describe, it, expect} from 'bun:test';
 import {baseParse} from '@vue/compiler-core';
 import {transform, type TransformOptions} from '../template/transform';
+import {CORE_REGISTRY} from '../runtime-helpers';
 import type {
   TuiWidgetCall,
   TuiConditionalBlock,
@@ -458,6 +459,49 @@ describe('transform', () => {
 
     it('throws on v-model with operator expression', () => {
       expect(() => parseTemplate('<Input v-model="a + b"/>')).toThrow('v-model expression must be a simple identifier or member expression');
+    });
+  });
+
+  describe('propHandlers from registry', () => {
+    it('attaches propHandlers from registry to widget node', () => {
+      const root = parseTemplate('<Input/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.propHandlers).toBeDefined();
+      expect(widget.propHandlers!.value).toEqual({method: 'updateValue'});
+    });
+
+    it('attaches propHandlers for all core widgets', () => {
+      const tags = ['Box', 'Text', 'Input', 'Button', 'Checkbox', 'Switch', 'RadioGroup', 'SelectButton', 'ScrollBox', 'Progress'];
+      for (const tag of tags) {
+        const root = parseTemplate(`<${tag}/>`);
+        const widget = asWidget(root.children[0]!);
+        expect(widget.propHandlers).toBeDefined();
+        expect(Object.keys(widget.propHandlers!).length).toBeGreaterThan(0);
+      }
+    });
+
+    it('does not attach propHandlers for component imports', () => {
+      const root = parseTemplate('<MyComp/>', {
+        components: {MyComp: 'MyComp'},
+      });
+      const widget = asWidget(root.children[0]!);
+      expect(widget.isComponent).toBe(true);
+      expect(widget.propHandlers).toBeUndefined();
+    });
+
+    it('does not attach propHandlers when using custom registry without propHandlers', () => {
+      const root = parseTemplate('<Box/>', {
+        registry: {Box: {creator: 'createBox', module: '@buntui/core'}},
+      });
+      const widget = asWidget(root.children[0]!);
+      expect(widget.propHandlers).toBeUndefined();
+    });
+
+    it('Input propHandlers include colorFg and borderStyle overrides', () => {
+      const root = parseTemplate('<Input/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.propHandlers!.colorFg).toEqual({method: 'updateColor', field: 'colorFg'});
+      expect(widget.propHandlers!.borderStyle).toEqual({method: 'updateBorder', field: 'borderStyle'});
     });
   });
 });

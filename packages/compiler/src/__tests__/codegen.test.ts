@@ -1,5 +1,6 @@
 import {describe, it, expect} from 'bun:test';
 import {generate, type CodegenOptions} from '../template/codegen';
+import {CORE_REGISTRY} from '../runtime-helpers';
 import type {
   TuiRenderRoot,
   TuiWidgetCall,
@@ -140,8 +141,9 @@ describe('codegen', () => {
 
   describe('reactive effects', () => {
     it('generates effect() for grouped prop (rect)', () => {
+      const boxHandlers = CORE_REGISTRY.Box?.propHandlers;
       const root = makeRoot(
-        [makeWidget({dynamicProps: [{type: 'TuiDynamicProp', name: 'x', expression: 'pos.x', loc: STUB_LOC}]})],
+        [makeWidget({dynamicProps: [{type: 'TuiDynamicProp', name: 'x', expression: 'pos.x', loc: STUB_LOC}], propHandlers: boxHandlers})],
         [],
         new Set(['createBox']),
       );
@@ -150,8 +152,9 @@ describe('codegen', () => {
     });
 
     it('generates effect() for primitive prop (value)', () => {
+      const textHandlers = CORE_REGISTRY.Text?.propHandlers;
       const root = makeRoot(
-        [makeWidget({tag: 'Text', creator: 'createTextWidget', dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'text', loc: STUB_LOC}]})],
+        [makeWidget({tag: 'Text', creator: 'createTextWidget', dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'text', loc: STUB_LOC}], propHandlers: textHandlers})],
         [],
         new Set(['createTextWidget']),
       );
@@ -387,7 +390,7 @@ describe('codegen', () => {
 
   // --- Potential issue / edge case tests ---
 
-  describe('edge cases: FLAG_PROP_MAP consistency', () => {
+  describe('edge cases: boolean flag props in constructor', () => {
     it('top-level widgets serialize visible as string "true"', () => {
       const widget = makeWidget({
         props: [
@@ -401,7 +404,7 @@ describe('codegen', () => {
       expect(result.code).toContain('x: "1"');
     });
 
-    it('conditional branch widgets include ALL props (including FLAG_PROP_MAP) in creation', () => {
+    it('conditional branch widgets include ALL props (including boolean flags) in creation', () => {
       const widget = makeWidget({
         props: [
           {type: 'TuiStaticProp', name: 'visible', value: 'true'},
@@ -657,6 +660,92 @@ describe('codegen', () => {
       );
       const result = gen(root);
       expect(result.code).not.toContain('.value = __box0;');
+    });
+  });
+
+  describe('per-widget propHandlers', () => {
+    it('uses per-widget handler for Input colorFg (updateColor)', () => {
+      const inputHandlers = CORE_REGISTRY.Input?.propHandlers;
+      const root = makeRoot(
+        [makeWidget({
+          tag: 'Input',
+          creator: 'createInputWidget',
+          dynamicProps: [{type: 'TuiDynamicProp', name: 'colorFg', expression: 'c', loc: STUB_LOC}],
+          propHandlers: inputHandlers,
+        })],
+        [],
+        new Set(['createInputWidget']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain('updateColor');
+      expect(result.code).toContain('colorFg');
+    });
+
+    it('uses per-widget handler for Input borderStyle (updateBorder)', () => {
+      const inputHandlers = CORE_REGISTRY.Input?.propHandlers;
+      const root = makeRoot(
+        [makeWidget({
+          tag: 'Input',
+          creator: 'createInputWidget',
+          dynamicProps: [{type: 'TuiDynamicProp', name: 'borderStyle', expression: 's', loc: STUB_LOC}],
+          propHandlers: inputHandlers,
+        })],
+        [],
+        new Set(['createInputWidget']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain('updateBorder');
+    });
+
+    it('uses per-widget handler for Progress max (setMax)', () => {
+      const progressHandlers = CORE_REGISTRY.Progress?.propHandlers;
+      const root = makeRoot(
+        [makeWidget({
+          tag: 'Progress',
+          creator: 'createProgressWidget',
+          dynamicProps: [{type: 'TuiDynamicProp', name: 'max', expression: 'm', loc: STUB_LOC}],
+          propHandlers: progressHandlers,
+        })],
+        [],
+        new Set(['createProgressWidget']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain('setMax');
+    });
+
+    it('per-widget handler takes priority over global map', () => {
+      const customHandlers = {
+        value: {method: 'customSetValue', field: 'value'},
+      };
+      const root = makeRoot(
+        [makeWidget({
+          tag: 'Text',
+          creator: 'createTextWidget',
+          dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'msg', loc: STUB_LOC}],
+          propHandlers: customHandlers,
+        })],
+        [],
+        new Set(['createTextWidget']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain('customSetValue');
+      expect(result.code).not.toContain('updateValue');
+    });
+
+    it('skips reactive effect when no propHandlers (extension import)', () => {
+      const root = makeRoot(
+        [makeWidget({
+          tag: 'MyWidget',
+          creator: 'MyWidget',
+          dynamicProps: [{type: 'TuiDynamicProp', name: 'colorFg', expression: 'c', loc: STUB_LOC}],
+        })],
+        [],
+        new Set(['MyWidget']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain('colorFg: unref(c)');
+      expect(result.code).not.toContain('updateColor');
+      expect(result.code).not.toContain('effect(()');
     });
   });
 });

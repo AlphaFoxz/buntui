@@ -1,4 +1,5 @@
-import {RUNTIME_HELPERS} from '../runtime-helpers';
+import type {SourceLocation} from '@vue/compiler-core';
+import {RUNTIME_HELPERS, type PropHandler} from '../runtime-helpers';
 import type {
   TuiRenderRoot,
   TuiWidgetCall,
@@ -8,9 +9,35 @@ import type {
 } from './ast';
 import {wrapExpr, wrapConditionExpr} from './expression-wrapping';
 import {buildEventHandler} from './event-codegen';
-import {PROP_UPDATE_MAP, FLAG_PROP_MAP, BOOLEAN_FLAGS} from './widget-props';
 
 const {EFFECT, UNREF} = RUNTIME_HELPERS;
+
+const BOOLEAN_FLAGS = new Set(['disabled', 'checked', 'readonly', 'draggable']);
+
+function resolvePropHandler(node: TuiWidgetCall, propName: string, propLoc?: SourceLocation): PropHandler | undefined {
+  if (!node.propHandlers) {
+    return undefined;
+  }
+
+  const handler = node.propHandlers[propName];
+  if (handler) {
+    return handler;
+  }
+
+  throw new Error(`Unknown prop "${propName}" on <${node.tag}> at line ${propLoc?.start.line ?? node.loc.start.line}:${propLoc?.start.column ?? node.loc.start.column}. This widget only accepts: ${Object.keys(node.propHandlers).join(', ')}.`);
+}
+
+function emitPropEffect(varName: string, handler: PropHandler, expression: string, guard?: string): string {
+  const expr = wrapExpr(expression);
+  const call = handler.field
+    ? `${varName}.${handler.method}({${handler.field}: ${expr}})`
+    : `${varName}.${handler.method}(${expr})`;
+  if (guard) {
+    return `${EFFECT}(() => { ${guard} { ${call}; } });`;
+  }
+
+  return `${EFFECT}(() => { ${call}; });`;
+}
 
 export type CodegenOptions = {
   /** Module ID for the core package import */
@@ -178,7 +205,7 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
   const args: string[] = [];
 
   // Build options object from props — all props (static and dynamic) go to the constructor.
-  // FLAG_PROP_MAP entries indicate boolean/flag props that need string→bool conversion for
+  // Boolean flag props (disabled, checked, etc.) need string→bool conversion for
   // static values, and are also used for reactive effect generation for dynamic values.
   const props: string[] = [];
   for (const prop of node.props) {
@@ -205,24 +232,9 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
 
   // Generate reactive effect bindings
   for (const prop of node.dynamicProps) {
-    const info = PROP_UPDATE_MAP[prop.name];
-    if (info) {
-      if (info.field) {
-        // Grouped prop: widget.updateRect({x: expr})
-        lines.push(`${EFFECT}(() => { ${varName}.${info.method}({${info.field}: ${wrapExpr(prop.expression)}}); });`);
-      } else {
-        // Primitive prop: widget.updateText(expr)
-        lines.push(`${EFFECT}(() => { ${varName}.${info.method}(${wrapExpr(prop.expression)}); });`);
-      }
-
-      continue;
-    }
-
-    // Flag props (disabled, checked, etc.): reactive setter calls
-    const setter = FLAG_PROP_MAP[prop.name];
-    if (setter) {
-      const expr = wrapExpr(prop.expression);
-      lines.push(`${EFFECT}(() => { ${varName}.${setter}(${expr}); });`);
+    const handler = resolvePropHandler(node, prop.name, prop.loc);
+    if (handler) {
+      lines.push(emitPropEffect(varName, handler, prop.expression));
     }
   }
 
@@ -533,21 +545,9 @@ function buildGuardedUpdateEffects(node: TuiWidgetCall, varName: string): string
 
   const effects: string[] = [];
   for (const prop of node.dynamicProps) {
-    const info = PROP_UPDATE_MAP[prop.name];
-    if (info) {
-      if (info.field) {
-        effects.push(`${EFFECT}(() => { if (${varName}) { ${varName}.${info.method}({${info.field}: ${wrapExpr(prop.expression)}}); } });`);
-      } else {
-        effects.push(`${EFFECT}(() => { if (${varName}) { ${varName}.${info.method}(${wrapExpr(prop.expression)}); } });`);
-      }
-
-      continue;
-    }
-
-    const setter = FLAG_PROP_MAP[prop.name];
-    if (setter) {
-      const expr = wrapExpr(prop.expression);
-      effects.push(`${EFFECT}(() => { if (${varName}) { ${varName}.${setter}(${expr}); } });`);
+    const handler = resolvePropHandler(node, prop.name, prop.loc);
+    if (handler) {
+      effects.push(emitPropEffect(varName, handler, prop.expression, `if (${varName})`));
     }
   }
 

@@ -91,7 +91,7 @@ export class ProgressWidget extends InteractiveWidget {
     }
   }
 
-  updateMax(max: number): void {
+  setMax(max: number): void {
     this.#max = max;
     if (this.#value !== undefined) {
       this.#value = this.#clamp(this.#value);

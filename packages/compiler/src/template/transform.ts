@@ -223,6 +223,7 @@ function transformElement(
     events,
     children,
     refName,
+    propHandlers: entry.propHandlers,
     loc: node.loc,
   };
 }

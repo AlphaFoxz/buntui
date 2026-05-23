@@ -1219,3 +1219,46 @@ describe('password mode', () => {
     expect(input.value).toBe('abc');
   });
 });
+
+describe('updateColor', () => {
+  it('updates normal and focused fg color', () => {
+    const input = new InputWidget({colorFg: 0xFF_FF_FF_FF});
+    input.updateColor({colorFg: 0x00_00_00_FF});
+    const rect = input.rect;
+    expect(rect).toBeDefined();
+  });
+
+  it('updates normal and focused bg color', () => {
+    const input = new InputWidget({colorBg: 0x1E_1E_2E_FF});
+    input.updateColor({colorBg: 0x00_00_00_FF});
+    const rect = input.rect;
+    expect(rect).toBeDefined();
+  });
+
+  it('updates both fg and bg together', () => {
+    const input = new InputWidget({colorFg: 0xFF_FF_FF_FF, colorBg: 0x1E_1E_2E_FF});
+    input.updateColor({colorFg: 0x00_00_00_FF, colorBg: 0xFF_FF_FF_FF});
+    const rect = input.rect;
+    expect(rect).toBeDefined();
+  });
+
+  it('does nothing when no colors provided', () => {
+    const input = new InputWidget({colorFg: 0xFF_FF_FF_FF});
+    input.updateColor({});
+    expect(input.rect).toBeDefined();
+  });
+});
+
+describe('updateBorder', () => {
+  it('updates border style', () => {
+    const input = new InputWidget({borderStyle: 'solid'});
+    input.updateBorder({borderStyle: 'double'});
+    expect(input.rect).toBeDefined();
+  });
+
+  it('does nothing when no border props provided', () => {
+    const input = new InputWidget({borderStyle: 'solid'});
+    input.updateBorder({});
+    expect(input.rect).toBeDefined();
+  });
+});

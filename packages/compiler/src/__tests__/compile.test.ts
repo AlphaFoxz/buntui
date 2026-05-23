@@ -131,10 +131,10 @@ describe('compile', () => {
     });
 
     it('generates named v-model with update: event', () => {
-      const result = compile('<template><Box v-model:title="pageTitle"/></template>');
-      expect(result.code).toContain('unref(pageTitle)');
-      expect(result.code).toContain('pageTitle.value = $event.title');
-      expect(result.code).toContain(".on('update:title'");
+      const result = compile('<template><Input v-model:value="text"/></template>');
+      expect(result.code).toContain('unref(text)');
+      expect(result.code).toContain('text.value = $event.value');
+      expect(result.code).toContain(".on('update:value'");
     });
 
     it('named v-model overrides per-tag config', () => {
@@ -647,6 +647,56 @@ describe('compile', () => {
       );
       expect(result.imports.some(i => i.includes('onMounted') && i.includes('@buntui/core'))).toBe(true);
       expect(result.imports.some(i => i.includes('ref as myRef') && i.includes('@vue/reactivity'))).toBe(true);
+    });
+  });
+
+  describe('per-widget propHandlers integration', () => {
+    it('generates updateColor for Input :colorFg', () => {
+      const result = compile('<template><Input :colorFg="color"/></template>');
+      expect(result.code).toContain('updateColor');
+      expect(result.code).toContain('colorFg');
+    });
+
+    it('generates updateColor for Input :colorBg', () => {
+      const result = compile('<template><Input :colorBg="bg"/></template>');
+      expect(result.code).toContain('updateColor');
+    });
+
+    it('generates updateBorder for Input :borderStyle', () => {
+      const result = compile('<template><Input :borderStyle="s"/></template>');
+      expect(result.code).toContain('updateBorder');
+    });
+
+    it('generates setMax for Progress :max', () => {
+      const result = compile('<template><Progress :max="limit"/></template>');
+      expect(result.code).toContain('setMax');
+    });
+
+    it('generates updateColor for Box :colorFg (via per-widget handlers)', () => {
+      const result = compile('<template><Box :colorFg="c"/></template>');
+      expect(result.code).toContain('updateColor');
+    });
+
+    it('generates setVisible for any widget with v-show', () => {
+      const result = compile('<template><Input v-show="visible"/></template>');
+      expect(result.code).toContain('setVisible');
+    });
+
+    it('throws on unknown prop when widget has propHandlers', () => {
+      expect(() => compile('<template><Input :borderColor="c"/></template>')).toThrow(/Unknown prop "borderColor" on <Input>/);
+    });
+
+    it('throws on unknown prop with suggestion of valid props', () => {
+      expect(() => compile('<template><Progress :unknown="x"/></template>')).toThrow(/This widget only accepts:/);
+    });
+
+    it('passes dynamic props to constructor only for extension imports (no reactive effect)', () => {
+      const result = compile(
+        '<template><Matrix :colorFg="c"/></template>'
+        + '<script setup>import Matrix from "@buntui/extensions/matrix";</script>',
+      );
+      expect(result.code).toContain('colorFg: unref(c)');
+      expect(result.code).not.toContain('updateColor');
     });
   });
 });

@@ -24,7 +24,7 @@ The compiler resolves template tags with a two-tier strategy:
 }
 ```
 
-Each sub-path module has a **default export** (the creator function) and named exports (class, types):
+Each sub-path module has a **default export** (the creator function) and named exports (class, types), **except** `hmr-error-overlay` which exports `mountHmrErrorOverlay` (a mount function, not a creator) and `HmrErrorOverlayHandle` (a handle type). It is not included in `EXTENSION_REGISTRY`.
 
 ```ts
 // src/matrix.ts

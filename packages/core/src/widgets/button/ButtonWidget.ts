@@ -1,9 +1,11 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
 import {BorderSides} from '../../draw_list/types';
-import {resolveBorderStyle, type TuiWidgetRect, type TuiWidgetSize} from '../types';
+import {
+  resolveBorderStyle, type TuiBorderStyleName, type TuiWidgetRect, type TuiWidgetSize,
+} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
-import {parseColor} from '../../utils/color';
+import {parseColor, type TuiColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
 import {getTheme} from '../../theme/provider';
 import type {ButtonWidgetOptions} from './types';
@@ -127,6 +129,60 @@ export class ButtonWidget extends InteractiveWidget {
 
   updateValue(value: string): void {
     this.#value = value;
+  }
+
+  updateNormalStyle(options: {colorFgNormal?: TuiColor; colorBgNormal?: TuiColor; borderColorNormal?: TuiColor; borderStyleNormal?: TuiBorderStyleName}): void {
+    if (options.colorFgNormal !== undefined) {
+      this.#colors.normal.fg = parseColor(options.colorFgNormal);
+    }
+
+    if (options.colorBgNormal !== undefined) {
+      this.#colors.normal.bg = parseColor(options.colorBgNormal);
+    }
+
+    if (options.borderColorNormal !== undefined) {
+      this.#colors.normal.borderColor = parseColor(options.borderColorNormal);
+    }
+
+    if (options.borderStyleNormal !== undefined) {
+      this.#colors.normal.borderStyle = resolveBorderStyle(options.borderStyleNormal);
+    }
+  }
+
+  updateHoveredStyle(options: {colorFgHovered?: TuiColor; colorBgHovered?: TuiColor; borderColorHovered?: TuiColor; borderStyleHovered?: TuiBorderStyleName}): void {
+    if (options.colorFgHovered !== undefined) {
+      this.#colors.hovered!.fg = parseColor(options.colorFgHovered);
+    }
+
+    if (options.colorBgHovered !== undefined) {
+      this.#colors.hovered!.bg = parseColor(options.colorBgHovered);
+    }
+
+    if (options.borderColorHovered !== undefined) {
+      this.#colors.hovered!.borderColor = parseColor(options.borderColorHovered);
+    }
+
+    if (options.borderStyleHovered !== undefined) {
+      this.#colors.hovered!.borderStyle = resolveBorderStyle(options.borderStyleHovered);
+    }
+  }
+
+  updatePressedStyle(options: {colorFgPressed?: TuiColor; colorBgPressed?: TuiColor; borderColorPressed?: TuiColor; borderStylePressed?: TuiBorderStyleName}): void {
+    if (options.colorFgPressed !== undefined) {
+      this.#colors.pressed!.fg = parseColor(options.colorFgPressed);
+    }
+
+    if (options.colorBgPressed !== undefined) {
+      this.#colors.pressed!.bg = parseColor(options.colorBgPressed);
+    }
+
+    if (options.borderColorPressed !== undefined) {
+      this.#colors.pressed!.borderColor = parseColor(options.borderColorPressed);
+    }
+
+    if (options.borderStylePressed !== undefined) {
+      this.#colors.pressed!.borderStyle = resolveBorderStyle(options.borderStylePressed);
+    }
   }
 
   override get rect(): TuiWidgetRect {

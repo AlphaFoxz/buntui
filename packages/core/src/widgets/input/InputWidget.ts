@@ -1,7 +1,9 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent, type MouseEvent} from '../../events/types';
 import {BorderSides, resolveCursorMode} from '../../draw_list/types';
-import {resolveBorderStyle, type TuiWidgetRect, type TuiWidgetSize} from '../types';
+import {
+  resolveBorderStyle, type TuiBorderStyleName, type TuiWidgetRect, type TuiWidgetSize,
+} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
@@ -83,9 +85,9 @@ export class InputWidget extends InteractiveWidget {
   #height: number;
 
   readonly #colors: ColorScheme<InputColors>;
-  readonly #borderStyle: number;
-  readonly #maxLength: number;
-  readonly #placeholder: string;
+  #borderStyle: number;
+  #maxLength: number;
+  #placeholder: string;
   readonly #placeholderColorFg: number;
   readonly #selectionBgColor: number;
   readonly #selectionFgColor: number;
@@ -241,6 +243,34 @@ export class InputWidget extends InteractiveWidget {
 
   setLabel(value: string): void {
     this.#label = value;
+  }
+
+  setMaxLength(value: number): void {
+    this.#maxLength = value;
+  }
+
+  setPlaceholder(value: string): void {
+    this.#placeholder = value;
+  }
+
+  updateColor(color: {colorFg?: number; colorBg?: number}): void {
+    if (color.colorFg !== undefined) {
+      const parsed = parseColor(color.colorFg);
+      this.#colors.normal.fg = parsed;
+      this.#colors.focused!.fg = parsed;
+    }
+
+    if (color.colorBg !== undefined) {
+      const parsed = parseColor(color.colorBg);
+      this.#colors.normal.bg = parsed;
+      this.#colors.focused!.bg = parsed;
+    }
+  }
+
+  updateBorder(border: {borderStyle?: TuiBorderStyleName}): void {
+    if (border.borderStyle !== undefined) {
+      this.#borderStyle = resolveBorderStyle(border.borderStyle);
+    }
   }
 
   updateValue(newValue: string): void {

@@ -28,16 +28,23 @@ describe('RUNTIME_HELPERS', () => {
 
 describe('CORE_REGISTRY', () => {
   it('maps all core template tags to creator and module', () => {
-    expect(CORE_REGISTRY.Box).toEqual({creator: 'createBox', module: '@buntui/core'});
-    expect(CORE_REGISTRY.Text).toEqual({creator: 'createTextWidget', module: '@buntui/core'});
-    expect(CORE_REGISTRY.Input).toEqual({creator: 'createInputWidget', module: '@buntui/core'});
-    expect(CORE_REGISTRY.Button).toEqual({creator: 'createButtonWidget', module: '@buntui/core'});
-    expect(CORE_REGISTRY.Checkbox).toEqual({creator: 'createCheckboxWidget', module: '@buntui/core'});
-    expect(CORE_REGISTRY.RadioGroup).toEqual({creator: 'createRadioGroupWidget', module: '@buntui/core'});
-    expect(CORE_REGISTRY.SelectButton).toEqual({creator: 'createSelectButtonWidget', module: '@buntui/core'});
-    expect(CORE_REGISTRY.Switch).toEqual({creator: 'createSwitchWidget', module: '@buntui/core'});
-    expect(CORE_REGISTRY.ScrollBox).toEqual({creator: 'createScrollBoxWidget', module: '@buntui/core'});
-    expect(CORE_REGISTRY.Progress).toEqual({creator: 'createProgressWidget', module: '@buntui/core'});
+    expect(CORE_REGISTRY.Box).toMatchObject({creator: 'createBox', module: '@buntui/core'});
+    expect(CORE_REGISTRY.Text).toMatchObject({creator: 'createTextWidget', module: '@buntui/core'});
+    expect(CORE_REGISTRY.Input).toMatchObject({creator: 'createInputWidget', module: '@buntui/core'});
+    expect(CORE_REGISTRY.Button).toMatchObject({creator: 'createButtonWidget', module: '@buntui/core'});
+    expect(CORE_REGISTRY.Checkbox).toMatchObject({creator: 'createCheckboxWidget', module: '@buntui/core'});
+    expect(CORE_REGISTRY.RadioGroup).toMatchObject({creator: 'createRadioGroupWidget', module: '@buntui/core'});
+    expect(CORE_REGISTRY.SelectButton).toMatchObject({creator: 'createSelectButtonWidget', module: '@buntui/core'});
+    expect(CORE_REGISTRY.Switch).toMatchObject({creator: 'createSwitchWidget', module: '@buntui/core'});
+    expect(CORE_REGISTRY.ScrollBox).toMatchObject({creator: 'createScrollBoxWidget', module: '@buntui/core'});
+    expect(CORE_REGISTRY.Progress).toMatchObject({creator: 'createProgressWidget', module: '@buntui/core'});
+  });
+
+  it('has per-widget propHandlers for all core widgets', () => {
+    for (const tag of Object.keys(CORE_REGISTRY)) {
+      expect(CORE_REGISTRY[tag as keyof typeof CORE_REGISTRY]?.propHandlers).toBeDefined();
+      expect(typeof CORE_REGISTRY[tag as keyof typeof CORE_REGISTRY]?.propHandlers).toBe('object');
+    }
   });
 
   it('does not contain extension tags', () => {

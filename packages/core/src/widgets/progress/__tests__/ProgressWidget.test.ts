@@ -97,16 +97,16 @@ describe('updateValue', () => {
   });
 });
 
-describe('updateMax', () => {
+describe('setMax', () => {
   it('updates max', () => {
     const pb = createProgress({value: 0.5, max: 1});
-    pb.updateMax(2);
+    pb.setMax(2);
     expect(pb.max).toBe(2);
   });
 
   it('re-clamps current value to new max', () => {
     const pb = createProgress({value: 0.8, max: 1});
-    pb.updateMax(0.5);
+    pb.setMax(0.5);
     expect(pb.value).toBe(0.5);
   });
 });
