@@ -54,10 +54,16 @@
       "name": "create-buntui",
       "version": "0.1.0-alpha.1",
       "bin": {
-        "create-buntui": "./src/index.ts",
+        "create-buntui": "./dist/index.js",
       },
       "dependencies": {
         "@buntui/core": "workspace:*",
+      },
+      "devDependencies": {
+        "@buntui/compiler": "workspace:*",
+        "@buntui/native": "workspace:*",
+        "@types/bun": "^1.3.14",
+        "@vue/reactivity": "^3.5.34",
       },
     },
     "packages/extensions": {

@@ -83,6 +83,12 @@ const expose: FlatXoConfig = [
       'max-params': ['error', {max: 6}],
     },
   },
+  {
+    files: ['packages/create-buntui/src/**/*.ts'],
+    rules: {
+      'unicorn/no-process-exit': 'off',
+    },
+  },
 ];
 
 export default expose;

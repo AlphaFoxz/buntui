@@ -3,8 +3,11 @@ import {type KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
+import {type ColorScheme, resolveColorState} from '../color-scheme';
 import {getTheme} from '../../theme/provider';
 import type {SelectButtonWidgetOptions} from './types';
+
+type SelectButtonColors = {fg: number; bg: number};
 
 function getDefaultSelectButtonOptions() {
   const theme = getTheme();
@@ -39,15 +42,8 @@ export class SelectButtonWidget extends InteractiveWidget {
   #selectedIndex: number;
   #hoveredIndex = -1;
 
-  readonly #colorFgNormal: number;
-  readonly #colorBgNormal: number;
-  readonly #colorFgActive: number;
-  readonly #colorBgActive: number;
-  readonly #colorFgFocused: number;
-  readonly #colorBgFocused: number;
-  readonly #colorFgDisabled: number;
-  readonly #colorBgDisabled: number;
-  readonly #colorFgSeparator: number;
+  readonly #colors: ColorScheme<SelectButtonColors>;
+  readonly #colorSeparator: number;
 
   constructor(options: SelectButtonWidgetOptions = {}) {
     super();
@@ -62,15 +58,25 @@ export class SelectButtonWidget extends InteractiveWidget {
       this.#selectedIndex = this.#options.indexOf(resolved.value);
     }
 
-    this.#colorFgNormal = parseColor(resolved.colorFgNormal);
-    this.#colorBgNormal = parseColor(resolved.colorBgNormal);
-    this.#colorFgActive = parseColor(resolved.colorFgActive);
-    this.#colorBgActive = parseColor(resolved.colorBgActive);
-    this.#colorFgFocused = parseColor(resolved.colorFgFocused);
-    this.#colorBgFocused = parseColor(resolved.colorBgFocused);
-    this.#colorFgDisabled = parseColor(resolved.colorFgDisabled);
-    this.#colorBgDisabled = parseColor(resolved.colorBgDisabled);
-    this.#colorFgSeparator = parseColor(resolved.colorFgSeparator);
+    this.#colors = {
+      normal: {
+        fg: parseColor(resolved.colorFgNormal),
+        bg: parseColor(resolved.colorBgNormal),
+      },
+      active: {
+        fg: parseColor(resolved.colorFgActive),
+        bg: parseColor(resolved.colorBgActive),
+      },
+      focused: {
+        fg: parseColor(resolved.colorFgFocused),
+        bg: parseColor(resolved.colorBgFocused),
+      },
+      disabled: {
+        fg: parseColor(resolved.colorFgDisabled),
+        bg: parseColor(resolved.colorBgDisabled),
+      },
+    };
+    this.#colorSeparator = parseColor(resolved.colorFgSeparator);
 
     this.on('mousedown', mouseData => {
       const index = this.#hitTestOption(mouseData.x);
@@ -202,13 +208,15 @@ export class SelectButtonWidget extends InteractiveWidget {
 
     buffer.pushClip(x, y, w, height);
 
-    const baseBg = this.disabled ? this.#colorBgDisabled : this.#colorBgNormal;
+    const baseColors = resolveColorState(this.#colors, {
+      disabled: this.disabled,
+    });
     buffer.drawRect({
       x,
       y,
       width: w,
       height,
-      bgRgba: baseBg,
+      bgRgba: baseColors.bg,
     });
 
     const layout = this.#computeLayout();
@@ -218,34 +226,20 @@ export class SelectButtonWidget extends InteractiveWidget {
       const isActive = i === this.#selectedIndex;
       const isHovered = i === this.#hoveredIndex;
 
-      if (isActive) {
-        const bg = this.disabled
-          ? this.#colorBgDisabled
-          : (this.focused ? this.#colorBgFocused : this.#colorBgActive);
-        buffer.drawRect({
-          x: itemX,
-          y,
-          width: itemW,
-          height,
-          bgRgba: bg,
-        });
-      } else if (isHovered && !this.disabled) {
-        buffer.drawRect({
-          x: itemX,
-          y,
-          width: itemW,
-          height,
-          bgRgba: this.#colorBgFocused,
-        });
-      }
+      const itemColors = resolveColorState(this.#colors, {
+        disabled: this.disabled,
+        focused: isActive ? this.focused : isHovered,
+        active: isActive && !this.focused,
+      });
 
-      let fg: number;
-      if (this.disabled) {
-        fg = this.#colorFgDisabled;
-      } else if (isActive) {
-        fg = this.focused ? this.#colorFgFocused : this.#colorFgActive;
-      } else {
-        fg = isHovered ? this.#colorFgFocused : this.#colorFgNormal;
+      if (itemColors.bg !== baseColors.bg) {
+        buffer.drawRect({
+          x: itemX,
+          y,
+          width: itemW,
+          height,
+          bgRgba: itemColors.bg,
+        });
       }
 
       const text = ` ${label} `;
@@ -254,13 +248,13 @@ export class SelectButtonWidget extends InteractiveWidget {
         x: itemX,
         y,
         text: visibleText,
-        fgRgba: fg,
+        fgRgba: itemColors.fg,
         bgRgba: 0x00_00_00_00,
       });
 
       if (i < layout.length - 1) {
         const sepX = itemX + itemW;
-        const sepFg = this.disabled ? this.#colorFgDisabled : this.#colorFgSeparator;
+        const sepFg = this.disabled ? baseColors.fg : this.#colorSeparator;
         buffer.drawText({
           x: sepX,
           y,

@@ -1,7 +1,7 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
 import {BorderSides} from '../../draw_list/types';
-import {resolveBorderStyle, type TuiWidgetRect} from '../types';
+import {resolveBorderStyle, type TuiWidgetRect, type TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
@@ -131,6 +131,10 @@ export class ButtonWidget extends InteractiveWidget {
 
   override get rect(): TuiWidgetRect {
     return this.#rect;
+  }
+
+  override intrinsicSize(): TuiWidgetSize | undefined {
+    return {width: this.#rect.width, height: this.#rect.height};
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {

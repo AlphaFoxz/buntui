@@ -1,6 +1,7 @@
 {
     "name": "{{name}}",
     "version": "0.0.1",
+    "type": "module",
     "scripts": {
         "dev": "bun --preload @buntui/compiler/vue-plugin src/dev.ts",
         "build": "bun run ./scripts/build.ts"
@@ -9,6 +10,7 @@
         "@buntui/core": "{{version}}",
         "@buntui/compiler": "{{version}}",
         "@buntui/native": "{{version}}",
+        "@buntui/extensions": "{{version}}",
         "@vue/reactivity": "^3.5.34"
     },
     "devDependencies": {

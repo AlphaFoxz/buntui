@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.json",
+  "vueCompilerOptions": {
+    "target": 3.5,
+    "strictTemplates": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "scripts/**/*.ts",
+    "node_modules/@buntui/core/dist/global.d.ts"
+  ]
+}

@@ -1,32 +1,76 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const templateDir = path.resolve(import.meta.dir, '..', 'templates', 'basic');
+export type TemplateName = 'basic' | 'sfc' | 'full';
 
-function copyRecursive(srcDir: string, outDir: string, projectName: string): void {
+function loadVersion(): string {
+  const raw = fs.readFileSync(path.resolve(import.meta.dir, '..', 'package.json'), 'utf-8');
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+  const parsed = JSON.parse(raw) as {version?: string};
+  return parsed.version ?? '0.0.0';
+}
+
+const VERSION = loadVersion();
+
+function getTemplateDir(template: TemplateName): string {
+  return path.resolve(import.meta.dir, '..', 'templates', template);
+}
+
+function copyRecursive(srcDir: string, outDir: string, variables: Record<string, string>): void {
   const entries = fs.readdirSync(srcDir, {withFileTypes: true});
   for (const entry of entries) {
     const srcPath = path.join(srcDir, entry.name);
     const outPath = path.join(outDir, entry.name);
     if (entry.isDirectory()) {
       fs.mkdirSync(outPath, {recursive: true});
-      copyRecursive(srcPath, outPath, projectName);
+      copyRecursive(srcPath, outPath, variables);
     } else {
       const content = fs.readFileSync(srcPath, 'utf-8');
-      const rendered = content.replaceAll('{{name}}', projectName);
+      let rendered = content;
+      for (const [key, value] of Object.entries(variables)) {
+        rendered = rendered.replaceAll(`{{${key}}}`, value);
+      }
+
       fs.writeFileSync(outPath, rendered, 'utf-8');
     }
   }
 }
 
-export function scaffoldCopy(projectName: string, targetDir: string): string {
+export function scaffoldCopy(
+  projectName: string,
+  targetDir: string,
+  template: TemplateName = 'basic',
+): string {
   const outputDir = path.resolve(targetDir, projectName);
 
   if (fs.existsSync(outputDir)) {
     throw new Error(`Directory already exists: ${outputDir}`);
   }
 
+  const templateDir = getTemplateDir(template);
+  if (!fs.existsSync(templateDir)) {
+    throw new Error(`Template not found: ${template}`);
+  }
+
   fs.mkdirSync(outputDir, {recursive: true});
-  copyRecursive(templateDir, outputDir, projectName);
+
+  const variables: Record<string, string> = {
+    name: projectName,
+    version: VERSION,
+  };
+
+  try {
+    copyRecursive(templateDir, outputDir, variables);
+  } catch (error) {
+    fs.rmSync(outputDir, {recursive: true, force: true});
+    throw error;
+  }
+
   return outputDir;
+}
+
+export function scaffoldCleanup(projectDir: string): void {
+  if (fs.existsSync(projectDir)) {
+    fs.rmSync(projectDir, {recursive: true, force: true});
+  }
 }

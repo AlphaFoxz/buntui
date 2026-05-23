@@ -2,10 +2,9 @@ import process from 'node:process';
 import path from 'node:path';
 import fs from 'node:fs';
 import {compile, CORE_REGISTRY} from '@buntui/compiler';
-import {getBinaryPath} from '@buntui/native';
 
 const result = await Bun.build({
-  entrypoints: ['src/main.ts'],
+  entrypoints: ['src/index.ts'],
   outdir: 'dist',
   target: 'bun',
   minify: true,
@@ -34,6 +33,8 @@ if (!result.success) {
   for (const error of result.logs) {
     console.error(error);
   }
+
+  // eslint-disable-next-line unicorn/no-process-exit
   process.exit(1);
 }
 
@@ -42,17 +43,24 @@ for (const output of result.outputs) {
 }
 
 function getBinaryExt(): string {
-  if (process.platform === 'win32') return 'dll';
-  if (process.platform === 'darwin') return 'dylib';
+  if (process.platform === 'win32') {
+    return 'dll';
+  }
+
+  if (process.platform === 'darwin') {
+    return 'dylib';
+  }
+
   return 'so';
 }
 
 const binaryName = `buntui.${getBinaryExt()}`;
-const nativePath = getBinaryPath();
+const libPrefix = process.platform === 'win32' ? '' : 'lib';
+const distName = `${libPrefix}${binaryName}`;
 const dllSearchPaths = [
-  ...(nativePath ? [nativePath] : []),
-  path.resolve(import.meta.dir, '..', 'node_modules', '@buntui', 'core', binaryName),
-  path.resolve(import.meta.dir, '..', binaryName),
+  path.resolve(import.meta.dir, '..', '..', 'native', 'binaries', `${process.platform}-${process.arch}`, binaryName),
+  path.resolve(import.meta.dir, '..', '..', 'native', 'zig-out', 'bin', binaryName),
+  path.resolve(import.meta.dir, '..', '..', 'native', 'zig-out', 'lib', distName),
 ];
 
 for (const candidate of dllSearchPaths) {

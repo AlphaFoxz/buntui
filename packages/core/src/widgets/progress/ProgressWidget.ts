@@ -1,6 +1,6 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import type {KeyboardEvent} from '../../events/types';
-import type {TuiWidgetRect} from '../types';
+import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {getTheme} from '../../theme/provider';
@@ -70,6 +70,10 @@ export class ProgressWidget extends InteractiveWidget {
 
   override get rect(): TuiWidgetRect {
     return this.#rect;
+  }
+
+  override intrinsicSize(): TuiWidgetSize | undefined {
+    return {width: this.#rect.width, height: this.#rect.height};
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {

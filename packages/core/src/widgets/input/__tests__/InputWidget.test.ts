@@ -262,22 +262,22 @@ describe('selection — clear', () => {
     expect(input.getSelection()).toBeUndefined();
   });
 
-  it('Escape cancels selection without blurring', () => {
+  it('Escape does not cancel selection', () => {
     const input = createInput({value: 'hello'});
     input.focus();
     input.handleKey(key({key: 'a', ctrlKey: true}));
     expect(input.getSelection()).toBeDefined();
     input.handleKey(key({key: 'Escape'}));
-    expect(input.getSelection()).toBeUndefined();
+    expect(input.getSelection()).toBeDefined();
   });
 
-  it('Escape blurs when there is no selection', () => {
+  it('Escape does not blur when there is no selection', () => {
     const input = createInput();
     input.focus();
     let blurred = false;
     input.on('blur', () => { blurred = true; });
     input.handleKey(key({key: 'Escape'}));
-    expect(blurred).toBe(true);
+    expect(blurred).toBe(false);
   });
 });
 

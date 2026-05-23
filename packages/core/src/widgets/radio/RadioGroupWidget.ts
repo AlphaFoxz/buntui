@@ -1,10 +1,13 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
-import type {TuiWidgetRect} from '../types';
+import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
+import {type ColorScheme, resolveColorState} from '../color-scheme';
 import {getTheme} from '../../theme/provider';
 import type {RadioGroupWidgetOptions} from './types';
+
+type RadioColors = {fg: number; bg: number};
 
 function getDefaultRadioOptions(): Required<RadioGroupWidgetOptions> {
   const theme = getTheme();
@@ -38,14 +41,7 @@ export class RadioGroupWidget extends InteractiveWidget {
   #hoveredIndex = -1;
   #focusedIndex = -1;
 
-  readonly #colorFgNormal: number;
-  readonly #colorBgNormal: number;
-  readonly #colorFgFocused: number;
-  readonly #colorBgFocused: number;
-  readonly #colorFgDisabled: number;
-  readonly #colorBgDisabled: number;
-  readonly #colorFgSelected: number;
-  readonly #colorBgSelected: number;
+  readonly #colors: ColorScheme<RadioColors>;
 
   constructor(options: RadioGroupWidgetOptions = {}) {
     super();
@@ -55,14 +51,24 @@ export class RadioGroupWidget extends InteractiveWidget {
     this.#value = resolved.value;
     this.setDisabled(resolved.disabled);
 
-    this.#colorFgNormal = parseColor(resolved.colorFgNormal);
-    this.#colorBgNormal = parseColor(resolved.colorBgNormal);
-    this.#colorFgFocused = parseColor(resolved.colorFgFocused);
-    this.#colorBgFocused = parseColor(resolved.colorBgFocused);
-    this.#colorFgDisabled = parseColor(resolved.colorFgDisabled);
-    this.#colorBgDisabled = parseColor(resolved.colorBgDisabled);
-    this.#colorFgSelected = parseColor(resolved.colorFgSelected);
-    this.#colorBgSelected = parseColor(resolved.colorBgSelected);
+    this.#colors = {
+      normal: {
+        fg: parseColor(resolved.colorFgNormal),
+        bg: parseColor(resolved.colorBgNormal),
+      },
+      focused: {
+        fg: parseColor(resolved.colorFgFocused),
+        bg: parseColor(resolved.colorBgFocused),
+      },
+      disabled: {
+        fg: parseColor(resolved.colorFgDisabled),
+        bg: parseColor(resolved.colorBgDisabled),
+      },
+      selected: {
+        fg: parseColor(resolved.colorFgSelected),
+        bg: parseColor(resolved.colorBgSelected),
+      },
+    };
 
     this.on('mousedown', mouseData => {
       const innerY = mouseData.y - this.#rect.y;
@@ -165,6 +171,10 @@ export class RadioGroupWidget extends InteractiveWidget {
     return this.#rect;
   }
 
+  override intrinsicSize(): TuiWidgetSize | undefined {
+    return {width: this.#rect.width, height: this.#rect.height};
+  }
+
   override updateRect(rect: Partial<TuiWidgetRect>): void {
     Object.assign(this.#rect, rect);
   }
@@ -177,15 +187,16 @@ export class RadioGroupWidget extends InteractiveWidget {
 
     buffer.pushClip(x, y, width, height);
 
-    const baseFg = this.disabled ? this.#colorFgDisabled : this.#colorFgNormal;
-    const baseBg = this.disabled ? this.#colorBgDisabled : this.#colorBgNormal;
+    const baseColors = resolveColorState(this.#colors, {
+      disabled: this.disabled,
+    });
 
     buffer.drawRect({
       x,
       y,
       width,
       height,
-      bgRgba: baseBg,
+      bgRgba: baseColors.bg,
     });
 
     const visibleCount = Math.min(this.#options.length, height);
@@ -197,16 +208,20 @@ export class RadioGroupWidget extends InteractiveWidget {
       const rowY = y + i;
 
       const indicator = isSelected ? '(●)' : '( )';
-      const fg = isSelected ? this.#colorFgSelected : ((isHovered || isFocused) ? this.#colorFgFocused : baseFg);
-      const bg = isSelected ? this.#colorBgSelected : ((isHovered || isFocused) ? this.#colorBgFocused : 0x00_00_00_00);
+      const colors = resolveColorState(this.#colors, {
+        disabled: this.disabled,
+        selected: isSelected,
+        hovered: isHovered,
+        focused: isFocused,
+      });
 
-      if (bg !== 0x00_00_00_00) {
+      if (colors.bg !== 0x00_00_00_00) {
         buffer.drawRect({
           x,
           y: rowY,
           width,
           height: 1,
-          bgRgba: bg,
+          bgRgba: colors.bg,
         });
       }
 
@@ -218,7 +233,7 @@ export class RadioGroupWidget extends InteractiveWidget {
         x,
         y: rowY,
         text,
-        fgRgba: fg,
+        fgRgba: colors.fg,
         bgRgba: 0x00_00_00_00,
       });
     }

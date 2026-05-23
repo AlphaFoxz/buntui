@@ -129,18 +129,18 @@ type NodeGenResult = {
   nextIndex: number;
 };
 
-function generateNode(node: TuiRenderNode, index: number): NodeGenResult | undefined {
+function generateNode(node: TuiRenderNode, index: number, parentVarName?: string): NodeGenResult | undefined {
   switch (node.type) {
     case 'TuiWidgetCall': {
       return generateWidgetCall(node, index);
     }
 
     case 'TuiConditionalBlock': {
-      return generateConditional(node, index);
+      return generateConditional(node, index, parentVarName);
     }
 
     case 'TuiListBlock': {
-      return generateList(node, index);
+      return generateList(node, index, parentVarName);
     }
 
     // Default: {
@@ -259,7 +259,7 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
         nextIndex = result.nextIndex;
       }
     } else {
-      const result = generateNode(child, nextIndex);
+      const result = generateNode(child, nextIndex, varName);
       if (result) {
         lines.push(...result.lines);
         nextIndex = result.nextIndex;
@@ -346,12 +346,18 @@ function collectWidgetTree(
   };
 }
 
-function buildUnmountTreeLines(tree: WidgetTree): string[] {
+function buildUnmountTreeLines(tree: WidgetTree, parentVarName?: string): string[] {
   const lines: string[] = [];
   if (tree.root.isComponent) {
     lines.push(
       `    if (${tree.root.varName}) {`,
       `      ${tree.root.varName}();`,
+      `      ${tree.root.varName} = null;`,
+    );
+  } else if (parentVarName) {
+    lines.push(
+      `    if (${tree.root.varName}) {`,
+      `      ${parentVarName}.removeChild(${tree.root.varName});`,
       `      ${tree.root.varName} = null;`,
     );
   } else {
@@ -374,7 +380,7 @@ function buildUnmountTreeLines(tree: WidgetTree): string[] {
   return lines;
 }
 
-function buildMountTreeLines(tree: WidgetTree): string[] {
+function buildMountTreeLines(tree: WidgetTree, parentVarName?: string): string[] {
   const lines: string[] = [`    if (!${tree.root.varName}) {`, `      ${tree.root.varName} = ${tree.root.createLine};`];
 
   for (const d of tree.descendants) {
@@ -397,6 +403,8 @@ function buildMountTreeLines(tree: WidgetTree): string[] {
 
   if (tree.root.isComponent) {
     lines.push('    }');
+  } else if (parentVarName) {
+    lines.push(`      ${parentVarName}.addChild(${tree.root.varName});`, '    }');
   } else {
     lines.push(`      __scene.mount(${tree.root.varName});`, '    }');
   }
@@ -404,7 +412,7 @@ function buildMountTreeLines(tree: WidgetTree): string[] {
   return lines;
 }
 
-function generateConditional(block: TuiConditionalBlock, index: number): NodeGenResult {
+function generateConditional(block: TuiConditionalBlock, index: number, parentVarName?: string): NodeGenResult {
   const branches = flattenConditional(block);
   const lines: string[] = [];
   let nextIndex = index;
@@ -444,7 +452,7 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
 
     // Mount this branch's widgets (root + descendants)
     for (const tree of branchTrees[i]!) {
-      effectLines.push(...buildMountTreeLines(tree));
+      effectLines.push(...buildMountTreeLines(tree, parentVarName));
     }
 
     // Unmount other branches' widgets
@@ -454,7 +462,7 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
       }
 
       for (const tree of branchTrees[j]!) {
-        effectLines.push(...buildUnmountTreeLines(tree));
+        effectLines.push(...buildUnmountTreeLines(tree, parentVarName));
       }
     }
 
@@ -467,7 +475,7 @@ function generateConditional(block: TuiConditionalBlock, index: number): NodeGen
     effectLines.push(' else {');
     for (const trees of branchTrees) {
       for (const tree of trees) {
-        effectLines.push(...buildUnmountTreeLines(tree));
+        effectLines.push(...buildUnmountTreeLines(tree, parentVarName));
       }
     }
 

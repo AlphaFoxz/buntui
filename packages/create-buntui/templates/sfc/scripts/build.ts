@@ -34,6 +34,7 @@ if (!result.success) {
   for (const error of result.logs) {
     console.error(error);
   }
+
   process.exit(1);
 }
 
