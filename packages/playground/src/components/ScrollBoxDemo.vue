@@ -49,14 +49,7 @@
 
     <Text :x="1" :y="15" :colorFg="'rgba(250,179,135,1)'" value="▶ Compact List (no border)" />
 
-    <ScrollBox
-        :x="1"
-        :y="16"
-        width="45%"
-        :height="6"
-        :colorBg="'rgba(24,24,37,1)'"
-        @scroll="handleScroll2"
-    >
+    <ScrollBox :x="1" :y="16" width="45%" :height="6" :colorBg="'rgba(24,24,37,1)'" @scroll="handleScroll2">
         <template>
             <Text
                 v-for="(item, index) in 30"
@@ -99,9 +92,8 @@ const scrollPercent = ref('0')
 function handleScroll(event: TuiScrollEvent) {
     scrollOffsetY.value = event.scrollOffsetY
     maxScrollY.value = event.maxScrollY
-    scrollPercent.value = maxScrollY.value > 0
-        ? String(Math.round((event.scrollOffsetY / event.maxScrollY) * 100))
-        : '0'
+    scrollPercent.value =
+        maxScrollY.value > 0 ? String(Math.round((event.scrollOffsetY / event.maxScrollY) * 100)) : '0'
 }
 
 const highlightIndex = ref(3)

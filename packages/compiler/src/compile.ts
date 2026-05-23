@@ -10,6 +10,8 @@ export type CompileOptions = {
   registry?: TuiComponentRegistry;
   transform?: Omit<TransformOptions, 'registry' | 'components'>;
   codegen?: CodegenOptions;
+  moduleRewrites?: Record<string, string>;
+  symbolRedirects?: Record<string, string>;
 };
 
 export type CompileResult = {
@@ -24,6 +26,17 @@ type ScriptAnalysis = {
   scriptBody: string[];
   componentMap: Record<string, string>;
   widgetImportMap: Record<string, string>;
+};
+
+const DEFAULT_MODULE_REWRITES: Record<string, string> = {
+  vue: '@vue/reactivity',
+};
+
+const DEFAULT_SYMBOL_REDIRECTS: Record<string, string> = {
+  onMounted: '@buntui/core',
+  onUnmounted: '@buntui/core',
+  onTick: '@buntui/core',
+  useTemplateRef: '@buntui/core',
 };
 
 export function compile(source: string, options?: CompileOptions): CompileResult {
@@ -58,8 +71,10 @@ export function compile(source: string, options?: CompileOptions): CompileResult
     });
 
     const coreModuleId = options?.codegen?.coreModuleId ?? '@buntui/core';
+    const moduleRewrites = {...DEFAULT_MODULE_REWRITES, ...options?.moduleRewrites};
+    const symbolRedirects = {...DEFAULT_SYMBOL_REDIRECTS, ...options?.symbolRedirects};
 
-    return assembleOutput(codegenResult, analysis.scriptImports, descriptor, templateAst, coreModuleId);
+    return assembleOutput(codegenResult, analysis.scriptImports, descriptor, templateAst, {coreModuleId, moduleRewrites, symbolRedirects});
   } catch (error) {
     if (!(error instanceof Error)) {
       throw new Error(`${filename} - ${String(error)}`, {cause: error});
@@ -172,19 +187,23 @@ function analyzeImportsFromAst(
   return {componentMap, widgetImportMap};
 }
 
-const BUNTUI_LIFECYCLE_HOOKS = new Set(['onMounted', 'onUnmounted', 'onTick', 'useTemplateRef']);
+type RewriteContext = {
+  coreModuleId: string;
+  moduleRewrites: Record<string, string>;
+  symbolRedirects: Record<string, string>;
+};
 
 function assembleOutput(
   codegenResult: CodegenResult,
   scriptImports: string[],
   descriptor: SFCDescriptor,
   templateAst: RootNode,
-  coreModuleId: string,
+  rewriteCtx: RewriteContext,
 ): CompileResult {
   const codegenImportSet = new Set(codegenResult.imports);
   const extraScriptImports = scriptImports
     .filter(i => !codegenImportSet.has(i))
-    .map(line => rewriteLifecycleImport(line, coreModuleId));
+    .flatMap(line => rewriteImport(line, rewriteCtx));
 
   const allImports = [...codegenResult.imports, ...extraScriptImports];
 
@@ -203,34 +222,51 @@ function assembleOutput(
 
 export {type SFCDescriptor} from '@vue/compiler-sfc';
 
-function rewriteLifecycleImport(line: string, coreModuleId: string): string {
+function parseImportName(raw: string): {original: string; local: string} {
+  const parts = raw.split(/\s+as\s+/v);
+  return {original: parts[0]!.trim(), local: parts.length > 1 ? parts[1]!.trim() : parts[0]!.trim()};
+}
+
+function rewriteImport(
+  line: string,
+  ctx: RewriteContext,
+): string[] {
   // eslint-disable-next-line require-unicode-regexp
-  const vueMatch = /^(\s*import\s*{)([^}]+)(}\s*from\s*)['"]vue['"]\s*;?\s*$/.exec(line);
-  if (!vueMatch) {
-    return line;
+  const match = /^(\s*import\s*{)([^}]+)(}\s*from\s*)['"]([^'"]+)['"]\s*;?\s*$/.exec(line);
+  if (!match) {
+    return [line];
   }
 
-  const [, prefix, names, suffix] = vueMatch;
+  const [, prefix, names, suffix, sourceModule = ''] = match;
   const nameList = (names ?? '').split(',').map(n => n.trim()).filter(Boolean);
-  const buntuiNames: string[] = [];
-  const remainingNames: string[] = [];
+  const parsedNames = nameList.map(n => parseImportName(n));
 
-  for (const name of nameList) {
-    if (BUNTUI_LIFECYCLE_HOOKS.has(name)) {
-      buntuiNames.push(name);
-    } else {
-      remainingNames.push(name);
+  const needsModuleRewrite = sourceModule in ctx.moduleRewrites;
+  const needsSymbolSplit = parsedNames.some(n => n.original in ctx.symbolRedirects);
+  if (!needsModuleRewrite && !needsSymbolSplit) {
+    return [line];
+  }
+
+  const groups = new Map<string, string[]>();
+  for (const {original, local} of parsedNames) {
+    const target = ctx.symbolRedirects[original] ?? sourceModule;
+    const displayName = original === local ? original : `${original} as ${local}`;
+    let group = groups.get(target);
+    if (!group) {
+      group = [];
+      groups.set(target, group);
     }
+
+    group.push(displayName);
   }
 
   const lines: string[] = [];
-  if (buntuiNames.length > 0) {
-    lines.push(`${prefix} ${buntuiNames.join(', ')} ${suffix}'${coreModuleId}';`);
+  for (const [target, groupNames] of groups) {
+    const resolvedTarget = target === sourceModule
+      ? (ctx.moduleRewrites[sourceModule] ?? sourceModule)
+      : target.replace('@buntui/core', ctx.coreModuleId);
+    lines.push(`${prefix!} ${groupNames.join(', ')} ${suffix!}'${resolvedTarget}';`);
   }
 
-  if (remainingNames.length > 0) {
-    lines.push(`${prefix} ${remainingNames.join(', ')} ${suffix}'vue';`);
-  }
-
-  return lines.length > 0 ? lines.join('\n') : line;
+  return lines.length > 0 ? lines : [line];
 }

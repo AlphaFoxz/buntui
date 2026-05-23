@@ -19,7 +19,7 @@ export class RenderLoop {
   readonly #tickInterval: number;
   readonly #renderInterval: number;
   #running = false;
-  #timerId: ReturnType<typeof setTimeout> | undefined;
+  #immediateId: ReturnType<typeof setImmediate> | undefined;
   #lastTime = 0;
   #accumulator = 0;
   #lastRenderTime = 0;
@@ -71,17 +71,17 @@ export class RenderLoop {
         LOGGER.logError(`Render loop error: ${formatError(error)}`);
       }
 
-      this.#timerId = setTimeout(loop, 1);
+      this.#immediateId = setImmediate(loop);
     };
 
-    this.#timerId = setTimeout(loop, 0);
+    this.#immediateId = setImmediate(loop);
   }
 
   stop(): void {
     this.#running = false;
-    if (this.#timerId !== undefined) {
-      clearTimeout(this.#timerId);
-      this.#timerId = undefined;
+    if (this.#immediateId !== undefined) {
+      clearImmediate(this.#immediateId);
+      this.#immediateId = undefined;
     }
   }
 }

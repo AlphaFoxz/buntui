@@ -507,4 +507,136 @@ describe('compile', () => {
       expect(result.code).toContain('myInput.value = __input0;');
     });
   });
+
+  describe('import rewriting', () => {
+    it('rewrites from "vue" to "@vue/reactivity" for reactivity functions', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + '<script setup>import {ref, computed} from "vue";\nconst msg = ref("hello");</script>',
+      );
+      expect(result.imports.some(i => i.includes('ref') && i.includes('@vue/reactivity'))).toBe(true);
+      expect(result.imports.some(i => i.includes('computed') && i.includes('@vue/reactivity'))).toBe(true);
+      expect(result.imports.some(i => i.includes("from 'vue'") || i.includes('from "vue"'))).toBe(false);
+    });
+
+    it('splits mixed import: lifecycle to @buntui/core, reactivity to @vue/reactivity', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + '<script setup>import {ref, onMounted} from "vue";\nconst msg = ref("hello");\nonMounted(() => {});</script>',
+      );
+      expect(result.imports.some(i => i.includes('onMounted') && i.includes('@buntui/core'))).toBe(true);
+      expect(result.imports.some(i => i.includes('ref') && i.includes('@vue/reactivity'))).toBe(true);
+      expect(result.imports.some(i => i.includes("from 'vue'") || i.includes('from "vue"'))).toBe(false);
+    });
+
+    it('rewrites pure lifecycle import from "vue" to @buntui/core', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + '<script setup>import {onMounted, onUnmounted} from "vue";\nconst msg = "hello";\nonMounted(() => {});</script>',
+      );
+      expect(result.imports.some(i => i.includes('onMounted') && i.includes('onUnmounted') && i.includes('@buntui/core'))).toBe(true);
+      expect(result.imports.some(i => i.includes("from 'vue'") || i.includes('from "vue"'))).toBe(false);
+    });
+
+    it('preserves import from @vue/reactivity as-is', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + '<script setup>import {ref} from "@vue/reactivity";\nconst msg = ref("hello");</script>',
+      );
+      expect(result.code).toContain('import {ref} from "@vue/reactivity"');
+    });
+
+    it('preserves import from other modules as-is', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + '<script setup>import {something} from "other-module";\nconst msg = "hello";</script>',
+      );
+      expect(result.code).toContain('import {something} from "other-module"');
+    });
+
+    it('supports custom symbolRedirects', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + '<script setup>import {ref, myHook} from "vue";\nconst msg = ref("hello");\nmyHook();</script>',
+        {symbolRedirects: {myHook: '@custom/pkg'}},
+      );
+      expect(result.imports.some(i => i.includes('myHook') && i.includes('@custom/pkg'))).toBe(true);
+      expect(result.imports.some(i => i.includes('ref') && i.includes('@vue/reactivity'))).toBe(true);
+    });
+
+    it('supports custom moduleRewrites', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + '<script setup>import {ref} from "vue";\nconst msg = ref("hello");</script>',
+        {moduleRewrites: {vue: 'my-reactivity'}},
+      );
+      expect(result.imports.some(i => i.includes('ref') && i.includes('my-reactivity'))).toBe(true);
+    });
+
+    it('handles single quote imports', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + "<script setup>import {ref} from 'vue';\nconst msg = ref('hello');</script>",
+      );
+      expect(result.imports.some(i => i.includes('ref') && i.includes('@vue/reactivity'))).toBe(true);
+    });
+
+    it('handles import with semicolon', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + '<script setup>import {ref} from "vue";\nconst msg = ref("hello");</script>',
+      );
+      expect(result.imports.some(i => i.includes('ref') && i.includes('@vue/reactivity'))).toBe(true);
+    });
+
+    it('handles import with onTick and useTemplateRef', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + '<script setup>import {onTick, useTemplateRef} from "vue";\nconst msg = "hello";</script>',
+      );
+      expect(result.imports.some(i => i.includes('onTick') && i.includes('useTemplateRef') && i.includes('@buntui/core'))).toBe(true);
+    });
+
+    it('does not rewrite import type', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + '<script setup>import type {Ref} from "vue";\nconst msg = "hello";</script>',
+      );
+      expect(result.code).toContain('import type {Ref} from "vue"');
+    });
+
+    it('resolves custom coreModuleId for symbolRedirects', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + '<script setup>import {onMounted} from "vue";\nconst msg = "hello";</script>',
+        {codegen: {coreModuleId: 'custom-core'}},
+      );
+      expect(result.imports.some(i => i.includes('onMounted') && i.includes('custom-core'))).toBe(true);
+    });
+
+    it('handles aliased reactivity import (ref as myRef)', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + '<script setup>import {ref as myRef} from "vue";\nconst msg = myRef("hello");</script>',
+      );
+      expect(result.imports.some(i => i.includes('ref as myRef') && i.includes('@vue/reactivity'))).toBe(true);
+    });
+
+    it('handles aliased lifecycle import (onMounted as mounted)', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + '<script setup>import {onMounted as mounted} from "vue";\nconst msg = "hello";\nmounted(() => {});</script>',
+      );
+      expect(result.imports.some(i => i.includes('onMounted as mounted') && i.includes('@buntui/core'))).toBe(true);
+    });
+
+    it('handles mixed aliased and non-aliased imports', () => {
+      const result = compile(
+        '<template><Text :value="msg"/></template>'
+        + '<script setup>import {ref as myRef, onMounted} from "vue";\nconst msg = myRef("hello");\nonMounted(() => {});</script>',
+      );
+      expect(result.imports.some(i => i.includes('onMounted') && i.includes('@buntui/core'))).toBe(true);
+      expect(result.imports.some(i => i.includes('ref as myRef') && i.includes('@vue/reactivity'))).toBe(true);
+    });
+  });
 });

@@ -28,7 +28,7 @@
         x="35%"
         :y="3"
         width="60%"
-        :height="8"
+        :height="9"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(166,227,161,0.3)'"
         borderStyle="rounded"
@@ -38,13 +38,16 @@
         <Text :colorFg="'rgba(166,227,161,1)'" value="▶ Checklist Summary" />
         <Text :colorFg="'rgba(205,214,244,1)'" :value="`Notifications: ${notifLabel}`" />
         <Text :colorFg="'rgba(205,214,244,1)'" :value="`Dark Mode: ${darkMode ? 'ON' : 'OFF'}`" />
-        <Text :colorFg="'rgba(205,214,244,1)'" :value="`Options: A=${optA ? '✓' : '✗'} B=${optB ? '✓' : '✗'} C=${optC ? '✓' : '✗'} (${checkedCount}/3)`" />
+        <Text
+            :colorFg="'rgba(205,214,244,1)'"
+            :value="`Options: A=${optA ? '✓' : '✗'} B=${optB ? '✓' : '✗'} C=${optC ? '✓' : '✗'} (${checkedCount}/3)`"
+        />
         <Text :colorFg="'rgba(108,112,134,1)'" value="Click checkboxes or use Enter/Space when focused" />
     </Box>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from '@vue/reactivity'
+import { ref, computed } from 'vue'
 
 const notifEnabled = ref(false)
 const darkMode = ref(false)
@@ -56,7 +59,7 @@ const allChecked = computed(() => optA.value && optB.value && optC.value)
 const noneChecked = computed(() => !optA.value && !optB.value && !optC.value)
 const isIndeterminate = computed(() => !allChecked.value && !noneChecked.value)
 const checkedCount = computed(() => [optA.value, optB.value, optC.value].filter(Boolean).length)
-const notifLabel = computed(() => notifEnabled.value ? 'Enabled' : 'Disabled')
+const notifLabel = computed(() => (notifEnabled.value ? 'Enabled' : 'Disabled'))
 
 function handleCheckChange(data: TuiCheckboxChangeEvent) {
     notifEnabled.value = data.checked

@@ -146,7 +146,7 @@ describe('codegen', () => {
         new Set(['createBox']),
       );
       const result = gen(root);
-      expect(result.code).toMatch(/effect\(\(\) => \{.*updateRect.*unref\(pos\.x\)/s);
+      expect(result.code).toMatch(/effect\(\(\) => \{.*updateRect.*unref\(pos\)\.x/s);
     });
 
     it('generates effect() for primitive prop (value)', () => {
@@ -472,13 +472,14 @@ describe('codegen', () => {
       expect(result.code).toContain('unref(flag) ? unref(a) : unref(b)');
     });
 
-    it('wraps function call identifiers', () => {
+    it('preserves function call identifiers (not wrapped)', () => {
       const widget = makeWidget({
         dynamicProps: [{type: 'TuiDynamicProp', name: 'visible', expression: 'fn()', loc: STUB_LOC}],
       });
       const root = makeRoot([widget], [], new Set(['createBox']));
       const result = gen(root);
-      expect(result.code).toContain('unref(fn)()');
+      expect(result.code).toContain('fn()');
+      expect(result.code).not.toContain('unref(fn)');
     });
 
     it('wraps array identifiers but not numeric indices', () => {
@@ -507,6 +508,77 @@ describe('codegen', () => {
       const result = gen(root);
       expect(result.code).toContain('unref(name) === `admin`');
       expect(result.code).not.toContain('unref(admin)');
+    });
+
+    it('wraps identifiers inside template literal interpolation', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: '`Dark Mode: ${darkMode ? \'ON\' : \'OFF\'}`', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(darkMode)');
+      expect(result.code).not.toContain('unref(ON)');
+      expect(result.code).not.toContain('unref(OFF)');
+    });
+
+    it('wraps multiple identifiers inside template literal interpolation', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: '`${name}: ${count}`', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(name)');
+      expect(result.code).toContain('unref(count)');
+    });
+
+    it('preserves string literals inside template literal interpolation', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: '`Result: ${flag ? \'yes\' : \'no\'}`', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(flag)');
+      expect(result.code).toContain("'yes'");
+      expect(result.code).toContain("'no'");
+    });
+
+    it('handles template literal with property access in interpolation', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: '`Name: ${user.name}`', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(user).name');
+    });
+
+    it('handles template literal with function call in interpolation', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: '`Count: ${getCount()}`', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('getCount()');
+      expect(result.code).not.toContain('unref(getCount)');
+    });
+
+    it('wraps dynamic prop value with template literal interpolation', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: '`A=${optA ? \'✓\' : \'✗\'} B=${optB ? \'✓\' : \'✗\'}`', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(optA)');
+      expect(result.code).toContain('unref(optB)');
+    });
+
+    it('handles nested template literal with braces in interpolation', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: '`Items: ${items.filter(x => x.active).length}`', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(items)');
+      expect(result.code).toContain('.active');
     });
   });
 

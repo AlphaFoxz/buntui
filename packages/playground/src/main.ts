@@ -10,8 +10,8 @@ export function run(devOptions: {logFilePath?: string} = {}) {
     logLevel: 'debug',
     clearLog: true,
     debugMode: true,
-    tickRate: 120,
-    renderRate: 60,
+    tickRate: 60,
+    renderRate: 24,
     ...devOptions,
   });
   const scene = app.createScene(App, {bgHexRgb: 0x00_00_00, visible: true});

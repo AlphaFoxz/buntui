@@ -53,11 +53,7 @@ const stepLabel = computed(() => {
     return labels[currentStep.value - 1] ?? ''
 })
 const stepDesc = computed(() => {
-    const descs = [
-        'Fetching packages from registry...',
-        'Writing files to disk...',
-        'Checking integrity checksums...',
-    ]
+    const descs = ['Fetching packages from registry...', 'Writing files to disk...', 'Checking integrity checksums...']
     return descs[currentStep.value - 1] ?? ''
 })
 </script>

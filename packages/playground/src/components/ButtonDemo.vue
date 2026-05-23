@@ -6,11 +6,43 @@
 
     <Text :x="1" :y="8" :colorFg="'rgba(166,227,161,1)'" value="▶ Border Style Variants" />
 
-    <Button :x="1" :y="9" :width="14" :height="3" value="Solid" borderStyleNormal="solid" @click="handleClick('Solid')" />
-    <Button :x="17" :y="9" :width="14" :height="3" value="Rounded" borderStyleNormal="rounded" @click="handleClick('Rounded')" />
+    <Button
+        :x="1"
+        :y="9"
+        :width="14"
+        :height="3"
+        value="Solid"
+        borderStyleNormal="solid"
+        @click="handleClick('Solid')"
+    />
+    <Button
+        :x="17"
+        :y="9"
+        :width="14"
+        :height="3"
+        value="Rounded"
+        borderStyleNormal="rounded"
+        @click="handleClick('Rounded')"
+    />
     <Button :x="33" :y="9" :width="14" :height="3" value="Bold" borderStyleNormal="bold" @click="handleClick('Bold')" />
-    <Button :x="49" :y="9" :width="14" :height="3" value="Double" borderStyleNormal="double" @click="handleClick('Double')" />
-    <Button :x="65" :y="9" :width="14" :height="3" value="Dashed" borderStyleNormal="dashed" @click="handleClick('Dashed')" />
+    <Button
+        :x="49"
+        :y="9"
+        :width="14"
+        :height="3"
+        value="Double"
+        borderStyleNormal="double"
+        @click="handleClick('Double')"
+    />
+    <Button
+        :x="65"
+        :y="9"
+        :width="14"
+        :height="3"
+        value="Dashed"
+        borderStyleNormal="dashed"
+        @click="handleClick('Dashed')"
+    />
 
     <Text :x="1" :y="13" :colorFg="'rgba(250,179,135,1)'" value="▶ Custom Color Schemes" />
 

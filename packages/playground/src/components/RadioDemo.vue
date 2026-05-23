@@ -9,13 +9,7 @@
         :value="selectedColor"
         @change="handleColorChange"
     />
-    <Box
-        :x="1"
-        :y="8"
-        :width="28"
-        :height="1"
-        :colorBg="selectedColorBg"
-    />
+    <Box :x="1" :y="8" :width="28" :height="1" :colorBg="selectedColorBg" />
 
     <Text :x="31" :y="3" :colorFg="'rgba(166,227,161,1)'" value="▶ Sizes" />
     <RadioGroup
@@ -63,8 +57,14 @@
         :direction="'vertical'"
         :gap="1"
     >
-        <Text :colorFg="'rgba(205,214,244,1)'" :value="`Color: ${colorName} | Size: ${sizeName} | Framework: ${frameworkName}`" />
-        <Text :colorFg="'rgba(108,112,134,1)'" value="Use arrow keys to navigate, Enter/Space to select. Mouse click also works." />
+        <Text
+            :colorFg="'rgba(205,214,244,1)'"
+            :value="`Color: ${colorName} | Size: ${sizeName} | Framework: ${frameworkName}`"
+        />
+        <Text
+            :colorFg="'rgba(108,112,134,1)'"
+            value="Use arrow keys to navigate, Enter/Space to select. Mouse click also works."
+        />
     </Box>
 </template>
 

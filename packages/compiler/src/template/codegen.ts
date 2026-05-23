@@ -5,115 +5,12 @@ import type {
   TuiRenderNode,
   TuiConditionalBlock,
   TuiListBlock,
-  TuiEventBinding,
 } from './ast';
+import {wrapExpr, wrapConditionExpr} from './expression-wrapping';
+import {buildEventHandler} from './event-codegen';
+import {PROP_UPDATE_MAP, FLAG_PROP_MAP, BOOLEAN_FLAGS} from './widget-props';
 
 const {EFFECT, UNREF} = RUNTIME_HELPERS;
-
-/**
- * Maps widget prop names to their runtime update method.
- * Grouped props (rect, color, etc.) use partial-object update methods.
- * Primitive props (text) use direct-value update methods.
- */
-const PROP_UPDATE_MAP: Record<string, {method: string; field: string}> = {
-  // Rect — updateRect({x: val})
-  x: {method: 'updateRect', field: 'x'},
-  y: {method: 'updateRect', field: 'y'},
-  width: {method: 'updateRect', field: 'width'},
-  height: {method: 'updateRect', field: 'height'},
-  // Color — updateColor({colorFg: val})
-  colorFg: {method: 'updateColor', field: 'colorFg'},
-  colorBg: {method: 'updateColor', field: 'colorBg'},
-  // Style — updateStyle({styleZIndex: val})
-  zIndex: {method: 'updateStyle', field: 'styleZIndex'},
-  styleModifier: {method: 'updateStyle', field: 'styleModifier'},
-  // Border — updateBorder({borderColor: val})
-  border: {method: 'updateBorder', field: 'border'},
-  borderColor: {method: 'updateBorder', field: 'borderColor'},
-  borderStyle: {method: 'updateBorder', field: 'borderStyle'},
-  borderTop: {method: 'updateBorder', field: 'borderTop'},
-  borderRight: {method: 'updateBorder', field: 'borderRight'},
-  borderBottom: {method: 'updateBorder', field: 'borderBottom'},
-  borderLeft: {method: 'updateBorder', field: 'borderLeft'},
-  // Shadow — updateShadow({shadowOffsetX: val})
-  shadowOffsetX: {method: 'updateShadow', field: 'shadowOffsetX'},
-  shadowOffsetY: {method: 'updateShadow', field: 'shadowOffsetY'},
-  shadowColor: {method: 'updateShadow', field: 'shadowColor'},
-  shadowCovered: {method: 'updateShadow', field: 'shadowCovered'},
-  // Text — updateValue(val)
-  value: {method: 'updateValue', field: ''},
-  // Stack layout — updateDirection(val)
-  direction: {method: 'updateDirection', field: ''},
-  gap: {method: 'updateGap', field: ''},
-  align: {method: 'updateAlign', field: ''},
-  // Padding — updatePadding({paddingTop: val})
-  paddingTop: {method: 'updatePadding', field: 'paddingTop'},
-  paddingRight: {method: 'updatePadding', field: 'paddingRight'},
-  paddingBottom: {method: 'updatePadding', field: 'paddingBottom'},
-  paddingLeft: {method: 'updatePadding', field: 'paddingLeft'},
-};
-
-// Flag props that map to setter calls for reactive updates.
-// These props are passed to the constructor for initial values and use
-// setter methods for reactive effect generation on dynamic bindings.
-const FLAG_PROP_MAP: Record<string, string> = {
-  draggable: 'setDraggable',
-  disabled: 'setDisabled',
-  checked: 'setChecked',
-  indeterminate: 'setIndeterminate',
-  readonly: 'setReadonly',
-  label: 'setLabel',
-  tabs: 'setOptions',
-  options: 'setOptions',
-  visible: 'setVisible',
-  hijack: 'hijackConsole',
-};
-
-// Props that are boolean flags (bare attrs like `readonly` parse as string "true").
-// Only these need string→bool conversion. Other FLAG_PROP_MAP entries (label, options)
-// are string/array props and should be passed as-is.
-const BOOLEAN_FLAGS = new Set(['disabled', 'checked', 'readonly', 'draggable', 'hijack']);
-
-const KEY_MODIFIER_MAP: Record<string, string> = {
-  enter: 'Enter',
-  esc: 'Escape',
-  escape: 'Escape',
-  tab: 'Tab',
-  space: ' ',
-  up: 'ArrowUp',
-  down: 'ArrowDown',
-  left: 'ArrowLeft',
-  right: 'ArrowRight',
-  delete: 'Delete',
-  backspace: 'Backspace',
-  insert: 'Insert',
-  home: 'Home',
-  end: 'End',
-  pageup: 'PageUp',
-  pagedown: 'PageDown',
-  f1: 'F1',
-  f2: 'F2',
-  f3: 'F3',
-  f4: 'F4',
-  f5: 'F5',
-  f6: 'F6',
-  f7: 'F7',
-  f8: 'F8',
-  f9: 'F9',
-  f10: 'F10',
-  f11: 'F11',
-  f12: 'F12',
-  f13: 'F13',
-  f14: 'F14',
-  f15: 'F15',
-  f16: 'F16',
-  f17: 'F17',
-  f18: 'F18',
-  f19: 'F19',
-  f20: 'F20',
-};
-
-const SYSTEM_MODIFIERS = new Set(['ctrl', 'shift', 'alt', 'meta']);
 
 export type CodegenOptions = {
   /** Module ID for the core package import */
@@ -295,7 +192,7 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
   }
 
   for (const prop of node.dynamicProps) {
-    props.push(`${prop.name}: ${UNREF}(${prop.expression})`);
+    props.push(`${prop.name}: ${wrapExpr(prop.expression)}`);
   }
 
   if (props.length > 0) {
@@ -311,11 +208,11 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
     const info = PROP_UPDATE_MAP[prop.name];
     if (info) {
       if (info.field) {
-        // Grouped prop: widget.updateRect({x: unref(expr)})
-        lines.push(`${EFFECT}(() => { ${varName}.${info.method}({${info.field}: ${UNREF}(${prop.expression})}); });`);
+        // Grouped prop: widget.updateRect({x: expr})
+        lines.push(`${EFFECT}(() => { ${varName}.${info.method}({${info.field}: ${wrapExpr(prop.expression)}}); });`);
       } else {
-        // Primitive prop: widget.updateText(unref(expr))
-        lines.push(`${EFFECT}(() => { ${varName}.${info.method}(${UNREF}(${prop.expression})); });`);
+        // Primitive prop: widget.updateText(expr)
+        lines.push(`${EFFECT}(() => { ${varName}.${info.method}(${wrapExpr(prop.expression)}); });`);
       }
 
       continue;
@@ -324,9 +221,7 @@ function generateWidgetCall(node: TuiWidgetCall, index: number): NodeGenResult {
     // Flag props (disabled, checked, etc.): reactive setter calls
     const setter = FLAG_PROP_MAP[prop.name];
     if (setter) {
-      const expr = prop.name === 'visible'
-        ? wrapConditionExpr(prop.expression)
-        : `${UNREF}(${prop.expression})`;
+      const expr = wrapExpr(prop.expression);
       lines.push(`${EFFECT}(() => { ${varName}.${setter}(${expr}); });`);
     }
   }
@@ -449,78 +344,6 @@ function collectWidgetTree(
     },
     nextIndex,
   };
-}
-
-const CONDITION_KEYWORDS = new Set([
-  'true',
-  'false',
-  'null',
-  'undefined',
-  'typeof',
-  'void',
-  'in',
-  'of',
-  'instanceof',
-  'new',
-  'delete',
-  'return',
-  'throw',
-]);
-
-function wrapConditionExpr(expr: string): string {
-  return expr.replaceAll(
-    /`[^`]*`|'[^']*'|"[^"]*"|\b([a-zA-Z_$][\w$]*)\b/gv,
-    (match, ident: string | undefined, offset: number) => {
-      if (ident === undefined) {
-        return match; // String literal
-      }
-
-      if (offset > 0 && expr[offset - 1] === '.') {
-        return match; // Property access
-      }
-
-      if (CONDITION_KEYWORDS.has(ident)) {
-        return match;
-      }
-
-      return `${UNREF}(${ident})`;
-    },
-  );
-}
-
-function buildEventHandler(eventBinding: TuiEventBinding): string {
-  if (eventBinding.modifiers.length === 0) {
-    return eventBinding.handler;
-  }
-
-  const guards: string[] = [];
-  const prefixLines: string[] = [];
-
-  for (const mod of eventBinding.modifiers) {
-    if (mod === 'stop') {
-      prefixLines.push('$event.stopPropagation();');
-    } else if (mod === 'prevent') {
-      continue;
-    } else if (SYSTEM_MODIFIERS.has(mod)) {
-      guards.push(`$event.${mod}Key`);
-    } else if (KEY_MODIFIER_MAP[mod] === undefined) {
-      guards.push(`$event.key === '${mod}'`);
-    } else {
-      guards.push(`$event.key === '${KEY_MODIFIER_MAP[mod]}'`);
-    }
-  }
-
-  if (guards.length === 0 && prefixLines.length === 0) {
-    return eventBinding.handler;
-  }
-
-  const guardCheck = guards.length > 0 ? `if (${guards.join(' && ')}) ` : '';
-  const prefix = prefixLines.join(' ');
-  const body = eventBinding.handler.includes('=>')
-    ? `${guardCheck}${eventBinding.handler}`
-    : `${prefix} ${guardCheck}${eventBinding.handler}`;
-
-  return `($event) => { ${body} }`;
 }
 
 function buildUnmountTreeLines(tree: WidgetTree): string[] {
@@ -687,7 +510,7 @@ function buildWidgetCreation(node: TuiWidgetCall): string {
   }
 
   for (const prop of node.dynamicProps) {
-    props.push(`${prop.name}: ${UNREF}(${prop.expression})`);
+    props.push(`${prop.name}: ${wrapExpr(prop.expression)}`);
   }
 
   return props.length > 0
@@ -705,9 +528,9 @@ function buildGuardedUpdateEffects(node: TuiWidgetCall, varName: string): string
     const info = PROP_UPDATE_MAP[prop.name];
     if (info) {
       if (info.field) {
-        effects.push(`${EFFECT}(() => { if (${varName}) { ${varName}.${info.method}({${info.field}: ${UNREF}(${prop.expression})}); } });`);
+        effects.push(`${EFFECT}(() => { if (${varName}) { ${varName}.${info.method}({${info.field}: ${wrapExpr(prop.expression)}}); } });`);
       } else {
-        effects.push(`${EFFECT}(() => { if (${varName}) { ${varName}.${info.method}(${UNREF}(${prop.expression})); } });`);
+        effects.push(`${EFFECT}(() => { if (${varName}) { ${varName}.${info.method}(${wrapExpr(prop.expression)}); } });`);
       }
 
       continue;
@@ -715,9 +538,7 @@ function buildGuardedUpdateEffects(node: TuiWidgetCall, varName: string): string
 
     const setter = FLAG_PROP_MAP[prop.name];
     if (setter) {
-      const expr = prop.name === 'visible'
-        ? wrapConditionExpr(prop.expression)
-        : `${UNREF}(${prop.expression})`;
+      const expr = wrapExpr(prop.expression);
       effects.push(`${EFFECT}(() => { if (${varName}) { ${varName}.${setter}(${expr}); } });`);
     }
   }

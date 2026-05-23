@@ -99,7 +99,9 @@ const passwordValue = ref('')
 const limitedValue = ref('')
 
 const inputFeedback = computed(() => `Username: [${inputValue.value}] (${inputValue.value.length} chars)`)
-const passwordFeedback = computed(() => `Password: ${'*'.repeat(passwordValue.value.length)} (${passwordValue.value.length} chars)`)
+const passwordFeedback = computed(
+    () => `Password: ${'*'.repeat(passwordValue.value.length)} (${passwordValue.value.length} chars)`,
+)
 const limitedFeedback = computed(() => `Limited: [${limitedValue.value}] (${limitedValue.value.length}/10 chars)`)
 
 function handleInput(data: TuiInputEvent) {

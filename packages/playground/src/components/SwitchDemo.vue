@@ -16,8 +16,24 @@
 
     <Switch :x="1" :y="7" :width="20" :height="1" label="Wi-Fi" :checked="wifiEnabled" @change="handleWifiChange" />
     <Switch :x="31" :y="7" :width="20" :height="1" label="Bluetooth" :checked="btEnabled" @change="handleBtChange" />
-    <Switch :x="1" :y="8" :width="20" :height="1" label="Location" :checked="locationEnabled" @change="handleLocationChange" />
-    <Switch :x="31" :y="8" :width="20" :height="1" label="Dark Mode" :checked="darkMode" @change="handleDarkModeChange" />
+    <Switch
+        :x="1"
+        :y="8"
+        :width="20"
+        :height="1"
+        label="Location"
+        :checked="locationEnabled"
+        @change="handleLocationChange"
+    />
+    <Switch
+        :x="31"
+        :y="8"
+        :width="20"
+        :height="1"
+        label="Dark Mode"
+        :checked="darkMode"
+        @change="handleDarkModeChange"
+    />
 
     <Text :x="1" :y="10" :colorFg="'rgba(243,139,168,1)'" value="▶ Disabled State" />
 

@@ -413,7 +413,6 @@ export class BoxWidget extends TuiWidgetEntity {
 
     buffer.pushClip(x, y, width, height);
 
-    // Background fill
     buffer.drawRect({
       x,
       y,
@@ -422,7 +421,6 @@ export class BoxWidget extends TuiWidgetEntity {
       bgRgba: colorBg,
     });
 
-    // Border
     if (borderStyle !== 0) {
       const sides = (borderTop ? BorderSides.Top : 0)
         | (borderRight ? BorderSides.Right : 0)
@@ -439,7 +437,18 @@ export class BoxWidget extends TuiWidgetEntity {
       });
     }
 
+    const borderH = (borderLeft ? 1 : 0) + (borderRight ? 1 : 0);
+    const borderV = (borderTop ? 1 : 0) + (borderBottom ? 1 : 0);
+    const {paddingTop, paddingLeft} = this.#padding;
+    const contentX = x + paddingLeft + (borderLeft ? 1 : 0);
+    const contentY = y + paddingTop + (borderTop ? 1 : 0);
+    const contentWidth = width - paddingLeft - this.#padding.paddingRight - borderH;
+    const contentHeight = height - paddingTop - this.#padding.paddingBottom - borderV;
+
+    buffer.pushClip(contentX, contentY, contentWidth, contentHeight);
     this.renderChildren(buffer);
+    buffer.popClip();
+
     buffer.popClip();
   }
 
