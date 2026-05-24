@@ -14,6 +14,8 @@ export const RUNTIME_HELPERS = {
   CREATE_SWITCH: 'createSwitchWidget',
   CREATE_SCROLL_BOX: 'createScrollBoxWidget',
   CREATE_PROGRESS: 'createProgressWidget',
+  CREATE_TEXTAREA: 'createTextareaWidget',
+  CREATE_TABLE: 'createTableWidget',
 
   // App & scene
   CREATE_APP: 'createApp',
@@ -106,7 +108,9 @@ const TEXT_PROP_HANDLERS: PropHandlers = {
 const INPUT_PROP_HANDLERS: PropHandlers = {
   ...PH_RECT, ...PH_COLOR, ...PH_BORDER_STYLE_ONLY,
   value: {method: 'updateValue'},
+  min: {method: 'setMin'},
   max: {method: 'setMax'},
+  step: {method: 'setStep'},
   maxLength: {method: 'setMaxLength'},
   placeholder: {method: 'setPlaceholder'},
   label: {method: 'setLabel'},
@@ -179,6 +183,23 @@ const PROGRESS_PROP_HANDLERS: PropHandlers = {
   ...PH_DISABLED, ...PH_VISIBLE,
 };
 
+const TEXTAREA_PROP_HANDLERS: PropHandlers = {
+  ...PH_RECT, ...PH_COLOR, ...PH_BORDER_STYLE_ONLY,
+  value: {method: 'updateValue'},
+  maxLength: {method: 'setMaxLength'},
+  placeholder: {method: 'setPlaceholder'},
+  label: {method: 'setLabel'},
+  readonly: {method: 'setReadonly'},
+  ...PH_DISABLED, ...PH_VISIBLE,
+};
+
+const TABLE_PROP_HANDLERS: PropHandlers = {
+  ...PH_RECT, ...PH_COLOR, ...PH_BORDER_STYLE_ONLY,
+  columns: {method: 'setColumns'},
+  rows: {method: 'setRows'},
+  ...PH_DISABLED, ...PH_VISIBLE,
+};
+
 export const CORE_REGISTRY: TuiComponentRegistry = {
   Box: {creator: RUNTIME_HELPERS.CREATE_BOX, module: '@buntui/core', propHandlers: BOX_PROP_HANDLERS},
   Text: {creator: RUNTIME_HELPERS.CREATE_TEXT, module: '@buntui/core', propHandlers: TEXT_PROP_HANDLERS},
@@ -190,4 +211,6 @@ export const CORE_REGISTRY: TuiComponentRegistry = {
   Switch: {creator: RUNTIME_HELPERS.CREATE_SWITCH, module: '@buntui/core', propHandlers: SWITCH_PROP_HANDLERS},
   ScrollBox: {creator: RUNTIME_HELPERS.CREATE_SCROLL_BOX, module: '@buntui/core', propHandlers: SCROLL_BOX_PROP_HANDLERS},
   Progress: {creator: RUNTIME_HELPERS.CREATE_PROGRESS, module: '@buntui/core', propHandlers: PROGRESS_PROP_HANDLERS},
+  Textarea: {creator: RUNTIME_HELPERS.CREATE_TEXTAREA, module: '@buntui/core', propHandlers: TEXTAREA_PROP_HANDLERS},
+  Table: {creator: RUNTIME_HELPERS.CREATE_TABLE, module: '@buntui/core', propHandlers: TABLE_PROP_HANDLERS},
 };

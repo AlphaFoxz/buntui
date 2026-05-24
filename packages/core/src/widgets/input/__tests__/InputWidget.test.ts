@@ -1255,3 +1255,368 @@ describe('updateBorder', () => {
     expect(input.rect).toBeDefined();
   });
 });
+
+describe('number mode', () => {
+  function createNumberInput(options?: {value?: string; min?: number; max?: number; step?: number; width?: number; x?: number; y?: number}) {
+    return new InputWidget({
+      type: 'number',
+      value: options?.value ?? '0',
+      min: options?.min ?? 0,
+      max: options?.max ?? 100,
+      step: options?.step ?? 1,
+      width: options?.width ?? 20,
+      x: options?.x ?? 5,
+      y: options?.y ?? 5,
+    });
+  }
+
+  describe('construction', () => {
+    it('initializes with given value', () => {
+      const input = createNumberInput({value: '42'});
+      expect(input.value).toBe('42');
+    });
+
+    it('defaults to "0"', () => {
+      const input = createNumberInput();
+      expect(input.value).toBe('0');
+    });
+  });
+
+  describe('typing — digits', () => {
+    it('accepts digit characters', () => {
+      const input = createNumberInput();
+      input.handleKey(key({key: '5'}));
+      expect(input.value).toBe('05');
+    });
+
+    it('accepts multiple digits', () => {
+      const input = createNumberInput({value: ''});
+      input.handleKey(key({key: '1'}));
+      input.handleKey(key({key: '2'}));
+      input.handleKey(key({key: '3'}));
+      expect(input.value).toBe('123');
+    });
+  });
+
+  describe('typing — minus', () => {
+    it('accepts minus at position 0', () => {
+      const input = createNumberInput({value: ''});
+      input.handleKey(key({key: '-'}));
+      expect(input.value).toBe('-');
+    });
+
+    it('rejects minus not at position 0', () => {
+      const input = createNumberInput({value: '5'});
+      input.handleKey(key({key: '-'}));
+      expect(input.value).toBe('5');
+    });
+
+    it('rejects second minus', () => {
+      const input = createNumberInput({value: '-5'});
+      input.handleKey(key({key: 'Home'}));
+      input.handleKey(key({key: '-'}));
+      expect(input.value).toBe('-5');
+    });
+  });
+
+  describe('typing — dot', () => {
+    it('accepts dot', () => {
+      const input = createNumberInput({value: '5'});
+      input.handleKey(key({key: '.'}));
+      expect(input.value).toBe('5.');
+    });
+
+    it('rejects second dot', () => {
+      const input = createNumberInput({value: '5.0'});
+      input.handleKey(key({key: '.'}));
+      expect(input.value).toBe('5.0');
+    });
+  });
+
+  describe('typing — rejection', () => {
+    it('rejects letters', () => {
+      const input = createNumberInput();
+      input.handleKey(key({key: 'a'}));
+      expect(input.value).toBe('0');
+    });
+
+    it('rejects special characters', () => {
+      const input = createNumberInput();
+      input.handleKey(key({key: '!'}));
+      expect(input.value).toBe('0');
+    });
+  });
+
+  describe('ArrowUp / ArrowDown', () => {
+    it('ArrowUp increments by step', () => {
+      const input = createNumberInput({value: '5'});
+      input.handleKey(key({key: 'ArrowUp'}));
+      expect(input.value).toBe('6');
+    });
+
+    it('ArrowDown decrements by step', () => {
+      const input = createNumberInput({value: '5'});
+      input.handleKey(key({key: 'ArrowDown'}));
+      expect(input.value).toBe('4');
+    });
+
+    it('clamps to max on increment', () => {
+      const input = createNumberInput({value: '99', max: 100});
+      input.handleKey(key({key: 'ArrowUp'}));
+      expect(input.value).toBe('100');
+      input.handleKey(key({key: 'ArrowUp'}));
+      expect(input.value).toBe('100');
+    });
+
+    it('clamps to min on decrement', () => {
+      const input = createNumberInput({value: '1', min: 0});
+      input.handleKey(key({key: 'ArrowDown'}));
+      expect(input.value).toBe('0');
+      input.handleKey(key({key: 'ArrowDown'}));
+      expect(input.value).toBe('0');
+    });
+
+    it('respects custom step', () => {
+      const input = createNumberInput({value: '10', step: 5});
+      input.handleKey(key({key: 'ArrowUp'}));
+      expect(input.value).toBe('15');
+      input.handleKey(key({key: 'ArrowDown'}));
+      expect(input.value).toBe('10');
+    });
+
+    it('handles NaN value as min for increment', () => {
+      const input = createNumberInput({value: ''});
+      input.handleKey(key({key: 'ArrowUp'}));
+      expect(input.value).toBe('1');
+    });
+
+    it('handles NaN value as max for decrement', () => {
+      const input = createNumberInput({value: ''});
+      input.handleKey(key({key: 'ArrowDown'}));
+      expect(input.value).toBe('99');
+    });
+
+    it('dispatches input event on increment', () => {
+      const input = createNumberInput({value: '5'});
+      const events: unknown[] = [];
+      input.on('input', data => events.push(data));
+      input.handleKey(key({key: 'ArrowUp'}));
+      expect(events).toHaveLength(1);
+      expect((events[0] as Record<string, string>).value).toBe('6');
+    });
+
+    it('dispatches change event on increment', () => {
+      const input = createNumberInput({value: '5'});
+      const events: unknown[] = [];
+      input.on('change', data => events.push(data));
+      input.handleKey(key({key: 'ArrowUp'}));
+      expect(events).toHaveLength(1);
+      expect((events[0] as Record<string, number>).value).toBe(6);
+    });
+
+    it('does not dispatch when value unchanged', () => {
+      const input = createNumberInput({value: '100', max: 100});
+      const events: unknown[] = [];
+      input.on('change', data => events.push(data));
+      input.handleKey(key({key: 'ArrowUp'}));
+      expect(events).toHaveLength(0);
+    });
+  });
+
+  describe('Enter — commitNumber', () => {
+    it('clamps value on Enter', () => {
+      const input = createNumberInput({value: '150', max: 100});
+      input.handleKey(key({key: 'Enter'}));
+      expect(input.value).toBe('100');
+    });
+
+    it('clamps to min on Enter', () => {
+      const input = createNumberInput({value: '-50', min: 0});
+      input.handleKey(key({key: 'Enter'}));
+      expect(input.value).toBe('0');
+    });
+
+    it('replaces NaN with min on Enter', () => {
+      const input = createNumberInput({value: 'abc', min: 0});
+      input.handleKey(key({key: 'Enter'}));
+      expect(input.value).toBe('0');
+    });
+
+    it('dispatches submit event', () => {
+      const input = createNumberInput({value: '42'});
+      let submitted = '';
+      input.on('submit', data => {
+        submitted = (data as Record<string, string>).value;
+      });
+      input.handleKey(key({key: 'Enter'}));
+      expect(submitted).toBe('42');
+    });
+  });
+
+  describe('blur — commitNumber', () => {
+    it('clamps value on blur', () => {
+      const input = createNumberInput({value: '150', max: 100});
+      input.focus();
+      input.blur();
+      expect(input.value).toBe('100');
+    });
+
+    it('replaces empty with min on blur', () => {
+      const input = createNumberInput({value: '', min: 5});
+      input.focus();
+      input.blur();
+      expect(input.value).toBe('5');
+    });
+  });
+
+  describe('mouse — increment/decrement buttons', () => {
+    it('clicks ▲ to increment', () => {
+      const input = createNumberInput({value: '5', x: 5, y: 5, width: 20});
+      input.dispatch('mousedown', mouse({x: 23, y: 6}));
+      expect(input.value).toBe('6');
+    });
+
+    it('clicks ▼ to decrement', () => {
+      const input = createNumberInput({value: '5', x: 5, y: 5, width: 20});
+      input.dispatch('mousedown', mouse({x: 23, y: 7}));
+      expect(input.value).toBe('4');
+    });
+  });
+
+  describe('wheel', () => {
+    it('scrolls up to increment', () => {
+      const input = createNumberInput({value: '5'});
+      input.dispatch('wheel', {button: 0, buttons: undefined, x: 0, y: 0, isRelease: false, shiftKey: false, ctrlKey: false, altKey: false, metaKey: false, wheelDeltaY: 1});
+      expect(input.value).toBe('6');
+    });
+
+    it('scrolls down to decrement', () => {
+      const input = createNumberInput({value: '5'});
+      input.dispatch('wheel', {button: 0, buttons: undefined, x: 0, y: 0, isRelease: false, shiftKey: false, ctrlKey: false, altKey: false, metaKey: false, wheelDeltaY: -1});
+      expect(input.value).toBe('4');
+    });
+  });
+
+  describe('paste — number filter', () => {
+    let clipboard: MockClipboard;
+    let previousClipboard: ClipboardProvider;
+
+    beforeEach(() => {
+      clipboard = new MockClipboard();
+      previousClipboard = setClipboard(clipboard);
+    });
+
+    afterEach(() => {
+      setClipboard(previousClipboard);
+    });
+
+    it('pastes only digits', () => {
+      const input = createNumberInput({value: ''});
+      clipboard.write('abc123def');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('123');
+    });
+
+    it('pastes digits and dot', () => {
+      const input = createNumberInput({value: ''});
+      clipboard.write('3.14abc');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('3.14');
+    });
+
+    it('pastes minus at start only', () => {
+      const input = createNumberInput({value: ''});
+      clipboard.write('-42');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('-42');
+    });
+
+    it('rejects minus when not at cursor start', () => {
+      const input = createNumberInput({value: '5'});
+      clipboard.write('-3');
+      input.handleKey(key({key: 'v', ctrlKey: true}));
+      expect(input.value).toBe('53');
+    });
+  });
+
+  describe('edit operations still work', () => {
+    it('backspace works', () => {
+      const input = createNumberInput({value: '42'});
+      input.handleKey(key({key: 'Backspace'}));
+      expect(input.value).toBe('4');
+    });
+
+    it('delete works', () => {
+      const input = createNumberInput({value: '42'});
+      input.handleKey(key({key: 'Home'}));
+      input.handleKey(key({key: 'Delete'}));
+      expect(input.value).toBe('2');
+    });
+
+    it('selection works', () => {
+      const input = createNumberInput({value: '42'});
+      input.handleKey(key({key: 'a', ctrlKey: true}));
+      const sel = input.getSelection();
+      expect(sel).toBeDefined();
+      expect(sel!.text).toBe('42');
+    });
+
+    it('undo/redo works', () => {
+      const input = createNumberInput({value: '42'});
+      input.handleKey(key({key: 'Backspace'}));
+      expect(input.value).toBe('4');
+      input.handleKey(key({key: 'z', ctrlKey: true}));
+      expect(input.value).toBe('42');
+    });
+
+    it('navigation works', () => {
+      const input = createNumberInput({value: '42'});
+      input.handleKey(key({key: 'Home'}));
+      input.handleKey(key({key: 'ArrowRight'}));
+      input.handleKey(key({key: '5'}));
+      expect(input.value).toBe('452');
+    });
+  });
+
+  describe('setMin / setMax / setStep', () => {
+    it('setMin updates min', () => {
+      const input = createNumberInput({value: '5', min: 0});
+      input.setMin(10);
+      input.handleKey(key({key: 'ArrowDown'}));
+      expect(input.value).toBe('10');
+    });
+
+    it('setMax updates max', () => {
+      const input = createNumberInput({value: '5', max: 100});
+      input.setMax(10);
+      input.handleKey(key({key: 'ArrowUp'}));
+      input.handleKey(key({key: 'ArrowUp'}));
+      input.handleKey(key({key: 'ArrowUp'}));
+      input.handleKey(key({key: 'ArrowUp'}));
+      input.handleKey(key({key: 'ArrowUp'}));
+      input.handleKey(key({key: 'ArrowUp'}));
+      expect(input.value).toBe('10');
+    });
+
+    it('setStep updates step', () => {
+      const input = createNumberInput({value: '10', step: 1});
+      input.setStep(10);
+      input.handleKey(key({key: 'ArrowUp'}));
+      expect(input.value).toBe('20');
+    });
+  });
+
+  describe('ArrowUp/Down do not move cursor in text mode', () => {
+    it('text mode ArrowUp does nothing special', () => {
+      const input = createInput({value: 'abc'});
+      input.handleKey(key({key: 'ArrowUp'}));
+      expect(input.value).toBe('abc');
+    });
+
+    it('text mode ArrowDown does nothing special', () => {
+      const input = createInput({value: 'abc'});
+      input.handleKey(key({key: 'ArrowDown'}));
+      expect(input.value).toBe('abc');
+    });
+  });
+});

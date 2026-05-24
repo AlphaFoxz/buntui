@@ -20,3 +20,7 @@ export {createScrollBoxWidget, ScrollBoxWidget} from './scroll-box/ScrollBoxWidg
 export type {ScrollBoxWidgetOptions} from './scroll-box/types';
 export {createProgressWidget, ProgressWidget} from './progress/ProgressWidget';
 export type {ProgressWidgetOptions} from './progress/types';
+export {createTextareaWidget, TextareaWidget} from './textarea/TextareaWidget';
+export type {TextareaWidgetOptions} from './textarea/types';
+export {createTableWidget, TableWidget} from './table/TableWidget';
+export type {TableWidgetOptions, TableColumn, TableRow} from './table/types';

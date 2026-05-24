@@ -1,7 +1,7 @@
 import type {TuiColor} from '../../utils/color';
 import type {TuiSizeValue, TuiBorderStyleName} from '../types';
 
-export type InputType = 'text' | 'password';
+export type InputType = 'text' | 'password' | 'number';
 
 export type InputWidgetOptions = {
   x?: TuiSizeValue;
@@ -18,6 +18,9 @@ export type InputWidgetOptions = {
   placeholderColorFg?: TuiColor;
   value?: string;
   type?: InputType;
+  min?: number;
+  max?: number;
+  step?: number;
   borderColorUnfocused?: TuiColor;
   borderColorFocused?: TuiColor;
   borderColorDisabled?: TuiColor;

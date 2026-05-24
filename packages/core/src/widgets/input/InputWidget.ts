@@ -102,6 +102,10 @@ export class InputWidget extends InteractiveWidget {
 
   #value: string;
   readonly #password: boolean;
+  readonly #isNumber: boolean;
+  #min: number;
+  #max: number;
+  #step: number;
   #cursorPos = 0;
   #scrollOffset = 0;
   #selectionAnchor: number | undefined;
@@ -146,6 +150,10 @@ export class InputWidget extends InteractiveWidget {
     this.#label = resolved.label ?? '';
     this.#isReadonly = resolved.readonly ?? false;
     this.#password = (resolved.type ?? 'text') === 'password';
+    this.#isNumber = (resolved.type ?? 'text') === 'number';
+    this.#min = resolved.min ?? 0;
+    this.#max = resolved.max ?? 100;
+    this.#step = resolved.step ?? 1;
     this.#value = resolved.value ?? '';
     this.#cursorPos = this.#value.length;
     this.setDisabled(resolved.disabled ?? false);
@@ -153,6 +161,22 @@ export class InputWidget extends InteractiveWidget {
     this.on('mousedown', mouseData => {
       if (this.disabled) {
         return;
+      }
+
+      if (this.#isNumber) {
+        const btnX = this.#x + this.#width - 2;
+        if (mouseData.x === btnX) {
+          const textY = this.#y + 1;
+          if (mouseData.y === textY) {
+            this.#increment();
+            return;
+          }
+
+          if (this.#height === 3 && mouseData.y === textY + 1) {
+            this.#decrement();
+            return;
+          }
+        }
       }
 
       const targetPos = this.#posFromMouse(mouseData);
@@ -207,7 +231,7 @@ export class InputWidget extends InteractiveWidget {
 
       const mouse0 = mouseData.x;
       const textX = this.#x + 1;
-      const textEndX = this.#x + this.#width - 1;
+      const textEndX = this.#isNumber ? this.#x + this.#width - 3 : this.#x + this.#width - 1;
 
       // Auto-scroll backward when dragging left past text area
       if (mouse0 < textX && this.#scrollOffset > 0) {
@@ -233,6 +257,18 @@ export class InputWidget extends InteractiveWidget {
     this.on('mouseup', () => {
       this.#isSelecting = false;
     });
+
+    this.on('wheel', data => {
+      if (this.disabled || !this.#isNumber) {
+        return;
+      }
+
+      if (data.wheelDeltaY > 0) {
+        this.#increment();
+      } else if (data.wheelDeltaY < 0) {
+        this.#decrement();
+      }
+    });
   }
 
   get value(): string {
@@ -257,6 +293,18 @@ export class InputWidget extends InteractiveWidget {
 
   setPlaceholder(value: string): void {
     this.#placeholder = value;
+  }
+
+  setMin(value: number): void {
+    this.#min = value;
+  }
+
+  setMax(value: number): void {
+    this.#max = value;
+  }
+
+  setStep(value: number): void {
+    this.#step = value;
   }
 
   updateColor(color: {colorFg?: number; colorBg?: number}): void {
@@ -291,6 +339,10 @@ export class InputWidget extends InteractiveWidget {
   }
 
   override blur(): void {
+    if (this.#isNumber) {
+      this.#commitNumber();
+    }
+
     this.#selectionAnchor = undefined;
     super.blur();
   }
@@ -299,7 +351,11 @@ export class InputWidget extends InteractiveWidget {
     const key = event.key!;
     if (key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
       if (!this.#isReadonly) {
-        this.#handleCharInput(key);
+        if (this.#isNumber) {
+          this.#handleNumberCharInput(key);
+        } else {
+          this.#handleCharInput(key);
+        }
       }
 
       return;
@@ -307,6 +363,18 @@ export class InputWidget extends InteractiveWidget {
 
     if (event.ctrlKey && this.#handleCtrlKey(key, event)) {
       return;
+    }
+
+    if (this.#isNumber) {
+      if (key === 'ArrowUp') {
+        this.#increment();
+        return;
+      }
+
+      if (key === 'ArrowDown') {
+        this.#decrement();
+        return;
+      }
     }
 
     switch (key) {
@@ -369,6 +437,10 @@ export class InputWidget extends InteractiveWidget {
       }
 
       case 'Enter': {
+        if (this.#isNumber) {
+          this.#commitNumber();
+        }
+
         this.#selectionAnchor = undefined;
         this.dispatch('submit', {value: this.#value});
         break;
@@ -440,7 +512,7 @@ export class InputWidget extends InteractiveWidget {
     // Text content or placeholder
     const textX = this.#x + 1;
     const textY = this.#y + 1;
-    const visibleWidth = this.#width - 2;
+    const visibleWidth = this.#isNumber ? this.#width - 4 : this.#width - 2;
 
     if (this.#value.length > 0) {
       const range = this.#getSelectionRange();
@@ -526,12 +598,33 @@ export class InputWidget extends InteractiveWidget {
       });
 
       if (this.#label.length > 0) {
-        const maxLabelWidth = this.#width - 2;
+        const maxLabelWidth = this.#isNumber ? this.#width - 4 : this.#width - 2;
         const clippedLabel = truncateToWidth(this.#label, maxLabelWidth);
         buffer.drawText({
           x: this.#x + 1,
           y: this.#y,
           text: clippedLabel,
+          fgRgba: colors.fg,
+          bgRgba: colors.bg,
+        });
+      }
+    }
+
+    if (this.#isNumber) {
+      const btnX = this.#x + this.#width - 2;
+      const textY = this.#y + 1;
+      buffer.drawChar({
+        x: btnX,
+        y: textY,
+        char: 0x25_B2,
+        fgRgba: colors.fg,
+        bgRgba: colors.bg,
+      });
+      if (this.#height >= 3) {
+        buffer.drawChar({
+          x: btnX,
+          y: textY + 1,
+          char: 0x25_BC,
           fgRgba: colors.fg,
           bgRgba: colors.bg,
         });
@@ -627,7 +720,7 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #clampScrollOffset(): void {
-    const visibleWidth = this.#width - 2;
+    const visibleWidth = this.#isNumber ? this.#width - 4 : this.#width - 2;
     if (visibleWidth <= 0) {
       return;
     }
@@ -658,6 +751,11 @@ export class InputWidget extends InteractiveWidget {
 
   #posFromMouse(data: MouseEvent): number {
     const innerX = data.x - this.#x - 1;
+    const visibleWidth = this.#isNumber ? this.#width - 4 : this.#width - 2;
+    if (innerX < 0 || innerX >= visibleWidth) {
+      return this.#cursorPos;
+    }
+
     const displayed = this.#displaySlice(this.#scrollOffset);
     return Math.max(0, Math.min(
       this.#value.length,
@@ -931,9 +1029,27 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #handlePaste(): void {
-    const text = getClipboard().read();
+    let text = getClipboard().read();
     if (text.length === 0) {
       return;
+    }
+
+    if (this.#isNumber) {
+      let filtered = '';
+      for (const char of text) {
+        if (char >= '0' && char <= '9') {
+          filtered += char;
+        } else if (char === '.' && !this.#value.includes('.') && !filtered.includes('.')) {
+          filtered += char;
+        } else if (char === '-' && filtered.length === 0 && this.#cursorPos === 0 && !this.#value.includes('-')) {
+          filtered += char;
+        }
+      }
+
+      text = filtered;
+      if (text.length === 0) {
+        return;
+      }
     }
 
     this.#pushUndo();
@@ -1002,6 +1118,62 @@ export class InputWidget extends InteractiveWidget {
     this.#clampScrollOffset();
     this.dispatch('redo', {value: this.#value});
     this.dispatch('input', {value: this.#value});
+  }
+
+  #handleNumberCharInput(key: string): void {
+    if (key >= '0' && key <= '9') {
+      this.#handleCharInput(key);
+    } else if (key === '-' && this.#cursorPos === 0 && !this.#value.includes('-')) {
+      this.#handleCharInput(key);
+    } else if (key === '.' && !this.#value.includes('.')) {
+      this.#handleCharInput(key);
+    }
+  }
+
+  #increment(): void {
+    const parsed = Number.parseFloat(this.#value);
+    const current = Number.isNaN(parsed) ? this.#min : parsed;
+    const next = Math.min(this.#max, current + this.#step);
+    const newText = String(next);
+    if (newText !== this.#value) {
+      this.#pushUndo();
+      this.#value = newText;
+      this.#cursorPos = this.#value.length;
+      this.#selectionAnchor = undefined;
+      this.#clampScrollOffset();
+      this.dispatch('input', {value: this.#value});
+      this.dispatch('change', {value: next});
+    }
+  }
+
+  #decrement(): void {
+    const parsed = Number.parseFloat(this.#value);
+    const current = Number.isNaN(parsed) ? this.#max : parsed;
+    const next = Math.max(this.#min, current - this.#step);
+    const newText = String(next);
+    if (newText !== this.#value) {
+      this.#pushUndo();
+      this.#value = newText;
+      this.#cursorPos = this.#value.length;
+      this.#selectionAnchor = undefined;
+      this.#clampScrollOffset();
+      this.dispatch('input', {value: this.#value});
+      this.dispatch('change', {value: next});
+    }
+  }
+
+  #commitNumber(): void {
+    const parsed = Number.parseFloat(this.#value);
+    if (Number.isNaN(parsed)) {
+      this.#value = String(this.#min);
+    } else {
+      const clamped = Math.max(this.#min, Math.min(this.#max, parsed));
+      this.#value = String(clamped);
+    }
+
+    this.#cursorPos = this.#value.length;
+    this.#selectionAnchor = undefined;
+    this.#clampScrollOffset();
   }
 }
 

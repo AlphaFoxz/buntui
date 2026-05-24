@@ -30,6 +30,8 @@ declare global {
   type TuiScrollEvent = {scrollOffsetY: number; maxScrollY: number};
   type TuiRadioGroupChangeEvent = {value: number; label: string};
   type TuiSelectButtonChangeEvent = {value: unknown; label: string};
+  type TuiTableRowSelectEvent = {index: number; row: Record<string, unknown>};
+  type TuiTableRowActivateEvent = {index: number; row: Record<string, unknown>};
 
   type TuiBorderStyle = 'none' | 'solid' | 'double' | 'rounded' | 'bold' | 'dashed' | 'dotted' | 'outsetbold' | 'outsetdouble';
   type TuiLayoutDirection = 'horizontal' | 'vertical';
@@ -92,7 +94,10 @@ declare global {
     placeholder?: string;
     placeholderColorFg?: TuiColor;
     value?: string;
-    type?: 'text' | 'password';
+    type?: 'text' | 'password' | 'number';
+    min?: number;
+    max?: number;
+    step?: number;
     modelValue?: string;
     label?: string;
     borderColorUnfocused?: TuiColor;
@@ -318,6 +323,54 @@ declare global {
     'update:modelValue': (value: string) => void;
   };
 
+  type TuiTextareaEmits = TuiInteractiveEmits & {
+    input: (data: TuiInputEvent) => void;
+    submit: (data: TuiSubmitEvent) => void;
+    'update:modelValue': (value: string) => void;
+  };
+
+  type TuiTableEmits = TuiInteractiveEmits & {
+    rowSelect: (data: {index: number; row: Record<string, unknown>}) => void;
+    rowActivate: (data: {index: number; row: Record<string, unknown>}) => void;
+  };
+
+  type TuiTextareaProps = {
+    x?: TuiSizeValue;
+    y?: TuiSizeValue;
+    width?: TuiSizeValue;
+    height?: TuiSizeValue;
+    colorFg?: TuiColor;
+    colorBg?: TuiColor;
+    placeholder?: string;
+    placeholderColorFg?: TuiColor;
+    value?: string;
+    modelValue?: string;
+    label?: string;
+    borderColorUnfocused?: TuiColor;
+    borderColorFocused?: TuiColor;
+    borderStyle?: TuiBorderStyle;
+    maxLength?: number;
+    selectionBgColor?: TuiColor;
+    selectionFgColor?: TuiColor;
+    readonly?: boolean;
+    disabled?: boolean;
+    colorFgDisabled?: TuiColor;
+    colorBgDisabled?: TuiColor;
+  };
+
+  type TuiTableProps = {
+    x?: TuiSizeValue;
+    y?: TuiSizeValue;
+    width?: TuiSizeValue;
+    height?: TuiSizeValue;
+    colorFg?: TuiColor;
+    colorBg?: TuiColor;
+    borderStyle?: TuiBorderStyle;
+    columns?: Array<{key: string; label?: string; width?: number; align?: 'left' | 'center' | 'right'}>;
+    rows?: Array<Record<string, unknown>>;
+    disabled?: boolean;
+  };
+
   type _Empty = Record<string, never>;
   type TuiComponent<P, E extends Record<string, ((...args: any[]) => any) | null>>
     = DefineComponent<P & {ref?: string}, _Empty, _Empty, _Empty, _Empty, _Empty, _Empty, E>;
@@ -335,6 +388,8 @@ declare module 'vue' {
     Switch: TuiComponent<TuiSwitchProps, TuiSwitchEmits>;
     ScrollBox: TuiComponent<TuiScrollBoxProps, TuiScrollBoxEmits>;
     Progress: TuiComponent<TuiProgressProps, TuiBaseEmits>;
+    Textarea: TuiComponent<TuiTextareaProps, TuiTextareaEmits>;
+    Table: TuiComponent<TuiTableProps, TuiTableEmits>;
   };
 }
 

@@ -52,6 +52,10 @@ export {createScrollBoxWidget, ScrollBoxWidget} from './widgets/scroll-box/Scrol
 export type {ScrollBoxWidgetOptions} from './widgets/scroll-box/types';
 export {createProgressWidget, ProgressWidget} from './widgets/progress/ProgressWidget';
 export type {ProgressWidgetOptions} from './widgets/progress/types';
+export {createTextareaWidget, TextareaWidget} from './widgets/textarea/TextareaWidget';
+export type {TextareaWidgetOptions} from './widgets/textarea/types';
+export {createTableWidget, TableWidget} from './widgets/table/TableWidget';
+export type {TableWidgetOptions, TableColumn, TableRow} from './widgets/table/types';
 export {
   BorderSides, BorderStyle, CursorMode, resolveCursorMode,
 } from './draw_list/types';

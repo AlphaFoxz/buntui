@@ -70,11 +70,37 @@
         value="Readonly content here"
     />
 
-    <Text :x="1" :y="18" value="▶ v-model Feedback" />
+    <Text :x="1" :y="18" value="▶ Textarea" />
+
+    <Textarea
+        :x="1"
+        :y="19"
+        :width="40"
+        :height="8"
+        label="Notes"
+        placeholder="Type multiline text..."
+        v-model="textareaValue"
+    />
+    <Box
+        :x="43"
+        :y="19"
+        width="52%"
+        :height="8"
+        :colorBg="'rgba(30,30,46,1)'"
+        :borderColor="'rgba(203,166,245,0.3)'"
+        borderStyle="rounded"
+        :direction="'vertical'"
+        :gap="1"
+    >
+        <Text :colorFg="'rgba(108,112,134,1)'" :value="textareaFeedback" />
+        <Text :colorFg="'rgba(108,112,134,1)'" :value="textareaPreview" />
+    </Box>
+
+    <Text :x="1" :y="29" value="▶ v-model Feedback" />
 
     <Box
         :x="1"
-        :y="19"
+        :y="30"
         width="95%"
         :height="5"
         :colorBg="'rgba(30,30,46,1)'"
@@ -97,12 +123,18 @@ import { onMounted, useTemplateRef } from 'vue'
 const inputValue = ref('')
 const passwordValue = ref('')
 const limitedValue = ref('')
+const textareaValue = ref('')
 
 const inputFeedback = computed(() => `Username: [${inputValue.value}] (${inputValue.value.length} chars)`)
 const passwordFeedback = computed(
     () => `Password: ${'*'.repeat(passwordValue.value.length)} (${passwordValue.value.length} chars)`,
 )
 const limitedFeedback = computed(() => `Limited: [${limitedValue.value}] (${limitedValue.value.length}/10 chars)`)
+const textareaFeedback = computed(() => `Lines: ${textareaValue.value.split('\n').length} | Chars: ${textareaValue.value.length}`)
+const textareaPreview = computed(() => {
+    const preview = textareaValue.value.slice(0, 60)
+    return preview.length > 0 ? `Preview: ${preview}${textareaValue.value.length > 60 ? '...' : ''}` : 'Preview: (empty)'
+})
 
 function handleInput(data: TuiInputEvent) {
     void data

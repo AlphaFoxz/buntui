@@ -13,6 +13,7 @@
     <ProgressDemo v-if="currentTab === 'Progress'" />
     <SwitchDemo v-if="currentTab === 'Switch'" />
     <TextDemo v-show="currentTab === 'Text'" />
+    <TableDemo v-if="currentTab === 'Table'" />
 
     <FrameRateWatcher x="10%" />
     <Logger />
@@ -34,6 +35,7 @@ import ScrollBoxDemo from './components/ScrollBoxDemo.vue'
 import ScrollIntoViewDemo from './components/ScrollIntoViewDemo.vue'
 import SwitchDemo from './components/SwitchDemo.vue'
 import TextDemo from './components/TextDemo.vue'
+import TableDemo from './components/TableDemo.vue'
 
 const tabOptions = ref([
     'Box',
@@ -46,6 +48,7 @@ const tabOptions = ref([
     'ScrollBox',
     'ScrollIntoView',
     'Text',
+    'Table',
 ])
 const currentTab = ref(tabOptions.value[0]!)
 
