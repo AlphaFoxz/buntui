@@ -33,19 +33,17 @@
         :y="4"
         width="45%"
         :height="15"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(166,227,161,0.3)'"
         borderStyle="rounded"
         :direction="'vertical'"
         :gap="1"
     >
-        <Text :colorFg="'rgba(166,227,161,1)'" value="▶ How it works" />
+        <Text value="▶ How it works" />
         <Text value="Press Tab / Shift+Tab to navigate" />
         <Text value="The ScrollBox auto-scrolls to" />
         <Text value="keep the focused input visible." />
-        <Text :colorFg="'rgba(108,112,134,1)'" value="" />
-        <Text :colorFg="'rgba(250,179,135,1)'" :value="`Scroll offset: ${scrollOffsetY}`" />
-        <Text :colorFg="'rgba(250,179,135,1)'" :value="`Max scroll:   ${maxScrollY}`" />
+        <Text value="" />
+        <Text :value="`Scroll offset: ${scrollOffsetY}`" />
+        <Text :value="`Max scroll:   ${maxScrollY}`" />
     </Box>
 
     <Text :x="1" :y="20" value="▶ Nested ScrollBox with Buttons" />
@@ -79,13 +77,11 @@
         :y="20"
         width="45%"
         :height="8"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(203,166,245,0.3)'"
         borderStyle="rounded"
         :direction="'vertical'"
         :gap="1"
     >
-        <Text :colorFg="'rgba(203,166,245,1)'" value="▶ Click Log" />
+        <Text value="▶ Click Log" />
         <Text :value="clickLog" />
     </Box>
 </template>

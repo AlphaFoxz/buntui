@@ -47,8 +47,6 @@
         :y="14"
         width="95%"
         :height="5"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(250,179,135,0.3)'"
         borderStyle="rounded"
         :direction="'vertical'"
         :gap="1"

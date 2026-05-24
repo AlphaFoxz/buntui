@@ -29,19 +29,17 @@
         :y="3"
         width="60%"
         :height="9"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(166,227,161,0.3)'"
         borderStyle="rounded"
         :direction="'vertical'"
         :gap="1"
     >
-        <Text :colorFg="'rgba(166,227,161,1)'" value="▶ Checklist Summary" />
+        <Text value="▶ Checklist Summary" />
         <Text :value="`Notifications: ${notifLabel}`" />
         <Text :value="`Dark Mode: ${darkMode ? 'ON' : 'OFF'}`" />
         <Text
             :value="`Options: A=${optA ? '✓' : '✗'} B=${optB ? '✓' : '✗'} C=${optC ? '✓' : '✗'} (${checkedCount}/3)`"
         />
-        <Text :colorFg="'rgba(108,112,134,1)'" value="Click checkboxes or use Enter/Space when focused" />
+        <Text value="Click checkboxes or use Enter/Space when focused" />
     </Box>
 </template>
 

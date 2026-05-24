@@ -64,7 +64,7 @@ export {
   isPercent, resolvePercent, extractPercentSpec, resolveSizeValue,
 } from './utils/percent';
 export {
-  defineTheme, catppuccinMocha, catppuccinLatte, nord, highContrast,
+  defineTheme, tokyoNightMoon, tokyoNightStorm, rosePineMoon, rosePineDawn, highContrast,
 } from './theme/themes';
 export type {TuiTheme, TuiThemeColors, TuiThemeBorderStyle} from './theme/types';
 export {getTheme, setTheme, onThemeChange} from './theme/provider';

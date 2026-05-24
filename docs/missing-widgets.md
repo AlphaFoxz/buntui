@@ -8,18 +8,6 @@ Widgets that HTML provides and TUI applications concretely need, but are not yet
 
 Dropdown list for picking one option from many. Every settings UI, every form needs this. As fundamental as Input and Button.
 
-### Textarea — `<textarea>`
-
-Multi-line text editing. Chat input, config editing, log viewing, note-taking — all require multi-line editing. InputWidget is single-line only.
-
-### Table — `<table>`
-
-Tabular data display with column headers, cell alignment, and row selection. One of the most common TUI use cases: process lists, data panels, file managers, dashboard tables.
-
-### Tabs — tab navigation
-
-Tab bar for switching between content panels. Terminal space is limited; tab switching is the primary way to organize content in TUI apps.
-
 ---
 
 ## Important — Significant UX improvement
@@ -27,10 +15,6 @@ Tab bar for switching between content panels. Terminal space is limited; tab swi
 ### Slider — `<input type="range">`
 
 Horizontal slider for numeric value input. Settings panels for volume, opacity, speed, etc.
-
-### Spinner — `<input type="number">`
-
-Numeric input with increment/decrement controls. Cleaner than a plain Input with manual validation.
 
 ### Dialog — `<dialog>`
 
@@ -57,10 +41,14 @@ Clickable text that triggers navigation or action. Help text, documentation link
 | Box | `<div>` | Done |
 | Text | `<span>` | Done |
 | Button | `<button>` | Done |
-| Input | `<input type="text">` | Done |
+| Input (text) | `<input type="text">` | Done |
+| Input (password) | `<input type="password">` | Done |
+| Input (number) | `<input type="number">` | Done |
+| Textarea | `<textarea>` | Done |
+| Table | `<table>` | Done |
 | Checkbox | `<input type="checkbox">` | Done |
 | Switch | toggle switch | Done |
 | RadioGroup | `<input type="radio">` | Done |
 | SelectButton | segmented control | Done |
-| ProgressBar | `<progress>` | Done |
+| Progress | `<progress>` | Done |
 | ScrollBox | `overflow: auto` | Done |

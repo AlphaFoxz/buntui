@@ -62,8 +62,6 @@
         :y="23"
         width="95%"
         :height="3"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(148,226,213,0.3)'"
         borderStyle="rounded"
         :direction="'vertical'"
         :gap="1"
@@ -72,7 +70,6 @@
             :value="`Color: ${colorName} | Size: ${sizeName} | Framework: ${frameworkName}`"
         />
         <Text
-            :colorFg="'rgba(108,112,134,1)'"
             value="Use arrow keys to navigate, Enter/Space to select. Mouse click also works."
         />
     </Box>
@@ -80,14 +77,14 @@
 
 <script setup lang="ts">
 import { ref, computed } from '@vue/reactivity'
-import { setTheme, catppuccinMocha, catppuccinLatte, nord, highContrast } from '@buntui/core'
+import { setTheme, tokyoNightMoon, tokyoNightStorm, rosePineMoon, rosePineDawn } from '@buntui/core'
 import type { TuiTheme } from '@buntui/core'
 
 const themes: Array<{name: string; theme: TuiTheme}> = [
-    { name: 'Catppuccin Mocha', theme: catppuccinMocha },
-    { name: 'Catppuccin Latte', theme: catppuccinLatte },
-    { name: 'Nord', theme: nord },
-    { name: 'High Contrast', theme: highContrast },
+    { name: 'Tokyo Night Moon', theme: tokyoNightMoon },
+    { name: 'Tokyo Night Storm', theme: tokyoNightStorm },
+    { name: 'Rose Pine Moon', theme: rosePineMoon },
+    { name: 'Rose Pine Dawn', theme: rosePineDawn },
 ]
 const themeOptions = themes.map(t => t.name)
 const selectedTheme = ref(0)

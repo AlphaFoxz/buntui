@@ -29,7 +29,7 @@ Unknown command types are skipped (`payload_len` allows parser to advance past t
 | 0x10-0x1F   | Drawing primitives| DrawRect, DrawText, DrawBorder, DrawShadow, DrawFill, DrawChar, DrawLine |
 | 0x20-0x2F   | Terminal control  | SetTitle, ShowCursor, HideCursor, SetCursorMode   |
 | 0x30-0x3F   | Sync update       | BeginSync, EndSync                                |
-| 0x100-0x7FFF| Compound commands | Future: DrawProgressBar, DrawScrollView           |
+| 0x100-0x7FFF| Compound commands | Future: DrawProgress, DrawScrollView              |
 | 0x8000-0xFFFF| User extensions  | Plugin system                                     |
 
 ## Key Files

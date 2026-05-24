@@ -86,14 +86,12 @@
         :y="19"
         width="52%"
         :height="8"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(203,166,245,0.3)'"
         borderStyle="rounded"
         :direction="'vertical'"
         :gap="1"
     >
-        <Text :colorFg="'rgba(108,112,134,1)'" :value="textareaFeedback" />
-        <Text :colorFg="'rgba(108,112,134,1)'" :value="textareaPreview" />
+        <Text :value="textareaFeedback" />
+        <Text :value="textareaPreview" />
     </Box>
 
     <Text :x="1" :y="29" value="▶ v-model Feedback" />
@@ -103,15 +101,13 @@
         :y="30"
         width="95%"
         :height="5"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(203,166,245,0.3)'"
         borderStyle="rounded"
         :direction="'vertical'"
         :gap="1"
     >
-        <Text :colorFg="'rgba(108,112,134,1)'" :value="inputFeedback" />
-        <Text :colorFg="'rgba(108,112,134,1)'" :value="passwordFeedback" />
-        <Text :colorFg="'rgba(108,112,134,1)'" :value="limitedFeedback" />
+        <Text :value="inputFeedback" />
+        <Text :value="passwordFeedback" />
+        <Text :value="limitedFeedback" />
     </Box>
 </template>
 

@@ -44,7 +44,7 @@
         @click="handleClick('Dashed')"
     />
 
-    <Text :x="1" :y="13" :colorFg="'rgba(250,179,135,1)'" value="▶ Custom Color Schemes" />
+    <Text :x="1" :y="13" value="▶ Custom Color Schemes" />
 
     <Button
         :x="1"
@@ -126,7 +126,7 @@
     <Button :x="31" :y="17" :width="20" :height="5" value="Large" @click="handleClick('Large')" />
     <Button :x="53" :y="18" :width="18" :height="3" value="Disabled" :disabled="true" />
 
-    <Text :x="1" :y="22" :colorFg="'rgba(108,112,134,1)'" :value="clickLog" />
+    <Text :x="1" :y="22" :value="clickLog" />
 </template>
 
 <script setup lang="ts">

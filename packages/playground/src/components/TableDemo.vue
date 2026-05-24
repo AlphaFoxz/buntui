@@ -29,14 +29,12 @@
         :y="3"
         width="33%"
         :height="6"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(203,166,245,0.3)'"
         borderStyle="rounded"
         :direction="'vertical'"
         :gap="1"
     >
-        <Text :colorFg="'rgba(203,166,245,1)'" value="▶ Selection Info" />
-        <Text :colorFg="'rgba(108,112,134,1)'" :value="selectionInfo" />
+        <Text value="▶ Selection Info" />
+        <Text :value="selectionInfo" />
     </Box>
 </template>
 

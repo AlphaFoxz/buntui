@@ -4,165 +4,209 @@ export function defineTheme(theme: TuiTheme): TuiTheme {
   return theme;
 }
 
-const catppuccinMochaColors: TuiThemeColors = {
-  background: 0x00_00_00_FF,
-  surface: 0x1E_1E_2E_FF,
-  surfaceHover: 0x45_47_5A_FF,
-  surfaceFocused: 0x31_32_44_FF,
-  surfacePressed: 0x45_47_5A_FF,
-  surfaceDisabled: 0x18_18_25_FF,
+function hex(r: number, g: number, b: number, a = 0xFF): number {
+  return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
+}
 
-  text: 0xFF_FF_FF_FF,
-  textMuted: 0x6C_70_86_FF,
-
-  border: 0x45_47_5A_FF,
-  borderFocused: 0x89_B4_FA_FF,
-
-  accent: 0x89_B4_FA_FF,
-  accentHover: 0xB4_BE_FE_FF,
-
-  selectionBg: 0x26_4F_78_FF,
-  selectionFg: 0xFF_FF_FF_FF,
-
-  shadow: 0x00_00_00_00,
-  scrollbar: 0x58_5B_70_FF,
-  scrollbarTrack: 0x31_32_44_FF,
-  progressFill: 0x89_B4_FA_FF,
-  progressTrack: 0x31_32_44_FF,
-
-  success: 0xA6_E3_A1_FF,
-  successMuted: 0x2B_4A_2E_FF,
-  danger: 0xF3_8B_A8_FF,
-  dangerMuted: 0x4A_2B_30_FF,
-  warning: 0xF9_E2_AF_FF,
-  placeholder: 0x6C_70_86_FF,
-};
-
-const catppuccinMochaBorderStyle: TuiThemeBorderStyle = {
+const defaultBorderStyle: TuiThemeBorderStyle = {
   normal: 'solid',
   focused: 'solid',
   pressed: 'bold',
   disabled: 'dashed',
 };
 
-export const catppuccinMocha: TuiTheme = defineTheme({
-  name: 'catppuccin-mocha',
-  colors: catppuccinMochaColors,
-  borderStyle: catppuccinMochaBorderStyle,
-});
+const tokyoNightMoonColors: TuiThemeColors = {
+  background: hex(0x1E, 0x20, 0x30),
+  surface: hex(0x22, 0x24, 0x36),
+  surfaceHover: hex(0x2F, 0x33, 0x4D),
+  surfaceFocused: hex(0x2F, 0x33, 0x4D),
+  surfacePressed: hex(0x39, 0x4B, 0x70),
+  surfaceDisabled: hex(0x19, 0x1B, 0x29),
 
-const catppuccinLatteColors: TuiThemeColors = {
-  background: 0xD6_CE_D0_FF,
-  surface: 0xEF_F1_F5_FF,
-  surfaceHover: 0xCC_D0_DA_FF,
-  surfaceFocused: 0xE6_E9_EF_FF,
-  surfacePressed: 0xCC_D0_DA_FF,
-  surfaceDisabled: 0xE6_E9_EF_FF,
+  text: hex(0xC8, 0xD3, 0xF5),
+  textMuted: hex(0x63, 0x6D, 0xA6),
 
-  text: 0x4C_4F_69_FF,
-  textMuted: 0x9C_A0_B0_FF,
+  border: hex(0x3B, 0x42, 0x61),
+  borderFocused: hex(0x82, 0xAA, 0xFF),
 
-  border: 0xCC_D0_DA_FF,
-  borderFocused: 0x1E_66_F5_FF,
+  accent: hex(0x82, 0xAA, 0xFF),
+  accentHover: hex(0x65, 0xBC, 0xFF),
 
-  accent: 0x1E_66_F5_FF,
-  accentHover: 0x2A_71_F7_FF,
-
-  selectionBg: 0xDC_8A_78_66,
-  selectionFg: 0x4C_4F_69_FF,
+  selectionBg: hex(0x3E, 0x68, 0xD7, 0x80),
+  selectionFg: hex(0xC8, 0xD3, 0xF5),
 
   shadow: 0x00_00_00_00,
-  scrollbar: 0x7C_7F_93_FF,
-  scrollbarTrack: 0xCC_D0_DA_FF,
-  progressFill: 0x1E_66_F5_FF,
-  progressTrack: 0xCC_D0_DA_FF,
+  scrollbar: hex(0x63, 0x6D, 0xA6),
+  scrollbarTrack: hex(0x2F, 0x33, 0x4D),
+  progressFill: hex(0x82, 0xAA, 0xFF),
+  progressTrack: hex(0x2F, 0x33, 0x4D),
 
-  success: 0x40_A0_2B_FF,
-  successMuted: 0xCE_D5_0A_4D,
-  danger: 0xD2_0F_39_FF,
-  dangerMuted: 0xE8_6B_6A_4D,
-  warning: 0xDF_8E_1D_FF,
-  placeholder: 0x9C_A0_B0_FF,
+  success: hex(0x4F, 0xD6, 0xBE),
+  successMuted: hex(0x2B, 0x4A, 0x4E, 0x80),
+  danger: hex(0xFF, 0x75, 0x7F),
+  dangerMuted: hex(0x4A, 0x2B, 0x30, 0x80),
+  warning: hex(0xFF, 0xC7, 0x77),
+  placeholder: hex(0x63, 0x6D, 0xA6),
 };
 
-export const catppuccinLatte: TuiTheme = defineTheme({
-  name: 'catppuccin-latte',
-  colors: catppuccinLatteColors,
-  borderStyle: catppuccinMochaBorderStyle,
+export const tokyoNightMoon: TuiTheme = defineTheme({
+  name: 'tokyo-night-moon',
+  colors: tokyoNightMoonColors,
+  borderStyle: defaultBorderStyle,
 });
 
-const nordColors: TuiThemeColors = {
-  background: 0x2E_34_40_FF,
-  surface: 0x3B_42_52_FF,
-  surfaceHover: 0x43_4C_5E_FF,
-  surfaceFocused: 0x43_4C_5E_FF,
-  surfacePressed: 0x4C_56_6A_FF,
-  surfaceDisabled: 0x3B_42_52_FF,
+const tokyoNightStormColors: TuiThemeColors = {
+  background: hex(0x1F, 0x23, 0x35),
+  surface: hex(0x24, 0x28, 0x3B),
+  surfaceHover: hex(0x29, 0x2E, 0x42),
+  surfaceFocused: hex(0x29, 0x2E, 0x42),
+  surfacePressed: hex(0x39, 0x4B, 0x70),
+  surfaceDisabled: hex(0x1B, 0x1E, 0x2D),
 
-  text: 0xEC_EF_F4_FF,
-  textMuted: 0xD8_DE_E9_FF,
+  text: hex(0xC0, 0xCA, 0xF5),
+  textMuted: hex(0x56, 0x5F, 0x89),
 
-  border: 0x4C_56_6A_FF,
-  borderFocused: 0x88_C0_D0_FF,
+  border: hex(0x3B, 0x42, 0x61),
+  borderFocused: hex(0x7A, 0xA2, 0xF7),
 
-  accent: 0x88_C0_D0_FF,
-  accentHover: 0x8F_BC_BB_FF,
+  accent: hex(0x7A, 0xA2, 0xF7),
+  accentHover: hex(0x2A, 0xC3, 0xDE),
 
-  selectionBg: 0x43_4C_5E_FF,
-  selectionFg: 0xEC_EF_F4_FF,
+  selectionBg: hex(0x3D, 0x59, 0xA1, 0x80),
+  selectionFg: hex(0xC0, 0xCA, 0xF5),
 
   shadow: 0x00_00_00_00,
-  scrollbar: 0x4C_56_6A_FF,
-  scrollbarTrack: 0x3B_42_52_FF,
-  progressFill: 0x88_C0_D0_FF,
-  progressTrack: 0x43_4C_5E_FF,
+  scrollbar: hex(0x56, 0x5F, 0x89),
+  scrollbarTrack: hex(0x29, 0x2E, 0x42),
+  progressFill: hex(0x7A, 0xA2, 0xF7),
+  progressTrack: hex(0x29, 0x2E, 0x42),
 
-  success: 0xA3_BE_8C_FF,
-  successMuted: 0x3B_42_52_80,
-  danger: 0xBF_61_6A_FF,
-  dangerMuted: 0x3B_42_52_80,
-  warning: 0xEB_CB_8B_FF,
-  placeholder: 0xD8_DE_E9_FF,
+  success: hex(0x9E, 0xCE, 0x6A),
+  successMuted: hex(0x2B, 0x4A, 0x2E, 0x80),
+  danger: hex(0xF7, 0x76, 0x8E),
+  dangerMuted: hex(0x4A, 0x2B, 0x30, 0x80),
+  warning: hex(0xE0, 0xAF, 0x68),
+  placeholder: hex(0x56, 0x5F, 0x89),
 };
 
-export const nord: TuiTheme = defineTheme({
-  name: 'nord',
-  colors: nordColors,
-  borderStyle: catppuccinMochaBorderStyle,
+export const tokyoNightStorm: TuiTheme = defineTheme({
+  name: 'tokyo-night-storm',
+  colors: tokyoNightStormColors,
+  borderStyle: defaultBorderStyle,
+});
+
+const rosePineMoonColors: TuiThemeColors = {
+  background: hex(0x23, 0x21, 0x36),
+  surface: hex(0x2A, 0x27, 0x3F),
+  surfaceHover: hex(0x39, 0x35, 0x52),
+  surfaceFocused: hex(0x39, 0x35, 0x52),
+  surfacePressed: hex(0x44, 0x41, 0x5A),
+  surfaceDisabled: hex(0x1F, 0x1D, 0x30),
+
+  text: hex(0xE0, 0xDE, 0xF4),
+  textMuted: hex(0x6E, 0x6A, 0x86),
+
+  border: hex(0x39, 0x35, 0x52),
+  borderFocused: hex(0xC4, 0xA7, 0xE7),
+
+  accent: hex(0xC4, 0xA7, 0xE7),
+  accentHover: hex(0xEB, 0xBC, 0xBA),
+
+  selectionBg: hex(0x3E, 0x8F, 0xB0, 0x66),
+  selectionFg: hex(0xE0, 0xDE, 0xF4),
+
+  shadow: 0x00_00_00_00,
+  scrollbar: hex(0x6E, 0x6A, 0x86),
+  scrollbarTrack: hex(0x39, 0x35, 0x52),
+  progressFill: hex(0xC4, 0xA7, 0xE7),
+  progressTrack: hex(0x39, 0x35, 0x52),
+
+  success: hex(0x9C, 0xCF, 0xD8),
+  successMuted: hex(0x2B, 0x4A, 0x4E, 0x80),
+  danger: hex(0xEB, 0x6F, 0x92),
+  dangerMuted: hex(0x4A, 0x2B, 0x38, 0x80),
+  warning: hex(0xF6, 0xC1, 0x77),
+  placeholder: hex(0x6E, 0x6A, 0x86),
+};
+
+export const rosePineMoon: TuiTheme = defineTheme({
+  name: 'rose-pine-moon',
+  colors: rosePineMoonColors,
+  borderStyle: defaultBorderStyle,
+});
+
+const rosePineDawnColors: TuiThemeColors = {
+  background: hex(0xFA, 0xF4, 0xED),
+  surface: hex(0xFF, 0xFA, 0xF3),
+  surfaceHover: hex(0xF2, 0xE9, 0xE1),
+  surfaceFocused: hex(0xF2, 0xE9, 0xE1),
+  surfacePressed: hex(0xDF, 0xDA, 0xD9),
+  surfaceDisabled: hex(0xF4, 0xED, 0xE8),
+
+  text: hex(0x46, 0x42, 0x61),
+  textMuted: hex(0x98, 0x93, 0xA5),
+
+  border: hex(0xCE, 0xCA, 0xCD),
+  borderFocused: hex(0x90, 0x7A, 0xA9),
+
+  accent: hex(0x90, 0x7A, 0xA9),
+  accentHover: hex(0xC4, 0xA7, 0xE7),
+
+  selectionBg: hex(0x28, 0x69, 0x83, 0x44),
+  selectionFg: hex(0x46, 0x42, 0x61),
+
+  shadow: 0x00_00_00_00,
+  scrollbar: hex(0x79, 0x75, 0x93),
+  scrollbarTrack: hex(0xF2, 0xE9, 0xE1),
+  progressFill: hex(0x90, 0x7A, 0xA9),
+  progressTrack: hex(0xF2, 0xE9, 0xE1),
+
+  success: hex(0x56, 0x94, 0x9F),
+  successMuted: hex(0x56, 0x94, 0x9F, 0x4D),
+  danger: hex(0xB4, 0x63, 0x7A),
+  dangerMuted: hex(0xB4, 0x63, 0x7A, 0x4D),
+  warning: hex(0xEA, 0x9D, 0x34),
+  placeholder: hex(0x98, 0x93, 0xA5),
+};
+
+export const rosePineDawn: TuiTheme = defineTheme({
+  name: 'rose-pine-dawn',
+  colors: rosePineDawnColors,
+  borderStyle: defaultBorderStyle,
 });
 
 const highContrastColors: TuiThemeColors = {
   background: 0x00_00_00_FF,
-  surface: 0x1A_1A_1A_FF,
-  surfaceHover: 0x33_33_33_FF,
-  surfaceFocused: 0x26_26_26_FF,
-  surfacePressed: 0x40_40_40_FF,
-  surfaceDisabled: 0x12_12_12_FF,
+  surface: hex(0x1A, 0x1A, 0x1A),
+  surfaceHover: hex(0x33, 0x33, 0x33),
+  surfaceFocused: hex(0x26, 0x26, 0x26),
+  surfacePressed: hex(0x40, 0x40, 0x40),
+  surfaceDisabled: hex(0x12, 0x12, 0x12),
 
-  text: 0xFF_FF_FF_FF,
-  textMuted: 0xAA_AA_AA_FF,
+  text: hex(0xFF, 0xFF, 0xFF),
+  textMuted: hex(0xAA, 0xAA, 0xAA),
 
-  border: 0x80_80_80_FF,
-  borderFocused: 0xFF_FF_00_FF,
+  border: hex(0x80, 0x80, 0x80),
+  borderFocused: hex(0xFF, 0xFF, 0x00),
 
-  accent: 0x00_FF_FF_FF,
-  accentHover: 0x80_FF_FF_FF,
+  accent: hex(0x00, 0xFF, 0xFF),
+  accentHover: hex(0x80, 0xFF, 0xFF),
 
-  selectionBg: 0x00_55_AA_FF,
-  selectionFg: 0xFF_FF_FF_FF,
+  selectionBg: hex(0x00, 0x55, 0xAA),
+  selectionFg: hex(0xFF, 0xFF, 0xFF),
 
   shadow: 0x00_00_00_00,
-  scrollbar: 0xCC_CC_CC_FF,
-  scrollbarTrack: 0x33_33_33_FF,
-  progressFill: 0x00_FF_00_FF,
-  progressTrack: 0x33_33_33_FF,
+  scrollbar: hex(0xCC, 0xCC, 0xCC),
+  scrollbarTrack: hex(0x33, 0x33, 0x33),
+  progressFill: hex(0x00, 0xFF, 0x00),
+  progressTrack: hex(0x33, 0x33, 0x33),
 
-  success: 0x00_FF_00_FF,
-  successMuted: 0x00_44_00_FF,
-  danger: 0xFF_00_00_FF,
-  dangerMuted: 0x44_00_00_FF,
-  warning: 0xFF_FF_00_FF,
-  placeholder: 0x80_80_80_FF,
+  success: hex(0x00, 0xFF, 0x00),
+  successMuted: hex(0x00, 0x44, 0x00),
+  danger: hex(0xFF, 0x00, 0x00),
+  dangerMuted: hex(0x44, 0x00, 0x00),
+  warning: hex(0xFF, 0xFF, 0x00),
+  placeholder: hex(0x80, 0x80, 0x80),
 };
 
 const highContrastBorderStyle: TuiThemeBorderStyle = {

@@ -30,21 +30,19 @@
         :y="4"
         width="45%"
         :height="10"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(166,227,161,0.3)'"
         borderStyle="rounded"
         :direction="'vertical'"
         :gap="1"
     >
-        <Text :colorFg="'rgba(166,227,161,1)'" value="▶ Scroll Info" />
+        <Text value="▶ Scroll Info" />
         <Text :value="`Offset: ${scrollOffsetY}`" />
         <Text :value="`Max: ${maxScrollY}`" />
         <Text :value="`Progress: ${scrollPercent}%`" />
-        <Text :colorFg="'rgba(108,112,134,1)'" value="" />
-        <Text :colorFg="'rgba(108,112,134,1)'" value="Controls:" />
-        <Text :colorFg="'rgba(108,112,134,1)'" value="  Mouse wheel / drag to scroll" />
-        <Text :colorFg="'rgba(108,112,134,1)'" value="  ↑↓ Arrow keys (1 line)" />
-        <Text :colorFg="'rgba(108,112,134,1)'" value="  PageUp/Down (viewport)" />
+        <Text value="" />
+        <Text value="Controls:" />
+        <Text value="  Mouse wheel / drag to scroll" />
+        <Text value="  ↑↓ Arrow keys (1 line)" />
+        <Text value="  PageUp/Down (viewport)" />
     </Box>
 
     <Text :x="1" :y="15" value="▶ Compact List (no border)" />
@@ -55,7 +53,7 @@
                 v-for="(item, index) in 30"
                 :x="1"
                 :y="17 + index"
-                :colorFg="index === highlightIndex ? 'rgba(250,179,135,1)' : 'rgba(108,112,134,1)'"
+                :colorFg="index === highlightIndex ? 'rgba(250,179,135,1)' : undefined"
                 :value="`  ${index === highlightIndex ? '▸' : ' '} Item ${String(index + 1).padStart(2, '0')} - compact scroll list`"
             />
         </template>
@@ -75,7 +73,6 @@
                 v-for="(item, index) in 15"
                 :x="1"
                 :y="16 + index"
-                :colorFg="'rgba(245,194,231,1)'"
                 :value="`${'█'.repeat(Math.max(1, 20 - index))}${'░'.repeat(index)} ${20 - index}%`"
             />
         </template>

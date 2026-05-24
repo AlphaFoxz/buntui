@@ -4,11 +4,11 @@ Baseline: each core widget is compared against its closest HTML equivalent to id
 
 ## Design Issues
 
-### ~~ProgressBar should not be focusable~~
+### ~~Progress should not be focusable~~
 
-~~HTML `<progress>` is not interactive. Currently `ProgressBarWidget` extends `InteractiveWidget`, making it part of the Tab order with no meaningful keyboard behavior (`handleActiveKey` is a no-op). It should likely extend `TuiWidgetEntity` directly or have `acceptsFocus = false` by default.~~
+~~HTML `<progress>` is not interactive. Currently `ProgressWidget` extends `InteractiveWidget`, making it part of the Tab order with no meaningful keyboard behavior (`handleActiveKey` is a no-op). It should likely extend `TuiWidgetEntity` directly or have `acceptsFocus = false` by default.~~
 
-~~**Affected file:** `packages/core/src/widgets/progress-bar/ProgressBarWidget.ts`~~
+~~**Affected file:** `packages/core/src/widgets/progress-bar/ProgressWidget.ts`~~
 
 ---
 

@@ -1,5 +1,5 @@
 export {
-  defineTheme, catppuccinMocha, catppuccinLatte, nord, highContrast,
+  defineTheme, tokyoNightMoon, tokyoNightStorm, rosePineMoon, rosePineDawn, highContrast,
 } from './themes';
 export type {TuiTheme, TuiThemeColors, TuiThemeBorderStyle} from './types';
 export {getTheme, setTheme, onThemeChange} from './provider';

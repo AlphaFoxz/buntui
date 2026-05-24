@@ -1,25 +1,25 @@
 import {describe, it, expect} from 'bun:test';
 import {setTheme} from '../provider';
-import {defineTheme, catppuccinMocha} from '../themes';
+import {defineTheme, tokyoNightMoon} from '../themes';
 import {createBox} from '../../widgets/box/BoxWidget';
 import {createTextWidget} from '../../widgets/text/TextWidget';
 
 const altTheme = defineTheme({
   name: 'alt-test-theme',
   colors: {
-    ...catppuccinMocha.colors,
+    ...tokyoNightMoon.colors,
     text: 0xFF_00_00_FF,
     surface: 0x00_FF_00_FF,
     background: 0x00_00_FF_FF,
     border: 0xFF_FF_00_FF,
     borderFocused: 0xFF_00_FF_FF,
   },
-  borderStyle: {...catppuccinMocha.borderStyle},
+  borderStyle: {...tokyoNightMoon.borderStyle},
 });
 
 describe('theme binding in factory functions', () => {
   function cleanup() {
-    setTheme(catppuccinMocha);
+    setTheme(tokyoNightMoon);
   }
 
   it('createBox updates colors on theme change', () => {
@@ -110,7 +110,7 @@ describe('theme binding in factory functions', () => {
     cleanup();
   });
 
-  it('multiple theme changes apply correctly', () => { 
+  it('multiple theme changes apply correctly', () => {
     const box = createBox();
     const parent = createBox({width: 80, height: 24});
     parent.addChild(box);
@@ -118,8 +118,8 @@ describe('theme binding in factory functions', () => {
     setTheme(altTheme);
     expect(box.color.colorFg).toBe(altTheme.colors.text as U32);
 
-    setTheme(catppuccinMocha);
-    expect(box.color.colorFg).toBe(catppuccinMocha.colors.text as U32);
+    setTheme(tokyoNightMoon);
+    expect(box.color.colorFg).toBe(tokyoNightMoon.colors.text as U32);
 
     setTheme(altTheme);
     expect(box.color.colorFg).toBe(altTheme.colors.text as U32);

@@ -1,25 +1,25 @@
 import {describe, it, expect} from 'bun:test';
 import {getTheme, setTheme, onThemeChange} from '../provider';
-import {defineTheme, catppuccinMocha} from '../themes';
+import {defineTheme, tokyoNightMoon} from '../themes';
 
 describe('provider', () => {
   it('returns the default theme', () => {
     const theme = getTheme();
-    expect(theme.name).toBe('catppuccin-mocha');
+    expect(theme.name).toBe('tokyo-night-moon');
   });
 
   it('setTheme changes the current theme', () => {
     const custom = defineTheme({
       name: 'test-theme',
-      colors: {...catppuccinMocha.colors},
-      borderStyle: {...catppuccinMocha.borderStyle},
+      colors: {...tokyoNightMoon.colors},
+      borderStyle: {...tokyoNightMoon.borderStyle},
     });
 
     setTheme(custom);
     expect(getTheme().name).toBe('test-theme');
 
-    setTheme(catppuccinMocha);
-    expect(getTheme().name).toBe('catppuccin-mocha');
+    setTheme(tokyoNightMoon);
+    expect(getTheme().name).toBe('tokyo-night-moon');
   });
 
   it('onThemeChange notifies listeners when theme changes', () => {
@@ -31,15 +31,15 @@ describe('provider', () => {
 
     const custom = defineTheme({
       name: 'listener-test',
-      colors: {...catppuccinMocha.colors},
-      borderStyle: {...catppuccinMocha.borderStyle},
+      colors: {...tokyoNightMoon.colors},
+      borderStyle: {...tokyoNightMoon.borderStyle},
     });
 
     setTheme(custom);
     expect(received).toEqual(['listener-test']);
 
-    setTheme(catppuccinMocha);
-    expect(received).toEqual(['listener-test', 'catppuccin-mocha']);
+    setTheme(tokyoNightMoon);
+    expect(received).toEqual(['listener-test', 'tokyo-night-moon']);
 
     unsubscribe();
   });
@@ -53,8 +53,8 @@ describe('provider', () => {
 
     const custom = defineTheme({
       name: 'unsub-test',
-      colors: {...catppuccinMocha.colors},
-      borderStyle: {...catppuccinMocha.borderStyle},
+      colors: {...tokyoNightMoon.colors},
+      borderStyle: {...tokyoNightMoon.borderStyle},
     });
 
     setTheme(custom);
@@ -62,7 +62,7 @@ describe('provider', () => {
 
     unsubscribe();
 
-    setTheme(catppuccinMocha);
+    setTheme(tokyoNightMoon);
     expect(received.length).toBe(1);
   });
 
@@ -75,8 +75,8 @@ describe('provider', () => {
 
     const custom = defineTheme({
       name: 'multi-test',
-      colors: {...catppuccinMocha.colors},
-      borderStyle: {...catppuccinMocha.borderStyle},
+      colors: {...tokyoNightMoon.colors},
+      borderStyle: {...tokyoNightMoon.borderStyle},
     });
 
     setTheme(custom);
@@ -84,9 +84,9 @@ describe('provider', () => {
     expect(b).toEqual(['multi-test']);
 
     unsubA();
-    setTheme(catppuccinMocha);
+    setTheme(tokyoNightMoon);
     expect(a.length).toBe(1);
-    expect(b).toEqual(['multi-test', 'catppuccin-mocha']);
+    expect(b).toEqual(['multi-test', 'tokyo-night-moon']);
 
     unsubB();
   });

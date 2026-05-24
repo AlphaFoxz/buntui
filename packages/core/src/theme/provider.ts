@@ -1,9 +1,9 @@
 import type {TuiTheme} from './types';
-import {catppuccinMocha} from './themes';
+import {tokyoNightMoon} from './themes';
 
 export type ThemeChangeListener = (theme: TuiTheme) => void;
 
-let currentTheme: TuiTheme = catppuccinMocha;
+let currentTheme: TuiTheme = tokyoNightMoon;
 const listeners = new Set<ThemeChangeListener>();
 
 export function getTheme(): TuiTheme {

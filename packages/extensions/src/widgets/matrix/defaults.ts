@@ -4,7 +4,7 @@ import type {MatrixColorScheme, MatrixWidgetOptions} from './types';
 export const DEFAULT_MATRIX_COLOR_SCHEME: MatrixColorScheme = {
   leadRgba: rgbToRgba(0x57, 0xFF, 0x57), // Bright green
   trailRgba: rgbToRgba(0x00, 0x8F, 0x11), // Medium green
-  bgRgba: rgbToRgba(0x00, 0x00, 0x00), // Black background
+  bgRgba: 0x00_00_00_00,
 };
 
 export const DEFAULT_MATRIX_OPTIONS: MatrixWidgetOptions = {
