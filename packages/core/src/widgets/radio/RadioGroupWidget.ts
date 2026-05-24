@@ -4,13 +4,12 @@ import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
-import {getTheme} from '../../theme/provider';
+import {resolveWidgetColors} from '../../theme/resolve';
 import type {RadioGroupWidgetOptions} from './types';
 
 type RadioColors = {fg: number; bg: number};
 
 function getDefaultRadioOptions(): Required<RadioGroupWidgetOptions> {
-  const theme = getTheme();
   return {
     x: 0,
     y: 0,
@@ -20,17 +19,16 @@ function getDefaultRadioOptions(): Required<RadioGroupWidgetOptions> {
     value: -1,
     disabled: false,
 
-    colorFgNormal: theme.colors.text,
-    colorBgNormal: theme.colors.surface,
-
-    colorFgFocused: theme.colors.text,
-    colorBgFocused: theme.colors.surfaceHover,
-
-    colorFgDisabled: theme.colors.textMuted,
-    colorBgDisabled: theme.colors.surfaceDisabled,
-
-    colorFgSelected: theme.colors.accent,
-    colorBgSelected: theme.colors.surfaceFocused,
+    ...resolveWidgetColors({
+      colorFgNormal: 'text',
+      colorBgNormal: 'surface',
+      colorFgFocused: 'text',
+      colorBgFocused: 'surfaceHover',
+      colorFgDisabled: 'textMuted',
+      colorBgDisabled: 'surfaceDisabled',
+      colorFgSelected: 'accent',
+      colorBgSelected: 'surfaceFocused',
+    }),
   };
 }
 

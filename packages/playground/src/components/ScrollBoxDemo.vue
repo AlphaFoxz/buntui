@@ -1,5 +1,5 @@
 <template>
-    <Text :x="1" :y="3" :colorFg="'rgba(137,180,250,1)'" value="▶ ScrollBox with Border & Scrollbar" />
+    <Text :x="1" :y="3" value="▶ ScrollBox with Border & Scrollbar" />
 
     <ScrollBox
         :x="1"
@@ -19,7 +19,7 @@
                 v-for="(item, index) in 20"
                 :x="1"
                 :y="5 + index"
-                :colorFg="index % 2 === 0 ? 'rgba(205,214,244,1)' : 'rgba(108,112,134,1)'"
+                :colorFg="index % 2 === 0 ? undefined : 'rgba(108,112,134,1)'"
                 :value="`${String(index + 1).padStart(2, '0')}. 第${index + 1}行内容 - Scrollable content line ${index + 1}`"
             />
         </template>
@@ -37,9 +37,9 @@
         :gap="1"
     >
         <Text :colorFg="'rgba(166,227,161,1)'" value="▶ Scroll Info" />
-        <Text :colorFg="'rgba(205,214,244,1)'" :value="`Offset: ${scrollOffsetY}`" />
-        <Text :colorFg="'rgba(205,214,244,1)'" :value="`Max: ${maxScrollY}`" />
-        <Text :colorFg="'rgba(205,214,244,1)'" :value="`Progress: ${scrollPercent}%`" />
+        <Text :value="`Offset: ${scrollOffsetY}`" />
+        <Text :value="`Max: ${maxScrollY}`" />
+        <Text :value="`Progress: ${scrollPercent}%`" />
         <Text :colorFg="'rgba(108,112,134,1)'" value="" />
         <Text :colorFg="'rgba(108,112,134,1)'" value="Controls:" />
         <Text :colorFg="'rgba(108,112,134,1)'" value="  Mouse wheel / drag to scroll" />
@@ -47,7 +47,7 @@
         <Text :colorFg="'rgba(108,112,134,1)'" value="  PageUp/Down (viewport)" />
     </Box>
 
-    <Text :x="1" :y="15" :colorFg="'rgba(250,179,135,1)'" value="▶ Compact List (no border)" />
+    <Text :x="1" :y="15" value="▶ Compact List (no border)" />
 
     <ScrollBox :x="1" :y="16" width="45%" :height="6" :colorBg="'rgba(24,24,37,1)'" @scroll="handleScroll2">
         <template>

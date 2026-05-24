@@ -1,10 +1,10 @@
 <template>
-    <Text :x="1" :y="3" :colorFg="'rgba(137,180,250,1)'" value="▶ State Buttons (hover / focus / click)" />
+    <Text :x="1" :y="3" value="▶ State Buttons (hover / focus / click)" />
 
     <Button :x="1" :y="4" :width="18" :height="3" value="Toggle disabled" @click="handleToggleClick" />
     <Button :x="21" :y="4" :width="25" :height="3" :disabled="buttonDisabled" :value="buttonLabel" />
 
-    <Text :x="1" :y="8" :colorFg="'rgba(166,227,161,1)'" value="▶ Border Style Variants" />
+    <Text :x="1" :y="8" value="▶ Border Style Variants" />
 
     <Button
         :x="1"
@@ -119,7 +119,7 @@
         @click="handleClick('Yellow')"
     />
 
-    <Text :x="1" :y="18" :colorFg="'rgba(203,166,245,1)'" value="▶ Sizes & Disabled" />
+    <Text :x="1" :y="18" value="▶ Sizes & Disabled" />
 
     <Button :x="1" :y="19" :width="10" :height="1" value="Tiny" @click="handleClick('Tiny')" />
     <Button :x="13" :y="18" :width="16" :height="3" value="Normal" @click="handleClick('Normal')" />

@@ -41,9 +41,22 @@ const KEY_MODIFIER_MAP: Record<string, string> = {
 
 const SYSTEM_MODIFIERS = new Set(['ctrl', 'shift', 'alt', 'meta']);
 
+const IDENTIFIER_RE = /^[a-zA-Z_$][\w$]*$/v;
+
+function isBareIdentifier(expr: string): boolean {
+  return IDENTIFIER_RE.test(expr.trim());
+}
+
+function isArrowFunction(expr: string): boolean {
+  return expr.trim().includes('=>');
+}
+
 export function buildEventHandler(eventBinding: TuiEventBinding): string {
+  const {handler} = eventBinding;
+  const needsWrapper = !isArrowFunction(handler) && !isBareIdentifier(handler);
+
   if (eventBinding.modifiers.length === 0) {
-    return eventBinding.handler;
+    return needsWrapper ? `($event) => { ${handler} }` : handler;
   }
 
   const guards: string[] = [];
@@ -63,15 +76,15 @@ export function buildEventHandler(eventBinding: TuiEventBinding): string {
     }
   }
 
-  if (guards.length === 0 && prefixLines.length === 0) {
-    return eventBinding.handler;
+  if (guards.length === 0 && prefixLines.length === 0 && !needsWrapper) {
+    return handler;
   }
 
   const guardCheck = guards.length > 0 ? `if (${guards.join(' && ')}) ` : '';
   const prefix = prefixLines.join(' ');
-  const body = eventBinding.handler.includes('=>')
-    ? `${guardCheck}${eventBinding.handler}`
-    : `${prefix} ${guardCheck}${eventBinding.handler}`;
+  const body = isArrowFunction(handler)
+    ? `${guardCheck}${handler}`
+    : `${prefix} ${guardCheck}${handler}`;
 
   return `($event) => { ${body} }`;
 }

@@ -2,6 +2,7 @@ import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
 import {parseColor} from '../../utils/color';
 import {getTheme} from '../../theme/provider';
+import {resolveWidgetColors} from '../../theme/resolve';
 import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import type {TuiWidgetEntity} from '../TuiWidgetEntity';
@@ -473,27 +474,31 @@ export class ScrollBoxWidget extends InteractiveWidget {
   }
 }
 
-const DEFAULT_SCROLL_BOX_OPTIONS: ScrollBoxWidgetOptions = {
-  x: 0,
-  y: 0,
-  width: 20,
-  height: 10,
-  colorBg: 0x00_00_00_FF,
-  borderColor: 0xFF_FF_FF_FF,
-  borderStyle: 'solid',
-  borderTop: true,
-  borderRight: true,
-  borderBottom: true,
-  borderLeft: true,
-  gap: 0,
-  scrollSpeed: 3,
-  alwaysShowScrollbar: false,
-  scrollbarColor: 0x58_5B_70_FF,
-  scrollbarTrackColor: 0x31_32_44_FF,
-};
+function getDefaultScrollBoxOptions(): ScrollBoxWidgetOptions {
+  return {
+    x: 0,
+    y: 0,
+    width: 20,
+    height: 10,
+    borderStyle: 'solid',
+    borderTop: true,
+    borderRight: true,
+    borderBottom: true,
+    borderLeft: true,
+    gap: 0,
+    scrollSpeed: 3,
+    alwaysShowScrollbar: false,
+    ...resolveWidgetColors({
+      colorBg: 'background',
+      borderColor: 'border',
+      scrollbarColor: 'scrollbar',
+      scrollbarTrackColor: 'scrollbarTrack',
+    }),
+  };
+}
 
 export function createScrollBoxWidget(options: Partial<ScrollBoxWidgetOptions> = {}): ScrollBoxWidget {
-  return new ScrollBoxWidget({...DEFAULT_SCROLL_BOX_OPTIONS, ...options});
+  return new ScrollBoxWidget({...getDefaultScrollBoxOptions(), ...options});
 }
 
 export default ScrollBoxWidget;

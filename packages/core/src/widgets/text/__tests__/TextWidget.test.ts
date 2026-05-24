@@ -26,7 +26,6 @@ describe('construction', () => {
 
   it('initializes with defaults from DEFAULT_TEXT_OPTIONS', () => {
     expect(DEFAULT_TEXT_OPTIONS.value).toBe('');
-    expect(DEFAULT_TEXT_OPTIONS.colorBg).toBe(0x00_00_00_00);
   });
 });
 

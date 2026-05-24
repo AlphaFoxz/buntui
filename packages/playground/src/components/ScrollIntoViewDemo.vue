@@ -1,10 +1,5 @@
 <template>
-    <Text
-        :x="1"
-        :y="3"
-        :colorFg="'rgba(137,180,250,1)'"
-        value="▶ Scroll Into View — Tab through inputs inside a ScrollBox"
-    />
+    <Text :x="1" :y="3" value="▶ Scroll Into View — Tab through inputs inside a ScrollBox" />
 
     <ScrollBox
         :x="1"
@@ -45,15 +40,15 @@
         :gap="1"
     >
         <Text :colorFg="'rgba(166,227,161,1)'" value="▶ How it works" />
-        <Text :colorFg="'rgba(205,214,244,1)'" value="Press Tab / Shift+Tab to navigate" />
-        <Text :colorFg="'rgba(205,214,244,1)'" value="The ScrollBox auto-scrolls to" />
-        <Text :colorFg="'rgba(205,214,244,1)'" value="keep the focused input visible." />
+        <Text value="Press Tab / Shift+Tab to navigate" />
+        <Text value="The ScrollBox auto-scrolls to" />
+        <Text value="keep the focused input visible." />
         <Text :colorFg="'rgba(108,112,134,1)'" value="" />
         <Text :colorFg="'rgba(250,179,135,1)'" :value="`Scroll offset: ${scrollOffsetY}`" />
         <Text :colorFg="'rgba(250,179,135,1)'" :value="`Max scroll:   ${maxScrollY}`" />
     </Box>
 
-    <Text :x="1" :y="20" :colorFg="'rgba(250,179,135,1)'" value="▶ Nested ScrollBox with Buttons" />
+    <Text :x="1" :y="20" value="▶ Nested ScrollBox with Buttons" />
 
     <ScrollBox
         :x="1"
@@ -91,14 +86,14 @@
         :gap="1"
     >
         <Text :colorFg="'rgba(203,166,245,1)'" value="▶ Click Log" />
-        <Text :colorFg="'rgba(205,214,244,1)'" :value="clickLog" />
+        <Text :value="clickLog" />
     </Box>
 </template>
 
 <script setup lang="ts">
 import { ref } from '@vue/reactivity'
 
-const values = ref(Array.from({length: 8}, () => ''))
+const values = ref(Array.from({ length: 8 }, () => ''))
 
 const scrollOffsetY = ref(0)
 const maxScrollY = ref(0)
@@ -111,7 +106,7 @@ function handleScroll(event: TuiScrollEvent) {
 const clickLog = ref('No clicks yet')
 function handleClick(index: number) {
     const now = new Date()
-    const ts = `${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+    const ts = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
     clickLog.value = `[${ts}] Clicked Button ${index}`
 }
 </script>

@@ -8,7 +8,7 @@ import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
-import {getTheme} from '../../theme/provider';
+import {resolveWidgetColors} from '../../theme/resolve';
 import {getClipboard} from '../../clipboard';
 import type {InputWidgetOptions} from './types';
 
@@ -52,29 +52,31 @@ function charCategory(code: number): number {
 }
 
 function getDefaultInputOptions(): InputWidgetOptions {
-  const theme = getTheme();
   return {
     x: 0,
     y: 0,
     width: 32,
     height: 3,
     placeholder: '',
-    placeholderColorFg: theme.colors.textMuted,
     value: '',
-    colorFg: theme.colors.text,
-    colorBg: theme.colors.surface,
-    borderColorUnfocused: theme.colors.border,
-    borderColorFocused: theme.colors.borderFocused,
-    borderColorDisabled: theme.colors.border,
-    borderStyle: theme.borderStyle.normal,
     maxLength: 0,
-    selectionBgColor: theme.colors.selectionBg,
-    selectionFgColor: theme.colors.selectionFg,
     label: '',
     readonly: false,
     disabled: false,
-    colorFgDisabled: theme.colors.textMuted,
-    colorBgDisabled: theme.colors.surfaceDisabled,
+
+    ...resolveWidgetColors({
+      colorFg: 'text',
+      colorBg: 'surface',
+      borderColorUnfocused: 'border',
+      borderColorFocused: 'borderFocused',
+      borderColorDisabled: 'border',
+      borderStyle: 'border.normal',
+      placeholderColorFg: 'placeholder',
+      selectionBgColor: 'selectionBg',
+      selectionFgColor: 'selectionFg',
+      colorFgDisabled: 'textMuted',
+      colorBgDisabled: 'surfaceDisabled',
+    }),
   };
 }
 
@@ -116,27 +118,27 @@ export class InputWidget extends InteractiveWidget {
     this.#height = rect.height;
     this.#colors = {
       normal: {
-        fg: parseColor(resolved.colorFg ?? 0xFF_FF_FF_FF),
-        bg: parseColor(resolved.colorBg ?? 0x1E_1E_2E_FF),
-        borderColor: parseColor(resolved.borderColorUnfocused ?? 0x45_47_5A_FF),
+        fg: parseColor(resolved.colorFg!),
+        bg: parseColor(resolved.colorBg!),
+        borderColor: parseColor(resolved.borderColorUnfocused!),
       },
       focused: {
-        fg: parseColor(resolved.colorFg ?? 0xFF_FF_FF_FF),
-        bg: parseColor(resolved.colorBg ?? 0x1E_1E_2E_FF),
-        borderColor: parseColor(resolved.borderColorFocused ?? 0x89_B4_FA_FF),
+        fg: parseColor(resolved.colorFg!),
+        bg: parseColor(resolved.colorBg!),
+        borderColor: parseColor(resolved.borderColorFocused!),
       },
       disabled: {
-        fg: parseColor(resolved.colorFgDisabled ?? 0x6C_70_86_FF),
-        bg: parseColor(resolved.colorBgDisabled ?? 0x1E_1E_2E_FF),
-        borderColor: parseColor(resolved.borderColorDisabled ?? 0x45_47_5A_FF),
+        fg: parseColor(resolved.colorFgDisabled!),
+        bg: parseColor(resolved.colorBgDisabled!),
+        borderColor: parseColor(resolved.borderColorDisabled!),
       },
     };
     this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
     this.#maxLength = resolved.maxLength ?? 0;
     this.#placeholder = resolved.placeholder ?? '';
-    this.#placeholderColorFg = parseColor(resolved.placeholderColorFg ?? 0x6C_70_86_FF);
-    this.#selectionBgColor = parseColor(resolved.selectionBgColor ?? 0x26_4F_78_FF);
-    this.#selectionFgColor = parseColor(resolved.selectionFgColor ?? 0xFF_FF_FF_FF);
+    this.#placeholderColorFg = parseColor(resolved.placeholderColorFg!);
+    this.#selectionBgColor = parseColor(resolved.selectionBgColor!);
+    this.#selectionFgColor = parseColor(resolved.selectionFgColor!);
     this.#label = resolved.label ?? '';
     this.#isReadonly = resolved.readonly ?? false;
     this.#password = (resolved.type ?? 'text') === 'password';

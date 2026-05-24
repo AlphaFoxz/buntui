@@ -1,5 +1,5 @@
 <template>
-    <Text :x="1" :y="3" :colorFg="'rgba(137,180,250,1)'" value="▶ Basic Switches" />
+    <Text :x="1" :y="3" value="▶ Basic Switches" />
 
     <Switch :x="1" :y="4" :width="20" :height="1" label="Notifications" @change="handleSwitchChange" />
     <Switch
@@ -12,7 +12,7 @@
         @change="handleAutoUpdateChange"
     />
 
-    <Text :x="1" :y="6" :colorFg="'rgba(166,227,161,1)'" value="▶ More Options" />
+    <Text :x="1" :y="6" value="▶ More Options" />
 
     <Switch :x="1" :y="7" :width="20" :height="1" label="Wi-Fi" :checked="wifiEnabled" @change="handleWifiChange" />
     <Switch :x="31" :y="7" :width="20" :height="1" label="Bluetooth" :checked="btEnabled" @change="handleBtChange" />
@@ -35,12 +35,12 @@
         @change="handleDarkModeChange"
     />
 
-    <Text :x="1" :y="10" :colorFg="'rgba(243,139,168,1)'" value="▶ Disabled State" />
+    <Text :x="1" :y="10" value="▶ Disabled State" />
 
     <Switch :x="1" :y="11" :width="20" :height="1" label="Disabled Off" :disabled="true" />
     <Switch :x="31" :y="11" :width="20" :height="1" label="Disabled On" :disabled="true" :checked="true" />
 
-    <Text :x="1" :y="13" :colorFg="'rgba(250,179,135,1)'" value="▶ Status Summary" />
+    <Text :x="1" :y="13" value="▶ Status Summary" />
 
     <Box
         :x="1"
@@ -53,8 +53,8 @@
         :direction="'vertical'"
         :gap="1"
     >
-        <Text :colorFg="'rgba(205,214,244,1)'" :value="statusLine1" />
-        <Text :colorFg="'rgba(205,214,244,1)'" :value="statusLine2" />
+        <Text :value="statusLine1" />
+        <Text :value="statusLine2" />
     </Box>
 </template>
 

@@ -4,13 +4,12 @@ import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
-import {getTheme} from '../../theme/provider';
+import {resolveWidgetColors} from '../../theme/resolve';
 import type {SelectButtonWidgetOptions} from './types';
 
 type SelectButtonColors = {fg: number; bg: number};
 
 function getDefaultSelectButtonOptions() {
-  const theme = getTheme();
   return {
     x: 0,
     y: 0,
@@ -20,19 +19,17 @@ function getDefaultSelectButtonOptions() {
     value: undefined as unknown,
     disabled: false,
 
-    colorFgNormal: theme.colors.textMuted,
-    colorBgNormal: theme.colors.surface,
-
-    colorFgActive: theme.colors.text,
-    colorBgActive: theme.colors.surfaceFocused,
-
-    colorFgFocused: theme.colors.accent,
-    colorBgFocused: theme.colors.surfaceHover,
-
-    colorFgDisabled: theme.colors.textMuted,
-    colorBgDisabled: theme.colors.surfaceDisabled,
-
-    colorFgSeparator: theme.colors.border,
+    ...resolveWidgetColors({
+      colorFgNormal: 'textMuted',
+      colorBgNormal: 'surface',
+      colorFgActive: 'text',
+      colorBgActive: 'surfaceFocused',
+      colorFgFocused: 'accent',
+      colorBgFocused: 'surfaceHover',
+      colorFgDisabled: 'textMuted',
+      colorBgDisabled: 'surfaceDisabled',
+      colorFgSeparator: 'border',
+    }),
   };
 }
 

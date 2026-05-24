@@ -84,6 +84,12 @@ const expose: FlatXoConfig = [
     },
   },
   {
+    files: ['packages/core/src/theme/resolve.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-type-assertion': 'off',
+    },
+  },
+  {
     files: ['packages/create-buntui/src/**/*.ts'],
     rules: {
       'unicorn/no-process-exit': 'off',

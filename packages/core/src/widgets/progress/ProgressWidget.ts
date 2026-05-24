@@ -3,11 +3,10 @@ import type {KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
-import {getTheme} from '../../theme/provider';
+import {resolveWidgetColors} from '../../theme/resolve';
 import type {ProgressWidgetOptions} from './types';
 
 function getDefaultProgressOptions() {
-  const theme = getTheme();
   return {
     x: 0 as number | `${number}%`,
     y: 0 as number | `${number}%`,
@@ -16,10 +15,12 @@ function getDefaultProgressOptions() {
     value: undefined as number | undefined,
     max: 1,
     disabled: false,
-    colorTrackNormal: theme.colors.progressTrack,
-    colorFillNormal: theme.colors.progressFill,
-    colorTrackDisabled: theme.colors.surface,
-    colorFillDisabled: theme.colors.border,
+    ...resolveWidgetColors({
+      colorTrackNormal: 'progressTrack',
+      colorFillNormal: 'progressFill',
+      colorTrackDisabled: 'surface',
+      colorFillDisabled: 'border',
+    }),
   };
 }
 

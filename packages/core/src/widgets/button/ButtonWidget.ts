@@ -7,7 +7,7 @@ import {
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor, type TuiColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
-import {getTheme} from '../../theme/provider';
+import {resolveWidgetColors} from '../../theme/resolve';
 import type {ButtonWidgetOptions} from './types';
 
 type ButtonColors = {
@@ -18,7 +18,6 @@ type ButtonColors = {
 };
 
 function getDefaultButtonOptions(): Required<ButtonWidgetOptions> {
-  const theme = getTheme();
   return {
     x: 0,
     y: 0,
@@ -26,30 +25,28 @@ function getDefaultButtonOptions(): Required<ButtonWidgetOptions> {
     height: 3,
     value: '',
 
-    colorFgNormal: theme.colors.text,
-    colorBgNormal: theme.colors.surface,
-    borderColorNormal: theme.colors.border,
-    borderStyleNormal: theme.borderStyle.normal,
-
-    colorFgFocused: theme.colors.text,
-    colorBgFocused: theme.colors.surfaceFocused,
-    borderColorFocused: theme.colors.borderFocused,
-    borderStyleFocused: theme.borderStyle.focused,
-
-    colorFgHovered: theme.colors.text,
-    colorBgHovered: theme.colors.surfaceHover,
-    borderColorHovered: theme.colors.border,
-    borderStyleHovered: theme.borderStyle.normal,
-
-    colorFgPressed: theme.colors.text,
-    colorBgPressed: theme.colors.surfacePressed,
-    borderColorPressed: theme.colors.borderFocused,
-    borderStylePressed: theme.borderStyle.pressed,
-
-    colorFgDisabled: theme.colors.textMuted,
-    colorBgDisabled: theme.colors.surfaceDisabled,
-    borderColorDisabled: theme.colors.surfaceFocused,
-    borderStyleDisabled: theme.borderStyle.disabled,
+    ...resolveWidgetColors({
+      colorFgNormal: 'text',
+      colorBgNormal: 'surface',
+      borderColorNormal: 'border',
+      borderStyleNormal: 'border.normal',
+      colorFgFocused: 'text',
+      colorBgFocused: 'surfaceFocused',
+      borderColorFocused: 'borderFocused',
+      borderStyleFocused: 'border.focused',
+      colorFgHovered: 'text',
+      colorBgHovered: 'surfaceHover',
+      borderColorHovered: 'border',
+      borderStyleHovered: 'border.normal',
+      colorFgPressed: 'text',
+      colorBgPressed: 'surfacePressed',
+      borderColorPressed: 'borderFocused',
+      borderStylePressed: 'border.pressed',
+      colorFgDisabled: 'textMuted',
+      colorBgDisabled: 'surfaceDisabled',
+      borderColorDisabled: 'surfaceFocused',
+      borderStyleDisabled: 'border.disabled',
+    }),
 
     disabled: false,
   };

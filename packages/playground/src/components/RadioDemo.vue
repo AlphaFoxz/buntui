@@ -1,5 +1,5 @@
 <template>
-    <Text :x="1" :y="3" :colorFg="'rgba(137,180,250,1)'" value="▶ Colors" />
+    <Text :x="1" :y="3" value="▶ Colors" />
     <RadioGroup
         :x="1"
         :y="4"
@@ -11,7 +11,7 @@
     />
     <Box :x="1" :y="8" :width="28" :height="1" :colorBg="selectedColorBg" />
 
-    <Text :x="31" :y="3" :colorFg="'rgba(166,227,161,1)'" value="▶ Sizes" />
+    <Text :x="31" :y="3" value="▶ Sizes" />
     <RadioGroup
         :x="31"
         :y="4"
@@ -21,9 +21,9 @@
         :value="selectedSize"
         @change="handleSizeChange"
     />
-    <Text :x="31" :y="8" :colorFg="'rgba(205,214,244,1)'" :value="`Selected: ${selectedLabel}`" />
+    <Text :x="31" :y="8" :value="`Selected: ${selectedLabel}`" />
 
-    <Text :x="1" :y="10" :colorFg="'rgba(250,179,135,1)'" value="▶ Disabled Group" />
+    <Text :x="1" :y="10" value="▶ Disabled Group" />
     <RadioGroup
         :x="1"
         :y="11"
@@ -34,7 +34,7 @@
         :disabled="true"
     />
 
-    <Text :x="31" :y="10" :colorFg="'rgba(203,166,245,1)'" value="▶ Framework" />
+    <Text :x="31" :y="10" value="▶ Framework" />
     <RadioGroup
         :x="31"
         :y="11"
@@ -45,7 +45,7 @@
         @change="handleFrameworkChange"
     />
 
-    <Text :x="1" :y="16" :colorFg="'rgba(148,226,213,1)'" value="▶ Summary" />
+    <Text :x="1" :y="16" value="▶ Summary" />
     <Box
         :x="1"
         :y="17"
@@ -58,7 +58,6 @@
         :gap="1"
     >
         <Text
-            :colorFg="'rgba(205,214,244,1)'"
             :value="`Color: ${colorName} | Size: ${sizeName} | Framework: ${frameworkName}`"
         />
         <Text

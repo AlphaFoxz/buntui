@@ -7,12 +7,11 @@
         :y="3"
         :width="28"
         :height="3"
-        :colorFg="'rgba(197,207,224,1)'"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(137,180,250,0.5)'"
         borderStyle="solid"
     >
-        <Text :colorFg="'rgba(197,207,224,1)'" :value="text1" />
+        <Text :value="text1" />
     </Box>
 
     <Box
@@ -22,12 +21,11 @@
         :y="3"
         :width="28"
         :height="3"
-        :colorFg="'rgba(197,207,224,1)'"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(166,227,161,1)'"
         borderStyle="rounded"
     >
-        <Text :colorFg="'rgba(197,207,224,1)'" :value="text2" />
+        <Text :value="text2" />
     </Box>
 
     <Box
@@ -36,12 +34,11 @@
         :y="6"
         :width="28"
         :height="3"
-        :colorFg="'rgba(197,207,224,1)'"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(250,179,135,1)'"
         borderStyle="double"
     >
-        <Text :colorFg="'rgba(197,207,224,1)'" :value="text3" />
+        <Text :value="text3" />
     </Box>
 
     <Box
@@ -50,12 +47,11 @@
         :y="6"
         :width="28"
         :height="3"
-        :colorFg="'rgba(197,207,224,1)'"
         :colorBg="'rgba(30,30,46,1)'"
         :borderColor="'rgba(243,139,168,1)'"
         borderStyle="bold"
     >
-        <Text :colorFg="'rgba(197,207,224,1)'" :value="text4" />
+        <Text :value="text4" />
     </Box>
 
     <!-- Dashed border -->
@@ -68,7 +64,7 @@
         :borderColor="'rgba(180,190,254,1)'"
         borderStyle="dashed"
     >
-        <Text :colorFg="'rgba(180,190,254,1)'" value="虚线 Dashed" />
+        <Text value="虚线 Dashed" />
     </Box>
 
     <!-- OutsetBold border -->
@@ -81,7 +77,7 @@
         :borderColor="'rgba(245,194,231,1)'"
         borderStyle="outsetbold"
     >
-        <Text :colorFg="'rgba(245,194,231,1)'" value="浮雕 Outset" />
+        <Text value="浮雕 Outset" />
     </Box>
 
     <!-- OutsetDouble border -->
@@ -93,7 +89,7 @@
         :borderColor="'rgba(148,226,213,1)'"
         borderStyle="outsetdouble"
     >
-        <Text :colorFg="'rgba(148,226,213,1)'" value="双浮雕 Outset²" />
+        <Text value="双浮雕 Outset²" />
     </Box>
 
     <Box
@@ -152,7 +148,7 @@
         :borderColor="'rgba(137,180,250,1)'"
     >
         <Text :colorFg="'rgba(108,112,134,1)'" value="align=Start" />
-        <Text :colorFg="'rgba(197,207,224,1)'" value="Row 1" />
+        <Text value="Row 1" />
         <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
     </Box>
 
@@ -169,7 +165,7 @@
         :borderColor="'rgba(250,179,135,1)'"
     >
         <Text :colorFg="'rgba(108,112,134,1)'" value="align=Center" />
-        <Text :colorFg="'rgba(197,207,224,1)'" value="Row 1" :colorBg="'rgba(49,50,68,1)'" />
+        <Text value="Row 1" :colorBg="'rgba(49,50,68,1)'" />
         <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" :colorBg="'rgba(49,50,68,1)'" />
     </Box>
 
@@ -186,7 +182,7 @@
         :borderColor="'rgba(166,227,161,1)'"
     >
         <Text :colorFg="'rgba(108,112,134,1)'" value="align=End" />
-        <Text :colorFg="'rgba(197,207,224,1)'" value="Row 1" :colorBg="'rgba(49,50,68,1)'" />
+        <Text value="Row 1" :colorBg="'rgba(49,50,68,1)'" />
         <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" :colorBg="'rgba(49,50,68,1)'" />
     </Box>
 
@@ -203,7 +199,7 @@
         :borderColor="'rgba(245,194,231,1)'"
     >
         <Text :colorFg="'rgba(108,112,134,1)'" value="align=Stretch" />
-        <Text :colorFg="'rgba(197,207,224,1)'" value="Row 1" :colorBg="'rgba(49,50,68,1)'" />
+        <Text value="Row 1" :colorBg="'rgba(49,50,68,1)'" />
         <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" :colorBg="'rgba(49,50,68,1)'" />
     </Box>
 </template>

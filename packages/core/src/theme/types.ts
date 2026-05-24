@@ -27,6 +27,12 @@ export type TuiThemeColors = {
   progressFill: TuiColor;
   progressTrack: TuiColor;
 
+  success: TuiColor;
+  successMuted: TuiColor;
+  danger: TuiColor;
+  dangerMuted: TuiColor;
+  warning: TuiColor;
+  placeholder: TuiColor;
 };
 
 export type TuiThemeBorderStyle = {

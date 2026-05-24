@@ -2,6 +2,7 @@ import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {BorderSides} from '../../draw_list/types';
 import {parseColor, type TuiColor} from '../../utils/color';
 import {getTheme} from '../../theme/provider';
+import {resolveWidgetColors} from '../../theme/resolve';
 import {
   TuiLayoutAlignment as LayoutAlignmentEnum,
   resolveBorderStyle,
@@ -144,11 +145,12 @@ function expandBorderShorthand(value: BorderShorthand): Border {
 }
 
 function initBorder(options: BoxWidgetOptions): TuiWidgetBorder {
+  const theme = getTheme();
   const expansion = options.border === undefined
     ? undefined
     : expandBorderShorthand(options.border);
   return {
-    borderColor: parseColor(options.borderColor ?? 0xFF_FF_FF_FF),
+    borderColor: parseColor(options.borderColor ?? theme.colors.border),
     borderStyle: resolveBorderStyle(options.borderStyle ?? 'none'),
     borderTop: options.borderTop ?? expansion?.borderTop ?? false,
     borderRight: options.borderRight ?? expansion?.borderRight ?? false,
@@ -173,9 +175,10 @@ export class BoxWidget extends TuiWidgetEntity {
   constructor(options: BoxWidgetOptions) {
     super();
     this.#rect = this.initRect(options.x, options.y, options.width, options.height, {width: 32, height: 3});
+    const theme = getTheme();
     this.#color = {
-      colorFg: parseColor(options.colorFg ?? 0xFF_FF_FF_FF),
-      colorBg: parseColor(options.colorBg ?? 0x00_00_00_FF),
+      colorFg: parseColor(options.colorFg ?? theme.colors.text),
+      colorBg: parseColor(options.colorBg ?? theme.colors.background),
     };
     this.#style = {
       styleZIndex: options.styleZIndex ?? 0,
@@ -557,7 +560,6 @@ export class BoxWidget extends TuiWidgetEntity {
 }
 
 export function getDefaultBoxOptions(): BoxWidgetOptions {
-  const theme = getTheme();
   return {
     x: 0,
     y: 0,
@@ -565,9 +567,11 @@ export function getDefaultBoxOptions(): BoxWidgetOptions {
     height: 3,
     border: true,
     borderStyle: 'solid',
-    colorFg: theme.colors.text,
-    colorBg: theme.colors.background,
-    borderColor: theme.colors.border,
+    ...resolveWidgetColors({
+      colorFg: 'text',
+      colorBg: 'background',
+      borderColor: 'border',
+    }),
   };
 }
 

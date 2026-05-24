@@ -36,10 +36,9 @@
         :gap="1"
     >
         <Text :colorFg="'rgba(166,227,161,1)'" value="▶ Checklist Summary" />
-        <Text :colorFg="'rgba(205,214,244,1)'" :value="`Notifications: ${notifLabel}`" />
-        <Text :colorFg="'rgba(205,214,244,1)'" :value="`Dark Mode: ${darkMode ? 'ON' : 'OFF'}`" />
+        <Text :value="`Notifications: ${notifLabel}`" />
+        <Text :value="`Dark Mode: ${darkMode ? 'ON' : 'OFF'}`" />
         <Text
-            :colorFg="'rgba(205,214,244,1)'"
             :value="`Options: A=${optA ? '✓' : '✗'} B=${optB ? '✓' : '✗'} C=${optC ? '✓' : '✗'} (${checkedCount}/3)`"
         />
         <Text :colorFg="'rgba(108,112,134,1)'" value="Click checkboxes or use Enter/Space when focused" />

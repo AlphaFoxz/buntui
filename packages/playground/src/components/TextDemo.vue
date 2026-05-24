@@ -9,7 +9,7 @@
         borderStyle="rounded"
     >
         <Text :colorFg="'rgba(137,180,250,1)'" value="▶ Dynamic Clock" />
-        <Text :colorFg="'rgba(205,214,244,1)'" :value="clockText" />
+        <Text :value="clockText" />
         <Text :colorFg="'rgba(108,112,134,1)'" :value="`Elapsed: ${elapsed}s`" />
     </Box>
 
@@ -23,9 +23,9 @@
         borderStyle="rounded"
     >
         <Text :colorFg="'rgba(250,179,135,1)'" value="▶ Font Styles" />
-        <Text styleModifier="bold" :colorFg="'rgba(197,207,224,1)'" value="Bold 粗体" />
-        <Text styleModifier="italic" :colorFg="'rgba(197,207,224,1)'" value="Italic 斜体" />
-        <Text styleModifier="underline" :colorFg="'rgba(197,207,224,1)'" value="Underline 下划线" />
+        <Text styleModifier="bold" value="Bold 粗体" />
+        <Text styleModifier="italic" value="Italic 斜体" />
+        <Text styleModifier="underline" value="Underline 下划线" />
     </Box>
 
     <Box
@@ -38,8 +38,8 @@
         borderStyle="rounded"
     >
         <Text :colorFg="'rgba(166,227,161,1)'" value="▶ More Styles" />
-        <Text styleModifier="dim" :colorFg="'rgba(197,207,224,1)'" value="Dim 暗淡" />
-        <Text :styleModifier="['bold', 'underline']" :colorFg="'rgba(197,207,224,1)'" value="Bold + Underline 组合" />
+        <Text styleModifier="dim" value="Dim 暗淡" />
+        <Text :styleModifier="['bold', 'underline']" value="Bold + Underline 组合" />
         <Text styleModifier="crossedout" :colorFg="'rgba(243,139,168,1)'" value="Strikethrough 删除线" />
     </Box>
 
@@ -74,7 +74,6 @@
             overflow="marquee"
             :scrollSpeed="6"
             :scrollPauseMs="800"
-            :colorFg="'rgba(205,214,244,1)'"
             value="This is a long scrolling text that exceeds the widget width. 这是一段超长的跑马灯文字演示，文字会在容器内自动滚动显示。"
         />
         <Text
@@ -110,9 +109,9 @@
         borderStyle="rounded"
     >
         <Text :colorFg="'rgba(245,194,231,1)'" value="▶ CJK & Special" />
-        <Text :colorFg="'rgba(205,214,244,1)'" value="中文 日本語 한국어 Emoji" />
-        <Text :colorFg="'rgba(205,214,244,1)'" value="★ ♠ ♣ ♥ ♦ ♪ ♫ → ← ↑ ↓" />
-        <Text :colorFg="'rgba(205,214,244,1)'" :value="dynamicPoem" />
+        <Text value="中文 日本語 한국어 Emoji" />
+        <Text value="★ ♠ ♣ ♥ ♦ ♪ ♫ → ← ↑ ↓" />
+        <Text :value="dynamicPoem" />
     </Box>
 </template>
 

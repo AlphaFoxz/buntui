@@ -164,16 +164,6 @@ describe('codegen', () => {
   });
 
   describe('event handlers', () => {
-    it('generates .on() registration', () => {
-      const root = makeRoot(
-        [makeWidget({events: [{type: 'TuiEventBinding', event: 'click', handler: 'handleClick', modifiers: [], loc: STUB_LOC}]})],
-        [],
-        new Set(['createBox']),
-      );
-      const result = gen(root);
-      expect(result.code).toContain(".on('click', handleClick)");
-    });
-
     it('generates key modifier guard', () => {
       const root = makeRoot(
         [makeWidget({events: [{type: 'TuiEventBinding', event: 'key', handler: 'onEnter', modifiers: ['enter'], loc: STUB_LOC}]})],
@@ -258,6 +248,49 @@ describe('codegen', () => {
       const result = gen(root);
       expect(result.code).toContain(".on('click', handleClick)");
       expect(result.code).not.toContain('$event');
+    });
+
+    it('wraps function call expression in arrow wrapper', () => {
+      const root = makeRoot(
+        [makeWidget({events: [{type: 'TuiEventBinding', event: 'click', handler: 'handleClick(index + 1)', modifiers: [], loc: STUB_LOC}]})],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain(".on('click', ($event) => { handleClick(index + 1) })");
+    });
+
+    it('wraps member expression in arrow wrapper', () => {
+      const root = makeRoot(
+        [makeWidget({events: [{type: 'TuiEventBinding', event: 'click', handler: 'handlers.onClick', modifiers: [], loc: STUB_LOC}]})],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain(".on('click', ($event) => { handlers.onClick })");
+    });
+
+    it('no wrapper for arrow function handler', () => {
+      const root = makeRoot(
+        [makeWidget({events: [{type: 'TuiEventBinding', event: 'click', handler: '($event) => handleClick($event)', modifiers: [], loc: STUB_LOC}]})],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain(".on('click', ($event) => handleClick($event))");
+      expect(result.code).not.toContain('($event) => { ($event) =>');
+    });
+
+    it('wraps function call with modifiers', () => {
+      const root = makeRoot(
+        [makeWidget({events: [{type: 'TuiEventBinding', event: 'key', handler: 'handleKey(index)', modifiers: ['enter'], loc: STUB_LOC}]})],
+        [],
+        new Set(['createBox']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain(".on('key', ($event) =>");
+      expect(result.code).toContain("$event.key === 'Enter'");
+      expect(result.code).toContain('handleKey(index)');
     });
   });
 

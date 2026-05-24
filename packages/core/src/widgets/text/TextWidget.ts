@@ -283,8 +283,6 @@ export const DEFAULT_TEXT_OPTIONS: TextWidgetOptions = {
   y: 0,
   width: 32,
   height: 1,
-  colorFg: 0xFF_FF_FF_FF,
-  colorBg: 0x00_00_00_00,
   value: '',
 };
 

@@ -4,7 +4,7 @@ import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
-import {getTheme} from '../../theme/provider';
+import {resolveWidgetColors} from '../../theme/resolve';
 import type {SwitchWidgetOptions} from './types';
 
 type SwitchColors = {
@@ -15,13 +15,7 @@ type SwitchColors = {
   dim: number;
 };
 
-// Catppuccin Mocha palette — widget-specific defaults
-const SWITCH_CROSS = 0xF3_8B_A8_FF;
-const SWITCH_CHECK = 0xA6_E3_A1_FF;
-const SWITCH_DIM = 0x6C_70_86_FF;
-
 function getDefaultSwitchOptions(): Required<SwitchWidgetOptions> {
-  const theme = getTheme();
   return {
     x: 0,
     y: 0,
@@ -31,29 +25,28 @@ function getDefaultSwitchOptions(): Required<SwitchWidgetOptions> {
     checked: false,
     disabled: false,
 
-    colorFgNormal: theme.colors.text,
-    colorBgNormal: theme.colors.surface,
-    colorCrossNormal: SWITCH_CROSS,
-    colorCheckNormal: SWITCH_CHECK,
-    colorDimNormal: SWITCH_DIM,
-
-    colorFgHovered: theme.colors.text,
-    colorBgHovered: theme.colors.surfaceHover,
-    colorCrossHovered: SWITCH_CROSS,
-    colorCheckHovered: SWITCH_CHECK,
-    colorDimHovered: theme.colors.borderFocused,
-
-    colorFgFocused: theme.colors.text,
-    colorBgFocused: theme.colors.surface,
-    colorCrossFocused: SWITCH_CROSS,
-    colorCheckFocused: SWITCH_CHECK,
-    colorDimFocused: SWITCH_DIM,
-
-    colorFgDisabled: theme.colors.textMuted,
-    colorBgDisabled: theme.colors.surface,
-    colorCrossDisabled: theme.colors.border,
-    colorCheckDisabled: theme.colors.border,
-    colorDimDisabled: theme.colors.surfaceFocused,
+    ...resolveWidgetColors({
+      colorFgNormal: 'text',
+      colorBgNormal: 'surface',
+      colorCrossNormal: 'danger',
+      colorCheckNormal: 'success',
+      colorDimNormal: 'textMuted',
+      colorFgHovered: 'text',
+      colorBgHovered: 'surfaceHover',
+      colorCrossHovered: 'danger',
+      colorCheckHovered: 'success',
+      colorDimHovered: 'borderFocused',
+      colorFgFocused: 'text',
+      colorBgFocused: 'surface',
+      colorCrossFocused: 'danger',
+      colorCheckFocused: 'success',
+      colorDimFocused: 'textMuted',
+      colorFgDisabled: 'textMuted',
+      colorBgDisabled: 'surface',
+      colorCrossDisabled: 'border',
+      colorCheckDisabled: 'border',
+      colorDimDisabled: 'surfaceFocused',
+    }),
   };
 }
 

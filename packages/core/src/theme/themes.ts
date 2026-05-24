@@ -31,6 +31,12 @@ const catppuccinMochaColors: TuiThemeColors = {
   progressFill: 0x89_B4_FA_FF,
   progressTrack: 0x31_32_44_FF,
 
+  success: 0xA6_E3_A1_FF,
+  successMuted: 0x2B_4A_2E_FF,
+  danger: 0xF3_8B_A8_FF,
+  dangerMuted: 0x4A_2B_30_FF,
+  warning: 0xF9_E2_AF_FF,
+  placeholder: 0x6C_70_86_FF,
 };
 
 const catppuccinMochaBorderStyle: TuiThemeBorderStyle = {

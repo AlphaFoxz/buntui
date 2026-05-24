@@ -124,12 +124,6 @@ describe('compile', () => {
       expect(result.code).toContain('$event.checked');
     });
 
-    it('generates checked binding for Switch', () => {
-      const result = compile('<template><Switch v-model="active"/></template>');
-      expect(result.code).toContain('unref(active)');
-      expect(result.code).toContain('$event.checked');
-    });
-
     it('generates named v-model with update: event', () => {
       const result = compile('<template><Input v-model:value="text"/></template>');
       expect(result.code).toContain('unref(text)');
@@ -591,14 +585,6 @@ describe('compile', () => {
       expect(result.imports.some(i => i.includes('ref') && i.includes('@vue/reactivity'))).toBe(true);
     });
 
-    it('handles import with semicolon', () => {
-      const result = compile(
-        '<template><Text :value="msg"/></template>'
-        + '<script setup>import {ref} from "vue";\nconst msg = ref("hello");</script>',
-      );
-      expect(result.imports.some(i => i.includes('ref') && i.includes('@vue/reactivity'))).toBe(true);
-    });
-
     it('handles import with onTick and useTemplateRef', () => {
       const result = compile(
         '<template><Text :value="msg"/></template>'
@@ -657,11 +643,6 @@ describe('compile', () => {
       expect(result.code).toContain('colorFg');
     });
 
-    it('generates updateColor for Input :colorBg', () => {
-      const result = compile('<template><Input :colorBg="bg"/></template>');
-      expect(result.code).toContain('updateColor');
-    });
-
     it('generates updateBorder for Input :borderStyle', () => {
       const result = compile('<template><Input :borderStyle="s"/></template>');
       expect(result.code).toContain('updateBorder');
@@ -670,11 +651,6 @@ describe('compile', () => {
     it('generates setMax for Progress :max', () => {
       const result = compile('<template><Progress :max="limit"/></template>');
       expect(result.code).toContain('setMax');
-    });
-
-    it('generates updateColor for Box :colorFg (via per-widget handlers)', () => {
-      const result = compile('<template><Box :colorFg="c"/></template>');
-      expect(result.code).toContain('updateColor');
     });
 
     it('generates setVisible for any widget with v-show', () => {

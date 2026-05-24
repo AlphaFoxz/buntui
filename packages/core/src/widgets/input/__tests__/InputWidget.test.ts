@@ -1228,13 +1228,6 @@ describe('updateColor', () => {
     expect(rect).toBeDefined();
   });
 
-  it('updates normal and focused bg color', () => {
-    const input = new InputWidget({colorBg: 0x1E_1E_2E_FF});
-    input.updateColor({colorBg: 0x00_00_00_FF});
-    const rect = input.rect;
-    expect(rect).toBeDefined();
-  });
-
   it('updates both fg and bg together', () => {
     const input = new InputWidget({colorFg: 0xFF_FF_FF_FF, colorBg: 0x1E_1E_2E_FF});
     input.updateColor({colorFg: 0x00_00_00_FF, colorBg: 0xFF_FF_FF_FF});

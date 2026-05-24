@@ -4,7 +4,7 @@ import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState} from '../color-scheme';
-import {getTheme} from '../../theme/provider';
+import {resolveWidgetColors} from '../../theme/resolve';
 import type {CheckboxWidgetOptions} from './types';
 
 type CheckboxColors = {
@@ -13,7 +13,6 @@ type CheckboxColors = {
 };
 
 function getDefaultCheckboxOptions(): Required<CheckboxWidgetOptions> {
-  const theme = getTheme();
   return {
     x: 0,
     y: 0,
@@ -24,17 +23,16 @@ function getDefaultCheckboxOptions(): Required<CheckboxWidgetOptions> {
     indeterminate: false,
     disabled: false,
 
-    colorFgNormal: theme.colors.text,
-    colorBgNormal: theme.colors.surface,
-
-    colorFgHovered: theme.colors.text,
-    colorBgHovered: theme.colors.surfaceHover,
-
-    colorFgFocused: theme.colors.text,
-    colorBgFocused: theme.colors.surfaceFocused,
-
-    colorFgDisabled: theme.colors.textMuted,
-    colorBgDisabled: theme.colors.surfaceDisabled,
+    ...resolveWidgetColors({
+      colorFgNormal: 'text',
+      colorBgNormal: 'surface',
+      colorFgHovered: 'text',
+      colorBgHovered: 'surfaceHover',
+      colorFgFocused: 'text',
+      colorBgFocused: 'surfaceFocused',
+      colorFgDisabled: 'textMuted',
+      colorBgDisabled: 'surfaceDisabled',
+    }),
   };
 }
 

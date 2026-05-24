@@ -1,5 +1,5 @@
 <template>
-    <Text :x="1" :y="3" :colorFg="'rgba(137,180,250,1)'" value="▶ Basic Inputs" />
+    <Text :x="1" :y="3" value="▶ Basic Inputs" />
 
     <Input
         ref="firstInput"
@@ -24,7 +24,7 @@
         :value="inputValue"
     />
 
-    <Text :x="1" :y="8" :colorFg="'rgba(166,227,161,1)'" value="▶ Password & maxLength" />
+    <Text :x="1" :y="8" value="▶ Password & maxLength" />
 
     <Input
         :x="1"
@@ -47,7 +47,7 @@
         v-model="limitedValue"
     />
 
-    <Text :x="1" :y="13" :colorFg="'rgba(250,179,135,1)'" value="▶ Disabled & Readonly" />
+    <Text :x="1" :y="13" value="▶ Disabled & Readonly" />
 
     <Input
         :x="1"
@@ -70,7 +70,7 @@
         value="Readonly content here"
     />
 
-    <Text :x="1" :y="18" :colorFg="'rgba(203,166,245,1)'" value="▶ v-model Feedback" />
+    <Text :x="1" :y="18" value="▶ v-model Feedback" />
 
     <Box
         :x="1"

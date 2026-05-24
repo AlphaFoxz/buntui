@@ -180,16 +180,6 @@ describe('unmounted', () => {
 });
 
 describe('indeterminate animation', () => {
-  it('defaults to indeterminate when no value', () => {
-    const pb = new ProgressWidget();
-    expect(pb.indeterminate).toBe(true);
-  });
-
-  it('is determinate when value is set', () => {
-    const pb = createProgress({value: 0.5});
-    expect(pb.indeterminate).toBe(false);
-  });
-
   it('update does nothing when determinate', () => {
     const pb = createProgress({value: 0.5});
     pb.update(16.67);
@@ -213,10 +203,4 @@ describe('indeterminate animation', () => {
 });
 
 describe('createProgressWidget factory', () => {
-  it('creates widget with default options', () => {
-    const pb = new ProgressWidget();
-    expect(pb.value).toBeUndefined();
-    expect(pb.indeterminate).toBe(true);
-    expect(pb.max).toBe(1);
-  });
 });

@@ -1,9 +1,9 @@
 <template>
-    <Text :x="1" :y="3" :colorFg="'rgba(137,180,250,1)'" value="▶ Determinate Progress" />
+    <Text :x="1" :y="3" value="▶ Determinate Progress" />
     <Text :x="1" :y="4" :colorFg="'rgba(108,112,134,1)'" :value="`Download: ${downloadProgress}%`" />
     <Progress :x="1" :y="5" width="95%" :height="1" :value="downloadProgress" :max="100" />
 
-    <Text :x="1" :y="7" :colorFg="'rgba(166,227,161,1)'" value="▶ Fractional (0-1 range)" />
+    <Text :x="1" :y="7" value="▶ Fractional (0-1 range)" />
     <Text :x="1" :y="8" :colorFg="'rgba(108,112,134,1)'" value="0.3" />
     <Progress :x="5" :y="8" width="20%" :height="1" :value="0.3" />
     <Text :x="30" :y="8" :colorFg="'rgba(108,112,134,1)'" value="0.6" />
@@ -11,13 +11,13 @@
     <Text :x="59" :y="8" :colorFg="'rgba(108,112,134,1)'" value="0.9" />
     <Progress :x="63" :y="8" width="30%" :height="1" :value="0.9" />
 
-    <Text :x="1" :y="10" :colorFg="'rgba(243,139,168,1)'" value="▶ Indeterminate (value=undefined)" />
+    <Text :x="1" :y="10" value="▶ Indeterminate (value=undefined)" />
     <Progress :x="1" :y="11" width="95%" :height="1" />
 
-    <Text :x="1" :y="13" :colorFg="'rgba(250,179,135,1)'" value="▶ Disabled" />
+    <Text :x="1" :y="13" value="▶ Disabled" />
     <Progress :x="1" :y="14" width="95%" :height="1" :value="0.8" :disabled="true" />
 
-    <Text :x="1" :y="16" :colorFg="'rgba(203,166,245,1)'" value="▶ Multi-step Progress" />
+    <Text :x="1" :y="16" value="▶ Multi-step Progress" />
     <Box
         :x="1"
         :y="17"
@@ -29,7 +29,7 @@
         :direction="'vertical'"
         :gap="1"
     >
-        <Text :colorFg="'rgba(205,214,244,1)'" :value="`Step ${currentStep}/3 - ${stepLabel}`" />
+        <Text :value="`Step ${currentStep}/3 - ${stepLabel}`" />
         <Progress width="100%" :height="1" :value="currentStep" :max="3" />
         <Text :colorFg="'rgba(108,112,134,1)'" :value="stepDesc" />
     </Box>

@@ -61,7 +61,8 @@ export {
 } from './utils/percent';
 export {defineTheme, catppuccinMocha} from './theme/themes';
 export type {TuiTheme, TuiThemeColors, TuiThemeBorderStyle} from './theme/types';
-export {getTheme, setTheme} from './theme/provider';
+export {getTheme, setTheme, onThemeChange} from './theme/provider';
+export type {ThemeChangeListener} from './theme/provider';
 export {useTheme} from './theme/use-theme';
 export {
   onTick, onMounted, onUnmounted, useTemplateRef,
