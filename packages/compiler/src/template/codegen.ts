@@ -24,6 +24,7 @@ function resolvePropHandler(node: TuiWidgetCall, propName: string, propLoc?: Sou
     return handler;
   }
 
+  // eslint-disable-next-line @stylistic/max-len
   throw new Error(`Unknown prop "${propName}" on <${node.tag}> at line ${propLoc?.start.line ?? node.loc.start.line}:${propLoc?.start.column ?? node.loc.start.column}. This widget only accepts: ${Object.keys(node.propHandlers).join(', ')}.`);
 }
 

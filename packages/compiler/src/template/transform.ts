@@ -1,3 +1,4 @@
+/* eslint-disable max-depth */
 import {
   type RootNode,
   type TemplateChildNode,
