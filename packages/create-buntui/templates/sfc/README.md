@@ -25,5 +25,4 @@ src/
   main.ts      Production entry
   dev.ts       Dev server with HMR
   App.vue      Root SFC component
-  env.d.ts     Type declarations for TUI events
 ```

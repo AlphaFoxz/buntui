@@ -13,5 +13,5 @@ process.on('SIGINT', () => {
 const app = createApp({logLevel: 'info', clearLog: true});
 setApp(app);
 setDefaultProjectName(defaultName);
-app.createScene(CreateUI, {bgHexRgb: 'rgb(26, 27, 38)', visible: true});
+app.createScene(CreateUI, {visible: true});
 app.start();

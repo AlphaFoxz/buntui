@@ -10,7 +10,7 @@ const expose: FlatXoConfig = [
       '**/*.vue',
       '**/dist/**',
       'designs/**',
-      'scripts/**',
+      '**/scripts/**',
       'packages/create-buntui/templates/**',
       'xo.config.ts'
     ],

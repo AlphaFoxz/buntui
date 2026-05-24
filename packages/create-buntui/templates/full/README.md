@@ -27,7 +27,6 @@ src/
   main.ts              Production entry
   dev.ts               Dev server with HMR
   App.vue              Root SFC with tabbed widget demos
-  env.d.ts             Type declarations for TUI events
   components/
     BoxDemo.vue        Box layout demos
     ButtonDemo.vue     Button interaction demos
@@ -36,6 +35,5 @@ src/
     SwitchDemo.vue     Switch toggle demos
     ProgressDemo.vue   Progress bar demos
     RadioDemo.vue      Radio group selection demos
-    ScrollBoxDemo.vue  Scrollable content demos
     TextDemo.vue       Text display demos
 ```

@@ -4,7 +4,6 @@
         :y="1"
         width="50%"
         :height="24"
-        colorBg="rgb(36, 40, 59)"
         borderColor="rgb(122, 162, 247)"
         borderStyle="rounded"
         :paddingTop="1"
@@ -15,61 +14,28 @@
         :shadowOffsetY="1"
         shadowColor="rgb(10, 10, 18)"
     >
-        <Text
-            width="100%"
-            :height="1"
-            value="Create BuntUI App"
-            colorFg="rgb(122, 162, 247)"
-            colorBg="rgb(36, 40, 59)"
-            styleModifier="bold"
-        />
+        <Text width="100%" :height="1" value="Create Buntui App" colorFg="rgb(122, 162, 247)" styleModifier="bold" />
 
         <SelectButton width="100%" :height="1" :options="['Template', 'Features']" v-model="currentTab" />
 
-        <Text
-            width="100%"
-            :height="1"
-            :value="'─'.repeat(40)"
-            colorFg="rgb(86, 95, 137)"
-            colorBg="rgb(36, 40, 59)"
-            overflow="clip"
-        />
+        <Text width="100%" :height="1" :value="'─'.repeat(40)" overflow="clip" />
 
-        <Box v-if="currentTab === 'Template'" width="100%" :border="false" direction="vertical" :gap="1" colorBg="rgb(36, 40, 59)">
+        <Box v-if="currentTab === 'Template'" width="100%" :border="false" direction="vertical" :gap="1">
             <Input
                 width="100%"
                 v-model="projectName"
-                colorFg="rgb(192, 202, 229)"
-                colorBg="rgb(26, 27, 38)"
-                borderColorUnfocused="rgb(86, 95, 137)"
-                borderColorFocused="rgb(122, 162, 247)"
-                borderStyle="solid"
                 placeholder="my-buntui-app"
                 label="Project name"
                 @submit="handleNext"
             />
 
-            <Text width="100%" :height="1" value="Template:" colorFg="rgb(192, 202, 229)" colorBg="rgb(36, 40, 59)" />
+            <Text width="100%" :height="1" value="Template:" />
 
-            <RadioGroup
-                width="100%"
-                :height="3"
-                :options="['Basic', 'SFC', 'Full']"
-                v-model="templateIndex"
-                colorFgSelected="rgb(122, 162, 247)"
-                colorBgSelected="rgb(59, 66, 91)"
-            />
+            <RadioGroup width="100%" :height="3" :options="['Basic', 'SFC', 'Full']" v-model="templateIndex" />
 
-            <Text
-                width="100%"
-                :height="1"
-                :value="templateDescription"
-                colorFg="rgb(108, 112, 134)"
-                colorBg="rgb(36, 40, 59)"
-                overflow="clip"
-            />
+            <Text width="100%" :height="1" :value="templateDescription" overflow="clip" />
 
-            <Box width="100%" :height="3" :border="false" direction="horizontal" :gap="2" align="center" colorBg="rgb(36, 40, 59)">
+            <Box width="100%" :height="3" :border="false" direction="horizontal" :gap="2" align="center">
                 <Button
                     :width="12"
                     :height="3"
@@ -93,29 +59,14 @@
                     :width="12"
                     :height="3"
                     value="Cancel"
-                    colorFgNormal="rgb(86, 95, 137)"
-                    colorBgNormal="rgb(36, 40, 59)"
-                    borderColorNormal="rgb(86, 95, 137)"
                     borderStyleNormal="rounded"
-                    colorFgFocused="rgb(192, 202, 229)"
-                    colorBgFocused="rgb(59, 66, 91)"
-                    borderColorFocused="rgb(192, 202, 229)"
                     borderStyleFocused="rounded"
-                    colorFgPressed="rgb(86, 95, 137)"
-                    colorBgPressed="rgb(42, 48, 69)"
-                    borderColorPressed="rgb(42, 48, 69)"
                     borderStylePressed="rounded"
                     @click="handleCancel"
                 />
             </Box>
 
-            <Text
-                width="100%"
-                :height="1"
-                value="Tab/↑↓ navigate · Enter next · Esc cancel"
-                colorFg="rgb(86, 95, 137)"
-                colorBg="rgb(36, 40, 59)"
-            />
+            <Text width="100%" :height="1" value="Tab/↑↓ navigate · Enter next · Esc cancel" />
         </Box>
 
         <Box
@@ -125,57 +76,16 @@
             direction="vertical"
             :gap="1"
             :paddingTop="1"
-            colorBg="rgb(36, 40, 59)"
         >
-            <Checkbox
-                width="100%"
-                :height="1"
-                label="Initialize git repository"
-                v-model="featureGit"
-                colorFgNormal="rgb(192, 202, 229)"
-                colorBgNormal="rgb(36, 40, 59)"
-                colorFgFocused="rgb(192, 202, 229)"
-                colorBgFocused="rgb(59, 66, 91)"
-            />
+            <Checkbox width="100%" :height="1" label="Initialize git repository" v-model="featureGit" />
 
-            <Checkbox
-                width="100%"
-                :height="1"
-                label="Include HMR dev tools"
-                v-model="featureHmr"
-                colorFgNormal="rgb(192, 202, 229)"
-                colorBgNormal="rgb(36, 40, 59)"
-                colorFgFocused="rgb(192, 202, 229)"
-                colorBgFocused="rgb(59, 66, 91)"
-            />
-
-            <Checkbox
-                width="100%"
-                :height="1"
-                label="Include example extensions"
-                v-model="featureExtensions"
-                colorFgNormal="rgb(192, 202, 229)"
-                colorBgNormal="rgb(36, 40, 59)"
-                colorFgFocused="rgb(192, 202, 229)"
-                colorBgFocused="rgb(59, 66, 91)"
-            />
-
-            <Box width="100%" :height="3" :border="false" direction="horizontal" :gap="2" align="center" colorBg="rgb(36, 40, 59)">
+            <Box width="100%" :height="3" :border="false" direction="horizontal" :gap="2" align="center">
                 <Button
                     :width="12"
                     :height="3"
                     value="← Back"
-                    colorFgNormal="rgb(86, 95, 137)"
-                    colorBgNormal="rgb(36, 40, 59)"
-                    borderColorNormal="rgb(86, 95, 137)"
                     borderStyleNormal="rounded"
-                    colorFgFocused="rgb(192, 202, 229)"
-                    colorBgFocused="rgb(59, 66, 91)"
-                    borderColorFocused="rgb(192, 202, 229)"
                     borderStyleFocused="rounded"
-                    colorFgPressed="rgb(86, 95, 137)"
-                    colorBgPressed="rgb(42, 48, 69)"
-                    borderColorPressed="rgb(42, 48, 69)"
                     borderStylePressed="rounded"
                     @click="handleBack"
                 />
@@ -203,29 +113,14 @@
                     :width="12"
                     :height="3"
                     value="Cancel"
-                    colorFgNormal="rgb(86, 95, 137)"
-                    colorBgNormal="rgb(36, 40, 59)"
-                    borderColorNormal="rgb(86, 95, 137)"
                     borderStyleNormal="rounded"
-                    colorFgFocused="rgb(192, 202, 229)"
-                    colorBgFocused="rgb(59, 66, 91)"
-                    borderColorFocused="rgb(192, 202, 229)"
                     borderStyleFocused="rounded"
-                    colorFgPressed="rgb(86, 95, 137)"
-                    colorBgPressed="rgb(42, 48, 69)"
-                    borderColorPressed="rgb(42, 48, 69)"
                     borderStylePressed="rounded"
                     @click="handleCancel"
                 />
             </Box>
 
-            <Text
-                width="100%"
-                :height="1"
-                value="Tab navigate · Space toggle · Esc back"
-                colorFg="rgb(86, 95, 137)"
-                colorBg="rgb(36, 40, 59)"
-            />
+            <Text width="100%" :height="1" value="Tab navigate · Space toggle · Esc back" />
         </Box>
     </Box>
 </template>
@@ -238,10 +133,6 @@ import { scaffoldCopy, scaffoldCleanup, type TemplateName } from './scaffold'
 import { validateProjectName } from './validate'
 import { LOGGER } from '@buntui/core'
 
-const TEXT_DIM = 'rgb(86, 95, 137)'
-const ERROR_COLOR = 'rgb(243, 139, 168)'
-const SUCCESS_COLOR = 'rgb(166, 227, 161)'
-
 const TEMPLATE_NAMES: TemplateName[] = ['basic', 'sfc', 'full']
 const TEMPLATE_DESCRIPTIONS = [
     'A minimal starting point with Box, Text, Button, and a clock demo.',
@@ -253,8 +144,6 @@ const currentTab = ref('Template')
 const projectName = ref(getDefaultProjectName() ?? 'my-buntui-app')
 const templateIndex = ref(0)
 const featureGit = ref(true)
-const featureHmr = ref(true)
-const featureExtensions = ref(false)
 const busy = ref(false)
 
 const templateDescription = computed(() => TEMPLATE_DESCRIPTIONS[templateIndex.value] ?? '')
@@ -311,6 +200,7 @@ async function handleCreate() {
         const exitCode = await proc.exited
         if (exitCode !== 0) {
             scaffoldCleanup(projectDir)
+            LOGGER.logError(`bun install failed (exit code ${exitCode})`)
             busy.value = false
             return
         }
@@ -324,6 +214,8 @@ async function handleCreate() {
             scaffoldCleanup(projectDir)
         }
 
+        const message = error instanceof Error ? error.message : String(error)
+        LOGGER.logError(message)
         busy.value = false
     }
 }

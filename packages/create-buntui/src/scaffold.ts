@@ -3,15 +3,6 @@ import path from 'node:path';
 
 export type TemplateName = 'basic' | 'sfc' | 'full';
 
-function loadVersion(): string {
-  const raw = fs.readFileSync(path.resolve(import.meta.dir, '..', 'package.json'), 'utf-8');
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-  const parsed = JSON.parse(raw) as {version?: string};
-  return parsed.version ?? '0.0.0';
-}
-
-const VERSION = loadVersion();
-
 function getTemplateDir(template: TemplateName): string {
   return path.resolve(import.meta.dir, '..', 'templates', template);
 }
@@ -56,7 +47,7 @@ export function scaffoldCopy(
 
   const variables: Record<string, string> = {
     name: projectName,
-    version: VERSION,
+    version: 'latest',
   };
 
   try {
