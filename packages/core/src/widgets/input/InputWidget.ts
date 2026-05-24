@@ -7,8 +7,8 @@ import {
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
-import {type ColorScheme, resolveColorState} from '../color-scheme';
-import {resolveWidgetColors} from '../../theme/resolve';
+import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
 import {getClipboard} from '../../clipboard';
 import type {InputWidgetOptions} from './types';
 
@@ -51,6 +51,22 @@ function charCategory(code: number): number {
   return CHAR_CATEGORY_WORD;
 }
 
+const INPUT_TOKEN_MAP = {
+  colorFgNormal: 'text',
+  colorBgNormal: 'surface',
+  colorFgFocused: 'text',
+  colorBgFocused: 'surface',
+  borderColorUnfocused: 'border',
+  borderColorFocused: 'borderFocused',
+  borderColorDisabled: 'border',
+  borderStyle: 'border.normal',
+  placeholderColorFg: 'placeholder',
+  selectionBgColor: 'selectionBg',
+  selectionFgColor: 'selectionFg',
+  colorFgDisabled: 'textMuted',
+  colorBgDisabled: 'surfaceDisabled',
+} as const;
+
 function getDefaultInputOptions(): InputWidgetOptions {
   return {
     x: 0,
@@ -64,19 +80,7 @@ function getDefaultInputOptions(): InputWidgetOptions {
     readonly: false,
     disabled: false,
 
-    ...resolveWidgetColors({
-      colorFg: 'text',
-      colorBg: 'surface',
-      borderColorUnfocused: 'border',
-      borderColorFocused: 'borderFocused',
-      borderColorDisabled: 'border',
-      borderStyle: 'border.normal',
-      placeholderColorFg: 'placeholder',
-      selectionBgColor: 'selectionBg',
-      selectionFgColor: 'selectionFg',
-      colorFgDisabled: 'textMuted',
-      colorBgDisabled: 'surfaceDisabled',
-    }),
+    ...resolveWidgetColors(INPUT_TOKEN_MAP),
   };
 }
 
@@ -90,9 +94,9 @@ export class InputWidget extends InteractiveWidget {
   #borderStyle: number;
   #maxLength: number;
   #placeholder: string;
-  readonly #placeholderColorFg: number;
-  readonly #selectionBgColor: number;
-  readonly #selectionFgColor: number;
+  #placeholderColorFg: number;
+  #selectionBgColor: number;
+  #selectionFgColor: number;
   #label: string;
   #isReadonly: boolean;
 
@@ -118,13 +122,13 @@ export class InputWidget extends InteractiveWidget {
     this.#height = rect.height;
     this.#colors = {
       normal: {
-        fg: parseColor(resolved.colorFg!),
-        bg: parseColor(resolved.colorBg!),
+        fg: parseColor(resolved.colorFgNormal!),
+        bg: parseColor(resolved.colorBgNormal!),
         borderColor: parseColor(resolved.borderColorUnfocused!),
       },
       focused: {
-        fg: parseColor(resolved.colorFg!),
-        bg: parseColor(resolved.colorBg!),
+        fg: parseColor(resolved.colorFgFocused!),
+        bg: parseColor(resolved.colorBgFocused!),
         borderColor: parseColor(resolved.borderColorFocused!),
       },
       disabled: {
@@ -391,6 +395,25 @@ export class InputWidget extends InteractiveWidget {
 
     if (rect.height !== undefined) {
       this.#height = rect.height;
+    }
+  }
+
+  updateThemeColors(resolved: Record<string, unknown>): void {
+    applyColorSchemeUpdates(this.#colors, resolved);
+    if (resolved.borderStyle !== undefined) {
+      this.#borderStyle = resolveBorderStyle(resolved.borderStyle as TuiBorderStyleName);
+    }
+
+    if (resolved.placeholderColorFg !== undefined) {
+      this.#placeholderColorFg = parseColor(resolved.placeholderColorFg as number);
+    }
+
+    if (resolved.selectionBgColor !== undefined) {
+      this.#selectionBgColor = parseColor(resolved.selectionBgColor as number);
+    }
+
+    if (resolved.selectionFgColor !== undefined) {
+      this.#selectionFgColor = parseColor(resolved.selectionFgColor as number);
     }
   }
 
@@ -983,7 +1006,11 @@ export class InputWidget extends InteractiveWidget {
 }
 
 export function createInputWidget(options?: Partial<InputWidgetOptions>): InputWidget {
-  return new InputWidget({...getDefaultInputOptions(), ...options});
+  const widget = new InputWidget({...getDefaultInputOptions(), ...options});
+  bindThemeToWidget(widget, INPUT_TOKEN_MAP, options ?? {}, resolved => {
+    widget.updateThemeColors(resolved);
+  });
+  return widget;
 }
 
 export default InputWidget;

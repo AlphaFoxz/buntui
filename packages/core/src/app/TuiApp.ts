@@ -155,7 +155,6 @@ export class TuiApp implements Disposable {
 
     const moduleRecord = module as Record<string, unknown>;
     if (typeof moduleRecord.setup === 'function') {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
       const setup = moduleRecord.setup as (scene: TuiScene) => (() => void) | void;
       const cleanup = runSetup(scene, () => setup(scene));
       this.#cleanups.set(scene.id, cleanup);

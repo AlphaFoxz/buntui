@@ -78,7 +78,6 @@ export class TuiContext implements CStruct {
   }
 
   get resizeBehavior(): TuiResizeBehavior {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- FFI boundary
     return this.#dataView.getUint8(OFFSETS.resizeBehavior) as TuiResizeBehavior;
   }
 

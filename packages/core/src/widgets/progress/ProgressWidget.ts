@@ -3,8 +3,15 @@ import type {KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
-import {resolveWidgetColors} from '../../theme/resolve';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
 import type {ProgressWidgetOptions} from './types';
+
+const PROGRESS_TOKEN_MAP = {
+  colorTrackNormal: 'progressTrack',
+  colorFillNormal: 'progressFill',
+  colorTrackDisabled: 'surface',
+  colorFillDisabled: 'border',
+} as const;
 
 function getDefaultProgressOptions() {
   return {
@@ -15,12 +22,7 @@ function getDefaultProgressOptions() {
     value: undefined as number | undefined,
     max: 1,
     disabled: false,
-    ...resolveWidgetColors({
-      colorTrackNormal: 'progressTrack',
-      colorFillNormal: 'progressFill',
-      colorTrackDisabled: 'surface',
-      colorFillDisabled: 'border',
-    }),
+    ...resolveWidgetColors(PROGRESS_TOKEN_MAP),
   };
 }
 
@@ -34,10 +36,10 @@ export class ProgressWidget extends InteractiveWidget {
   #animDirection = 1;
   #lastTimestamp = 0;
 
-  readonly #colorTrackNormal: number;
-  readonly #colorFillNormal: number;
-  readonly #colorTrackDisabled: number;
-  readonly #colorFillDisabled: number;
+  #colorTrackNormal: number;
+  #colorFillNormal: number;
+  #colorTrackDisabled: number;
+  #colorFillDisabled: number;
 
   constructor(options: ProgressWidgetOptions = {}) {
     super();
@@ -122,6 +124,24 @@ export class ProgressWidget extends InteractiveWidget {
     void _event;
   }
 
+  updateThemeColors(resolved: Record<string, unknown>): void {
+    if (resolved.colorTrackNormal !== undefined) {
+      this.#colorTrackNormal = parseColor(resolved.colorTrackNormal as number);
+    }
+
+    if (resolved.colorFillNormal !== undefined) {
+      this.#colorFillNormal = parseColor(resolved.colorFillNormal as number);
+    }
+
+    if (resolved.colorTrackDisabled !== undefined) {
+      this.#colorTrackDisabled = parseColor(resolved.colorTrackDisabled as number);
+    }
+
+    if (resolved.colorFillDisabled !== undefined) {
+      this.#colorFillDisabled = parseColor(resolved.colorFillDisabled as number);
+    }
+  }
+
   override emitDrawCommands(buffer: DrawListBuffer): void {
     const {x, y, width, height} = this.#rect;
     if (width <= 0 || height <= 0) {
@@ -171,7 +191,11 @@ export class ProgressWidget extends InteractiveWidget {
 }
 
 export function createProgressWidget(options?: Partial<ProgressWidgetOptions>): ProgressWidget {
-  return new ProgressWidget({...getDefaultProgressOptions(), ...options});
+  const widget = new ProgressWidget({...getDefaultProgressOptions(), ...options});
+  bindThemeToWidget(widget, PROGRESS_TOKEN_MAP, options ?? {}, resolved => {
+    widget.updateThemeColors(resolved);
+  });
+  return widget;
 }
 
 export default ProgressWidget;

@@ -125,6 +125,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
 
   let timer: ReturnType<typeof setTimeout> | undefined;
   let extraWatchers: Array<ReturnType<typeof watch>> = [];
+  let closed = false;
 
   // Persistent state across reloads for incremental compilation
   const compiledCache = new Map<string, string>(); // ResolvedPath -> compiled code
@@ -266,6 +267,10 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
   }
 
   async function reload(changedFile?: string) {
+    if (closed) {
+      return;
+    }
+
     try {
       onClear();
 
@@ -277,8 +282,9 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
         await incrementalReload(changedFile);
       }
 
-      // Refresh watchers for imported .vue files after successful compile
-      updateChildWatchers();
+      if (!closed) {
+        updateChildWatchers();
+      }
     } catch (error) {
       needsFullReload = true;
       onError?.(error instanceof Error ? error : new Error(String(error)));
@@ -286,9 +292,15 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
   }
 
   function scheduleReload(changedFile?: string) {
+    if (closed) {
+      return;
+    }
+
     clearTimeout(timer);
     timer = setTimeout(() => {
-      void reload(changedFile);
+      if (!closed) {
+        void reload(changedFile);
+      }
     }, debounceMs);
   }
 
@@ -339,6 +351,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
 
   return {
     close() {
+      closed = true;
       clearTimeout(timer);
       mainWatcher.close();
       for (const w of extraWatchers) {

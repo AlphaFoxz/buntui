@@ -21,7 +21,31 @@ function writeFile(filePath: string, content: string) {
   fs.writeFileSync(filePath, content, 'utf-8');
 }
 
-function rmrf(dir: string) {
+function rmrfSync(dir: string, retries = 5): void {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      fs.rmSync(dir, {recursive: true, force: true});
+      return;
+    } catch (error) {
+      if (i === retries) throw error;
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== 'EBUSY' && code !== 'EPERM') throw error;
+    }
+  }
+}
+
+async function rmrf(dir: string): Promise<void> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    try {
+      fs.rmSync(dir, {recursive: true, force: true});
+      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== 'EBUSY' && code !== 'EPERM') throw error;
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+  }
+
   fs.rmSync(dir, {recursive: true, force: true});
 }
 
@@ -55,12 +79,12 @@ describe('VUE_IMPORT_RE', () => {
 
 describe('discoverVueFiles', () => {
   beforeEach(() => {
-    rmrf(TMP);
+    rmrfSync(TMP);
     mkdirp(TMP);
   });
 
   afterEach(() => {
-    rmrf(TMP);
+    rmrfSync(TMP);
   });
 
   it('returns single file with no imports', () => {
@@ -161,12 +185,12 @@ describe('replaceImportPath', () => {
 
 describe('cleanupStaleTemporaryFiles', () => {
   beforeEach(() => {
-    rmrf(TMP);
+    rmrfSync(TMP);
     mkdirp(TMP);
   });
 
   afterEach(() => {
-    rmrf(TMP);
+    rmrfSync(TMP);
   });
 
   it('removes _hmr_*.ts files', () => {
@@ -226,15 +250,15 @@ function touch(filePath: string): void {
 describe('createDevServer integration', () => {
   let activeServer: ReturnType<typeof createDevServer> | undefined;
 
-  beforeEach(() => {
-    rmrf(ITMP);
+  beforeEach(async () => {
+    await rmrf(ITMP);
     mkdirp(ITMP);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     activeServer?.close();
     activeServer = undefined;
-    rmrf(ITMP);
+    await rmrf(ITMP);
   });
 
   it('calls onReload with setup function on first load', async () => {

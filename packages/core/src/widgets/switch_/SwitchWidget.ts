@@ -3,8 +3,8 @@ import {type KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
-import {type ColorScheme, resolveColorState} from '../color-scheme';
-import {resolveWidgetColors} from '../../theme/resolve';
+import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
 import type {SwitchWidgetOptions} from './types';
 
 type SwitchColors = {
@@ -14,6 +14,29 @@ type SwitchColors = {
   check: number;
   dim: number;
 };
+
+const SWITCH_TOKEN_MAP = {
+  colorFgNormal: 'text',
+  colorBgNormal: 'surface',
+  colorCrossNormal: 'danger',
+  colorCheckNormal: 'success',
+  colorDimNormal: 'textMuted',
+  colorFgHovered: 'text',
+  colorBgHovered: 'surfaceHover',
+  colorCrossHovered: 'danger',
+  colorCheckHovered: 'success',
+  colorDimHovered: 'borderFocused',
+  colorFgFocused: 'text',
+  colorBgFocused: 'surface',
+  colorCrossFocused: 'danger',
+  colorCheckFocused: 'success',
+  colorDimFocused: 'textMuted',
+  colorFgDisabled: 'textMuted',
+  colorBgDisabled: 'surface',
+  colorCrossDisabled: 'border',
+  colorCheckDisabled: 'border',
+  colorDimDisabled: 'surfaceFocused',
+} as const;
 
 function getDefaultSwitchOptions(): Required<SwitchWidgetOptions> {
   return {
@@ -25,28 +48,7 @@ function getDefaultSwitchOptions(): Required<SwitchWidgetOptions> {
     checked: false,
     disabled: false,
 
-    ...resolveWidgetColors({
-      colorFgNormal: 'text',
-      colorBgNormal: 'surface',
-      colorCrossNormal: 'danger',
-      colorCheckNormal: 'success',
-      colorDimNormal: 'textMuted',
-      colorFgHovered: 'text',
-      colorBgHovered: 'surfaceHover',
-      colorCrossHovered: 'danger',
-      colorCheckHovered: 'success',
-      colorDimHovered: 'borderFocused',
-      colorFgFocused: 'text',
-      colorBgFocused: 'surface',
-      colorCrossFocused: 'danger',
-      colorCheckFocused: 'success',
-      colorDimFocused: 'textMuted',
-      colorFgDisabled: 'textMuted',
-      colorBgDisabled: 'surface',
-      colorCrossDisabled: 'border',
-      colorCheckDisabled: 'border',
-      colorDimDisabled: 'surfaceFocused',
-    }),
+    ...resolveWidgetColors(SWITCH_TOKEN_MAP),
   };
 }
 
@@ -135,6 +137,10 @@ export class SwitchWidget extends InteractiveWidget {
     Object.assign(this.#rect, rect);
   }
 
+  updateThemeColors(resolved: Record<string, unknown>): void {
+    applyColorSchemeUpdates(this.#colors, resolved);
+  }
+
   override emitDrawCommands(buffer: DrawListBuffer): void {
     const {x, y, width, height} = this.#rect;
     if (width <= 0 || height <= 0) {
@@ -207,7 +213,11 @@ export class SwitchWidget extends InteractiveWidget {
 }
 
 export function createSwitchWidget(options?: Partial<SwitchWidgetOptions>): SwitchWidget {
-  return new SwitchWidget({...getDefaultSwitchOptions(), ...options});
+  const widget = new SwitchWidget({...getDefaultSwitchOptions(), ...options});
+  bindThemeToWidget(widget, SWITCH_TOKEN_MAP, options ?? {}, resolved => {
+    widget.updateThemeColors(resolved);
+  });
+  return widget;
 }
 
 export default SwitchWidget;

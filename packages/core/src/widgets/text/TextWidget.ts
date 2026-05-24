@@ -2,6 +2,7 @@ import {stringDisplayWidth, truncateToWidth, charDisplayWidth} from '../../utils
 import {parseColor, type TuiColor} from '../../utils/color';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {getTheme} from '../../theme/provider';
+import {bindThemeToWidget} from '../../theme/resolve';
 import {
   type TuiSizeValue,
   type TuiWidgetColor,
@@ -286,17 +287,27 @@ export const DEFAULT_TEXT_OPTIONS: TextWidgetOptions = {
   value: '',
 };
 
+const TEXT_TOKEN_MAP = {colorFg: 'text'} as const;
+
 export function createTextWidget(options: Partial<TextWidgetOptions> & {value: string}): TextWidget;
 export function createTextWidget(value: string): TextWidget;
 export function createTextWidget(options: string | (Partial<TextWidgetOptions> & {value: string})) {
   if (typeof options === 'string') {
-    return new TextWidget({...DEFAULT_TEXT_OPTIONS, value: options});
+    const widget = new TextWidget({...DEFAULT_TEXT_OPTIONS, value: options});
+    bindThemeToWidget(widget, TEXT_TOKEN_MAP, {}, resolved => {
+      widget.updateColor({colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg as TuiColor)});
+    });
+    return widget;
   }
 
-  return new TextWidget({
+  const widget = new TextWidget({
     ...DEFAULT_TEXT_OPTIONS,
     ...options,
   });
+  bindThemeToWidget(widget, TEXT_TOKEN_MAP, options, resolved => {
+    widget.updateColor({colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg as TuiColor)});
+  });
+  return widget;
 }
 
 export default TextWidget;

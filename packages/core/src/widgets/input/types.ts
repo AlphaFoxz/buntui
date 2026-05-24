@@ -10,6 +10,10 @@ export type InputWidgetOptions = {
   height?: TuiSizeValue;
   colorFg?: TuiColor;
   colorBg?: TuiColor;
+  colorFgNormal?: TuiColor;
+  colorBgNormal?: TuiColor;
+  colorFgFocused?: TuiColor;
+  colorBgFocused?: TuiColor;
   placeholder?: string;
   placeholderColorFg?: TuiColor;
   value?: string;

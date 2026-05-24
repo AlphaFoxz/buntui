@@ -54,6 +54,7 @@ export abstract class TuiWidgetEntity implements Mountable {
   readonly #children: TuiWidgetEntity[] = [];
   #percentSpec: TuiWidgetPercentSpec | undefined = undefined;
   #propagationStopped = false;
+  readonly #cleanupFns: Array<() => void> = [];
 
   get hasPercentLayout(): boolean {
     return this.#percentSpec !== undefined;
@@ -221,8 +222,17 @@ export abstract class TuiWidgetEntity implements Mountable {
   unmounted(): void {
     this.#referenceCount--;
     if (this.#referenceCount <= 0) {
+      for (const fn of this.#cleanupFns) {
+        fn();
+      }
+
+      this.#cleanupFns.length = 0;
       this.#eventHandlers.clear();
     }
+  }
+
+  addCleanup(fn: () => void): void {
+    this.#cleanupFns.push(fn);
   }
 
   /**

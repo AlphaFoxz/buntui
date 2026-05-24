@@ -1,5 +1,6 @@
+import type {TuiWidgetEntity} from '../widgets/TuiWidgetEntity';
 import type {TuiTheme, TuiThemeBorderStyle, TuiThemeColors} from './types';
-import {getTheme} from './provider';
+import {getTheme, onThemeChange} from './provider';
 
 export type ThemeToken = keyof TuiThemeColors | `border.${keyof TuiThemeBorderStyle}`;
 
@@ -44,4 +45,28 @@ function resolveToken(theme: TuiTheme, token: string): unknown {
   }
 
   return undefined;
+}
+
+export function bindThemeToWidget<M extends Record<string, ThemeToken>>(
+  widget: TuiWidgetEntity,
+  tokenMap: M,
+  userOverrides: Record<string, unknown>,
+  apply: (resolved: Record<string, unknown>) => void,
+): void {
+  const tracked = Object.fromEntries(Object.entries(tokenMap).filter(([key]) => userOverrides[key] === undefined));
+
+  if (Object.keys(tracked).length === 0) {
+    return;
+  }
+
+  const unsub = onThemeChange(theme => {
+    const resolved: Record<string, unknown> = {};
+    for (const [key, token] of Object.entries(tracked)) {
+      resolved[key] = resolveToken(theme, String(token));
+    }
+
+    apply(resolved);
+  });
+
+  widget.addCleanup(unsub);
 }

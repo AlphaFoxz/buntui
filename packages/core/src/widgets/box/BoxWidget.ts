@@ -2,7 +2,7 @@ import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {BorderSides} from '../../draw_list/types';
 import {parseColor, type TuiColor} from '../../utils/color';
 import {getTheme} from '../../theme/provider';
-import {resolveWidgetColors} from '../../theme/resolve';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
 import {
   TuiLayoutAlignment as LayoutAlignmentEnum,
   resolveBorderStyle,
@@ -559,6 +559,12 @@ export class BoxWidget extends TuiWidgetEntity {
   }
 }
 
+const BOX_TOKEN_MAP = {
+  colorFg: 'text',
+  colorBg: 'background',
+  borderColor: 'border',
+} as const;
+
 export function getDefaultBoxOptions(): BoxWidgetOptions {
   return {
     x: 0,
@@ -567,16 +573,22 @@ export function getDefaultBoxOptions(): BoxWidgetOptions {
     height: 3,
     border: true,
     borderStyle: 'solid',
-    ...resolveWidgetColors({
-      colorFg: 'text',
-      colorBg: 'background',
-      borderColor: 'border',
-    }),
+    ...resolveWidgetColors(BOX_TOKEN_MAP),
   };
 }
 
 export function createBox(options: Partial<BoxWidgetOptions> = {}): BoxWidget {
-  return new BoxWidget({...getDefaultBoxOptions(), ...options});
+  const widget = new BoxWidget({...getDefaultBoxOptions(), ...options});
+  bindThemeToWidget(widget, BOX_TOKEN_MAP, options, resolved => {
+    widget.updateColor({
+      colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg as TuiColor),
+      colorBg: resolved.colorBg === undefined ? undefined : parseColor(resolved.colorBg as TuiColor),
+    });
+    if (resolved.borderColor !== undefined) {
+      widget.updateBorder({borderColor: parseColor(resolved.borderColor as TuiColor)});
+    }
+  });
+  return widget;
 }
 
 export default BoxWidget;

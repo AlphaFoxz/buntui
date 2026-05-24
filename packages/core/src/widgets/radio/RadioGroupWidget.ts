@@ -3,11 +3,22 @@ import {type KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
-import {type ColorScheme, resolveColorState} from '../color-scheme';
-import {resolveWidgetColors} from '../../theme/resolve';
+import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
 import type {RadioGroupWidgetOptions} from './types';
 
 type RadioColors = {fg: number; bg: number};
+
+const RADIO_TOKEN_MAP = {
+  colorFgNormal: 'text',
+  colorBgNormal: 'surface',
+  colorFgFocused: 'text',
+  colorBgFocused: 'surfaceHover',
+  colorFgDisabled: 'textMuted',
+  colorBgDisabled: 'surfaceDisabled',
+  colorFgSelected: 'accent',
+  colorBgSelected: 'surfaceFocused',
+} as const;
 
 function getDefaultRadioOptions(): Required<RadioGroupWidgetOptions> {
   return {
@@ -19,16 +30,7 @@ function getDefaultRadioOptions(): Required<RadioGroupWidgetOptions> {
     value: -1,
     disabled: false,
 
-    ...resolveWidgetColors({
-      colorFgNormal: 'text',
-      colorBgNormal: 'surface',
-      colorFgFocused: 'text',
-      colorBgFocused: 'surfaceHover',
-      colorFgDisabled: 'textMuted',
-      colorBgDisabled: 'surfaceDisabled',
-      colorFgSelected: 'accent',
-      colorBgSelected: 'surfaceFocused',
-    }),
+    ...resolveWidgetColors(RADIO_TOKEN_MAP),
   };
 }
 
@@ -177,6 +179,10 @@ export class RadioGroupWidget extends InteractiveWidget {
     Object.assign(this.#rect, rect);
   }
 
+  updateThemeColors(resolved: Record<string, unknown>): void {
+    applyColorSchemeUpdates(this.#colors, resolved);
+  }
+
   override emitDrawCommands(buffer: DrawListBuffer): void {
     const {x, y, width, height} = this.#rect;
     if (width <= 0 || height <= 0) {
@@ -246,7 +252,11 @@ export class RadioGroupWidget extends InteractiveWidget {
 }
 
 export function createRadioGroupWidget(options?: Partial<RadioGroupWidgetOptions>): RadioGroupWidget {
-  return new RadioGroupWidget({...getDefaultRadioOptions(), ...options});
+  const widget = new RadioGroupWidget({...getDefaultRadioOptions(), ...options});
+  bindThemeToWidget(widget, RADIO_TOKEN_MAP, options ?? {}, resolved => {
+    widget.updateThemeColors(resolved);
+  });
+  return widget;
 }
 
 export default RadioGroupWidget;

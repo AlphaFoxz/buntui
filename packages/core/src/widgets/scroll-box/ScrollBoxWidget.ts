@@ -2,7 +2,7 @@ import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
 import {parseColor} from '../../utils/color';
 import {getTheme} from '../../theme/provider';
-import {resolveWidgetColors} from '../../theme/resolve';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
 import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import type {TuiWidgetEntity} from '../TuiWidgetEntity';
@@ -474,6 +474,13 @@ export class ScrollBoxWidget extends InteractiveWidget {
   }
 }
 
+const SCROLLBOX_TOKEN_MAP = {
+  colorBg: 'background',
+  borderColor: 'border',
+  scrollbarColor: 'scrollbar',
+  scrollbarTrackColor: 'scrollbarTrack',
+} as const;
+
 function getDefaultScrollBoxOptions(): ScrollBoxWidgetOptions {
   return {
     x: 0,
@@ -488,17 +495,30 @@ function getDefaultScrollBoxOptions(): ScrollBoxWidgetOptions {
     gap: 0,
     scrollSpeed: 3,
     alwaysShowScrollbar: false,
-    ...resolveWidgetColors({
-      colorBg: 'background',
-      borderColor: 'border',
-      scrollbarColor: 'scrollbar',
-      scrollbarTrackColor: 'scrollbarTrack',
-    }),
+    ...resolveWidgetColors(SCROLLBOX_TOKEN_MAP),
   };
 }
 
 export function createScrollBoxWidget(options: Partial<ScrollBoxWidgetOptions> = {}): ScrollBoxWidget {
-  return new ScrollBoxWidget({...getDefaultScrollBoxOptions(), ...options});
+  const widget = new ScrollBoxWidget({...getDefaultScrollBoxOptions(), ...options});
+  bindThemeToWidget(widget, SCROLLBOX_TOKEN_MAP, options, resolved => {
+    if (resolved.colorBg !== undefined) {
+      widget.updateColor({colorBg: parseColor(resolved.colorBg as number)});
+    }
+
+    if (resolved.borderColor !== undefined) {
+      widget.updateBorder({borderColor: parseColor(resolved.borderColor as number)});
+    }
+
+    if (resolved.scrollbarColor !== undefined) {
+      widget.setScrollbarColor(parseColor(resolved.scrollbarColor as number));
+    }
+
+    if (resolved.scrollbarTrackColor !== undefined) {
+      widget.setScrollbarTrackColor(parseColor(resolved.scrollbarTrackColor as number));
+    }
+  });
+  return widget;
 }
 
 export default ScrollBoxWidget;

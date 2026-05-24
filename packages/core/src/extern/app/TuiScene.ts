@@ -1,10 +1,10 @@
 import {genId} from '../../utils/genId';
-import {rgbToRgba} from '../../utils/styles';
+import {parseColor} from '../../utils/color';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import type {MouseEvent} from '../../events/types';
 import {isFocusable, type Focusable} from '../../widgets/Focusable';
 import {type TuiWidgetEntity} from '../../widgets/TuiWidgetEntity';
-import {getTheme} from '../../theme/provider';
+import {getTheme, onThemeChange} from '../../theme/provider';
 import type {Entity} from '../types';
 import {type TuiSceneOptions} from './types';
 import {TUI_CONTEXT_INSTANCE} from './TuiContext';
@@ -13,6 +13,7 @@ export class TuiScene implements Entity {
   readonly #id: bigint;
   #visible: boolean;
   #bgRgba: number;
+  #themeUnsub: (() => void) | undefined;
   readonly #widgets = new Set<TuiWidgetEntity>();
   readonly #lifecycleHandlers = new Map<string, Array<() => void>>();
   readonly #tickHandlers: Array<(dt: number) => void> = [];
@@ -22,7 +23,12 @@ export class TuiScene implements Entity {
   constructor(options?: Partial<TuiSceneOptions>) {
     this.#id = genId();
     this.#visible = options?.visible ?? false;
-    this.#bgRgba = rgbToRgba(options?.bgHexRgb ?? getTheme().colors.background);
+    this.#bgRgba = this.#resolveBgColor(options?.bgHexRgb ?? getTheme().colors.background);
+    if (options?.bgHexRgb === undefined) {
+      this.#themeUnsub = onThemeChange(theme => {
+        this.#bgRgba = parseColor(theme.colors.background);
+      });
+    }
   }
 
   // --- Getters / Setters ---
@@ -63,9 +69,7 @@ export class TuiScene implements Entity {
     g?: number,
     b?: number,
   ): void {
-    this.#bgRgba = typeof color === 'number' && g !== undefined && b !== undefined
-      ? rgbToRgba(color, g, b)
-      : rgbToRgba(color);
+    this.#bgRgba = typeof color === 'number' && g !== undefined && b !== undefined ? parseColor(`rgb(${color},${g},${b})`) : this.#resolveBgColor(color);
   }
 
   setVisible(visible: boolean) {
@@ -132,6 +136,8 @@ export class TuiScene implements Entity {
   }
 
   destroy() {
+    this.#themeUnsub?.();
+    this.#themeUnsub = undefined;
     for (const widget of this.#widgets) {
       this.unmount(widget);
     }
@@ -260,6 +266,14 @@ export class TuiScene implements Entity {
     for (const child of widget.children) {
       this.#collectFocusable(child, out);
     }
+  }
+
+  #resolveBgColor(color: number | string | {r: number; g: number; b: number}): number {
+    if (typeof color === 'object') {
+      return parseColor(`rgb(${color.r},${color.g},${color.b})`);
+    }
+
+    return parseColor(color);
   }
 }
 

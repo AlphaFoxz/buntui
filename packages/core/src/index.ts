@@ -59,7 +59,9 @@ export type {KeyboardEvent, MouseEvent} from './events/types';
 export {
   isPercent, resolvePercent, extractPercentSpec, resolveSizeValue,
 } from './utils/percent';
-export {defineTheme, catppuccinMocha} from './theme/themes';
+export {
+  defineTheme, catppuccinMocha, catppuccinLatte, nord, highContrast,
+} from './theme/themes';
 export type {TuiTheme, TuiThemeColors, TuiThemeBorderStyle} from './theme/types';
 export {getTheme, setTheme, onThemeChange} from './theme/provider';
 export type {ThemeChangeListener} from './theme/provider';

@@ -14,7 +14,7 @@ export function run(devOptions: {logFilePath?: string} = {}) {
     renderRate: 24,
     ...devOptions,
   });
-  const scene = app.createScene(App, {bgHexRgb: 0x00_00_00, visible: true});
+  const scene = app.createScene(App, {visible: true});
   // App.switchScene(scene);
   app.start();
   // Scene.setVisible(false);

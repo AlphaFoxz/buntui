@@ -136,7 +136,6 @@ export type U8<T extends boolean | number> = T extends number
 
 export function toU8<T extends boolean | number>(value: T): U8<T> {
   if (typeof value === 'boolean') {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- conditional type U8<T> cannot be inferred from literal
     return (value ? 1 : 0) as U8<T>;
   }
 
@@ -144,7 +143,6 @@ export function toU8<T extends boolean | number>(value: T): U8<T> {
     throw new Error('can not convert to u8');
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- conditional type U8<T> cannot be inferred from number
   return value as unknown as U8<T>;
 }
 

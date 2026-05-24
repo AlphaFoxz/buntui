@@ -3,14 +3,25 @@ import {type KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
-import {type ColorScheme, resolveColorState} from '../color-scheme';
-import {resolveWidgetColors} from '../../theme/resolve';
+import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
 import type {CheckboxWidgetOptions} from './types';
 
 type CheckboxColors = {
   fg: number;
   bg: number;
 };
+
+const CHECKBOX_TOKEN_MAP = {
+  colorFgNormal: 'text',
+  colorBgNormal: 'surface',
+  colorFgHovered: 'text',
+  colorBgHovered: 'surfaceHover',
+  colorFgFocused: 'text',
+  colorBgFocused: 'surfaceFocused',
+  colorFgDisabled: 'textMuted',
+  colorBgDisabled: 'surfaceDisabled',
+} as const;
 
 function getDefaultCheckboxOptions(): Required<CheckboxWidgetOptions> {
   return {
@@ -23,16 +34,7 @@ function getDefaultCheckboxOptions(): Required<CheckboxWidgetOptions> {
     indeterminate: false,
     disabled: false,
 
-    ...resolveWidgetColors({
-      colorFgNormal: 'text',
-      colorBgNormal: 'surface',
-      colorFgHovered: 'text',
-      colorBgHovered: 'surfaceHover',
-      colorFgFocused: 'text',
-      colorBgFocused: 'surfaceFocused',
-      colorFgDisabled: 'textMuted',
-      colorBgDisabled: 'surfaceDisabled',
-    }),
+    ...resolveWidgetColors(CHECKBOX_TOKEN_MAP),
   };
 }
 
@@ -119,6 +121,10 @@ export class CheckboxWidget extends InteractiveWidget {
     Object.assign(this.#rect, rect);
   }
 
+  updateThemeColors(resolved: Record<string, unknown>): void {
+    applyColorSchemeUpdates(this.#colors, resolved);
+  }
+
   override emitDrawCommands(buffer: DrawListBuffer): void {
     const {x, y, width, height} = this.#rect;
     if (width <= 0 || height <= 0) {
@@ -182,7 +188,11 @@ export class CheckboxWidget extends InteractiveWidget {
 }
 
 export function createCheckboxWidget(options?: Partial<CheckboxWidgetOptions>): CheckboxWidget {
-  return new CheckboxWidget({...getDefaultCheckboxOptions(), ...options});
+  const widget = new CheckboxWidget({...getDefaultCheckboxOptions(), ...options});
+  bindThemeToWidget(widget, CHECKBOX_TOKEN_MAP, options ?? {}, resolved => {
+    widget.updateThemeColors(resolved);
+  });
+  return widget;
 }
 
 export default CheckboxWidget;

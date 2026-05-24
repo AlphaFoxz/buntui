@@ -45,10 +45,21 @@
         @change="handleFrameworkChange"
     />
 
-    <Text :x="1" :y="16" value="▶ Summary" />
-    <Box
+    <Text :x="1" :y="16" value="▶ Theme" />
+    <RadioGroup
         :x="1"
         :y="17"
+        :width="58"
+        :height="4"
+        :options="themeOptions"
+        :value="selectedTheme"
+        @change="handleThemeChange"
+    />
+
+    <Text :x="1" :y="22" value="▶ Summary" />
+    <Box
+        :x="1"
+        :y="23"
         width="95%"
         :height="3"
         :colorBg="'rgba(30,30,46,1)'"
@@ -69,6 +80,21 @@
 
 <script setup lang="ts">
 import { ref, computed } from '@vue/reactivity'
+import { setTheme, catppuccinMocha, catppuccinLatte, nord, highContrast } from '@buntui/core'
+import type { TuiTheme } from '@buntui/core'
+
+const themes: Array<{name: string; theme: TuiTheme}> = [
+    { name: 'Catppuccin Mocha', theme: catppuccinMocha },
+    { name: 'Catppuccin Latte', theme: catppuccinLatte },
+    { name: 'Nord', theme: nord },
+    { name: 'High Contrast', theme: highContrast },
+]
+const themeOptions = themes.map(t => t.name)
+const selectedTheme = ref(0)
+function handleThemeChange(data: TuiRadioGroupChangeEvent) {
+    selectedTheme.value = data.value
+    setTheme(themes[data.value]!.theme)
+}
 
 const selectedColor = ref(-1)
 const colorName = computed(() => ['Red', 'Green', 'Blue', 'Yellow'][selectedColor.value] ?? 'None')

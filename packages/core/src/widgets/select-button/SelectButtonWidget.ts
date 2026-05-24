@@ -3,11 +3,23 @@ import {type KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
-import {type ColorScheme, resolveColorState} from '../color-scheme';
-import {resolveWidgetColors} from '../../theme/resolve';
+import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
 import type {SelectButtonWidgetOptions} from './types';
 
 type SelectButtonColors = {fg: number; bg: number};
+
+const SELECT_BUTTON_TOKEN_MAP = {
+  colorFgNormal: 'textMuted',
+  colorBgNormal: 'surface',
+  colorFgActive: 'text',
+  colorBgActive: 'surfaceFocused',
+  colorFgFocused: 'accent',
+  colorBgFocused: 'surfaceHover',
+  colorFgDisabled: 'textMuted',
+  colorBgDisabled: 'surfaceDisabled',
+  colorFgSeparator: 'border',
+} as const;
 
 function getDefaultSelectButtonOptions() {
   return {
@@ -19,17 +31,7 @@ function getDefaultSelectButtonOptions() {
     value: undefined as unknown,
     disabled: false,
 
-    ...resolveWidgetColors({
-      colorFgNormal: 'textMuted',
-      colorBgNormal: 'surface',
-      colorFgActive: 'text',
-      colorBgActive: 'surfaceFocused',
-      colorFgFocused: 'accent',
-      colorBgFocused: 'surfaceHover',
-      colorFgDisabled: 'textMuted',
-      colorBgDisabled: 'surfaceDisabled',
-      colorFgSeparator: 'border',
-    }),
+    ...resolveWidgetColors(SELECT_BUTTON_TOKEN_MAP),
   };
 }
 
@@ -40,7 +42,7 @@ export class SelectButtonWidget extends InteractiveWidget {
   #hoveredIndex = -1;
 
   readonly #colors: ColorScheme<SelectButtonColors>;
-  readonly #colorSeparator: number;
+  #colorSeparator: number;
 
   constructor(options: SelectButtonWidgetOptions = {}) {
     super();
@@ -196,6 +198,13 @@ export class SelectButtonWidget extends InteractiveWidget {
       && y < this.#rect.y + this.#rect.height;
   }
 
+  updateThemeColors(resolved: Record<string, unknown>): void {
+    applyColorSchemeUpdates(this.#colors, resolved);
+    if (resolved.colorFgSeparator !== undefined) {
+      this.#colorSeparator = parseColor(resolved.colorFgSeparator as number);
+    }
+  }
+
   override emitDrawCommands(buffer: DrawListBuffer): void {
     const {x, y, height} = this.#rect;
     const w = this.#effectiveWidth();
@@ -309,7 +318,11 @@ export class SelectButtonWidget extends InteractiveWidget {
 }
 
 export function createSelectButtonWidget(options?: Partial<SelectButtonWidgetOptions>): SelectButtonWidget {
-  return new SelectButtonWidget({...getDefaultSelectButtonOptions(), ...options});
+  const widget = new SelectButtonWidget({...getDefaultSelectButtonOptions(), ...options});
+  bindThemeToWidget(widget, SELECT_BUTTON_TOKEN_MAP, options ?? {}, resolved => {
+    widget.updateThemeColors(resolved);
+  });
+  return widget;
 }
 
 export default SelectButtonWidget;

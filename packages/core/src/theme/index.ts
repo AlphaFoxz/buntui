@@ -1,4 +1,6 @@
-export {defineTheme, catppuccinMocha} from './themes';
+export {
+  defineTheme, catppuccinMocha, catppuccinLatte, nord, highContrast,
+} from './themes';
 export type {TuiTheme, TuiThemeColors, TuiThemeBorderStyle} from './types';
 export {getTheme, setTheme, onThemeChange} from './provider';
 export type {ThemeChangeListener} from './provider';

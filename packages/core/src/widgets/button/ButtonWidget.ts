@@ -6,8 +6,8 @@ import {
 } from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor, type TuiColor} from '../../utils/color';
-import {type ColorScheme, resolveColorState} from '../color-scheme';
-import {resolveWidgetColors} from '../../theme/resolve';
+import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
 import type {ButtonWidgetOptions} from './types';
 
 type ButtonColors = {
@@ -17,6 +17,29 @@ type ButtonColors = {
   borderStyle: number;
 };
 
+const BUTTON_TOKEN_MAP = {
+  colorFgNormal: 'text',
+  colorBgNormal: 'surface',
+  borderColorNormal: 'border',
+  borderStyleNormal: 'border.normal',
+  colorFgFocused: 'text',
+  colorBgFocused: 'surfaceFocused',
+  borderColorFocused: 'borderFocused',
+  borderStyleFocused: 'border.focused',
+  colorFgHovered: 'text',
+  colorBgHovered: 'surfaceHover',
+  borderColorHovered: 'border',
+  borderStyleHovered: 'border.normal',
+  colorFgPressed: 'text',
+  colorBgPressed: 'surfacePressed',
+  borderColorPressed: 'borderFocused',
+  borderStylePressed: 'border.pressed',
+  colorFgDisabled: 'textMuted',
+  colorBgDisabled: 'surfaceDisabled',
+  borderColorDisabled: 'surfaceFocused',
+  borderStyleDisabled: 'border.disabled',
+} as const;
+
 function getDefaultButtonOptions(): Required<ButtonWidgetOptions> {
   return {
     x: 0,
@@ -25,28 +48,7 @@ function getDefaultButtonOptions(): Required<ButtonWidgetOptions> {
     height: 3,
     value: '',
 
-    ...resolveWidgetColors({
-      colorFgNormal: 'text',
-      colorBgNormal: 'surface',
-      borderColorNormal: 'border',
-      borderStyleNormal: 'border.normal',
-      colorFgFocused: 'text',
-      colorBgFocused: 'surfaceFocused',
-      borderColorFocused: 'borderFocused',
-      borderStyleFocused: 'border.focused',
-      colorFgHovered: 'text',
-      colorBgHovered: 'surfaceHover',
-      borderColorHovered: 'border',
-      borderStyleHovered: 'border.normal',
-      colorFgPressed: 'text',
-      colorBgPressed: 'surfacePressed',
-      borderColorPressed: 'borderFocused',
-      borderStylePressed: 'border.pressed',
-      colorFgDisabled: 'textMuted',
-      colorBgDisabled: 'surfaceDisabled',
-      borderColorDisabled: 'surfaceFocused',
-      borderStyleDisabled: 'border.disabled',
-    }),
+    ...resolveWidgetColors(BUTTON_TOKEN_MAP),
 
     disabled: false,
   };
@@ -246,10 +248,18 @@ export class ButtonWidget extends InteractiveWidget {
 
     buffer.popClip();
   }
+
+  updateThemeColors(resolved: Record<string, unknown>): void {
+    applyColorSchemeUpdates(this.#colors, resolved);
+  }
 }
 
 export function createButtonWidget(options?: Partial<ButtonWidgetOptions>): ButtonWidget {
-  return new ButtonWidget({...getDefaultButtonOptions(), ...options});
+  const widget = new ButtonWidget({...getDefaultButtonOptions(), ...options});
+  bindThemeToWidget(widget, BUTTON_TOKEN_MAP, options ?? {}, resolved => {
+    widget.updateThemeColors(resolved);
+  });
+  return widget;
 }
 
 export default ButtonWidget;

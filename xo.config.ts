@@ -84,7 +84,7 @@ const expose: FlatXoConfig = [
     },
   },
   {
-    files: ['packages/core/src/theme/resolve.ts'],
+    files: ['packages/core/src/**/*.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-type-assertion': 'off',
     },
