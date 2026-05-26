@@ -375,6 +375,7 @@ describe('createDevServer integration', () => {
     touch(entry);
 
     await waitFor(() => reloadCount >= 1);
+    await wait(50);
 
     writeFile(child, '<template><Text value="updated"/></template>');
 

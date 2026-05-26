@@ -7,8 +7,15 @@ import {
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {truncateToWidth} from '../../utils/string-width';
+import {getTheme} from '../../theme/provider';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
+import {
+  computeScrollbarGeometry,
+  renderScrollbar,
+  scrollbarHitTest,
+  computeThumbDragOffset, type ScrollbarHitTest,
+} from '../scrollbar-helper';
 import type {SelectOption, SelectWidgetOptions} from './types';
 
 type SelectColors = {fg: number; bg: number; borderColor: number};
@@ -68,6 +75,13 @@ export class SelectWidget extends InteractiveWidget {
   #opened = false;
   #hoveredIndex = -1;
   #focusedIndex = -1;
+  #scrollOffset = 0;
+  readonly #scrollbarColor: number;
+  readonly #scrollbarTrackColor: number;
+
+  #thumbDragging = false;
+  #thumbDragStartY = 0;
+  #thumbDragStartOffset = 0;
 
   readonly #triggerColors: ColorScheme<SelectColors>;
   readonly #dropdownColors: DropdownColors;
@@ -82,6 +96,10 @@ export class SelectWidget extends InteractiveWidget {
     this.#label = resolved.label;
     this.#borderStyle = resolveBorderStyle(resolved.borderStyle);
     this.setDisabled(resolved.disabled);
+
+    const theme = getTheme();
+    this.#scrollbarColor = parseColor(theme.colors.scrollbar);
+    this.#scrollbarTrackColor = parseColor(theme.colors.scrollbarTrack);
 
     this.#triggerColors = {
       normal: {
@@ -114,6 +132,25 @@ export class SelectWidget extends InteractiveWidget {
 
     this.on('mousedown', mouseData => {
       if (this.#opened) {
+        const hit = this.#scrollbarHitTest();
+        const result = hit ? scrollbarHitTest(mouseData.x, mouseData.y, hit) : {type: 'none'} as const;
+        if (result.type === 'thumb') {
+          this.#thumbDragging = true;
+          this.#thumbDragStartY = mouseData.y;
+          this.#thumbDragStartOffset = this.#scrollOffset;
+          return;
+        }
+
+        if (result.type === 'track-above') {
+          this.#scrollBy(-this.#dropdownHeight());
+          return;
+        }
+
+        if (result.type === 'track-below') {
+          this.#scrollBy(this.#dropdownHeight());
+          return;
+        }
+
         const index = this.#hitTestDropdown(mouseData.y);
         if (index >= 0) {
           this.#select(index);
@@ -126,9 +163,27 @@ export class SelectWidget extends InteractiveWidget {
     });
 
     this.on('mousemove', mouseData => {
+      if (this.#thumbDragging) {
+        if ((mouseData.buttons ?? 0) === 0) {
+          this.#thumbDragging = false;
+          return;
+        }
+
+        const delta = mouseData.y - this.#thumbDragStartY;
+        const geometry = computeScrollbarGeometry(this.#dropdownHeight(), this.#options.length, this.#thumbDragStartOffset);
+        const newOffset = computeThumbDragOffset(delta, this.#thumbDragStartOffset, geometry);
+        this.#scrollOffset = Math.max(0, Math.min(newOffset, this.#maxScrollOffset()));
+        this.#hoveredIndex = -1;
+        return;
+      }
+
       if (this.#opened) {
         this.#hoveredIndex = this.#hitTestDropdown(mouseData.y);
       }
+    });
+
+    this.on('mouseup', () => {
+      this.#thumbDragging = false;
     });
 
     this.on('mouseover', mouseData => {
@@ -139,6 +194,12 @@ export class SelectWidget extends InteractiveWidget {
 
     this.on('mouseout', () => {
       this.#hoveredIndex = -1;
+    });
+
+    this.on('wheel', data => {
+      if (this.#opened) {
+        this.#scrollBy(data.wheelDeltaY * 3);
+      }
     });
   }
 
@@ -188,7 +249,7 @@ export class SelectWidget extends InteractiveWidget {
 
     if (event.key === 'ArrowDown') {
       this.#focusedIndex = this.#focusedIndex < 0 ? 0 : (this.#focusedIndex + 1) % this.#options.length;
-
+      this.#ensureFocusedVisible();
       return;
     }
 
@@ -201,16 +262,39 @@ export class SelectWidget extends InteractiveWidget {
         this.#focusedIndex--;
       }
 
+      this.#ensureFocusedVisible();
       return;
     }
 
     if (event.key === 'Home') {
       this.#focusedIndex = 0;
+      this.#scrollOffset = 0;
       return;
     }
 
     if (event.key === 'End') {
       this.#focusedIndex = this.#options.length - 1;
+      this.#scrollOffset = this.#maxScrollOffset();
+      return;
+    }
+
+    if (event.key === 'PageDown') {
+      if (this.#focusedIndex < 0) {
+        this.#focusedIndex = 0;
+      }
+
+      this.#focusedIndex = Math.min(this.#focusedIndex + this.#dropdownHeight(), this.#options.length - 1);
+      this.#ensureFocusedVisible();
+      return;
+    }
+
+    if (event.key === 'PageUp') {
+      if (this.#focusedIndex < 0) {
+        this.#focusedIndex = 0;
+      }
+
+      this.#focusedIndex = Math.max(this.#focusedIndex - this.#dropdownHeight(), 0);
+      this.#ensureFocusedVisible();
     }
   }
 
@@ -251,6 +335,10 @@ export class SelectWidget extends InteractiveWidget {
     this.#focusedIndex = this.#selectedIndex();
     if (this.#hoveredIndex >= options.length) {
       this.#hoveredIndex = -1;
+    }
+
+    if (this.#scrollOffset > this.#maxScrollOffset()) {
+      this.#scrollOffset = this.#maxScrollOffset();
     }
   }
 
@@ -409,18 +497,22 @@ export class SelectWidget extends InteractiveWidget {
 
   #drawDropdown(buffer: DrawListBuffer, x: number, startY: number, width: number): void {
     const ddH = this.#dropdownHeight();
+    const needsScrollbar = this.#options.length > ddH;
+    const listWidth = needsScrollbar ? width - 1 : width;
+
     buffer.pushClip(x, startY, width, ddH);
 
     buffer.drawRect({
       x, y: startY, width, height: ddH, bgRgba: this.#dropdownColors.item.bg,
     });
 
-    const visibleCount = Math.min(this.#options.length, DROPDOWN_MAX_VISIBLE);
     const selIdx = this.#selectedIndex();
+    const end = Math.min(this.#scrollOffset + ddH, this.#options.length);
 
-    for (let i = 0; i < visibleCount; i++) {
+    for (let i = this.#scrollOffset; i < end; i++) {
       const option = this.#options[i]!;
-      const rowY = startY + i;
+      const row = i - this.#scrollOffset;
+      const rowY = startY + row;
       const isSelected = i === selIdx;
       const isHovered = i === this.#hoveredIndex;
       const isFocused = i === this.#focusedIndex;
@@ -436,12 +528,12 @@ export class SelectWidget extends InteractiveWidget {
 
       if (colors.bg !== 0x00_00_00_00) {
         buffer.drawRect({
-          x, y: rowY, width, height: 1, bgRgba: colors.bg,
+          x, y: rowY, width: listWidth, height: 1, bgRgba: colors.bg,
         });
       }
 
       const marker = isSelected ? '●' : ' ';
-      const maxLabelWidth = width - 4;
+      const maxLabelWidth = listWidth - 4;
       const visibleLabel = maxLabelWidth > 0 ? option.label.slice(0, Math.max(0, maxLabelWidth)) : '';
 
       buffer.drawText({
@@ -453,11 +545,54 @@ export class SelectWidget extends InteractiveWidget {
       });
     }
 
+    if (needsScrollbar) {
+      const geometry = computeScrollbarGeometry(ddH, this.#options.length, this.#scrollOffset);
+      renderScrollbar({
+        buffer, x: x + width - 1, trackY: startY, trackHeight: ddH, geometry, thumbColor: this.#scrollbarColor, trackColor: this.#scrollbarTrackColor,
+      });
+    }
+
     buffer.popClip();
+  }
+
+  #scrollbarHitTest(): ScrollbarHitTest | undefined {
+    const ddH = this.#dropdownHeight();
+    if (this.#options.length <= ddH) {
+      return undefined;
+    }
+
+    const geometry = computeScrollbarGeometry(ddH, this.#options.length, this.#scrollOffset);
+    return {
+      x: this.#rect.x + this.#rect.width - 1,
+      trackY: this.#rect.y + this.#rect.height,
+      trackHeight: ddH,
+      thumbY: this.#rect.y + this.#rect.height + geometry.thumbOffset,
+      thumbSize: geometry.thumbSize,
+    };
   }
 
   #dropdownHeight(): number {
     return Math.min(this.#options.length, DROPDOWN_MAX_VISIBLE);
+  }
+
+  #maxScrollOffset(): number {
+    return Math.max(0, this.#options.length - this.#dropdownHeight());
+  }
+
+  #scrollBy(delta: number): void {
+    const newOffset = Math.max(0, Math.min(this.#scrollOffset + delta, this.#maxScrollOffset()));
+    if (newOffset !== this.#scrollOffset) {
+      this.#scrollOffset = newOffset;
+      this.#hoveredIndex = -1;
+    }
+  }
+
+  #ensureFocusedVisible(): void {
+    if (this.#focusedIndex < this.#scrollOffset) {
+      this.#scrollOffset = this.#focusedIndex;
+    } else if (this.#focusedIndex >= this.#scrollOffset + this.#dropdownHeight()) {
+      this.#scrollOffset = this.#focusedIndex - this.#dropdownHeight() + 1;
+    }
   }
 
   #selectedIndex(): number {
@@ -484,7 +619,12 @@ export class SelectWidget extends InteractiveWidget {
       return -1;
     }
 
-    return relativeY;
+    const index = this.#scrollOffset + relativeY;
+    if (index >= this.#options.length) {
+      return -1;
+    }
+
+    return index;
   }
 
   #openDropdown(): void {
@@ -498,12 +638,14 @@ export class SelectWidget extends InteractiveWidget {
       this.#focusedIndex = 0;
     }
 
+    this.#scrollOffset = Math.max(0, Math.min(this.#focusedIndex, this.#maxScrollOffset()));
     this.dispatch('open', undefined);
   }
 
   #close(): void {
     this.#opened = false;
     this.#hoveredIndex = -1;
+    this.#scrollOffset = 0;
     this.dispatch('close', undefined);
   }
 

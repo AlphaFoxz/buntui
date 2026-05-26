@@ -11,7 +11,7 @@ export function run(devOptions: {logFilePath?: string} = {}) {
     clearLog: true,
     debugMode: true,
     tickRate: 60,
-    renderRate: 24,
+    renderRate: 48,
     ...devOptions,
   });
   const scene = app.createScene(App, {visible: true});

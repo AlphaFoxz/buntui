@@ -7,6 +7,12 @@ import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import type {TuiWidgetEntity} from '../TuiWidgetEntity';
 import {type BoxWidget, createBox} from '../box/BoxWidget';
+import {
+  computeScrollbarGeometry,
+  renderScrollbar,
+  scrollbarHitTest,
+  computeThumbDragOffset, type ScrollbarHitTest,
+} from '../scrollbar-helper';
 import type {ScrollBoxWidgetOptions} from './types';
 
 export class ScrollBoxWidget extends InteractiveWidget {
@@ -68,21 +74,35 @@ export class ScrollBoxWidget extends InteractiveWidget {
     });
 
     this.on('mousedown', data => {
-      const thumb = this.#scrollbarThumbGeometry();
-      if (data.x === thumb?.x && data.y >= thumb.trackY && data.y < thumb.trackY + thumb.trackHeight) {
-        if (data.y >= thumb.thumbY && data.y < thumb.thumbY + thumb.thumbSize) {
+      const hit = this.#scrollbarHitTest();
+      const result = hit ? scrollbarHitTest(data.x, data.y, hit) : {type: 'none'} as const;
+      switch (result.type) {
+        case 'thumb': {
           this.#thumbDragging = true;
           this.#thumbDragStartY = data.y;
           this.#thumbDragStartOffset = this.#scrollOffsetY;
-        } else if (data.y < thumb.thumbY) {
-          this.scrollBy(-this.#computeViewport().height);
-        } else {
-          this.scrollBy(this.#computeViewport().height);
+
+          break;
         }
-      } else {
-        this.#dragScrolling = true;
-        this.#dragStartY = data.y;
-        this.#dragStartOffset = this.#scrollOffsetY;
+
+        case 'track-above': {
+          this.scrollBy(-this.#computeViewport().height);
+
+          break;
+        }
+
+        case 'track-below': {
+          this.scrollBy(this.#computeViewport().height);
+
+          break;
+        }
+
+        case 'none': {
+          this.#dragScrolling = true;
+          this.#dragStartY = data.y;
+          this.#dragStartOffset = this.#scrollOffsetY;
+          break;
+        }
       }
     });
 
@@ -94,17 +114,9 @@ export class ScrollBoxWidget extends InteractiveWidget {
         }
 
         const delta = data.y - this.#thumbDragStartY;
-        const maxScroll = this.#maxScrollOffset();
         const viewport = this.#computeViewport();
-        const contentHeight = this.#computeContentHeight();
-        const thumbRatio = viewport.height / contentHeight;
-        const thumbSize = Math.max(1, Math.round(thumbRatio * viewport.height));
-        const scrollableRange = viewport.height - thumbSize;
-
-        if (scrollableRange > 0) {
-          this.scrollTo(this.#thumbDragStartOffset + Math.round((delta / scrollableRange) * maxScroll));
-        }
-
+        const geometry = computeScrollbarGeometry(viewport.height, this.#computeContentHeight(), this.#thumbDragStartOffset);
+        this.scrollTo(computeThumbDragOffset(delta, this.#thumbDragStartOffset, geometry));
         return;
       }
 
@@ -443,27 +455,13 @@ export class ScrollBoxWidget extends InteractiveWidget {
       return;
     }
 
-    const scrollbarX = viewport.x + viewport.width;
-    const thumbRatio = viewport.height / contentHeight;
-    const thumbSize = Math.max(1, Math.round(thumbRatio * viewport.height));
-    const scrollableRange = viewport.height - thumbSize;
-    const thumbOffset = maxScroll > 0
-      ? Math.round((this.#scrollOffsetY / maxScroll) * scrollableRange)
-      : 0;
-
-    for (let row = 0; row < viewport.height; row++) {
-      const isThumb = row >= thumbOffset && row < thumbOffset + thumbSize;
-      buffer.drawChar({
-        x: scrollbarX,
-        y: viewport.y + row,
-        char: isThumb ? 0x25_88 : 0x25_02,
-        fgRgba: isThumb ? this.#scrollbarColor : this.#scrollbarTrackColor,
-        bgRgba: 0x00_00_00_00,
-      });
-    }
+    const geometry = computeScrollbarGeometry(viewport.height, contentHeight, this.#scrollOffsetY);
+    renderScrollbar({
+      buffer, x: viewport.x + viewport.width, trackY: viewport.y, trackHeight: viewport.height, geometry, thumbColor: this.#scrollbarColor, trackColor: this.#scrollbarTrackColor,
+    });
   }
 
-  #scrollbarThumbGeometry(): {x: number; trackY: number; trackHeight: number; thumbY: number; thumbSize: number} | undefined {
+  #scrollbarHitTest(): ScrollbarHitTest | undefined {
     const maxScroll = this.#maxScrollOffset();
     if (maxScroll === 0 && !this.#alwaysShowScrollbar) {
       return undefined;
@@ -475,19 +473,13 @@ export class ScrollBoxWidget extends InteractiveWidget {
       return undefined;
     }
 
-    const thumbRatio = viewport.height / contentHeight;
-    const thumbSize = Math.max(1, Math.round(thumbRatio * viewport.height));
-    const scrollableRange = viewport.height - thumbSize;
-    const thumbOffset = maxScroll > 0
-      ? Math.round((this.#scrollOffsetY / maxScroll) * scrollableRange)
-      : 0;
-
+    const geometry = computeScrollbarGeometry(viewport.height, contentHeight, this.#scrollOffsetY);
     return {
       x: viewport.x + viewport.width,
       trackY: viewport.y,
       trackHeight: viewport.height,
-      thumbY: viewport.y + thumbOffset,
-      thumbSize,
+      thumbY: viewport.y + geometry.thumbOffset,
+      thumbSize: geometry.thumbSize,
     };
   }
 }
