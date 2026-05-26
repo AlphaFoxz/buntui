@@ -7,8 +7,6 @@
         :y="3"
         :width="28"
         :height="3"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(137,180,250,0.5)'"
         borderStyle="solid"
     >
         <Text :value="text1" />
@@ -21,74 +19,31 @@
         :y="3"
         :width="28"
         :height="3"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(166,227,161,1)'"
         borderStyle="rounded"
     >
         <Text :value="text2" />
     </Box>
 
-    <Box
-        @click="handleClick"
-        :x="1"
-        :y="6"
-        :width="28"
-        :height="3"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(250,179,135,1)'"
-        borderStyle="double"
-    >
+    <Box @click="handleClick" :x="1" :y="6" :width="28" :height="3" borderStyle="double">
         <Text :value="text3" />
     </Box>
 
-    <Box
-        @contextmenu="handleContextmenu"
-        :x="31"
-        :y="6"
-        :width="28"
-        :height="3"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(243,139,168,1)'"
-        borderStyle="bold"
-    >
+    <Box @contextmenu="handleContextmenu" :x="31" :y="6" :width="28" :height="3" borderStyle="bold">
         <Text :value="text4" />
     </Box>
 
     <!-- Dashed border -->
-    <Box
-        :x="1"
-        :y="9"
-        :width="20"
-        :height="3"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(180,190,254,1)'"
-        borderStyle="dashed"
-    >
+    <Box :x="1" :y="9" :width="20" :height="3" borderStyle="dashed">
         <Text value="虚线 Dashed" />
     </Box>
 
     <!-- OutsetBold border -->
-    <Box
-        :x="22"
-        :y="9"
-        :width="20"
-        :height="3"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(245,194,231,1)'"
-        borderStyle="outsetbold"
-    >
+    <Box :x="22" :y="9" :width="20" :height="3" borderStyle="outsetbold">
         <Text value="浮雕 Outset" />
     </Box>
 
     <!-- OutsetDouble border -->
-    <Box
-        :x="43"
-        :y="9"
-        :width="20"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(148,226,213,1)'"
-        borderStyle="outsetdouble"
-    >
+    <Box :x="43" :y="9" :width="20" borderStyle="outsetdouble">
         <Text value="双浮雕 Outset²" />
     </Box>
 
@@ -103,7 +58,7 @@
         borderStyle="rounded"
         :z-index="2"
     >
-        <Text :colorFg="'rgba(30,30,46,1)'" value="zIndex=2 最上层" />
+        <Text value="zIndex=2 最上层" />
     </Box>
 
     <!-- Z-Index: blue (middle, zIndex=1) -->
@@ -117,7 +72,7 @@
         :borderColor="'rgba(137,180,250,1)'"
         :zIndex="1"
     >
-        <Text :colorFg="'rgba(30,30,46,1)'" value="zIndex=1 中间层" />
+        <Text value="zIndex=1 中间层" />
     </Box>
 
     <!-- Z-Index: red (bottom, zIndex=0) -->
@@ -132,75 +87,31 @@
         border="1 0"
         :zIndex="0"
     >
-        <Text :colorFg="'rgba(30,30,46,1)'" value="zIndex=0 最底层" />
+        <Text value="zIndex=0 最底层" />
     </Box>
 
-    <Box
-        draggable
-        v-model:x="dx"
-        :y="19"
-        width="48%"
-        :height="7"
-        :direction="'vertical'"
-        :gap="1"
-        :align="'start'"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(137,180,250,1)'"
-    >
+    <Box draggable v-model:x="dx" :y="19" width="48%" :height="7" :direction="'vertical'" :gap="1" :align="'start'">
         <Text :colorFg="'rgba(108,112,134,1)'" value="align=Start" />
         <Text value="Row 1" />
         <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
     </Box>
 
-    <Box
-        draggable
-        x="50%"
-        :y="19"
-        width="48%"
-        :height="7"
-        :direction="'vertical'"
-        :gap="1"
-        :align="'center'"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(250,179,135,1)'"
-    >
+    <Box draggable x="50%" :y="19" width="48%" :height="7" :direction="'vertical'" :gap="1" :align="'center'">
         <Text :colorFg="'rgba(108,112,134,1)'" value="align=Center" />
-        <Text value="Row 1" :colorBg="'rgba(49,50,68,1)'" />
-        <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" :colorBg="'rgba(49,50,68,1)'" />
+        <Text value="Row 1" />
+        <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
     </Box>
 
-    <Box
-        draggable
-        :x="dx"
-        :y="27"
-        width="48%"
-        :height="7"
-        :direction="'vertical'"
-        :gap="1"
-        :align="'end'"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(166,227,161,1)'"
-    >
+    <Box draggable :x="dx" :y="27" width="48%" :height="7" :direction="'vertical'" :gap="1" :align="'end'">
         <Text :colorFg="'rgba(108,112,134,1)'" value="align=End" />
-        <Text value="Row 1" :colorBg="'rgba(49,50,68,1)'" />
-        <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" :colorBg="'rgba(49,50,68,1)'" />
+        <Text value="Row 1" />
+        <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
     </Box>
 
-    <Box
-        draggable
-        x="50%"
-        :y="27"
-        width="48%"
-        :height="7"
-        :direction="'vertical'"
-        :gap="1"
-        :align="'stretch'"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(245,194,231,1)'"
-    >
+    <Box draggable x="50%" :y="27" width="48%" :height="7" :direction="'vertical'" :gap="1" :align="'stretch'">
         <Text :colorFg="'rgba(108,112,134,1)'" value="align=Stretch" />
-        <Text value="Row 1" :colorBg="'rgba(49,50,68,1)'" />
-        <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" :colorBg="'rgba(49,50,68,1)'" />
+        <Text value="Row 1" />
+        <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
     </Box>
 </template>
 

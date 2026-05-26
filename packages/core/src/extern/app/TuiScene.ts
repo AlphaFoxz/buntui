@@ -206,12 +206,12 @@ export class TuiScene implements Entity {
   }
 
   #getSortedWidgets(): TuiWidgetEntity[] {
-    this.#sortedCache ??= [...this.#widgets].toSorted((a, b) => a.zIndex - b.zIndex);
+    this.#sortedCache = [...this.#widgets].toSorted((a, b) => a.zIndex - b.zIndex);
     return this.#sortedCache;
   }
 
   #getSortedWidgetsReverse(): TuiWidgetEntity[] {
-    this.#sortedReverseCache ??= [...this.#widgets].toReversed().toSorted((a, b) => b.zIndex - a.zIndex);
+    this.#sortedReverseCache = [...this.#widgets].toReversed().toSorted((a, b) => b.zIndex - a.zIndex);
     return this.#sortedReverseCache;
   }
 

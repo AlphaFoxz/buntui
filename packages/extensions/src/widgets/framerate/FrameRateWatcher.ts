@@ -5,6 +5,7 @@ import {
   TUI_CONTEXT_INSTANCE,
   TuiWidgetEntity,
   getTheme,
+  onThemeChange,
   parseColor,
   type TuiColor,
 } from '@buntui/core';
@@ -16,16 +17,14 @@ export type FrameRateWatcherOptions = {
   colorBg?: TuiColor;
 };
 
-const FPS_BG = 0x1E_1E_2E_DD;
-
 export class FrameRateWatcher extends TuiWidgetEntity {
   #x: number;
   #y: number;
   #latestTick = 0n;
   #fps = 0;
   #timer: NodeJS.Timeout | null = null;
-  readonly #colorFg: number;
-  readonly #colorBg: number;
+  #colorFg: number;
+  #colorBg: number;
 
   constructor(options: FrameRateWatcherOptions = {}) {
     super();
@@ -34,8 +33,23 @@ export class FrameRateWatcher extends TuiWidgetEntity {
     this.#y = rect.y;
     const theme = getTheme();
     this.#colorFg = parseColor(options.colorFg ?? theme.colors.text);
-    this.#colorBg = parseColor(options.colorBg ?? FPS_BG);
+    this.#colorBg = parseColor(options.colorBg ?? theme.colors.surface);
     this.setDraggable(true);
+
+    if (options.colorFg === undefined || options.colorBg === undefined) {
+      const trackFg = options.colorFg === undefined;
+      const trackBg = options.colorBg === undefined;
+      const unsub = onThemeChange(t => {
+        if (trackFg) {
+          this.#colorFg = parseColor(t.colors.text);
+        }
+
+        if (trackBg) {
+          this.#colorBg = parseColor(t.colors.surface);
+        }
+      });
+      this.addCleanup(unsub);
+    }
   }
 
   override get zIndex(): number {

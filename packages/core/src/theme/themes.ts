@@ -1,6 +1,60 @@
 import type {TuiTheme, TuiThemeBorderStyle, TuiThemeColors} from './types';
 
+const REQUIRED_COLOR_KEYS: ReadonlyArray<keyof TuiThemeColors> = [
+  'background',
+  'surface',
+  'surfaceHover',
+  'surfaceFocused',
+  'surfacePressed',
+  'surfaceDisabled',
+  'text',
+  'textMuted',
+  'border',
+  'borderFocused',
+  'accent',
+  'accentHover',
+  'selectionBg',
+  'selectionFg',
+  'shadow',
+  'scrollbar',
+  'scrollbarTrack',
+  'progressFill',
+  'progressTrack',
+  'success',
+  'successMuted',
+  'danger',
+  'dangerMuted',
+  'warning',
+  'placeholder',
+];
+
+const REQUIRED_BORDER_KEYS: ReadonlyArray<keyof TuiThemeBorderStyle> = [
+  'normal', 'focused', 'pressed', 'disabled',
+];
+
 export function defineTheme(theme: TuiTheme): TuiTheme {
+  if (!theme.name || typeof theme.name !== 'string') {
+    throw new TypeError('defineTheme: theme.name must be a non-empty string');
+  }
+
+  if (!theme.colors || typeof theme.colors !== 'object') {
+    throw new TypeError('defineTheme: theme.colors must be an object');
+  }
+
+  const missingColors = REQUIRED_COLOR_KEYS.filter(key => !(key in theme.colors));
+  if (missingColors.length > 0) {
+    throw new TypeError(`defineTheme: missing color keys: ${missingColors.join(', ')}`);
+  }
+
+  if (!theme.borderStyle || typeof theme.borderStyle !== 'object') {
+    throw new TypeError('defineTheme: theme.borderStyle must be an object');
+  }
+
+  const missingBorders = REQUIRED_BORDER_KEYS.filter(key => !(key in theme.borderStyle));
+  if (missingBorders.length > 0) {
+    throw new TypeError(`defineTheme: missing borderStyle keys: ${missingBorders.join(', ')}`);
+  }
+
   return theme;
 }
 

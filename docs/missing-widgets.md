@@ -4,9 +4,11 @@ Widgets that HTML provides and TUI applications concretely need, but are not yet
 
 ## Required — TUI apps cannot be built without these
 
-### Select — `<select>`
+~~### Select — `<select>`~~
 
-Dropdown list for picking one option from many. Every settings UI, every form needs this. As fundamental as Input and Button.
+~~Dropdown list for picking one option from many. Every settings UI, every form needs this. As fundamental as Input and Button.~~
+
+> **Done**: `SelectWidget` implemented with dropdown overlay, keyboard/mouse navigation, and theme support.
 
 ---
 
@@ -20,17 +22,23 @@ Horizontal slider for numeric value input. Settings panels for volume, opacity, 
 
 Modal overlay for confirmations, alerts, and input prompts. "Are you sure?" / "Enter a value:" dialogs.
 
-### Tooltip — `title` attribute
+~~### Tooltip — `title` attribute~~
 
-Hover-triggered informational popup. Help text, keyboard shortcut hints, descriptions.
+~~Hover-triggered informational popup. Help text, keyboard shortcut hints, descriptions.~~
 
-### Details — `<details>` / `<summary>`
+> **Removed**: TUI environments have limited hover support; most terminal apps rely on status bar hints or help panels instead. Not worth the complexity.
 
-Collapsible section with summary header. Settings panels, debug info grouping, FAQ lists.
+~~### Details — `<details>` / `<summary>`~~
 
-### Link — `<a>`
+~~Collapsible section with summary header. Settings panels, debug info grouping, FAQ lists.~~
 
-Clickable text that triggers navigation or action. Help text, documentation links, breadcrumb navigation.
+> **Removed**: Can be composed from `Box` + `Text` with conditional visibility (`visible` prop). Not a distinct primitive.
+
+~~### Link — `<a>`~~
+
+~~Clickable text that triggers navigation or action. Help text, documentation links, breadcrumb navigation.~~
+
+> **Removed**: Functionally a `Button` styled as inline text. No need for a separate widget.
 
 ---
 
@@ -50,5 +58,6 @@ Clickable text that triggers navigation or action. Help text, documentation link
 | Switch | toggle switch | Done |
 | RadioGroup | `<input type="radio">` | Done |
 | SelectButton | segmented control | Done |
+| Select | `<select>` | Done |
 | Progress | `<progress>` | Done |
 | ScrollBox | `overflow: auto` | Done |

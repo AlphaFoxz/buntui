@@ -76,6 +76,12 @@ export class TextWidget extends TuiWidgetEntity {
     return this.#color;
   }
 
+  updateThemeColors(resolved: Record<string, unknown>): void {
+    this.updateColor({
+      colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg as TuiColor),
+    });
+  }
+
   updateColor(color: Partial<TuiWidgetColor>) {
     if (color.colorFg !== undefined) {
       this.#color.colorFg = parseColor(color.colorFg);
@@ -295,7 +301,7 @@ export function createTextWidget(options: string | (Partial<TextWidgetOptions> &
   if (typeof options === 'string') {
     const widget = new TextWidget({...DEFAULT_TEXT_OPTIONS, value: options});
     bindThemeToWidget(widget, TEXT_TOKEN_MAP, {}, resolved => {
-      widget.updateColor({colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg as TuiColor)});
+      widget.updateThemeColors(resolved);
     });
     return widget;
   }
@@ -305,7 +311,7 @@ export function createTextWidget(options: string | (Partial<TextWidgetOptions> &
     ...options,
   });
   bindThemeToWidget(widget, TEXT_TOKEN_MAP, options, resolved => {
-    widget.updateColor({colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg as TuiColor)});
+    widget.updateThemeColors(resolved);
   });
   return widget;
 }

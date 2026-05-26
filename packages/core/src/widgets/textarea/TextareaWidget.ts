@@ -1,6 +1,6 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent, type MouseEvent} from '../../events/types';
-import {BorderSides, resolveCursorMode} from '../../draw_list/types';
+import {BorderSides, resolveCursorMode, type CursorModeName} from '../../draw_list/types';
 import {
   resolveBorderStyle, type TuiBorderStyleName, type TuiWidgetRect, type TuiWidgetSize,
 } from '../types';
@@ -10,7 +10,6 @@ import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
 import {getClipboard} from '../../clipboard';
-import {getTheme} from '../../theme/provider';
 import type {TextareaWidgetOptions} from './types';
 
 type TextareaColors = {fg: number; bg: number; borderColor: number};
@@ -128,6 +127,7 @@ export class TextareaWidget extends InteractiveWidget {
   #clickCount = 0;
   #lastClickTime = 0;
   #lastClickPos: TextPosition = {line: -1, col: -1};
+  #cursorMode: CursorModeName = 'blinking-ibeam';
   readonly #undoStack: Array<{value: string; cursorLine: number; cursorCol: number; selectionAnchor: TextPosition | undefined}> = [];
   readonly #redoStack: Array<{value: string; cursorLine: number; cursorCol: number; selectionAnchor: TextPosition | undefined}> = [];
 
@@ -167,9 +167,8 @@ export class TextareaWidget extends InteractiveWidget {
     this.#value = resolved.value ?? '';
     this.setDisabled(resolved.disabled ?? false);
 
-    const theme = getTheme();
-    this.#scrollbarColor = parseColor(resolved.scrollbarColor ?? theme.colors.scrollbar);
-    this.#scrollbarTrackColor = parseColor(resolved.scrollbarTrackColor ?? theme.colors.scrollbarTrack);
+    this.#scrollbarColor = parseColor(resolved.scrollbarColor!);
+    this.#scrollbarTrackColor = parseColor(resolved.scrollbarTrackColor!);
 
     this.#rebuildLines();
     this.#cursorLine = Math.max(0, this.#logicalLines.length - 1);
@@ -448,10 +447,21 @@ export class TextareaWidget extends InteractiveWidget {
         break;
       }
 
+      case 'Insert': {
+        this.#cycleCursorMode();
+        break;
+      }
+
       default: {
         break;
       }
     }
+  }
+
+  #cycleCursorMode(): void {
+    const modes: CursorModeName[] = ['blinking-ibeam', 'blinking-block', 'blinking-underscore', 'ibeam', 'block', 'underscore'];
+    const idx = modes.indexOf(this.#cursorMode);
+    this.#cursorMode = modes[(idx + 1) % modes.length]!;
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {
@@ -575,7 +585,7 @@ export class TextareaWidget extends InteractiveWidget {
           const textBeforeCursor = vl.text.slice(0, colInVisual);
           const cursorX = viewport.x + stringDisplayWidth(textBeforeCursor);
           buffer.setCursor(cursorX, cursorScreenY);
-          buffer.setCursorMode(resolveCursorMode('blinking-ibeam'));
+          buffer.setCursorMode(resolveCursorMode(this.#cursorMode));
           buffer.showCursor();
         }
       }

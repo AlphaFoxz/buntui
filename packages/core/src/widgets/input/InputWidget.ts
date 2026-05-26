@@ -1,6 +1,6 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent, type MouseEvent} from '../../events/types';
-import {BorderSides, resolveCursorMode} from '../../draw_list/types';
+import {BorderSides, resolveCursorMode, type CursorModeName} from '../../draw_list/types';
 import {
   resolveBorderStyle, type TuiBorderStyleName, type TuiWidgetRect, type TuiWidgetSize,
 } from '../types';
@@ -113,6 +113,7 @@ export class InputWidget extends InteractiveWidget {
   #clickCount = 0;
   #lastClickTime = 0;
   #lastClickPos = -1;
+  #cursorMode: CursorModeName = 'blinking-ibeam';
   readonly #undoStack: Array<{value: string; cursorPos: number; selectionAnchor: number | undefined}> = [];
   readonly #redoStack: Array<{value: string; cursorPos: number; selectionAnchor: number | undefined}> = [];
 
@@ -436,6 +437,11 @@ export class InputWidget extends InteractiveWidget {
         break;
       }
 
+      case 'Insert': {
+        this.#cycleCursorMode();
+        break;
+      }
+
       case 'Enter': {
         if (this.#isNumber) {
           this.#commitNumber();
@@ -450,6 +456,12 @@ export class InputWidget extends InteractiveWidget {
         break;
       }
     }
+  }
+
+  #cycleCursorMode(): void {
+    const modes: CursorModeName[] = ['blinking-ibeam', 'blinking-block', 'blinking-underscore', 'ibeam', 'block', 'underscore'];
+    const idx = modes.indexOf(this.#cursorMode);
+    this.#cursorMode = modes[(idx + 1) % modes.length]!;
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {
@@ -636,7 +648,7 @@ export class InputWidget extends InteractiveWidget {
       const textBeforeCursor = this.#maskText(this.#value.slice(this.#scrollOffset, this.#cursorPos));
       const cursorX = textX + stringDisplayWidth(textBeforeCursor);
       buffer.setCursor(cursorX, textY);
-      buffer.setCursorMode(resolveCursorMode('blinking-ibeam'));
+      buffer.setCursorMode(resolveCursorMode(this.#cursorMode));
       buffer.showCursor();
     }
 

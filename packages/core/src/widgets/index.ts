@@ -24,3 +24,5 @@ export {createTextareaWidget, TextareaWidget} from './textarea/TextareaWidget';
 export type {TextareaWidgetOptions} from './textarea/types';
 export {createTableWidget, TableWidget} from './table/TableWidget';
 export type {TableWidgetOptions, TableColumn, TableRow} from './table/types';
+export {createSelectWidget, SelectWidget} from './select/SelectWidget';
+export type {SelectWidgetOptions, SelectOption} from './select/types';

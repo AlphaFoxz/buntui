@@ -4,7 +4,13 @@ import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
+import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import type {ProgressWidgetOptions} from './types';
+
+type ProgressColors = {
+  track: number;
+  fill: number;
+};
 
 const PROGRESS_TOKEN_MAP = {
   colorTrackNormal: 'progressTrack',
@@ -36,10 +42,7 @@ export class ProgressWidget extends InteractiveWidget {
   #animDirection = 1;
   #lastTimestamp = 0;
 
-  #colorTrackNormal: number;
-  #colorFillNormal: number;
-  #colorTrackDisabled: number;
-  #colorFillDisabled: number;
+  readonly #colors: ColorScheme<ProgressColors>;
 
   constructor(options: ProgressWidgetOptions = {}) {
     super();
@@ -49,10 +52,16 @@ export class ProgressWidget extends InteractiveWidget {
     this.#value = resolved.value === undefined ? undefined : this.#clamp(resolved.value);
     this.setDisabled(resolved.disabled);
 
-    this.#colorTrackNormal = parseColor(resolved.colorTrackNormal);
-    this.#colorFillNormal = parseColor(resolved.colorFillNormal);
-    this.#colorTrackDisabled = parseColor(resolved.colorTrackDisabled);
-    this.#colorFillDisabled = parseColor(resolved.colorFillDisabled);
+    this.#colors = {
+      normal: {
+        track: parseColor(resolved.colorTrackNormal),
+        fill: parseColor(resolved.colorFillNormal),
+      },
+      disabled: {
+        track: parseColor(resolved.colorTrackDisabled),
+        fill: parseColor(resolved.colorFillDisabled),
+      },
+    };
   }
 
   override get acceptsFocus(): boolean {
@@ -125,21 +134,7 @@ export class ProgressWidget extends InteractiveWidget {
   }
 
   updateThemeColors(resolved: Record<string, unknown>): void {
-    if (resolved.colorTrackNormal !== undefined) {
-      this.#colorTrackNormal = parseColor(resolved.colorTrackNormal as number);
-    }
-
-    if (resolved.colorFillNormal !== undefined) {
-      this.#colorFillNormal = parseColor(resolved.colorFillNormal as number);
-    }
-
-    if (resolved.colorTrackDisabled !== undefined) {
-      this.#colorTrackDisabled = parseColor(resolved.colorTrackDisabled as number);
-    }
-
-    if (resolved.colorFillDisabled !== undefined) {
-      this.#colorFillDisabled = parseColor(resolved.colorFillDisabled as number);
-    }
+    applyColorSchemeUpdates(this.#colors, resolved);
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
@@ -150,8 +145,9 @@ export class ProgressWidget extends InteractiveWidget {
 
     buffer.pushClip(x, y, width, height);
 
-    const trackColor = this.disabled ? this.#colorTrackDisabled : this.#colorTrackNormal;
-    const fillColor = this.disabled ? this.#colorFillDisabled : this.#colorFillNormal;
+    const colors = resolveColorState(this.#colors, {disabled: this.disabled});
+    const trackColor = colors.track;
+    const fillColor = colors.fill;
 
     buffer.drawRect({
       x, y, width, height, bgRgba: trackColor,

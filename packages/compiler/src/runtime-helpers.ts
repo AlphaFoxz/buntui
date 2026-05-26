@@ -16,6 +16,7 @@ export const RUNTIME_HELPERS = {
   CREATE_PROGRESS: 'createProgressWidget',
   CREATE_TEXTAREA: 'createTextareaWidget',
   CREATE_TABLE: 'createTableWidget',
+  CREATE_SELECT: 'createSelectWidget',
 
   // App & scene
   CREATE_APP: 'createApp',
@@ -200,6 +201,16 @@ const TABLE_PROP_HANDLERS: PropHandlers = {
   ...PH_DISABLED, ...PH_VISIBLE,
 };
 
+const SELECT_PROP_HANDLERS: PropHandlers = {
+  ...PH_RECT,
+  value: {method: 'updateValue'},
+  options: {method: 'setOptions'},
+  placeholder: {method: 'setPlaceholder'},
+  label: {method: 'setLabel'},
+  borderStyle: {method: 'updateBorder', field: 'borderStyle'},
+  ...PH_DISABLED, ...PH_VISIBLE,
+};
+
 export const CORE_REGISTRY: TuiComponentRegistry = {
   Box: {creator: RUNTIME_HELPERS.CREATE_BOX, module: '@buntui/core', propHandlers: BOX_PROP_HANDLERS},
   Text: {creator: RUNTIME_HELPERS.CREATE_TEXT, module: '@buntui/core', propHandlers: TEXT_PROP_HANDLERS},
@@ -213,4 +224,5 @@ export const CORE_REGISTRY: TuiComponentRegistry = {
   Progress: {creator: RUNTIME_HELPERS.CREATE_PROGRESS, module: '@buntui/core', propHandlers: PROGRESS_PROP_HANDLERS},
   Textarea: {creator: RUNTIME_HELPERS.CREATE_TEXTAREA, module: '@buntui/core', propHandlers: TEXTAREA_PROP_HANDLERS},
   Table: {creator: RUNTIME_HELPERS.CREATE_TABLE, module: '@buntui/core', propHandlers: TABLE_PROP_HANDLERS},
+  Select: {creator: RUNTIME_HELPERS.CREATE_SELECT, module: '@buntui/core', propHandlers: SELECT_PROP_HANDLERS},
 };

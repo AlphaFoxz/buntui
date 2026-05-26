@@ -9,7 +9,6 @@ import {parseColor} from '../../utils/color';
 import {stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
-import {getTheme} from '../../theme/provider';
 import type {TableColumn, TableRow, TableWidgetOptions} from './types';
 
 type TableColors = {
@@ -118,9 +117,8 @@ export class TableWidget extends InteractiveWidget {
     this.#selectionFgColor = parseColor(resolved.selectionFgColor!);
     this.setDisabled(resolved.disabled ?? false);
 
-    const theme = getTheme();
-    this.#scrollbarColor = parseColor(resolved.scrollbarColor ?? theme.colors.scrollbar);
-    this.#scrollbarTrackColor = parseColor(resolved.scrollbarTrackColor ?? theme.colors.scrollbarTrack);
+    this.#scrollbarColor = parseColor(resolved.scrollbarColor!);
+    this.#scrollbarTrackColor = parseColor(resolved.scrollbarTrackColor!);
 
     if (resolved.columns) {
       this.#resolveColumns(resolved.columns);

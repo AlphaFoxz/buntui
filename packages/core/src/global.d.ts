@@ -29,6 +29,7 @@ declare global {
   type TuiRedoEvent = {value: string};
   type TuiScrollEvent = {scrollOffsetY: number; maxScrollY: number};
   type TuiRadioGroupChangeEvent = {value: number; label: string};
+  type TuiSelectChangeEvent = {value: string; label: string};
   type TuiSelectButtonChangeEvent = {value: unknown; label: string};
   type TuiTableRowSelectEvent = {index: number; row: Record<string, unknown>};
   type TuiTableRowActivateEvent = {index: number; row: Record<string, unknown>};
@@ -334,6 +335,13 @@ declare global {
     rowActivate: (data: {index: number; row: Record<string, unknown>}) => void;
   };
 
+  type TuiSelectEmits = TuiInteractiveEmits & {
+    change: (data: TuiSelectChangeEvent) => void;
+    open: () => void;
+    close: () => void;
+    'update:modelValue': (value: string) => void;
+  };
+
   type TuiTextareaProps = {
     x?: TuiSizeValue;
     y?: TuiSizeValue;
@@ -371,6 +379,37 @@ declare global {
     disabled?: boolean;
   };
 
+  type TuiSelectProps = {
+    x?: TuiSizeValue;
+    y?: TuiSizeValue;
+    width?: TuiSizeValue;
+    height?: TuiSizeValue;
+    options?: Array<{value: string; label: string}>;
+    value?: string;
+    modelValue?: string;
+    placeholder?: string;
+    label?: string;
+    disabled?: boolean;
+    colorFgNormal?: TuiColor;
+    colorBgNormal?: TuiColor;
+    colorFgFocused?: TuiColor;
+    colorBgFocused?: TuiColor;
+    colorFgHovered?: TuiColor;
+    colorBgHovered?: TuiColor;
+    colorFgDisabled?: TuiColor;
+    colorBgDisabled?: TuiColor;
+    borderColorUnfocused?: TuiColor;
+    borderColorFocused?: TuiColor;
+    borderColorDisabled?: TuiColor;
+    borderStyle?: TuiBorderStyle;
+    colorFgItem?: TuiColor;
+    colorBgItem?: TuiColor;
+    colorFgItemSelected?: TuiColor;
+    colorBgItemSelected?: TuiColor;
+    colorFgItemHovered?: TuiColor;
+    colorBgItemHovered?: TuiColor;
+  };
+
   type _Empty = Record<string, never>;
   type TuiComponent<P, E extends Record<string, ((...args: any[]) => any) | null>>
     = DefineComponent<P & {ref?: string}, _Empty, _Empty, _Empty, _Empty, _Empty, _Empty, E>;
@@ -390,6 +429,7 @@ declare module 'vue' {
     Progress: TuiComponent<TuiProgressProps, TuiBaseEmits>;
     Textarea: TuiComponent<TuiTextareaProps, TuiTextareaEmits>;
     Table: TuiComponent<TuiTableProps, TuiTableEmits>;
+    Select: TuiComponent<TuiSelectProps, TuiSelectEmits>;
   };
 }
 

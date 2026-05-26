@@ -249,6 +249,24 @@ export class ScrollBoxWidget extends InteractiveWidget {
     this.propagatePositionDelta(this.#rect.x - oldX, this.#rect.y - oldY);
   }
 
+  updateThemeColors(resolved: Record<string, unknown>): void {
+    if (resolved.colorBg !== undefined) {
+      this.updateColor({colorBg: parseColor(resolved.colorBg as number)});
+    }
+
+    if (resolved.borderColor !== undefined) {
+      this.updateBorder({borderColor: parseColor(resolved.borderColor as number)});
+    }
+
+    if (resolved.scrollbarColor !== undefined) {
+      this.setScrollbarColor(parseColor(resolved.scrollbarColor as number));
+    }
+
+    if (resolved.scrollbarTrackColor !== undefined) {
+      this.setScrollbarTrackColor(parseColor(resolved.scrollbarTrackColor as number));
+    }
+  }
+
   // -- Visual chrome update methods (delegate to innerBox) --
 
   updateColor(color: Parameters<BoxWidget['updateColor']>[0]): void {
@@ -501,22 +519,8 @@ function getDefaultScrollBoxOptions(): ScrollBoxWidgetOptions {
 
 export function createScrollBoxWidget(options: Partial<ScrollBoxWidgetOptions> = {}): ScrollBoxWidget {
   const widget = new ScrollBoxWidget({...getDefaultScrollBoxOptions(), ...options});
-  bindThemeToWidget(widget, SCROLLBOX_TOKEN_MAP, options, resolved => {
-    if (resolved.colorBg !== undefined) {
-      widget.updateColor({colorBg: parseColor(resolved.colorBg as number)});
-    }
-
-    if (resolved.borderColor !== undefined) {
-      widget.updateBorder({borderColor: parseColor(resolved.borderColor as number)});
-    }
-
-    if (resolved.scrollbarColor !== undefined) {
-      widget.setScrollbarColor(parseColor(resolved.scrollbarColor as number));
-    }
-
-    if (resolved.scrollbarTrackColor !== undefined) {
-      widget.setScrollbarTrackColor(parseColor(resolved.scrollbarTrackColor as number));
-    }
+  bindThemeToWidget(widget, SCROLLBOX_TOKEN_MAP, options ?? {}, resolved => {
+    widget.updateThemeColors(resolved);
   });
   return widget;
 }

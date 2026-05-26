@@ -258,6 +258,16 @@ export class BoxWidget extends TuiWidgetEntity {
     }
   }
 
+  updateThemeColors(resolved: Record<string, unknown>): void {
+    this.updateColor({
+      colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg as TuiColor),
+      colorBg: resolved.colorBg === undefined ? undefined : parseColor(resolved.colorBg as TuiColor),
+    });
+    if (resolved.borderColor !== undefined) {
+      this.updateBorder({borderColor: parseColor(resolved.borderColor as TuiColor)});
+    }
+  }
+
   updateStyle(style: Omit<Partial<TuiWidgetStyle>, 'styleModifier'> & {styleModifier?: TuiFontStyleInput}): void {
     if (style.styleModifier !== undefined) {
       this.#style.styleModifier = resolveFontStyle(style.styleModifier);
@@ -579,14 +589,8 @@ export function getDefaultBoxOptions(): BoxWidgetOptions {
 
 export function createBox(options: Partial<BoxWidgetOptions> = {}): BoxWidget {
   const widget = new BoxWidget({...getDefaultBoxOptions(), ...options});
-  bindThemeToWidget(widget, BOX_TOKEN_MAP, options, resolved => {
-    widget.updateColor({
-      colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg as TuiColor),
-      colorBg: resolved.colorBg === undefined ? undefined : parseColor(resolved.colorBg as TuiColor),
-    });
-    if (resolved.borderColor !== undefined) {
-      widget.updateBorder({borderColor: parseColor(resolved.borderColor as TuiColor)});
-    }
+  bindThemeToWidget(widget, BOX_TOKEN_MAP, options ?? {}, resolved => {
+    widget.updateThemeColors(resolved);
   });
   return widget;
 }

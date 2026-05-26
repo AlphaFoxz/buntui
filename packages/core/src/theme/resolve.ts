@@ -36,15 +36,11 @@ function resolveToken(theme: TuiTheme, token: string): unknown {
     if (borderKey !== undefined) {
       return theme.borderStyle[borderKey];
     }
+
+    return undefined;
   }
 
-  for (const [colorKey, colorValue] of Object.entries(theme.colors)) {
-    if (colorKey === token) {
-      return colorValue;
-    }
-  }
-
-  return undefined;
+  return theme.colors[token as keyof TuiThemeColors];
 }
 
 export function bindThemeToWidget<M extends Record<string, ThemeToken>>(

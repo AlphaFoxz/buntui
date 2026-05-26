@@ -6,12 +6,8 @@
         :y="4"
         width="45%"
         :height="10"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(137,180,250,0.5)'"
         borderStyle="rounded"
         :alwaysShowScrollbar="true"
-        :scrollbarColor="'rgba(137,180,250,0.6)'"
-        :scrollbarTrackColor="'rgba(49,50,68,1)'"
         @scroll="handleScroll"
     >
         <template>
@@ -25,15 +21,7 @@
         </template>
     </ScrollBox>
 
-    <Box
-        x="50%"
-        :y="4"
-        width="45%"
-        :height="10"
-        borderStyle="rounded"
-        :direction="'vertical'"
-        :gap="1"
-    >
+    <Box x="50%" :y="4" width="45%" :height="10" borderStyle="rounded" :direction="'vertical'" :gap="1">
         <Text value="▶ Scroll Info" />
         <Text :value="`Offset: ${scrollOffsetY}`" />
         <Text :value="`Max: ${maxScrollY}`" />
@@ -47,7 +35,7 @@
 
     <Text :x="1" :y="15" value="▶ Compact List (no border)" />
 
-    <ScrollBox :x="1" :y="16" width="45%" :height="6" :colorBg="'rgba(24,24,37,1)'" @scroll="handleScroll2">
+    <ScrollBox :x="1" :y="16" width="45%" :height="6" @scroll="handleScroll2">
         <template>
             <Text
                 v-for="(item, index) in 30"
@@ -59,15 +47,7 @@
         </template>
     </ScrollBox>
 
-    <ScrollBox
-        x="50%"
-        :y="15"
-        width="45%"
-        :height="6"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(245,194,231,0.3)'"
-        borderStyle="double"
-    >
+    <ScrollBox x="50%" :y="15" width="45%" :height="6" borderStyle="double">
         <template>
             <Text
                 v-for="(item, index) in 15"
