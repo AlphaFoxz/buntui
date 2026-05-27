@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {readPackageVersion} from './utils';
 
 export type TemplateName = 'basic' | 'sfc' | 'full';
 
@@ -45,9 +46,10 @@ export function scaffoldCopy(
 
   fs.mkdirSync(outputDir, {recursive: true});
 
+  const selfVersion = readPackageVersion(path.resolve(import.meta.dir, '..', 'package.json'));
   const variables: Record<string, string> = {
     name: projectName,
-    version: 'latest',
+    version: selfVersion ?? 'latest',
   };
 
   try {

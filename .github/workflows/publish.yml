@@ -133,6 +133,9 @@ jobs:
                     fi
                   done
 
+            - name: Build create-buntui
+              run: bun run --cwd packages/create-buntui build
+
             - uses: actions/setup-node@v6
               with:
                   node-version: '24'
@@ -151,7 +154,7 @@ jobs:
 
             - name: Verify build artifacts
               run: |
-                  for pkg in packages/core packages/extensions packages/compiler packages/buntui; do
+                  for pkg in packages/core packages/extensions packages/compiler packages/buntui packages/create-buntui; do
                     if [ ! -f "$pkg/dist/index.js" ] && [ ! -f "$pkg/dist/index.d.ts" ]; then
                       echo "ERROR: Missing build output in $pkg/dist/"
                       exit 1
