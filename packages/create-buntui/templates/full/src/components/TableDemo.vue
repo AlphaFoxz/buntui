@@ -1,19 +1,19 @@
 <template>
-    <Text :x="1" :y="3" :colorFg="'rgba(137,180,250,1)'" value="Table widget — structured data display with selection" />
+    <Text :x="1" :y="3" colorFg="rgba(137,180,250,1)" value="Table widget — structured data display with selection" />
 
     <Table
         :x="1"
         :y="4"
         :width="60"
         :height="8"
-        :colorBg="'rgba(30,30,46,1)'"
-        :borderColor="'rgba(137,180,250,0.5)'"
+        colorBg="rgba(30,30,46,1)"
+        borderColor="rgba(137,180,250,0.5)"
         borderStyle="rounded"
         :columns="columns"
         :rows="rows"
     />
 
-    <Text :x="1" :y="13" :colorFg="'rgba(108,112,134,1)'" value="Use arrow keys to navigate rows" />
+    <Text :x="1" :y="13" colorFg="rgba(108,112,134,1)" value="Use arrow keys to navigate rows" />
 </template>
 
 <script setup lang="ts">
