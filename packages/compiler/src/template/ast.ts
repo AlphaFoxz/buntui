@@ -95,6 +95,8 @@ export type TuiListBlock = {
   itemVar: string;
   indexVar?: string;
   listExpression: string;
+  /** Key expression from :key="expr", enables reactive keyed diffing */
+  keyExpression?: string;
   /** Body template to repeat */
   body: TuiRenderNode[];
   loc: SourceLocation;

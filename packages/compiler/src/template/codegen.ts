@@ -569,6 +569,14 @@ function buildEventLines(node: TuiWidgetCall, varName: string): string[] {
 }
 
 function generateList(node: TuiListBlock, index: number, parentVar?: string): NodeGenResult {
+  if (node.keyExpression) {
+    return generateKeyedList(node, index, parentVar);
+  }
+
+  return generateStaticList(node, index, parentVar);
+}
+
+function generateStaticList(node: TuiListBlock, index: number, parentVar?: string): NodeGenResult {
   const lines: string[] = [];
 
   // Numeric range: v-for="i in 20" → Vue iterates 1..N inclusive
@@ -621,6 +629,127 @@ function generateList(node: TuiListBlock, index: number, parentVar?: string): No
   return {lines, nextIndex};
 }
 
+function generateKeyedList(node: TuiListBlock, index: number, parentVar?: string): NodeGenResult {
+  const lines: string[] = [];
+  const mapVar = `__list${index}_map`;
+  const keyExpr = wrapExpr(node.keyExpression!);
+
+  lines.push(
+    `let ${mapVar} = new Map();`,
+    `${EFFECT}(() => {`,
+    `  for (const [, __w] of ${mapVar}) {`,
+    parentVar ? `    ${parentVar}.removeChild(__w);` : '    __scene.unmount(__w);',
+    '  }',
+    '  const __new = new Map();',
+  );
+
+  const isRange = /^\d+$/v.test(node.listExpression.trim());
+  if (isRange) {
+    if (node.indexVar) {
+      lines.push(
+        `  for (let ${node.indexVar} = 0; ${node.indexVar} < ${node.listExpression}; ${node.indexVar}++) {`,
+        `    const ${node.itemVar} = ${node.indexVar} + 1;`,
+      );
+    } else {
+      lines.push(`  for (let ${node.itemVar} = 1; ${node.itemVar} <= ${node.listExpression}; ${node.itemVar}++) {`);
+    }
+  } else if (node.indexVar) {
+    lines.push(`  for (const [${node.indexVar}, ${node.itemVar}] of ${wrapExpr(node.listExpression)}.entries()) {`);
+  } else {
+    lines.push(`  for (const ${node.itemVar} of ${wrapExpr(node.listExpression)}) {`);
+  }
+
+  let nextIndex = index;
+  for (const child of node.body) {
+    if (child.type === 'TuiWidgetCall' && !child.isComponent) {
+      nextIndex = generateKeyedBodyWidget(child, nextIndex, mapVar, keyExpr, parentVar, lines);
+    } else if (child.type === 'TuiWidgetCall' && child.isComponent) {
+      const result = generateNode(child, nextIndex);
+      if (result) {
+        for (const l of result.lines) {
+          lines.push(`    ${l}`);
+        }
+
+        nextIndex = result.nextIndex;
+      }
+    } else if (child.type === 'TuiConditionalBlock') {
+      const result = generateConditional(child, nextIndex, parentVar);
+      if (result) {
+        for (const l of result.lines) {
+          lines.push(`    ${l}`);
+        }
+
+        nextIndex = result.nextIndex;
+      }
+    } else if (child.type === 'TuiListBlock') {
+      const result = generateList(child, nextIndex, parentVar);
+      if (result) {
+        for (const l of result.lines) {
+          lines.push(`    ${l}`);
+        }
+
+        nextIndex = result.nextIndex;
+      }
+    }
+  }
+
+  lines.push('  }', `  ${mapVar} = __new;`, '});');
+
+  return {lines, nextIndex};
+}
+
+function generateKeyedBodyWidget(
+  node: TuiWidgetCall,
+  index: number,
+  mapVar: string,
+  keyExpr: string,
+  parentVar: string | undefined,
+  lines: string[],
+): number {
+  const varName = getWidgetVarName(node, index);
+
+  lines.push(`    let ${varName} = ${mapVar}.get(${keyExpr});`, `    if (${varName}) {`);
+
+  for (const prop of node.dynamicProps) {
+    const handler = resolvePropHandler(node, prop.name, prop.loc);
+    if (handler) {
+      const expr = wrapExpr(prop.expression);
+      const call = handler.field
+        ? `${varName}.${handler.method}({${handler.field}: ${expr}})`
+        : `${varName}.${handler.method}(${expr})`;
+      lines.push(`      ${call};`);
+    }
+  }
+
+  lines.push('    } else {', `      ${varName} = ${buildWidgetCreation(node)};`);
+
+  for (const eventBinding of node.events) {
+    lines.push(`      ${varName}.on('${eventBinding.event}', ${buildEventHandler(eventBinding)});`);
+  }
+
+  let nextIndex = index + 1;
+  for (const subChild of node.children) {
+    if (subChild.type === 'TuiWidgetCall' && !subChild.isComponent) {
+      const subVar = getWidgetVarName(subChild, nextIndex);
+      lines.push(`      const ${subVar} = ${buildWidgetCreation(subChild)};`);
+      for (const eventBinding of subChild.events) {
+        lines.push(`      ${subVar}.on('${eventBinding.event}', ${buildEventHandler(eventBinding)});`);
+      }
+
+      lines.push(`      ${varName}.addChild(${subVar});`);
+      nextIndex++;
+    }
+  }
+
+  lines.push(
+    '    }',
+    parentVar ? `    ${parentVar}.addChild(${varName});` : `    __scene.mount(${varName});`,
+    `    __new.set(${keyExpr}, ${varName});`,
+  );
+
+  return nextIndex;
+}
+
 function getWidgetVarName(node: TuiWidgetCall, index: number): string {
   return `__${node.tag.toLowerCase()}${index}`;
 }
@@ -651,6 +780,10 @@ function hasDynamicBindings(root: TuiRenderRoot): boolean {
     }
 
     if (node.type === 'TuiListBlock') {
+      if (node.keyExpression) {
+        return true;
+      }
+
       return node.body.some(n => checkNode(n));
     }
 

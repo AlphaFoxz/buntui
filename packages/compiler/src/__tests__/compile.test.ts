@@ -83,6 +83,72 @@ describe('compile', () => {
       const result = compile('<template><Text v-for="n in 5"/></template>');
       expect(result.code).toContain('for (let n = 1; n <= 5; n++)');
     });
+
+    it('filters out :key from widget props in v-for', () => {
+      const result = compile('<template><Text v-for="item in items" :key="item" :value="item"/></template>');
+      expect(result.code).not.toContain('key:');
+      expect(result.code).toContain('value: unref(item)');
+    });
+
+    it('filters out static key attribute from widget props', () => {
+      const result = compile('<template><Text v-for="item in items" key="fixed" :value="item"/></template>');
+      expect(result.code).not.toContain('key:');
+      expect(result.code).toContain('createTextWidget');
+    });
+  });
+
+  describe('v-for with :key (reactive keyed list)', () => {
+    it('generates effect with Map for keyed list', () => {
+      const result = compile('<template><Text v-for="item in items" :key="item" :value="item"/></template>');
+      expect(result.code).toContain('new Map()');
+      expect(result.code).toContain('effect(() => {');
+    });
+
+    it('creates or reuses widgets by key', () => {
+      const result = compile('<template><Text v-for="item in items" :key="item" :value="item"/></template>');
+      expect(result.code).toContain('.get(');
+      expect(result.code).toContain('__new.set(');
+    });
+
+    it('removes stale widgets on re-render', () => {
+      const result = compile('<template><Text v-for="item in items" :key="item" :value="item"/></template>');
+      expect(result.code).toContain('unmount(');
+    });
+
+    it('adds child to parent widget in keyed list', () => {
+      const result = compile('<template><Box><Text v-for="item in items" :key="item" :value="item"/></Box></template>');
+      expect(result.code).toContain('.addChild(');
+      expect(result.code).toContain('new Map()');
+    });
+
+    it('does not pass key as widget constructor prop', () => {
+      const result = compile('<template><Text v-for="item in items" :key="item.id" :value="item.name"/></template>');
+      expect(result.code).not.toContain('key:');
+      expect(result.code).toContain('unref(item).id');
+    });
+
+    it('updates dynamic props on reused widgets', () => {
+      const result = compile('<template><Text v-for="item in items" :key="item" :value="item"/></template>');
+      expect(result.code).toContain('updateValue');
+    });
+
+    it('imports effect and unref for keyed list', () => {
+      const result = compile('<template><Text v-for="item in items" :key="item"/></template>');
+      expect(result.imports.some(i => i.includes('effect') && i.includes('unref'))).toBe(true);
+    });
+
+    it('supports indexed keyed iteration', () => {
+      const result = compile('<template><Text v-for="(item, i) in items" :key="item" :value="item"/></template>');
+      expect(result.code).toContain('entries()');
+      expect(result.code).toContain('new Map()');
+    });
+
+    it('supports nested widget children in keyed list', () => {
+      const result = compile('<template><Box v-for="item in items" :key="item"><Text :value="item"/></Box></template>');
+      expect(result.code).toContain('new Map()');
+      expect(result.code).toContain('createTextWidget');
+      expect(result.code).toContain('.addChild(');
+    });
   });
 
   describe('v-if / v-else-if / v-else', () => {

@@ -1,5 +1,5 @@
 <template>
-    <Text :x="1" :y="3" colorFg="rgba(137,180,250,1)" value="RadioGroup widget — single selection from options" />
+    <Text :x="1" :y="3" value="RadioGroup widget — single selection from options" />
 
     <RadioGroup
         :x="1"
@@ -9,7 +9,7 @@
         @change="handleChange"
     />
 
-    <Text :x="1" :y="8" colorFg="rgba(108,112,134,1)" :value="log" />
+    <Text :x="1" :y="8" :value="log" />
 </template>
 
 <script setup lang="ts">

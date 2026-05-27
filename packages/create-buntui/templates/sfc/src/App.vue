@@ -3,9 +3,7 @@
         x="20%"
         y="25%"
         width="60%"
-        :height="12"
-        colorBg="rgba(30,30,46,1)"
-        borderColor="rgba(137,180,250,1)"
+        :height="17"
         borderStyle="rounded"
         direction="vertical"
         :gap="1"
@@ -15,10 +13,10 @@
         :paddingLeft="2"
         :paddingRight="2"
     >
-        <Text colorFg="rgba(137,180,250,1)" :value="title" styleModifier="bold" />
-        <Text colorFg="rgba(166,227,161,1)" value="SFC template with hot reload" />
-        <Text colorFg="rgba(205,214,244,1)" value="Edit src/App.vue to get started" />
-        <Text colorFg="rgba(108,112,134,1)" :value="clock" />
+        <Text :value="title" styleModifier="bold" />
+        <Text value="SFC template with hot reload" />
+        <Text value="Edit src/App.vue to get started" />
+        <Text :value="clock" />
         <Box direction="horizontal" :gap="2" align="center">
             <Button :value="'Count: ' + count" @click="increment" />
         </Box>

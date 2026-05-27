@@ -142,6 +142,11 @@ function transformElement(
     props.splice(refIndex, 1);
   }
 
+  const keyIndex = props.findIndex(p => p.name === 'key');
+  if (keyIndex !== -1) {
+    props.splice(keyIndex, 1);
+  }
+
   // Transform children recursively
   const children: TuiRenderNode[] = [];
   let childIdx = 0;
@@ -478,6 +483,10 @@ function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string)
   // V-bind / : shorthand — dynamic prop
   if (dir.name === 'bind' && dir.arg) {
     const name = resolveArgContent(dir);
+    if (name === 'key') {
+      return undefined;
+    }
+
     const expression = resolveExpContent(dir);
     return [{
       type: 'dynamic',
@@ -644,6 +653,19 @@ function processListBlock(
 
   const {itemVar, indexVar, listExpression} = parseForExpression(vForDir.exp.content);
 
+  let keyExpression: string | undefined;
+  for (const prop of node.props) {
+    if (
+      prop.type === NodeTypes.DIRECTIVE
+      && prop.name === 'bind'
+      && prop.arg?.type === NodeTypes.SIMPLE_EXPRESSION
+      && prop.arg.content === 'key'
+      && prop.exp?.type === NodeTypes.SIMPLE_EXPRESSION
+    ) {
+      keyExpression = prop.exp.content;
+    }
+  }
+
   // <template> acts as a fragment — children become the list body directly
   const isFragment = node.tag === 'template';
   const body: TuiRenderNode[] = [];
@@ -680,6 +702,7 @@ function processListBlock(
     itemVar,
     indexVar,
     listExpression,
+    keyExpression,
     body,
     loc: node.loc,
   };

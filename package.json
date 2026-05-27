@@ -23,6 +23,7 @@
     },
     "workspaces": [
         "packages/*",
-        "packages/native-platforms/*"
+        "packages/native-platforms/*",
+        "packages/create-buntui/my*"
     ]
 }

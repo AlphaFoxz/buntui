@@ -1,37 +1,38 @@
 <template>
-    <Text :x="1" :y="3" colorFg="rgba(137,180,250,1)" value="Textarea widget — multi-line text editor" />
+    <Text :x="1" :y="3" value="Textarea widget — multi-line text editor" />
 
     <Box
         :x="1"
         :y="4"
         :width="50"
-        :height="6"
-        colorBg="rgba(30,30,46,1)"
-        borderColor="rgba(137,180,250,0.5)"
+        :height="8"
         borderStyle="rounded"
         direction="vertical"
         :gap="1"
         :paddingTop="1"
         :paddingLeft="1"
     >
-        <Text colorFg="rgba(108,112,134,1)" value="Type and press Ctrl+Enter to submit:" />
+        <Text :value="label" />
         <Textarea
             :width="46"
             :height="3"
             placeholder="Enter multi-line text..."
-            @submit="handleSubmit"
+            v-model="text"
         />
     </Box>
 
-    <Text :x="1" :y="11" colorFg="rgba(166,227,161,1)" :value="submittedValue" />
+    <Text :x="1" :y="13" :value="preview" />
 </template>
 
 <script setup lang="ts">
-import { ref } from '@vue/reactivity'
+import { ref, computed } from '@vue/reactivity'
 
-const submittedValue = ref('Submit result appears here')
+const text = ref('')
 
-function handleSubmit(event: TuiSubmitEvent) {
-    submittedValue.value = `Submitted: "${event.value}"`
-}
+const label = computed(() => text.value.length > 0 ? `Characters: ${text.value.length}` : 'Type something below:')
+
+const preview = computed(() => {
+    const lines = text.value.split('\n')
+    return text.value.length > 0 ? `${lines.length} lines, ${text.value.length} chars` : 'Preview appears here'
+})
 </script>
