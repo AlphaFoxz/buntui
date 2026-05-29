@@ -140,15 +140,17 @@ describe('SelectWidget containsPoint with dropdown', () => {
     expect(select.containsPoint(9, 6)).toBe(false);
   });
 
-  it('zIndex is 999 when opened, 0 when closed', () => {
+  it('zIndex is 100 and portal is true when opened', () => {
     const select = createSelectWidget({
       x: 10, y: 5, width: 20, height: 1,
       options: MANY_OPTIONS, value: 'opt0',
     });
     expect(select.zIndex).toBe(0);
+    expect(select.portal).toBe(false);
     select.focus();
     select.handleActiveKey({...KEY_EVENT, key: 'Enter'});
-    expect(select.zIndex).toBe(999);
+    expect(select.zIndex).toBe(100);
+    expect(select.portal).toBe(true);
   });
 });
 
@@ -193,5 +195,61 @@ describe('SelectWidget with TuiScene hitTest integration', () => {
     expect(scene.hitTest(mouseEvent({x: 97, y: 14}))).toBe(select);
     expect(scene.hitTest(mouseEvent({x: 97, y: 16}))).toBe(select);
     expect(scene.hitTest(mouseEvent({x: 97, y: 17}))).toBeUndefined();
+  });
+
+  it('sets portal=true on open and portal=false on close', async () => {
+    const {TuiScene} = await import('../../../extern/app/TuiScene');
+
+    const scene = new TuiScene({visible: true});
+    const select = createSelectWidget({
+      x: 10, y: 5, width: 20, height: 1,
+      options: MANY_OPTIONS, value: 'opt0',
+    });
+    scene.mount(select);
+
+    expect(select.portal).toBe(false);
+    select.focus();
+    select.handleActiveKey({...KEY_EVENT, key: 'Enter'});
+    expect(select.portal).toBe(true);
+
+    select.handleActiveKey({...KEY_EVENT, key: 'Escape'});
+    expect(select.portal).toBe(false);
+  });
+
+  it('restores zIndex after close', async () => {
+    const {TuiScene} = await import('../../../extern/app/TuiScene');
+
+    const scene = new TuiScene({visible: true});
+    const select = createSelectWidget({
+      x: 10, y: 5, width: 20, height: 1,
+      options: MANY_OPTIONS, value: 'opt0',
+    });
+    scene.mount(select);
+
+    expect(select.zIndex).toBe(0);
+    select.focus();
+    select.handleActiveKey({...KEY_EVENT, key: 'Enter'});
+    expect(select.zIndex).toBe(100);
+    select.handleActiveKey({...KEY_EVENT, key: 'Escape'});
+    expect(select.zIndex).toBe(0);
+  });
+
+  it('preserves preset zIndex after open/close cycle', async () => {
+    const {TuiScene} = await import('../../../extern/app/TuiScene');
+
+    const scene = new TuiScene({visible: true});
+    const select = createSelectWidget({
+      x: 10, y: 5, width: 20, height: 1,
+      options: MANY_OPTIONS, value: 'opt0',
+    });
+    select.setZIndex(50);
+    scene.mount(select);
+
+    expect(select.zIndex).toBe(50);
+    select.focus();
+    select.handleActiveKey({...KEY_EVENT, key: 'Enter'});
+    expect(select.zIndex).toBe(100);
+    select.handleActiveKey({...KEY_EVENT, key: 'Escape'});
+    expect(select.zIndex).toBe(50);
   });
 });

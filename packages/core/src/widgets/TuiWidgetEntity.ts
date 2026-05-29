@@ -49,6 +49,8 @@ export abstract class TuiWidgetEntity implements Mountable {
   #referenceCount = 0;
   #draggable = false;
   #visible = true;
+  #portal = false;
+  #zIndexOverride: number | undefined = undefined;
   #parent: TuiWidgetEntity | null = null;
   readonly #eventHandlers = new Map<string, Set<WidgetEventHandler>>();
   readonly #children: TuiWidgetEntity[] = [];
@@ -112,6 +114,10 @@ export abstract class TuiWidgetEntity implements Mountable {
     return this.#draggable;
   }
 
+  get portal(): boolean {
+    return this.#portal;
+  }
+
   get visible(): boolean {
     return this.#visible;
   }
@@ -137,7 +143,7 @@ export abstract class TuiWidgetEntity implements Mountable {
   }
 
   get zIndex(): number {
-    return 0;
+    return this.#zIndexOverride ?? 0;
   }
 
   get rect(): TuiWidgetRect {
@@ -151,6 +157,14 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   setDraggable(value: boolean): void {
     this.#draggable = value;
+  }
+
+  setZIndex(value: number): void {
+    this.#zIndexOverride = value;
+  }
+
+  setPortal(value: boolean): void {
+    this.#portal = value;
   }
 
   setVisible(value: boolean): void {
@@ -250,6 +264,10 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   abstract emitDrawCommands(buf: DrawListBuffer): void;
 
+  protected getZIndexOverride(): number | undefined {
+    return this.#zIndexOverride;
+  }
+
   protected initRect(
     x?: TuiSizeValue,
     y?: TuiSizeValue,
@@ -292,7 +310,7 @@ export abstract class TuiWidgetEntity implements Mountable {
    */
   protected renderChildren(buf: DrawListBuffer): void {
     for (const child of this.#children) {
-      if (child.visible) {
+      if (child.visible && !child.portal) {
         child.emitDrawCommands(buf);
       }
     }

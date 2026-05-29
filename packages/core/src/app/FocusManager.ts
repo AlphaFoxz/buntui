@@ -10,6 +10,7 @@ export class FocusManager {
   #focusedWidget: (TuiWidgetEntity & Focusable) | undefined;
   #keyHandler: ((data: KeyboardEvent) => void) | undefined;
   readonly #getScene: () => TuiScene | undefined;
+  readonly #focusScopeStack: TuiWidgetEntity[] = [];
 
   constructor(getScene: () => TuiScene | undefined) {
     this.#getScene = getScene;
@@ -82,7 +83,34 @@ export class FocusManager {
   }
 
   getFocusableWidgets(): ReadonlyArray<TuiWidgetEntity & Focusable> {
-    return this.#getScene()?.getFocusableWidgets() ?? [];
+    const all = this.#getScene()?.getFocusableWidgets() ?? [];
+    if (this.#focusScopeStack.length === 0) {
+      return all;
+    }
+
+    const scopeRoot = this.#focusScopeStack.at(-1)!;
+    return all.filter(w => this.#isDescendantOf(w, scopeRoot));
+  }
+
+  pushFocusScope(scopeRoot: TuiWidgetEntity): void {
+    this.#focusScopeStack.push(scopeRoot);
+  }
+
+  popFocusScope(): void {
+    this.#focusScopeStack.pop();
+  }
+
+  #isDescendantOf(widget: TuiWidgetEntity, ancestor: TuiWidgetEntity): boolean {
+    let current: TuiWidgetEntity | null = widget;
+    while (current) {
+      if (current === ancestor) {
+        return true;
+      }
+
+      current = current.parent;
+    }
+
+    return false;
   }
 
   #scrollIntoView(widget: TuiWidgetEntity): void {

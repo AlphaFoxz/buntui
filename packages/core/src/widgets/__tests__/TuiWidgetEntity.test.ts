@@ -23,6 +23,28 @@ class TestWidget extends TuiWidgetEntity {
   _rect: {x: number; y: number; width: number; height: number} = {x: 0, y: 0, width: 10, height: 5};
 }
 
+class ContainerWidget extends TuiWidgetEntity {
+  emitCommandsCalled = false;
+
+  override emitDrawCommands(buf: DrawListBuffer): void {
+    this.emitCommandsCalled = true;
+    this.renderChildren(buf);
+  }
+
+  override get rect() {
+    return this._rect;
+  }
+
+  override updateRect(rect: Partial<{x: U16; y: U16; width: U16; height: U16}>): void {
+    const oldX = this._rect.x;
+    const oldY = this._rect.y;
+    Object.assign(this._rect, rect);
+    this.propagatePositionDelta(this._rect.x - oldX, this._rect.y - oldY);
+  }
+
+  _rect: {x: number; y: number; width: number; height: number} = {x: 0, y: 0, width: 10, height: 5};
+}
+
 function createWidget(): TestWidget {
   return new TestWidget();
 }
@@ -30,6 +52,10 @@ function createWidget(): TestWidget {
 describe('default property values', () => {
   it('draggable defaults to false', () => {
     expect(createWidget().draggable).toBe(false);
+  });
+
+  it('portal defaults to false', () => {
+    expect(createWidget().portal).toBe(false);
   });
 
   it('visible defaults to true', () => {
@@ -311,12 +337,55 @@ describe('renderChildren', () => {
     child.setVisible(false);
     parent.addChild(child);
 
-    // Create a mock buffer
     const mockBuf = {} as DrawListBuffer;
     parent.emitDrawCommands(mockBuf);
-    // emitCommandsCalled is only set on the parent, child was invisible
     expect(parent.emitCommandsCalled).toBe(true);
     expect(child.emitCommandsCalled).toBe(false);
+  });
+
+  it('skips portal-marked children', () => {
+    const parent = new ContainerWidget();
+    const normalChild = new TestWidget();
+    const portalChild = new TestWidget();
+    portalChild.setPortal(true);
+    parent.addChild(normalChild);
+    parent.addChild(portalChild);
+
+    const mockBuf = {} as DrawListBuffer;
+    parent.emitDrawCommands(mockBuf);
+    expect(normalChild.emitCommandsCalled).toBe(true);
+    expect(portalChild.emitCommandsCalled).toBe(false);
+  });
+});
+
+describe('portal', () => {
+  it('setPortal changes portal flag', () => {
+    const widget = createWidget();
+    expect(widget.portal).toBe(false);
+    widget.setPortal(true);
+    expect(widget.portal).toBe(true);
+    widget.setPortal(false);
+    expect(widget.portal).toBe(false);
+  });
+
+  it('portal children are still in parent children array', () => {
+    const parent = createWidget();
+    const child = createWidget();
+    child.setPortal(true);
+    parent.addChild(child);
+    expect(parent.children).toContain(child);
+    expect(child.parent).toBe(parent);
+  });
+
+  it('portal child event bubbling still works', () => {
+    const parent = createWidget();
+    const child = createWidget();
+    child.setPortal(true);
+    parent.addChild(child);
+    let parentReceived = false;
+    parent.on('click', () => { parentReceived = true; });
+    child.dispatch('click', undefined);
+    expect(parentReceived).toBe(true);
   });
 });
 

@@ -458,12 +458,6 @@ export class TextareaWidget extends InteractiveWidget {
     }
   }
 
-  #cycleCursorMode(): void {
-    const modes: CursorModeName[] = ['blinking-ibeam', 'blinking-block', 'blinking-underscore', 'ibeam', 'block', 'underscore'];
-    const idx = modes.indexOf(this.#cursorMode);
-    this.#cursorMode = modes[(idx + 1) % modes.length]!;
-  }
-
   override updateRect(rect: Partial<TuiWidgetRect>): void {
     if (rect.x !== undefined) {
       this.#x = rect.x;
@@ -646,6 +640,12 @@ export class TextareaWidget extends InteractiveWidget {
 
   scrollBy(delta: number): void {
     this.scrollTo(this.#scrollOffsetY + delta);
+  }
+
+  #cycleCursorMode(): void {
+    const modes: CursorModeName[] = ['blinking-ibeam', 'blinking-block', 'blinking-underscore', 'ibeam', 'block', 'underscore'];
+    const idx = modes.indexOf(this.#cursorMode);
+    this.#cursorMode = modes[(idx + 1) % modes.length]!;
   }
 
   #rebuildLines(): void {

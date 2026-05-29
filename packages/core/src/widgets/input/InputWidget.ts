@@ -458,12 +458,6 @@ export class InputWidget extends InteractiveWidget {
     }
   }
 
-  #cycleCursorMode(): void {
-    const modes: CursorModeName[] = ['blinking-ibeam', 'blinking-block', 'blinking-underscore', 'ibeam', 'block', 'underscore'];
-    const idx = modes.indexOf(this.#cursorMode);
-    this.#cursorMode = modes[(idx + 1) % modes.length]!;
-  }
-
   override updateRect(rect: Partial<TuiWidgetRect>): void {
     if (rect.x !== undefined) {
       this.#x = rect.x;
@@ -693,6 +687,12 @@ export class InputWidget extends InteractiveWidget {
     this.#selectionAnchor = Math.min(a, b);
     this.#cursorPos = Math.max(a, b);
     this.#clampScrollOffset();
+  }
+
+  #cycleCursorMode(): void {
+    const modes: CursorModeName[] = ['blinking-ibeam', 'blinking-block', 'blinking-underscore', 'ibeam', 'block', 'underscore'];
+    const idx = modes.indexOf(this.#cursorMode);
+    this.#cursorMode = modes[(idx + 1) % modes.length]!;
   }
 
   #maskText(text: string): string {

@@ -58,6 +58,8 @@ export {createTableWidget, TableWidget} from './widgets/table/TableWidget';
 export type {TableWidgetOptions, TableColumn, TableRow} from './widgets/table/types';
 export {createSelectWidget, SelectWidget} from './widgets/select/SelectWidget';
 export type {SelectWidgetOptions, SelectOption} from './widgets/select/types';
+export {createModalWidget, ModalWidget} from './widgets/modal/ModalWidget';
+export type {ModalWidgetOptions} from './widgets/modal/types';
 export {
   BorderSides, BorderStyle, CursorMode, resolveCursorMode,
 } from './draw_list/types';

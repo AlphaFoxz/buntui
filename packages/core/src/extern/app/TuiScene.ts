@@ -6,6 +6,7 @@ import {isFocusable, type Focusable} from '../../widgets/Focusable';
 import {type TuiWidgetEntity} from '../../widgets/TuiWidgetEntity';
 import {getTheme, onThemeChange} from '../../theme/provider';
 import type {Entity} from '../types';
+import {OverlayManager} from '../../overlay/OverlayManager';
 import {type TuiSceneOptions} from './types';
 import {TUI_CONTEXT_INSTANCE} from './TuiContext';
 
@@ -17,8 +18,8 @@ export class TuiScene implements Entity {
   readonly #widgets = new Set<TuiWidgetEntity>();
   readonly #lifecycleHandlers = new Map<string, Array<() => void>>();
   readonly #tickHandlers: Array<(dt: number) => void> = [];
-  #sortedCache: TuiWidgetEntity[] | undefined = undefined;
-  #sortedReverseCache: TuiWidgetEntity[] | undefined = undefined;
+  #sortedAllReverseCache: TuiWidgetEntity[] | undefined = undefined;
+  readonly #overlayManager = new OverlayManager();
 
   constructor(options?: Partial<TuiSceneOptions>) {
     this.#id = genId();
@@ -46,6 +47,10 @@ export class TuiScene implements Entity {
   }
 
   // --- Public API ---
+
+  getOverlayManager(): OverlayManager {
+    return this.#overlayManager;
+  }
 
   mount(widget: TuiWidgetEntity) {
     this.#widgets.add(widget);
@@ -101,9 +106,34 @@ export class TuiScene implements Entity {
     buf.setSynchronizedUpdate(true);
     buf.hideCursor();
 
-    for (const widget of this.#getSortedWidgets()) {
-      if (widget.visible) {
-        widget.emitDrawCommands(buf);
+    const portalWidgets = this.#collectPortalWidgets();
+    const backdropEntries = this.#overlayManager.getBackdropEntries();
+
+    type RenderItem
+      = | {kind: 'widget'; zIndex: number; widget: TuiWidgetEntity}
+        | {kind: 'backdrop'; zIndex: number; draw: (buf: DrawListBuffer) => void};
+
+    const items: RenderItem[] = [];
+    for (const w of this.#widgets) {
+      items.push({kind: 'widget', zIndex: w.zIndex, widget: w});
+    }
+
+    for (const pw of portalWidgets) {
+      items.push({kind: 'widget', zIndex: pw.zIndex, widget: pw});
+    }
+
+    for (const bd of backdropEntries) {
+      items.push({kind: 'backdrop', zIndex: bd.zIndex, draw: bd.draw});
+    }
+
+    items.sort((a, b) => a.zIndex - b.zIndex);
+    for (const item of items) {
+      if (item.kind === 'widget') {
+        if (item.widget.visible) {
+          item.widget.emitDrawCommands(buf);
+        }
+      } else {
+        item.draw(buf);
       }
     }
   }
@@ -112,7 +142,7 @@ export class TuiScene implements Entity {
     const mx = rawEvent.x;
     const my = rawEvent.y;
 
-    for (const widget of this.#getSortedWidgetsReverse()) {
+    for (const widget of this.#getSortedAllWidgetsReverse()) {
       if (widget.visible && widget.containsPoint(mx, my)) {
         return this.#deepHitTest(widget, mx, my);
       }
@@ -201,18 +231,13 @@ export class TuiScene implements Entity {
   // --- Private ---
 
   #invalidateCache(): void {
-    this.#sortedCache = undefined;
-    this.#sortedReverseCache = undefined;
+    this.#sortedAllReverseCache = undefined;
   }
 
-  #getSortedWidgets(): TuiWidgetEntity[] {
-    this.#sortedCache = [...this.#widgets].toSorted((a, b) => a.zIndex - b.zIndex);
-    return this.#sortedCache;
-  }
-
-  #getSortedWidgetsReverse(): TuiWidgetEntity[] {
-    this.#sortedReverseCache = [...this.#widgets].toReversed().toSorted((a, b) => b.zIndex - a.zIndex);
-    return this.#sortedReverseCache;
+  #getSortedAllWidgetsReverse(): TuiWidgetEntity[] {
+    const all = [...this.#widgets, ...this.#collectPortalWidgets()];
+    this.#sortedAllReverseCache = all.toReversed().toSorted((a, b) => b.zIndex - a.zIndex);
+    return this.#sortedAllReverseCache;
   }
 
   #deepHitTest(widget: TuiWidgetEntity, x: number, y: number): TuiWidgetEntity {
@@ -274,6 +299,33 @@ export class TuiScene implements Entity {
     }
 
     return parseColor(color);
+  }
+
+  #collectPortalWidgets(): TuiWidgetEntity[] {
+    const result: TuiWidgetEntity[] = [];
+    for (const widget of this.#widgets) {
+      if (!widget.visible) {
+        continue;
+      }
+
+      this.#collectPortalWidgetsRecursive(widget, result);
+    }
+
+    return result;
+  }
+
+  #collectPortalWidgetsRecursive(widget: TuiWidgetEntity, out: TuiWidgetEntity[]): void {
+    for (const child of widget.children) {
+      if (!child.visible) {
+        continue;
+      }
+
+      if (child.portal) {
+        out.push(child);
+      }
+
+      this.#collectPortalWidgetsRecursive(child, out);
+    }
   }
 }
 

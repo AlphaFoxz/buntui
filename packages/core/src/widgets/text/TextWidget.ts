@@ -107,7 +107,7 @@ export class TextWidget extends TuiWidgetEntity {
   }
 
   override get zIndex(): number {
-    return this.#style.styleZIndex;
+    return this.getZIndexOverride() ?? this.#style.styleZIndex;
   }
 
   get value() {

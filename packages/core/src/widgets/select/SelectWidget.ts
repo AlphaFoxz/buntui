@@ -73,6 +73,7 @@ export class SelectWidget extends InteractiveWidget {
   #label: string;
   #borderStyle: number;
   #opened = false;
+  #previousZIndex = 0;
   #hoveredIndex = -1;
   #focusedIndex = -1;
   #scrollOffset = 0;
@@ -368,10 +369,6 @@ export class SelectWidget extends InteractiveWidget {
     Object.assign(this.#rect, rect);
   }
 
-  override get zIndex(): number {
-    return this.#opened ? 999 : 0;
-  }
-
   override containsPoint(x: number, y: number): boolean {
     const {x: rx, y: ry, width: rw, height: rh} = this.#rect;
     if (x >= rx && x < rx + rw && y >= ry && y < ry + rh) {
@@ -628,11 +625,14 @@ export class SelectWidget extends InteractiveWidget {
   }
 
   #openDropdown(): void {
-    if (this.#options.length === 0) {
+    if (this.#options.length === 0 || this.#opened) {
       return;
     }
 
     this.#opened = true;
+    this.#previousZIndex = this.zIndex;
+    this.setPortal(true);
+    this.setZIndex(100);
     this.#focusedIndex = this.#selectedIndex();
     if (this.#focusedIndex < 0 && this.#options.length > 0) {
       this.#focusedIndex = 0;
@@ -643,7 +643,13 @@ export class SelectWidget extends InteractiveWidget {
   }
 
   #close(): void {
+    if (!this.#opened) {
+      return;
+    }
+
     this.#opened = false;
+    this.setPortal(false);
+    this.setZIndex(this.#previousZIndex);
     this.#hoveredIndex = -1;
     this.#scrollOffset = 0;
     this.dispatch('close', undefined);

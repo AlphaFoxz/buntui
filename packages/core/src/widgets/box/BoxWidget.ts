@@ -234,7 +234,7 @@ export class BoxWidget extends TuiWidgetEntity {
   }
 
   override get zIndex(): number {
-    return this.#style.styleZIndex;
+    return this.getZIndexOverride() ?? this.#style.styleZIndex;
   }
 
   // -- Update methods --

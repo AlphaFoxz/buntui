@@ -6,7 +6,10 @@ import {TuiWidgetEntity} from '../../../widgets/TuiWidgetEntity';
 
 class StubWidget extends TuiWidgetEntity {
   _zIndex = 0;
-  override emitDrawCommands(_buf: DrawListBuffer): void {}
+  emitCommandsCalled = false;
+  override emitDrawCommands(_buf: DrawListBuffer): void {
+    this.emitCommandsCalled = true;
+  }
   override containsPoint(x: number, y: number): boolean {
     return x >= this._rect.x && x < this._rect.x + this._rect.width
       && y >= this._rect.y && y < this._rect.y + this._rect.height;
@@ -25,6 +28,13 @@ class StubWidget extends TuiWidgetEntity {
   }
 
   _rect: {x: number; y: number; width: number; height: number} = {x: 0, y: 0, width: 10, height: 5};
+}
+
+class StubContainer extends StubWidget {
+  override emitDrawCommands(buf: DrawListBuffer): void {
+    this.emitCommandsCalled = true;
+    this.renderChildren(buf);
+  }
 }
 
 function createWidget(rect?: {x?: number; y?: number; width?: number; height?: number; zIndex?: number}): StubWidget {
@@ -192,6 +202,39 @@ describe('hitTest', () => {
     const result = scene.hitTest(mouseEvent(5, 5));
     expect(result).toBeUndefined();
   });
+
+  it('finds portal widget outside parent bounds', () => {
+    const scene = new TuiScene();
+    const container = new StubContainer();
+    container._rect = {x: 0, y: 0, width: 10, height: 5};
+    scene.mount(container);
+
+    const portalChild = new StubWidget();
+    portalChild._rect = {x: 0, y: 5, width: 10, height: 5};
+    portalChild._zIndex = 10;
+    portalChild.setPortal(true);
+    container.addChild(portalChild);
+
+    expect(scene.hitTest(mouseEvent(5, 7))).toBe(portalChild);
+  });
+
+  it('portal widget with higher zIndex wins hitTest over parent siblings', () => {
+    const scene = new TuiScene();
+    const container = new StubContainer();
+    container._rect = {x: 0, y: 0, width: 10, height: 5};
+    scene.mount(container);
+
+    const sibling = createWidget({x: 0, y: 0, width: 10, height: 10, zIndex: 5});
+    scene.mount(sibling);
+
+    const portalChild = new StubWidget();
+    portalChild._rect = {x: 0, y: 0, width: 10, height: 10};
+    portalChild._zIndex = 10;
+    portalChild.setPortal(true);
+    container.addChild(portalChild);
+
+    expect(scene.hitTest(mouseEvent(5, 7))).toBe(portalChild);
+  });
 });
 
 describe('clearWidgets', () => {
@@ -331,5 +374,306 @@ describe('update', () => {
     scene.mount(widget);
     scene.update(16);
     expect(order).toEqual(['tick', 'widget']);
+  });
+});
+
+describe('portal rendering', () => {
+  it('portal child is hoisted to scene level rendering', () => {
+    const scene = new TuiScene();
+    const container = new StubContainer();
+    const portalChild = new StubWidget();
+    portalChild.setPortal(true);
+    container.addChild(portalChild);
+    scene.mount(container);
+
+    const buf = {
+      setBackground: () => {},
+      setSynchronizedUpdate: () => {},
+      hideCursor: () => {},
+    } as unknown as DrawListBuffer;
+    scene.emitDrawCommands(buf);
+
+    expect(portalChild.emitCommandsCalled).toBe(true);
+  });
+
+  it('non-portal child renders normally via parent renderChildren', () => {
+    const scene = new TuiScene();
+    const container = new StubContainer();
+    const normalChild = new StubWidget();
+    container.addChild(normalChild);
+    scene.mount(container);
+
+    const buf = {
+      setBackground: () => {},
+      setSynchronizedUpdate: () => {},
+      hideCursor: () => {},
+    } as unknown as DrawListBuffer;
+    scene.emitDrawCommands(buf);
+
+    expect(normalChild.emitCommandsCalled).toBe(true);
+  });
+
+  it('portal child is not rendered inline by parent renderChildren', () => {
+    const container = new StubContainer();
+    const portalChild = new StubWidget();
+    portalChild.setPortal(true);
+    container.addChild(portalChild);
+
+    const buf = {} as DrawListBuffer;
+    container.emitDrawCommands(buf);
+
+    expect(portalChild.emitCommandsCalled).toBe(false);
+  });
+
+  it('portal toggle reverts to inline rendering', () => {
+    const scene = new TuiScene();
+    const container = new StubContainer();
+    const child = new StubWidget();
+    child.setPortal(true);
+    container.addChild(child);
+    scene.mount(container);
+
+    const buf = {
+      setBackground: () => {},
+      setSynchronizedUpdate: () => {},
+      hideCursor: () => {},
+    } as unknown as DrawListBuffer;
+    scene.emitDrawCommands(buf);
+    expect(child.emitCommandsCalled).toBe(true);
+
+    child.emitCommandsCalled = false;
+    child.setPortal(false);
+    scene.emitDrawCommands(buf);
+    expect(child.emitCommandsCalled).toBe(true);
+  });
+
+  it('portal widget renders with zIndex sort order', () => {
+    const scene = new TuiScene();
+    const background = new StubWidget();
+    background._zIndex = 0;
+    const portalWidget = new StubWidget();
+    portalWidget.setPortal(true);
+    portalWidget._zIndex = 10;
+    const container = new StubContainer();
+    container.addChild(portalWidget);
+    scene.mount(background);
+    scene.mount(container);
+
+    const emitOrder: number[] = [];
+    background.emitDrawCommands = () => { emitOrder.push(background._zIndex); };
+    portalWidget.emitDrawCommands = () => { emitOrder.push(portalWidget._zIndex); };
+
+    const buf = {
+      setBackground: () => {},
+      setSynchronizedUpdate: () => {},
+      hideCursor: () => {},
+    } as unknown as DrawListBuffer;
+    scene.emitDrawCommands(buf);
+
+    expect(emitOrder).toEqual([0, 10]);
+  });
+
+  it('nested portals are both hoisted', () => {
+    const scene = new TuiScene();
+    const container = new StubContainer();
+    const innerPortal = new StubWidget();
+    innerPortal.setPortal(true);
+    const outerPortal = new StubContainer();
+    outerPortal.setPortal(true);
+    outerPortal.addChild(innerPortal);
+    container.addChild(outerPortal);
+    scene.mount(container);
+
+    const buf = {
+      setBackground: () => {},
+      setSynchronizedUpdate: () => {},
+      hideCursor: () => {},
+    } as unknown as DrawListBuffer;
+    scene.emitDrawCommands(buf);
+
+    expect(outerPortal.emitCommandsCalled).toBe(true);
+    expect(innerPortal.emitCommandsCalled).toBe(true);
+  });
+
+  it('invisible portal widget is not collected', () => {
+    const scene = new TuiScene();
+    const container = new StubContainer();
+    const portalChild = new StubWidget();
+    portalChild.setPortal(true);
+    portalChild.setVisible(false);
+    container.addChild(portalChild);
+    scene.mount(container);
+
+    const buf = {
+      setBackground: () => {},
+      setSynchronizedUpdate: () => {},
+      hideCursor: () => {},
+    } as unknown as DrawListBuffer;
+    scene.emitDrawCommands(buf);
+
+    expect(portalChild.emitCommandsCalled).toBe(false);
+  });
+
+  it('deeply nested portal is collected', () => {
+    const scene = new TuiScene();
+    const root = new StubContainer();
+    const mid = new StubContainer();
+    const deepPortal = new StubWidget();
+    deepPortal.setPortal(true);
+    mid.addChild(deepPortal);
+    root.addChild(mid);
+    scene.mount(root);
+
+    const buf = {
+      setBackground: () => {},
+      setSynchronizedUpdate: () => {},
+      hideCursor: () => {},
+    } as unknown as DrawListBuffer;
+    scene.emitDrawCommands(buf);
+
+    expect(deepPortal.emitCommandsCalled).toBe(true);
+  });
+
+  it('portal widget remains in parent-child tree for event bubbling', () => {
+    const scene = new TuiScene();
+    const container = new StubContainer();
+    const portalChild = new StubWidget();
+    portalChild.setPortal(true);
+    container.addChild(portalChild);
+    scene.mount(container);
+
+    let parentReceived = false;
+    container.on('click', () => { parentReceived = true; });
+    portalChild.dispatch('click', undefined);
+    expect(parentReceived).toBe(true);
+  });
+
+  it('unmounted portal is not collected', () => {
+    const scene = new TuiScene();
+    const container = new StubContainer();
+    const portalChild = new StubWidget();
+    portalChild.setPortal(true);
+    container.addChild(portalChild);
+    container.removeChild(portalChild);
+    scene.mount(container);
+
+    const buf = {
+      setBackground: () => {},
+      setSynchronizedUpdate: () => {},
+      hideCursor: () => {},
+    } as unknown as DrawListBuffer;
+    scene.emitDrawCommands(buf);
+
+    expect(portalChild.emitCommandsCalled).toBe(false);
+  });
+
+  it('portal child of invisible scene-level widget is not rendered', () => {
+    const scene = new TuiScene();
+    const container = new StubContainer();
+    container.setVisible(false);
+    const portalChild = new StubWidget();
+    portalChild.setPortal(true);
+    container.addChild(portalChild);
+    scene.mount(container);
+
+    const buf = {
+      setBackground: () => {},
+      setSynchronizedUpdate: () => {},
+      hideCursor: () => {},
+    } as unknown as DrawListBuffer;
+    scene.emitDrawCommands(buf);
+
+    expect(portalChild.emitCommandsCalled).toBe(false);
+  });
+
+  it('portal child of invisible intermediate widget is not rendered', () => {
+    const scene = new TuiScene();
+    const root = new StubContainer();
+    const mid = new StubContainer();
+    mid.setVisible(false);
+    const portalChild = new StubWidget();
+    portalChild.setPortal(true);
+    mid.addChild(portalChild);
+    root.addChild(mid);
+    scene.mount(root);
+
+    const buf = {
+      setBackground: () => {},
+      setSynchronizedUpdate: () => {},
+      hideCursor: () => {},
+    } as unknown as DrawListBuffer;
+    scene.emitDrawCommands(buf);
+
+    expect(portalChild.emitCommandsCalled).toBe(false);
+  });
+
+  it('showing parent makes portal child render again', () => {
+    const scene = new TuiScene();
+    const container = new StubContainer();
+    container.setVisible(false);
+    const portalChild = new StubWidget();
+    portalChild.setPortal(true);
+    container.addChild(portalChild);
+    scene.mount(container);
+
+    const buf = {
+      setBackground: () => {},
+      setSynchronizedUpdate: () => {},
+      hideCursor: () => {},
+    } as unknown as DrawListBuffer;
+    scene.emitDrawCommands(buf);
+    expect(portalChild.emitCommandsCalled).toBe(false);
+
+    container.setVisible(true);
+    portalChild.emitCommandsCalled = false;
+    scene.emitDrawCommands(buf);
+    expect(portalChild.emitCommandsCalled).toBe(true);
+  });
+
+  it('v-show: invisible parent keeps portal child in tree with lifecycle intact', () => {
+    const scene = new TuiScene();
+    const container = new StubContainer();
+    const portalChild = new StubWidget();
+    portalChild.setPortal(true);
+    container.addChild(portalChild);
+    scene.mount(container);
+
+    expect(portalChild.referenceCount).toBe(1);
+    expect(container.children).toContain(portalChild);
+    expect(portalChild.parent).toBe(container);
+
+    container.setVisible(false);
+
+    expect(portalChild.referenceCount).toBe(1);
+    expect(container.children).toContain(portalChild);
+    expect(portalChild.parent).toBe(container);
+
+    let parentReceived = false;
+    container.on('click', () => { parentReceived = true; });
+    portalChild.dispatch('click', undefined);
+    expect(parentReceived).toBe(true);
+  });
+
+  it('v-if: removeChild detaches portal child and it is not collected', () => {
+    const scene = new TuiScene();
+    const container = new StubContainer();
+    const portalChild = new StubWidget();
+    portalChild.setPortal(true);
+    container.addChild(portalChild);
+    scene.mount(container);
+
+    expect(portalChild.referenceCount).toBe(1);
+    container.removeChild(portalChild);
+    expect(portalChild.referenceCount).toBe(0);
+    expect(container.children).not.toContain(portalChild);
+    expect(portalChild.parent).toBeNull();
+
+    const buf = {
+      setBackground: () => {},
+      setSynchronizedUpdate: () => {},
+      hideCursor: () => {},
+    } as unknown as DrawListBuffer;
+    scene.emitDrawCommands(buf);
+    expect(portalChild.emitCommandsCalled).toBe(false);
   });
 });

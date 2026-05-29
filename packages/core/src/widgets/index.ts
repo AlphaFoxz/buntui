@@ -26,3 +26,5 @@ export {createTableWidget, TableWidget} from './table/TableWidget';
 export type {TableWidgetOptions, TableColumn, TableRow} from './table/types';
 export {createSelectWidget, SelectWidget} from './select/SelectWidget';
 export type {SelectWidgetOptions, SelectOption} from './select/types';
+export {createModalWidget, ModalWidget} from './modal/ModalWidget';
+export type {ModalWidgetOptions} from './modal/types';

@@ -95,7 +95,7 @@ class HmrErrorOverlayWidget extends TuiWidgetEntity {
   }
 
   override get zIndex(): number {
-    return 9999;
+    return this.getZIndexOverride() ?? 9999;
   }
 
   override get rect(): TuiWidgetRect {
