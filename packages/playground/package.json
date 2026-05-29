@@ -1,7 +1,7 @@
 {
     "name": "@buntui/playground",
     "private": true,
-    "version": "0.1.0-alpha.2",
+    "version": "0.1.0-alpha.3",
     "scripts": {
         "dev": "bun --preload @buntui/compiler/vue-plugin src/dev.ts",
         "build": "bun run ./scripts/build.ts --name=main.bunjs"
