@@ -267,6 +267,7 @@ pub fn unicodeToKeyName(unicode: u16) []const u8 {
     switch (unicode) {
         0x08 => return "Backspace",
         0x09 => return "Tab",
+        0x0A => return "Enter",
         0x0D => return "Enter",
         0x1B => return "Escape",
         0x20 => return " ",

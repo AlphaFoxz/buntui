@@ -299,6 +299,9 @@ const Parser = struct {
         if (unicode_char == 0x08 and virtual_code == 0 and !is_ctrl) {
             is_ctrl = true;
         }
+        if ((unicode_char == 0x0D or unicode_char == 0x0A) and !is_ctrl and isCtrlPhysicallyHeld()) {
+            is_ctrl = true;
+        }
 
         if (unicode_char == 0) {
             logger.logDebugFmt("特殊键 (VirtualKey: {})", .{virtual_code});

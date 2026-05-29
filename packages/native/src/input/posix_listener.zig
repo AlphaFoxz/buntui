@@ -105,6 +105,7 @@ fn keyCodeToKeyName(code: u16) []const u8 {
     switch (code) {
         0x08 => return "Backspace",
         0x09 => return "Tab",
+        0x0A => return "Enter",
         0x0D => return "Enter",
         0x1B => return "Escape",
         0x20 => return " ",
@@ -183,6 +184,12 @@ const Parser = struct {
                 } else if (byte == 0x0D) {
                     emitKeyboardEvent(
                         buildModifiers(false, false, false, false, false),
+                        byte,
+                        "Enter",
+                    );
+                } else if (byte == 0x0A) {
+                    emitKeyboardEvent(
+                        buildModifiers(false, false, true, false, false),
                         byte,
                         "Enter",
                     );
@@ -820,12 +827,13 @@ test "Parser: Ctrl+letter (0x01-0x07) produces Ctrl modifier" {
     }
 }
 
-test "Parser: Ctrl+J (0x0A) is NOT Enter, produces Ctrl+J" {
+test "Parser: raw 0x0A (LF) is recognized as Ctrl+Enter, not Ctrl+J" {
     event_bus.event_bus_setup();
     defer event_bus.event_bus_stats();
 
     var parser: Parser = .{};
-    // 0x0A = Ctrl+J (line feed), should be distinct from Enter (0x0D)
+    // 0x0A = LF. Intercepted before Ctrl+letter handler so Ctrl+Enter
+    // is not misidentified as Ctrl+J. Real Ctrl+J arrives via modifyOtherKeys.
     parser.processByte(0x0A);
 
     const slot = event_bus.event_bus_poll();
@@ -835,7 +843,7 @@ test "Parser: Ctrl+J (0x0A) is NOT Enter, produces Ctrl+J" {
         const key_len: u8 = @intCast(@min(s[3], 236));
         const key = s[4 .. 4 + key_len];
         try std.testing.expect(modifiers & payloads.MOD_CTRL != 0);
-        try std.testing.expectEqualStrings("J", key);
+        try std.testing.expectEqualStrings("Enter", key);
         event_bus.event_bus_commit();
     }
 }
