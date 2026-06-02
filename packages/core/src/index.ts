@@ -1,4 +1,5 @@
 export {createApp} from './app';
+export type {TuiSFCModule} from './app';
 export * as widgets from './widgets';
 export {
   createBox,

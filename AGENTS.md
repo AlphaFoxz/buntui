@@ -9,7 +9,7 @@
 | Task | Command |
 |---|---|
 | Full build (sync versions + topological build) | `bun run build` |
-| Dev server (playground + HMR) | `bun run dev` |
+| Dev server (playground + HMR) | `bun run dev <app-name>` (e.g., `bun run dev demo`) |
 | Run all TS tests | `bun run test:ts` |
 | Run all Zig tests | `bun run test:zig` |
 | Run a single TS test | `bun test packages/core/src/widgets/box/__tests__/BoxWidget.test.ts` |
@@ -36,7 +36,7 @@ packages/native-platforms/ Pre-built binaries: win32-x64, linux-x64, darwin-x64,
 packages/core/            TS runtime: widget system, FFI bindings, event bus, draw list
 packages/extensions/      Extra widgets with sub-path exports (matrix, snake, etc.)
 packages/compiler/        SFC compiler (.vue → TS) using Vue compiler-core
-packages/playground/      Demo app (bun --preload @buntui/compiler/vue-plugin src/dev.ts)
+packages/playground/      Multi-app playground: `bun run dev <app-name>` (apps: demo, video-player)
 packages/buntui/          Umbrella package re-exporting core + extensions
 packages/create-buntui/   CLI scaffolding tool (bunx create-buntui)
 ```

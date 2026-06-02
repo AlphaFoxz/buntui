@@ -5,7 +5,7 @@
     "scripts": {
         "build": "bun run sync && bun run ./scripts/build.ts",
         "check": "bunx xo --fix --config ./xo.config.ts",
-        "dev": "bun run --cwd ./packages/playground dev",
+        "dev": "bun --cwd ./packages/playground --preload @buntui/compiler/vue-plugin src/dev.ts",
         "cli": "bun --cwd ./packages/create-buntui dev",
         "sync": "bun run ./scripts/sync-version.ts",
         "test": "bun test:zig && bun test:ts",

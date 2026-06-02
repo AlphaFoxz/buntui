@@ -4,7 +4,7 @@
     "version": "0.1.0-alpha.3",
     "scripts": {
         "dev": "bun --preload @buntui/compiler/vue-plugin src/dev.ts",
-        "build": "bun run ./scripts/build.ts --name=main.bunjs"
+        "build": "bun run ./scripts/build.ts"
     },
     "dependencies": {
         "@vue/reactivity": "^3.5.35",
