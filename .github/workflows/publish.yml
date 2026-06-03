@@ -93,7 +93,7 @@ jobs:
 
             - name: Build packages (skip native — binaries are pre-built)
               run: |
-                  for pkg in core extensions buntui compiler; do
+                  for pkg in core extensions buntui compiler cli; do
                     echo "::group::Building $pkg"
                     bun run --cwd "packages/$pkg" build
                     echo "::endgroup::"
@@ -155,8 +155,8 @@ jobs:
 
             - name: Verify build artifacts
               run: |
-                  for pkg in packages/core packages/extensions packages/compiler packages/buntui packages/create-buntui; do
-                    if [ ! -f "$pkg/dist/index.js" ] && [ ! -f "$pkg/dist/index.d.ts" ]; then
+                  for pkg in packages/core packages/extensions packages/compiler packages/buntui packages/cli packages/create-buntui; do
+                    if [ ! -f "$pkg/dist/index.js" ] && [ ! -f "$pkg/dist/buntui.js" ] && [ ! -f "$pkg/dist/index.d.ts" ]; then
                       echo "ERROR: Missing build output in $pkg/dist/"
                       exit 1
                     fi
@@ -218,6 +218,12 @@ jobs:
             - name: Publish buntui
               run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
               working-directory: packages/buntui
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Publish @buntui/cli
+              run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
+              working-directory: packages/cli
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
