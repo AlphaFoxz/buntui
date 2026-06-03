@@ -36,13 +36,13 @@ function getPlatformDefs(): PlatformDef[] {
 function getBuildScriptDllNames(): string[] {
   const paths = [
     path.join(ROOT, 'my-buntui-app', 'scripts', 'build.ts'),
-    path.join(ROOT, 'packages', 'create-buntui', 'templates', 'basic', 'scripts', 'build.ts'),
+    path.join(ROOT, 'packages', 'cli', 'src', 'lib', 'native-binary.ts'),
   ];
   const names: string[] = [];
   for (const p of paths) {
     if (!fs.existsSync(p)) continue;
     const src = fs.readFileSync(p, 'utf8');
-    const match = src.match(/buntui\.\$\{getBinaryExt\(\)\}/);
+    const match = src.match(/buntui\.\$\{ext\}/);
     if (match) names.push('buntui.{ext}');
   }
 
@@ -126,7 +126,7 @@ describe('native distribution consistency', () => {
     }
   });
 
-  it('create-buntui template package.json declares @buntui/native', () => {
+  it('create-buntui template package.json declares @buntui/cli', () => {
     const templatePkgPath = path.join(
       ROOT,
       'packages',
@@ -140,26 +140,25 @@ describe('native distribution consistency', () => {
     const cleaned = src.replace(/\{\{name\}\}/g, 'test-app');
     const pkg = JSON.parse(cleaned);
     expect(
-      pkg.dependencies?.['@buntui/native'],
-      'template must declare @buntui/native dependency',
+      pkg.dependencies?.['@buntui/cli'],
+      'template must declare @buntui/cli dependency',
     ).toBeDefined();
   });
 
-  it('create-buntui template build script imports @buntui/native', () => {
-    const templateBuildPath = path.join(
+  it('cli native-binary.ts copies buntui.{ext} to dist', () => {
+    const cliNativePath = path.join(
       ROOT,
       'packages',
-      'create-buntui',
-      'templates',
-      'basic',
-      'scripts',
-      'build.ts',
+      'cli',
+      'src',
+      'lib',
+      'native-binary.ts',
     );
-    if (!fs.existsSync(templateBuildPath)) return;
-    const src = fs.readFileSync(templateBuildPath, 'utf8');
+    if (!fs.existsSync(cliNativePath)) return;
+    const src = fs.readFileSync(cliNativePath, 'utf8');
     expect(
-      src.includes("from '@buntui/native'"),
-      'template build.ts must import getBinaryPath from @buntui/native',
+      src.includes('buntui.'),
+      'cli native-binary.ts must reference buntui binary name',
     ).toBe(true);
   });
 

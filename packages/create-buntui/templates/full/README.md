@@ -24,16 +24,18 @@ The built output is in `dist/`.
 
 ```
 src/
-  main.ts              Production entry
-  dev.ts               Dev server with HMR
-  App.vue              Root SFC with tabbed widget demos
-  components/
-    BoxDemo.vue        Box layout demos
-    ButtonDemo.vue     Button interaction demos
-    InputDemo.vue      Text input demos
-    CheckboxDemo.vue   Checkbox toggle demos
-    SwitchDemo.vue     Switch toggle demos
-    ProgressDemo.vue   Progress bar demos
-    RadioDemo.vue      Radio group selection demos
-    TextDemo.vue       Text display demos
+  apps/main/             App entry point
+    App.vue              Root SFC with tabbed widget demos
+    main.ts              Production & dev entry
+    components/
+      BoxDemo.vue        Box layout demos
+      ButtonDemo.vue     Button interaction demos
+      InputDemo.vue      Text input demos
+      CheckboxDemo.vue   Checkbox toggle demos
+      SwitchDemo.vue     Switch toggle demos
+      ProgressDemo.vue   Progress bar demos
+      RadioDemo.vue      Radio group selection demos
+      TextDemo.vue       Text display demos
+  shared/
+    runApp.ts            App bootstrap helper
 ```

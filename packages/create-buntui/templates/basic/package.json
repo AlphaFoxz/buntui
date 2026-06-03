@@ -3,12 +3,12 @@
     "version": "0.0.1",
     "type": "module",
     "scripts": {
-        "dev": "bun --preload @buntui/compiler/vue-plugin src/dev.ts",
-        "build": "bun run ./scripts/build.ts"
+        "dev": "buntui dev",
+        "build": "buntui build"
     },
     "dependencies": {
+        "@buntui/cli": "{{version}}",
         "@buntui/core": "{{version}}",
-        "@buntui/compiler": "{{version}}",
         "@buntui/native": "{{version}}",
         "@vue/reactivity": "^3.5.34"
     },

@@ -1,0 +1,31 @@
+{
+    "name": "@buntui/cli",
+    "version": "0.1.0-alpha.3",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AlphaFoxz/buntui.git",
+        "directory": "packages/cli"
+    },
+    "bin": {
+        "buntui": "./dist/buntui.js"
+    },
+    "files": [
+        "dist/"
+    ],
+    "scripts": {
+        "build": "bun run ./scripts/build.ts"
+    },
+    "dependencies": {
+        "@buntui/compiler": "workspace:*",
+        "@buntui/core": "workspace:*",
+        "@buntui/extensions": "workspace:*",
+        "@vue/reactivity": "^3.5.35",
+        "commander": "^15.0.0"
+    },
+    "devDependencies": {
+        "@buntui/native": "workspace:*",
+        "@types/bun": "^1.3.14",
+        "vue": "^3.5.35",
+        "vue-tsc": "^3.3.3"
+    }
+}

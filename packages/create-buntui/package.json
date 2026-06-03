@@ -7,23 +7,22 @@
         "directory": "packages/create-buntui"
     },
     "bin": {
-        "create-buntui": "./dist/index.js"
+        "create-buntui": "./dist/main.js"
     },
     "files": [
         "dist/",
         "templates/"
     ],
     "scripts": {
-        "build": "bun run ./scripts/build.ts",
-        "dev": "bun --preload @buntui/compiler/vue-plugin ./src/index.ts"
+        "dev": "buntui dev",
+        "build": "buntui build"
     },
     "dependencies": {
-        "@buntui/core": "workspace:*"
+        "@buntui/cli": "workspace:*",
+        "@buntui/core": "workspace:*",
+        "@vue/reactivity": "^3.5.35"
     },
     "devDependencies": {
-        "@buntui/compiler": "workspace:*",
-        "@buntui/native": "workspace:*",
-        "@vue/reactivity": "^3.5.35",
         "@types/bun": "^1.3.14"
     }
 }

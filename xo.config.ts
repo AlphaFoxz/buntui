@@ -95,6 +95,16 @@ const expose: FlatXoConfig = [
       'unicorn/no-process-exit': 'off',
     },
   },
+  {
+    files: ['packages/cli/src/**/*.ts'],
+    rules: {
+      'unicorn/no-process-exit': 'off',
+      '@typescript-eslint/no-unsafe-type-assertion': 'off',
+      'require-unicode-regexp': 'off',
+      'import-x/no-unassigned-import': 'off',
+      'import-x/order': 'off',
+    },
+  },
 ];
 
 export default expose;

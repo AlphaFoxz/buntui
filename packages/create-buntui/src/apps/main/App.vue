@@ -128,9 +128,9 @@
 <script setup lang="ts">
 import process from 'node:process'
 import { ref, computed } from '@vue/reactivity'
-import { getApp, getDefaultProjectName } from './app-context'
-import { scaffoldCopy, scaffoldCleanup, type TemplateName } from './scaffold'
-import { validateProjectName } from './validate'
+import { getApp, getDefaultProjectName } from '../../shared/app-context'
+import { scaffoldCopy, scaffoldCleanup, type TemplateName } from '../../shared/scaffold'
+import { validateProjectName } from '../../shared/validate'
 import { LOGGER } from '@buntui/core'
 
 const TEMPLATE_NAMES: TemplateName[] = ['basic', 'sfc', 'full']

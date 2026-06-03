@@ -22,7 +22,9 @@ The built output is in `dist/`.
 
 ```
 src/
-  main.ts      Production entry
-  dev.ts       Dev server with HMR
-  App.vue      Root SFC component
+  apps/main/     App entry point
+    App.vue      Root SFC component
+    main.ts      Production & dev entry
+  shared/
+    runApp.ts    App bootstrap helper
 ```
