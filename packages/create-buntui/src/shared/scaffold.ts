@@ -4,8 +4,23 @@ import {readPackageVersion} from './utils';
 
 export type TemplateName = 'basic' | 'sfc' | 'full';
 
+function resolveSelfResource(...segments: string[]): string {
+  const candidates = [
+    path.resolve(import.meta.dir, '..', '..', ...segments),
+    path.resolve(import.meta.dir, '..', ...segments),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+
+  return candidates[0]!;
+}
+
 function getTemplateDir(template: TemplateName): string {
-  return path.resolve(import.meta.dir, '..', '..', 'templates', template);
+  return resolveSelfResource('templates', template);
 }
 
 function copyRecursive(srcDir: string, outDir: string, variables: Record<string, string>): void {
@@ -46,7 +61,7 @@ export function scaffoldCopy(
 
   fs.mkdirSync(outputDir, {recursive: true});
 
-  const selfVersion = readPackageVersion(path.resolve(import.meta.dir, '..', '..', 'package.json'));
+  const selfVersion = readPackageVersion(resolveSelfResource('package.json'));
   const variables: Record<string, string> = {
     name: projectName,
     version: selfVersion ?? 'latest',
