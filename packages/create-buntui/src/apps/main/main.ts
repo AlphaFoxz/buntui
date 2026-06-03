@@ -5,7 +5,7 @@ import App from './App.vue';
 
 export const ENTRY = 'App.vue';
 
-export function run() {
+export function run(options?: {logFilePath?: string}) {
   const args = process.argv.slice(2);
   const defaultName = args[0];
 
@@ -13,7 +13,7 @@ export function run() {
     process.exit(0);
   });
 
-  const app = createApp({logLevel: 'info', clearLog: true});
+  const app = createApp({logLevel: 'info', clearLog: true, logFilePath: options?.logFilePath});
   setApp(app);
   setDefaultProjectName(defaultName);
   app.createScene(App, {visible: true});

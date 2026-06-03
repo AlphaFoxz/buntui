@@ -2,6 +2,7 @@ import {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import {TUI_CONTEXT_INSTANCE} from '../extern/app/TuiContext';
 import type {TuiScene} from '../extern/app/TuiScene';
 import {LOGGER} from '../common/logger';
+import {nextTick, cancelTick} from '../platform/next-tick';
 import type {TuiBackend} from './TuiBackend';
 
 export type RenderLoopOptions = {
@@ -19,7 +20,7 @@ export class RenderLoop {
   readonly #tickInterval: number;
   readonly #renderInterval: number;
   #running = false;
-  #immediateId: ReturnType<typeof setImmediate> | undefined;
+  #immediateId: ReturnType<typeof nextTick> | undefined;
   #lastTime = 0;
   #accumulator = 0;
   #lastRenderTime = 0;
@@ -71,16 +72,16 @@ export class RenderLoop {
         LOGGER.logError(`Render loop error: ${formatError(error)}`);
       }
 
-      this.#immediateId = setImmediate(loop);
+      this.#immediateId = nextTick(loop);
     };
 
-    this.#immediateId = setImmediate(loop);
+    this.#immediateId = nextTick(loop);
   }
 
   stop(): void {
     this.#running = false;
     if (this.#immediateId !== undefined) {
-      clearImmediate(this.#immediateId);
+      cancelTick(this.#immediateId);
       this.#immediateId = undefined;
     }
   }

@@ -89,13 +89,13 @@ describe('native distribution consistency', () => {
     }
   });
 
-  it('ffi.ts binaryName matches bun:ffi suffix', () => {
+  it('ffi-native.ts binaryName matches bun:ffi suffix', () => {
     const ffiSrc = fs.readFileSync(
-      path.join(ROOT, 'packages', 'core', 'src', 'utils', 'ffi.ts'),
+      path.join(ROOT, 'packages', 'core', 'src', 'utils', 'ffi-native.ts'),
       'utf8',
     );
     const match = ffiSrc.match(/`buntui\.\$\{suffix\}`/);
-    expect(match, 'ffi.ts binaryName should use `buntui.${suffix}`').not.toBeNull();
+    expect(match, 'ffi-native.ts binaryName should use `buntui.${suffix}`').not.toBeNull();
   });
 
   it('native/index.ts binaryName matches bun:ffi suffix', () => {
@@ -106,7 +106,7 @@ describe('native distribution consistency', () => {
 
   it('build scripts produce filename that resolveNativeLibPath can find via Bun.main', () => {
     const ffiSrc = fs.readFileSync(
-      path.join(ROOT, 'packages', 'core', 'src', 'utils', 'ffi.ts'),
+      path.join(ROOT, 'packages', 'core', 'src', 'utils', 'ffi-native.ts'),
       'utf8',
     );
     const runtimeNameMatch = ffiSrc.match(/`buntui\.\$\{suffix\}`/);

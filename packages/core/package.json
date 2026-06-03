@@ -16,6 +16,14 @@
         "./global": {
             "types": "./dist/global.d.ts",
             "default": "./dist/global.d.ts"
+        },
+        "./platform": {
+            "browser": {
+                "types": "./dist/platform/browser.d.ts",
+                "default": "./dist/platform/browser.js"
+            },
+            "types": "./dist/platform/native.d.ts",
+            "default": "./dist/platform/native.js"
         }
     },
     "files": [

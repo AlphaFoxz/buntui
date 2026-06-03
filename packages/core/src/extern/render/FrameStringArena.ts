@@ -1,36 +1,35 @@
-import {type Pointer, ptr} from 'bun:ffi';
+import {ptr} from '../../platform/pointer';
 import {ptrOffset} from '../../utils/pointer';
 
 export class SharedStringArena {
   #size: number = 1024 * 1024;
   #buffer: Uint8Array;
-  #ptr: Pointer;
   #cursor = 0;
   readonly #encoder = new TextEncoder('utf-8');
   constructor(bytes?: number) {
     this.#size = bytes ?? this.#size;
     this.#buffer = new Uint8Array(this.#size);
-    this.#ptr = ptr(this.#buffer);
   }
 
   get cursor() {
     return this.#cursor;
   }
 
+  get buffer() {
+    return this.#buffer;
+  }
+
   swap(other: SharedStringArena) {
     const newBuffer = other.#buffer;
     const newSize = other.#size;
-    const newPtr = other.#ptr;
     const newCursor = other.#cursor;
 
     other.#buffer = this.#buffer;
     other.#size = this.#size;
-    other.#ptr = this.#ptr;
     other.#cursor = this.#cursor;
 
     this.#buffer = newBuffer;
     this.#size = newSize;
-    this.#ptr = newPtr;
     this.#cursor = newCursor;
   }
 
@@ -50,7 +49,8 @@ export class SharedStringArena {
 
     this.#buffer[this.#cursor + written] = 0;
 
-    const stringPtr = ptrOffset(this.#ptr, this.#cursor);
+    const basePtr = ptr(this.#buffer);
+    const stringPtr = ptrOffset(basePtr, this.#cursor);
     const stringLength = written;
 
     this.#cursor += written + 1;

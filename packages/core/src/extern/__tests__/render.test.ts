@@ -1,6 +1,7 @@
 import {it, expect} from 'bun:test';
 import {SharedStringArena, FrameStringArena} from '../render/FrameStringArena';
-import {cToString} from '../../utils/ffi';
+import {cToString} from '../../utils/ffi-native';
+import '../../platform/native';
 
 it('SharedStringArena ascii', () => {
   const arena = new SharedStringArena();

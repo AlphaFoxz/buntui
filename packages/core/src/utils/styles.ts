@@ -1,3 +1,5 @@
+import {colorToNumber} from './color-parser';
+
 export function rgbToRgba(hexRgb: number | string): number;
 export function rgbToRgba(r: number, g: number, b: number): number;
 export function rgbToRgba(rgb: {r: number; g: number; b: number}): number;
@@ -7,20 +9,25 @@ export function rgbToRgba(
   g?: number,
   b?: number,
 ): number {
-  const input = typeof color === 'number' && g !== undefined && b !== undefined
-    ? {r: color, g, b} as const
-    : color;
-
-  let n = Bun.color(input, 'number');
-  if (n === null && typeof color === 'string') {
-    n = Bun.color('#' + color, 'number');
+  if (typeof color === 'number' && g !== undefined && b !== undefined) {
+    return ((color << 24) | (g << 16) | (b << 8) | 0xFF) >>> 0;
   }
 
-  if (n === null) {
-    throw new Error('Invalid color: ' + JSON.stringify(color));
+  if (typeof color === 'number') {
+    return ((color << 8) | 0xFF) >>> 0;
   }
 
-  return ((n << 8) | 0xFF) >>> 0;
+  if (typeof color === 'string') {
+    const n = colorToNumber(color) ?? colorToNumber('#' + color);
+    if (n === undefined) {
+      throw new Error('Invalid color: ' + JSON.stringify(color));
+    }
+
+    return (((n >>> 8) << 8) | 0xFF) >>> 0;
+  }
+
+  const {r, g: gv, b: bv} = color;
+  return ((r << 24) | (gv << 16) | (bv << 8) | 0xFF) >>> 0;
 }
 
 export function withAlpha(rgbaValue: number, alpha: number): number {

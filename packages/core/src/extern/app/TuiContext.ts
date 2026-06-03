@@ -1,4 +1,4 @@
-import {type Pointer, ptr} from 'bun:ffi';
+import {ptr, type Pointer} from '../../platform/pointer';
 import {createOffsetCalculator} from '../../utils/ffi';
 import type {CStruct} from '../types';
 import TuiDataViewWrapper from '../TuiDataViewWrapper';
@@ -20,13 +20,12 @@ const OFFSETS = Object.freeze({
   debugMode: OFFSET_COUNTER.mark('u8'),
 });
 export class TuiContext implements CStruct {
-  readonly #ptr: Pointer;
+  readonly #buffer: ArrayBuffer;
   readonly #dataView: TuiDataViewWrapper;
 
   constructor() {
-    const buffer = new ArrayBuffer(OFFSET_COUNTER.currentOffset);
-    this.#ptr = ptr(buffer);
-    const dataView = new TuiDataViewWrapper(buffer);
+    this.#buffer = new ArrayBuffer(OFFSET_COUNTER.currentOffset);
+    const dataView = new TuiDataViewWrapper(this.#buffer);
     this.#dataView = dataView;
     dataView.setBigUint64(OFFSETS.tick, 0n, true);
     dataView.setUint16(OFFSETS.x, 0, true);
@@ -37,8 +36,8 @@ export class TuiContext implements CStruct {
     dataView.setBool(OFFSETS.debugMode, false);
   }
 
-  get ptr() {
-    return this.#ptr;
+  get ptr(): Pointer {
+    return ptr(this.#buffer);
   }
 
   get tick() {

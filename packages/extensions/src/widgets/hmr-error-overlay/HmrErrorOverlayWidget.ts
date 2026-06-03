@@ -1,5 +1,4 @@
-import nodeBuffer from 'node:buffer';
-import nodeProcess from 'node:process';
+import process from 'node:process';
 import {
   type DrawListBuffer,
   type TuiWidgetRect,
@@ -43,8 +42,9 @@ export function mountHmrErrorOverlay(scene: Mountable, error: Error): HmrErrorOv
 }
 
 function writeToClipboard(text: string): void {
-  const encoded = nodeBuffer.Buffer.from(text, 'utf-8').toString('base64');
-  nodeProcess.stdout.write(`\u001B]52;c;${encoded}\u0007`);
+  const encoded = btoa(new TextEncoder().encode(text).reduce((s, b) => s + String.fromCodePoint(b), ''));
+  const sequence = `\u001B]52;c;${encoded}\u0007`;
+  process.stdout.write(sequence);
 }
 
 class HmrErrorOverlayWidget extends TuiWidgetEntity {

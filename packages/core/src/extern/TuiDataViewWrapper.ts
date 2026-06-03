@@ -1,4 +1,4 @@
-import {type Pointer} from 'bun:ffi';
+import type {Pointer} from '../platform/pointer';
 import {Bool} from '../utils/ffi';
 import {ptrFromNumber} from '../utils/pointer';
 

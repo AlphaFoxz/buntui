@@ -78,7 +78,12 @@ export function resolveApp(name: string | undefined, cwd?: string): AppInfo {
     return apps[0]!;
   }
 
-  console.error('Multiple apps found. Specify an app name:');
+  const main = apps.find(a => a.name === 'main');
+  if (main) {
+    return main;
+  }
+
+  console.error('Default app "main" not found. Specify an app name:');
   for (const a of apps) {
     console.error(`  - ${a.name}`);
   }

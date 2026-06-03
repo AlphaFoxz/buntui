@@ -1,6 +1,4 @@
 #!/usr/bin/env bun
-import path from 'node:path';
-import process from 'node:process';
 import {TuiEventType} from '../events/types';
 import {TUI_CONTEXT_INSTANCE} from '../extern/app/TuiContext';
 import {type LogLevel, type TuiAppOptions, type TuiSceneOptions} from '../extern/app/types';
@@ -10,18 +8,13 @@ import {EVENT_BUS} from '../events';
 import TuiScene from '../extern/app/TuiScene';
 import {setTheme as setGlobalTheme} from '../theme/provider';
 import type {TuiTheme} from '../theme/types';
+import {getNodeProcess, createBackend, getDefaultLogDir} from '../platform';
 import {FocusManager} from './FocusManager';
 import {PointerManager} from './PointerManager';
 import {RenderLoop} from './RenderLoop';
 import {type TuiBackend} from './TuiBackend';
-import {NativeBackend} from './NativeBackend';
 import {runSetup} from './scene-context';
 
-/**
- * Structural type for compiled SFC modules.
- * Uses `Record<string, unknown>` so it accepts Volar's `DefineComponent`
- * without core depending on vue.
- */
 export type TuiSFCModule = Record<string, unknown>;
 
 export class TuiApp implements Disposable {
@@ -35,15 +28,15 @@ export class TuiApp implements Disposable {
   readonly #cleanups = new Map<bigint, () => void>();
 
   constructor(options?: Partial<TuiAppOptions> & {backend?: TuiBackend}) {
-    this.#backend = options?.backend ?? new NativeBackend();
+    this.#backend = options?.backend ?? createBackend();
     const logLevel: LogLevel = options?.logLevel ?? 'info';
-    const logFileDir = options?.logFilePath ?? path.dirname(Bun.main);
+    const logFileDir = options?.logFilePath ?? getDefaultLogDir();
     const backendLogName = options?.backendLogName ?? 'buntui-backend.log';
     const frontendLogName = options?.frontendLogName ?? 'buntui-frontend.log';
     const clearLog = options?.clearLog ?? false;
     this.#backend.setupLogger(logFileDir, backendLogName, logLevel, clearLog);
     this.#debugMode = options?.debugMode ?? false;
-    void LOGGER.init({
+    LOGGER.init({
       logFileDir,
       logLevel,
       clearLog,
@@ -78,7 +71,6 @@ export class TuiApp implements Disposable {
 
     this.#focusManager.start();
 
-    // Global 'q' to quit — independent of focus state
     EVENT_BUS.on(TuiEventType.KeyboardEvent, data => {
       if (data.key === 'q' || data.key === 'Q') {
         setTimeout(() => {
@@ -114,10 +106,6 @@ export class TuiApp implements Disposable {
     this.#focusManager.blurWidget();
   }
 
-  getFocusableWidgets(): ReturnType<FocusManager['getFocusableWidgets']> {
-    return this.#focusManager.getFocusableWidgets();
-  }
-
   dispose() {
     this.#renderLoop.stop();
     this.#pointerManager.stop();
@@ -143,7 +131,7 @@ export class TuiApp implements Disposable {
 
   stop() {
     this.dispose();
-    process.exit(0);
+    getNodeProcess()?.exit(0);
   }
 
   setTheme(theme: TuiTheme): void {
@@ -204,16 +192,11 @@ export class TuiApp implements Disposable {
     this.activateScene(scene);
   }
 
-  /**
-   * Activate a scene: deactivate the current one first (blur focus,
-   * reset pointer state), then make the new scene visible and emit lifecycle.
-   */
   activateScene(scene: TuiScene) {
     if (this.#currentScene === scene) {
       return;
     }
 
-    // Deactivate old scene
     if (this.#currentScene) {
       this.#currentScene.setVisible(false);
       this.#focusManager.blurWidget();
@@ -221,7 +204,6 @@ export class TuiApp implements Disposable {
       this.#currentScene.emitLifecycle('exit');
     }
 
-    // Activate new scene
     this.#currentScene = scene;
     scene.setVisible(true);
     scene.emitLifecycle('enter');
@@ -318,11 +300,14 @@ function onUnexpectedExit(error: unknown) {
   flushConsole();
   setTimeout(() => {
     appInstance?.dispose();
-    process.exit(1);
+    getNodeProcess()?.exit(1);
   });
 }
 
-process.on('unhandledRejection', onUnexpectedExit);
-process.on('uncaughtException', onUnexpectedExit);
+{
+  const p = getNodeProcess();
+  p?.on('unhandledRejection', onUnexpectedExit);
+  p?.on('uncaughtException', onUnexpectedExit);
+}
 
 export default TuiApp;

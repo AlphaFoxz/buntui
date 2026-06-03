@@ -1,5 +1,8 @@
-import {dlopen, FFIType, toArrayBuffer} from 'bun:ffi';
-import {resolveNativeLibPath, toCstring} from '../utils/ffi';
+import {
+  dlopen, FFIType, toArrayBuffer, type Pointer as BunPointer,
+} from 'bun:ffi';
+import {resolveNativeLibPath} from '../utils/ffi-native';
+import {toCstring} from '../utils/ffi';
 import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import type {CStruct} from '../extern/types';
 import type {LogLevel} from '../extern/app/types';
@@ -9,7 +12,10 @@ import {
   TuiEventType, KeyboardEvent, MouseEvent, WheelEvent, TermResizeEvent,
   type TuiEvent,
 } from '../events/types';
-import type {TuiBackend, TuiBackendEventHandler} from './TuiBackend';
+import {nextTick} from '../platform/next-tick';
+// eslint-disable-next-line import-x/no-unassigned-import
+import '../platform/native';
+import {type TuiBackend, type TuiBackendEventHandler} from './TuiBackend';
 
 const schemaRegistry = new Map<number, new (buffer: ArrayBuffer) => TuiEvent>([
   [TuiEventType.KeyboardEvent, KeyboardEvent],
@@ -49,6 +55,7 @@ export class NativeBackend implements TuiBackend {
 
   setupLogger(logFileDir: string, backendLogName: string, logLevel: LogLevel, clearLog: boolean): void {
     const logLevelValue = logLevelToNumber(logLevel);
+
     loadLib().setupLogger(toCstring(logFileDir), toCstring(backendLogName), logLevelValue, clearLog ? 1 : 0);
   }
 
@@ -61,7 +68,7 @@ export class NativeBackend implements TuiBackend {
   }
 
   detectTermSize(context: CStruct): void {
-    loadLib().detectTermSize(context.ptr);
+    loadLib().detectTermSize(context.ptr as BunPointer);
   }
 
   renderDrawList(context: CStruct, drawListBuffer: DrawListBuffer): void {
@@ -104,7 +111,7 @@ export class NativeBackend implements TuiBackend {
         }
       }
 
-      setImmediate(consume);
+      nextTick(consume);
     };
 
     consume();

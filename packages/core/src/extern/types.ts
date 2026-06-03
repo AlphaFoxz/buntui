@@ -1,4 +1,4 @@
-import type {Pointer} from 'bun:ffi';
+import type {Pointer} from '../platform/pointer';
 
 export type Disposable = {
   dispose(disposeWidgets?: boolean): void | Promise<void>;

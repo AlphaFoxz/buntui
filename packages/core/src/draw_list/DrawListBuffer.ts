@@ -1,4 +1,4 @@
-import {type Pointer, ptr} from 'bun:ffi';
+import {type Pointer, ptr} from '../platform/pointer';
 import TuiDataViewWrapper from '../extern/TuiDataViewWrapper';
 import {
   DrawCmd,

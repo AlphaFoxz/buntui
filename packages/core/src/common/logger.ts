@@ -1,7 +1,6 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import {appendFile} from 'node:fs/promises';
 import {type LogLevel} from '../extern/app/types';
+import {nextTick, cancelTick} from '../platform/next-tick';
+import {createFileLogSink} from '../platform';
 
 export type LoggerOptions = {
   logFileDir: string;
@@ -9,6 +8,10 @@ export type LoggerOptions = {
   clearLog: boolean;
   frontendLogName: string;
   backendLogName: string;
+};
+
+export type LogSink = {
+  write(level: string, message: string): void;
 };
 
 const LOG_LEVEL_DEBUG = 0;
@@ -36,85 +39,73 @@ export function logLevelToNumber(level: LogLevel): number {
   }
 }
 
-let cachedTimestampString = '';
-let cachedTimestamp = 0;
-function timestampString() {
-  const date = new Date();
-  const time = date.getTime();
-  if (time === cachedTimestamp) {
-    return cachedTimestampString;
-  }
+class ConsoleLogSink implements LogSink {
+  write(level: string, message: string): void {
+    const timestamp = `[${new Date().toISOString()}]`;
+    const formatted = `${timestamp} ${level}: ${message}`;
+    switch (level) {
+      case 'error': {
+        console.error(formatted);
+        break;
+      }
 
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const hour = date.getHours();
-  const minute = date.getMinutes();
-  const second = date.getSeconds();
-  cachedTimestamp = time;
-  const pad = (n: number) => String(n).padStart(2, '0');
-  cachedTimestampString = `[${year}-${pad(month)}-${pad(day)} ${pad(hour)}:${pad(minute)}:${pad(second)}]`;
-  return cachedTimestampString;
+      case 'warning': {
+        console.warn(formatted);
+        break;
+      }
+
+      default: {
+        console.log(formatted);
+      }
+    }
+  }
 }
 
 class LoggerImpl {
-  #logFileDir = '';
-  #logFile = '';
+  #sink: LogSink = new ConsoleLogSink();
   #logLevel: number = LOG_LEVEL_INFO;
-  readonly #taskQueue: Array<() => Promise<void>> = [];
+  readonly #taskQueue: Array<() => void> = [];
   #running = false;
-  #immediateId: ReturnType<typeof setImmediate> | undefined;
-  async init(options: LoggerOptions) {
-    this.#logFileDir = options.logFileDir;
-    const {logLevel, clearLog} = options;
-    this.#logFile = path.resolve(this.#logFileDir, options.frontendLogName);
-    this.#logLevel = logLevelToNumber(logLevel);
+  #immediateId: ReturnType<typeof nextTick> | undefined;
 
-    if (!fs.existsSync(this.#logFileDir)) {
-      fs.mkdirSync(this.#logFileDir, {recursive: true});
-    }
-
-    if (clearLog) {
-      fs.writeFileSync(this.#logFile, '');
-    }
+  init(options: LoggerOptions) {
+    this.#logLevel = logLevelToNumber(options.logLevel);
+    this.#sink = createFileLogSink(options.logFileDir, options.frontendLogName, options.clearLog);
 
     this.#running = true;
-    const consume = async () => {
+    const consume = () => {
       if (!this.#running) {
         return;
       }
 
       try {
-        const tasks: Array<Promise<void>> = [];
         while (this.#taskQueue.length > 0) {
           const task = this.#taskQueue.shift();
           if (task) {
-            tasks.push(task());
+            task();
           }
         }
-
-        await Promise.all(tasks);
       } finally {
-        this.#immediateId = setImmediate(() => {
-          void consume();
-        });
+        this.#immediateId = nextTick(consume);
       }
     };
 
-    this.#immediateId = setImmediate(() => {
-      void consume();
-    });
+    this.#immediateId = nextTick(consume);
+  }
+
+  setSink(sink: LogSink) {
+    this.#sink = sink;
   }
 
   deinit() {
     this.#running = false;
     if (this.#immediateId !== undefined) {
-      clearImmediate(this.#immediateId);
+      cancelTick(this.#immediateId);
       this.#immediateId = undefined;
     }
 
     for (const task of this.#taskQueue) {
-      void task();
+      task();
     }
 
     this.#taskQueue.length = 0;
@@ -122,35 +113,36 @@ class LoggerImpl {
 
   logDebug(content: string) {
     if (this.#logLevel === LOG_LEVEL_DEBUG) {
-      this.#taskQueue.push(async () => {
-        await appendFile(this.#logFile, `${timestampString()} debug: ${content}\n`);
+      this.#taskQueue.push(() => {
+        this.#sink.write('debug', content);
       });
     }
   }
 
   logInfo(content: string) {
     if (this.#logLevel <= LOG_LEVEL_INFO) {
-      this.#taskQueue.push(async () => {
-        await appendFile(this.#logFile, `${timestampString()} info: ${content}\n`);
+      this.#taskQueue.push(() => {
+        this.#sink.write('info', content);
       });
     }
   }
 
   logWarning(content: string) {
     if (this.#logLevel <= LOG_LEVEL_WARNING) {
-      this.#taskQueue.push(async () => {
-        await appendFile(this.#logFile, `${timestampString()} warning: ${content}\n`);
+      this.#taskQueue.push(() => {
+        this.#sink.write('warning', content);
       });
     }
   }
 
   logError(content: string) {
     if (this.#logLevel <= LOG_LEVEL_ERROR) {
-      this.#taskQueue.push(async () => {
-        await appendFile(this.#logFile, `${timestampString()} error: ${content}\n`);
+      this.#taskQueue.push(() => {
+        this.#sink.write('error', content);
       });
     }
   }
 }
 
 export const LOGGER = new LoggerImpl();
+export {ConsoleLogSink};
