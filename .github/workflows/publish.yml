@@ -55,7 +55,12 @@ jobs:
 
             - name: Build
               working-directory: packages/native
-              run: zig build -Dtarget=${{ matrix.zig-target }} -Drelease=true
+              run: |
+                  if [ "${{ matrix.platform-key }}" = "wasm32-wasi" ]; then
+                    zig build wasm -Drelease=true
+                  else
+                    zig build -Dtarget=${{ matrix.zig-target }} -Drelease=true
+                  fi
 
             - name: Copy to platform package
               working-directory: packages/native
@@ -127,11 +132,16 @@ jobs:
                   name: native-darwin-arm64
                   path: packages/native-platforms/darwin-arm64
 
+            - uses: actions/download-artifact@v4
+              with:
+                  name: native-wasm32-wasi
+                  path: packages/native-platforms/wasm32-wasi
+
             - name: Verify native binaries
               run: |
                   for dir in packages/native-platforms/*/; do
                     platform=$(basename "$dir")
-                    count=$(find "$dir" -maxdepth 1 \( -name '*.dll' -o -name '*.so' -o -name '*.dylib' \) | wc -l)
+                    count=$(find "$dir" -maxdepth 1 \( -name '*.dll' -o -name '*.so' -o -name '*.dylib' -o -name '*.wasm' \) | wc -l)
                     if [ "$count" -eq 0 ]; then
                       echo "ERROR: No binary found for $platform"
                       exit 1
@@ -192,6 +202,13 @@ jobs:
             - name: Publish @buntui/native-darwin-arm64
               run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
               working-directory: packages/native-platforms/darwin-arm64
+              continue-on-error: true
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+            - name: Publish @buntui/native-wasm32-wasi
+              run: npm publish --provenance --access public --tag ${{ steps.dist-tag.outputs.tag }}
+              working-directory: packages/native-platforms/wasm32-wasi
               continue-on-error: true
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
