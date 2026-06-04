@@ -7,6 +7,9 @@ const glo_alloc = @import("./glo_alloc.zig");
 const TuiScale = @import("./typedef.zig").TuiScale;
 const Bool = @import("./typedef.zig").Bool;
 const compile = @import("./compile.zig");
+const platform = @import("./platform.zig");
+
+const is_wasm = platform.is_wasm;
 
 pub const TuiResizeBehavior = enum(u8) {
     Fixed = 0,
@@ -28,6 +31,10 @@ pub fn detectTermSize(context: *TuiContext) void {
     context.y = 0;
     context.rows = 35;
     context.cols = 90;
+
+    if (comptime is_wasm) {
+        return;
+    }
 
     switch (builtin.os.tag) {
         .windows => {

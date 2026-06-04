@@ -1,0 +1,16 @@
+{
+    "name": "@buntui/native-wasm32-wasi",
+    "version": "0.1.0-alpha.3",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AlphaFoxz/buntui.git",
+        "directory": "packages/native-platforms/wasm32-wasi"
+    },
+    "exports": {
+        ".": "./index.ts"
+    },
+    "files": [
+        "buntui.wasm",
+        "index.ts"
+    ]
+}

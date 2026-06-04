@@ -101,13 +101,13 @@ Remove all hard Bun/Node dependencies from core runtime so both native and brows
 
 ### Phase B — Zig WASM Build
 
-- [ ] **B-1** Create WASM stub for `core/std_io.zig` — memory-backed writer instead of stdout
-- [ ] **B-2** Create WASM stub for `core/logger.zig` — no-op all log functions
-- [ ] **B-3** Create WASM stub for `core/tui_context.zig` — keep struct, no-op `detectTermSize`
-- [ ] **B-4** Create WASM stub for `core/error.zig` — replace `process.exit` with `@trap()`
-- [ ] **B-5** Add `wasm32` build target to `build.zig` with comptime module selection (stubs vs native)
-- [ ] **B-6** New WASM exports: `renderDrawListToBuffer()`, `getOutputPtr()`/`getOutputLen()`, `setTerminalSize()`
-- [ ] **B-7** Test WASM build locally — compile, load in browser, feed a DrawListBuffer, read ANSI output
+- [x] **B-1** Create WASM stub for `core/std_io.zig` — memory-backed writer instead of stdout
+- [x] **B-2** Create WASM stub for `core/logger.zig` — no-op all log functions
+- [x] **B-3** Create WASM stub for `core/tui_context.zig` — keep struct, no-op `detectTermSize`
+- [x] **B-4** Create WASM stub for `core/error.zig` — replace `process.exit` with `@trap()`
+- [x] **B-5** Add `wasm32` build target to `build.zig` with comptime module selection (stubs vs native)
+- [x] **B-6** New WASM exports: `renderDrawListToBuffer()`, `getOutputPtr()`/`getOutputLen()`, `setTerminalSize()`
+- [x] **B-7** Test WASM build locally — compile, load in browser, feed a DrawListBuffer, read ANSI output
 
 ### Phase C — HTML Backend Implementation
 

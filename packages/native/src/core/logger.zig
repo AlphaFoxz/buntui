@@ -1,5 +1,8 @@
 const std = @import("std");
 const Bool = @import("./typedef.zig").Bool;
+const platform = @import("./platform.zig");
+
+const is_wasm = platform.is_wasm;
 
 pub const LOG_LEVEL = u8;
 pub const LOG_LEVEL_DEBUG: u8 = 0;
@@ -22,6 +25,10 @@ const flush_on_error = true;
 const flush_on_warning = true;
 
 pub fn load(dir_path: []const u8, log_name: []const u8, lvl: LOG_LEVEL, clear_log: Bool) void {
+    if (comptime is_wasm) {
+        current_log_level = lvl;
+        return;
+    }
     switch (current_log_level) {
         0...4 => {
             current_log_level = lvl;
@@ -83,6 +90,9 @@ pub fn load(dir_path: []const u8, log_name: []const u8, lvl: LOG_LEVEL, clear_lo
 }
 
 pub fn unload() void {
+    if (comptime is_wasm) {
+        return;
+    }
     if (!log_path_initialized) {
         return;
     }
@@ -136,6 +146,9 @@ inline fn currentTimestampStr() []const u8 {
 }
 
 fn write(msg: []const u8, need_flush: bool) void {
+    if (comptime is_wasm) {
+        return;
+    }
     if (!log_path_initialized) {
         return;
     }
@@ -146,6 +159,9 @@ fn write(msg: []const u8, need_flush: bool) void {
 }
 
 pub fn logDebug(msg: []const u8) void {
+    if (comptime is_wasm) {
+        return;
+    }
     if (current_log_level > LOG_LEVEL_DEBUG) {
         return;
     }
@@ -157,6 +173,9 @@ pub fn logDebug(msg: []const u8) void {
 }
 
 pub fn logDebugFmt(comptime fmt: []const u8, args: anytype) void {
+    if (comptime is_wasm) {
+        return;
+    }
     if (current_log_level > LOG_LEVEL_DEBUG) {
         return;
     }
@@ -172,6 +191,9 @@ pub fn logDebugFmt(comptime fmt: []const u8, args: anytype) void {
 }
 
 pub fn logInfo(msg: []const u8) void {
+    if (comptime is_wasm) {
+        return;
+    }
     if (current_log_level > LOG_LEVEL_INFO) {
         return;
     }
@@ -183,6 +205,9 @@ pub fn logInfo(msg: []const u8) void {
 }
 
 pub fn logInfoFmt(comptime fmt: []const u8, args: anytype) void {
+    if (comptime is_wasm) {
+        return;
+    }
     if (current_log_level > LOG_LEVEL_INFO) {
         return;
     }
@@ -198,6 +223,9 @@ pub fn logInfoFmt(comptime fmt: []const u8, args: anytype) void {
 }
 
 pub fn logWarning(msg: []const u8) void {
+    if (comptime is_wasm) {
+        return;
+    }
     if (current_log_level > LOG_LEVEL_WARNING) {
         return;
     }
@@ -209,6 +237,9 @@ pub fn logWarning(msg: []const u8) void {
 }
 
 pub fn logWarningFmt(comptime fmt: []const u8, args: anytype) void {
+    if (comptime is_wasm) {
+        return;
+    }
     if (current_log_level > LOG_LEVEL_WARNING) {
         return;
     }
@@ -224,6 +255,9 @@ pub fn logWarningFmt(comptime fmt: []const u8, args: anytype) void {
 }
 
 pub fn logError(msg: []const u8) void {
+    if (comptime is_wasm) {
+        return;
+    }
     if (current_log_level > LOG_LEVEL_ERROR) {
         return;
     }
@@ -235,6 +269,9 @@ pub fn logError(msg: []const u8) void {
 }
 
 pub fn logErrorFmt(comptime fmt: []const u8, args: anytype) void {
+    if (comptime is_wasm) {
+        return;
+    }
     if (current_log_level > LOG_LEVEL_ERROR) {
         return;
     }
@@ -250,6 +287,9 @@ pub fn logErrorFmt(comptime fmt: []const u8, args: anytype) void {
 }
 
 pub fn flush() void {
+    if (comptime is_wasm) {
+        return;
+    }
     if (!log_path_initialized) {
         return;
     }

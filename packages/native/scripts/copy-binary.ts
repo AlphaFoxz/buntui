@@ -36,6 +36,13 @@ const targets = [
   },
 ];
 
+const wasmTarget = {
+  zigTarget: 'wasm32-wasi',
+  platformKey: 'wasm32-wasi',
+  libDir: 'wasm32-wasi',
+  binaryExt: 'wasm',
+};
+
 const nativeDir = path.resolve(import.meta.dir, '..');
 
 const copyTasks: Array<{from: string; to: string}> = [];
@@ -64,3 +71,21 @@ await Promise.all(copyTasks.map(async task => {
   await cp(task.from, task.to);
   console.log(`Copied: ${path.relative(nativeDir, task.from)} -> ${path.relative(nativeDir, task.to)}`);
 }));
+
+console.log(`Building for ${wasmTarget.platformKey} (${wasmTarget.zigTarget})...`);
+execSync(`zig build wasm -Drelease=true`, {
+  cwd: nativeDir,
+  stdio: 'inherit',
+});
+
+const wasmDest = path.join(nativeDir, '..', 'native-platforms', wasmTarget.platformKey);
+const wasmFrom = path.join(nativeDir, 'zig-out', wasmTarget.libDir, `${appName}.${wasmTarget.binaryExt}`);
+const wasmTo = path.join(wasmDest, `${appName}.${wasmTarget.binaryExt}`);
+
+if (fs.existsSync(wasmFrom)) {
+  await mkdir(wasmDest, {recursive: true});
+  await cp(wasmFrom, wasmTo);
+  console.log(`Copied: ${path.relative(nativeDir, wasmFrom)} -> ${path.relative(nativeDir, wasmTo)}`);
+} else {
+  console.warn(`Warning: ${wasmFrom} not found`);
+}

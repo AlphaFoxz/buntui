@@ -4,7 +4,6 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimizeOpt = b.standardOptimizeOption(.{
         .preferred_optimize_mode = .ReleaseFast,
-        // .preferred_optimize_mode = .ReleaseSmall,
     });
 
     const root_module = b.createModule(.{
@@ -21,6 +20,31 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(lib);
 
+    // WASM build target
+    const wasm_target = b.resolveTargetQuery(.{
+        .cpu_arch = .wasm32,
+        .os_tag = .wasi,
+    });
+    const wasm_module = b.createModule(.{
+        .root_source_file = b.path("src/wasm_lib.zig"),
+        .target = wasm_target,
+        .optimize = optimizeOpt,
+    });
+    wasm_module.linkSystemLibrary("c", .{});
+
+    const wasm_lib = b.addExecutable(.{
+        .name = "buntui",
+        .root_module = wasm_module,
+    });
+
+    const wasm_install = b.addInstallArtifact(wasm_lib, .{
+        .dest_dir = .{ .override = .{ .custom = "wasm32-wasi" } },
+        .dest_sub_path = "buntui.wasm",
+    });
+
+    const wasm_step = b.step("wasm", "Build WASM library");
+    wasm_step.dependOn(&wasm_install.step);
+
     // Unit tests — runs all `test` blocks found via tests.zig imports
     const test_module = b.createModule(.{
         .root_source_file = b.path("src/tests.zig"),
@@ -34,30 +58,4 @@ pub fn build(b: *std.Build) void {
 
     const test_step = b.step("test", "Run all unit tests");
     test_step.dependOn(&run_unit_tests.step);
-}
-
-fn createModule(
-    b: *std.Build,
-    code_path: []const u8,
-    target: std.Build.ResolvedTarget,
-    optimize_opt: std.builtin.OptimizeMode,
-) *std.Build.Module {
-    return b.createModule(.{
-        .root_source_file = b.path(code_path),
-        .target = target,
-        .optimize = optimize_opt,
-    });
-}
-
-fn createDependency(
-    b: *std.Build,
-    name: []const u8,
-    target: std.Build.ResolvedTarget,
-    optimize_opt: std.builtin.OptimizeMode,
-) *std.Build.Module {
-    const dep = b.dependency(name, .{
-        .target = target,
-        .optimize = optimize_opt,
-    });
-    return dep.module(name);
 }

@@ -40,6 +40,12 @@ jobs:
                       lib-prefix: lib
                       binary-ext: dylib
 
+                    - zig-target: wasm32-wasi
+                      platform-key: wasm32-wasi
+                      lib-dir: wasm32-wasi
+                      lib-prefix: ''
+                      binary-ext: wasm
+
         steps:
             - uses: actions/checkout@v6
 
