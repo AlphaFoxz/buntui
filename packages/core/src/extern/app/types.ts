@@ -1,3 +1,5 @@
+import type {Scheduler} from '../../platform/next-tick';
+
 export type LogLevel = 'debug' | 'info' | 'warning' | 'error';
 
 export type TuiAppOptions = {
@@ -9,6 +11,7 @@ export type TuiAppOptions = {
   debugMode: boolean;
   tickRate?: number;
   renderRate?: number;
+  scheduler?: Scheduler;
 };
 
 export type TuiSceneOptions = {

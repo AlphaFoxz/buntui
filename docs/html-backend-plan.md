@@ -15,12 +15,12 @@ Same Zig code, two compilation targets. No TS-side rasterizer port needed.
 
 ## Why WASM Instead of TS Port
 
-| | TS Port | WASM (chosen) |
-|---|---|---|
-| Code to write | ~2000 lines (port rasterizer + presenter) | ~340 lines (4 stub modules) |
-| Maintenance | Two rasterizer implementations to keep in sync | One codebase, shared between native and HTML |
-| Performance | Good enough | Better (native memory layout, no GC pressure) |
-| Risk | Subtle bugs from manual port | Same battle-tested code as native |
+|               | TS Port                                        | WASM (chosen)                                 |
+| ------------- | ---------------------------------------------- | --------------------------------------------- |
+| Code to write | ~2000 lines (port rasterizer + presenter)      | ~340 lines (4 stub modules)                   |
+| Maintenance   | Two rasterizer implementations to keep in sync | One codebase, shared between native and HTML  |
+| Performance   | Good enough                                    | Better (native memory layout, no GC pressure) |
+| Risk          | Subtle bugs from manual port                   | Same battle-tested code as native             |
 
 ## Zig Code Portability Analysis
 
@@ -38,12 +38,12 @@ Same Zig code, two compilation targets. No TS-side rasterizer port needed.
 
 ### Needs WASM stubs (~340 lines, 1-2 days)
 
-| Module | Problem | WASM Replacement |
-|---|---|---|
-| `core/std_io.zig` | Binds to stdout | Write to `ArrayList(u8)` memory buffer; JS reads via WASM export |
-| `core/logger.zig` | File I/O + threading | No-op stub (browser console via JS if needed) |
-| `core/tui_context.zig` | `detectTermSize()` uses kernel32/posix | Keep struct, `detectTermSize` → no-op; JS sets dimensions |
-| `core/error.zig` | `std.process.exit()` | Replace with `@trap()` |
+| Module                 | Problem                                | WASM Replacement                                                 |
+| ---------------------- | -------------------------------------- | ---------------------------------------------------------------- |
+| `core/std_io.zig`      | Binds to stdout                        | Write to `ArrayList(u8)` memory buffer; JS reads via WASM export |
+| `core/logger.zig`      | File I/O + threading                   | No-op stub (browser console via JS if needed)                    |
+| `core/tui_context.zig` | `detectTermSize()` uses kernel32/posix | Keep struct, `detectTermSize` → no-op; JS sets dimensions        |
+| `core/error.zig`       | `std.process.exit()`                   | Replace with `@trap()`                                           |
 
 ## Current Architecture
 
@@ -67,16 +67,16 @@ An HTML backend only needs to implement this interface. No changes to the interf
 
 The widget layer and event system are completely clean (pure TS). Blockers are concentrated in ~10 infrastructure files, ~20 call sites total. All changes are defensive (platform guards, type abstractions) — no business logic changes needed.
 
-| Bun/Node API | Affected Files | Fix |
-|---|---|---|
-| `bun:ffi` Pointer/ptr | `extern/types.ts`, `TuiContext.ts`, `DrawListBuffer.ts`, `pointer.ts` | Abstract `Pointer` type; browser = `number` (WASM linear memory) |
-| `Bun.color()` | `utils/color.ts`, `utils/styles.ts` | Replace with lightweight CSS color parser (Canvas API or manual hex/rgb) |
-| `setImmediate` | `RenderLoop.ts`, `common/logger.ts` | Wrap in `nextTick()` utility; browser fallback to `setTimeout` |
-| `process.exit/on` | `TuiApp.ts` | Guard with `typeof process !== 'undefined'` |
-| `Bun.main` | `TuiApp.ts` | Make log dir optional; browser skips file logging |
-| `node:fs/path` | `common/logger.ts` | Abstract logger backend; browser uses `console` |
-| `node:child_process` | `SystemClipboard.ts`, `clipboard/index.ts` | Lazy instantiation; browser uses `navigator.clipboard` |
-| `node:buffer/process` | `HmrErrorOverlayWidget.ts` | Use `btoa()` instead of `Buffer`; dev-only, can exclude from browser builds |
+| Bun/Node API          | Affected Files                                                        | Fix                                                                         |
+| --------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `bun:ffi` Pointer/ptr | `extern/types.ts`, `TuiContext.ts`, `DrawListBuffer.ts`, `pointer.ts` | Abstract `Pointer` type; browser = `number` (WASM linear memory)            |
+| `Bun.color()`         | `utils/color.ts`, `utils/styles.ts`                                   | Replace with lightweight CSS color parser (Canvas API or manual hex/rgb)    |
+| `setImmediate`        | `RenderLoop.ts`, `common/logger.ts`                                   | Wrap in `nextTick()` utility; browser fallback to `setTimeout`              |
+| `process.exit/on`     | `TuiApp.ts`                                                           | Guard with `typeof process !== 'undefined'`                                 |
+| `Bun.main`            | `TuiApp.ts`                                                           | Make log dir optional; browser skips file logging                           |
+| `node:fs/path`        | `common/logger.ts`                                                    | Abstract logger backend; browser uses `console`                             |
+| `node:child_process`  | `SystemClipboard.ts`, `clipboard/index.ts`                            | Lazy instantiation; browser uses `navigator.clipboard`                      |
+| `node:buffer/process` | `HmrErrorOverlayWidget.ts`                                            | Use `btoa()` instead of `Buffer`; dev-only, can exclude from browser builds |
 
 ## Task List
 
@@ -95,9 +95,9 @@ Remove all hard Bun/Node dependencies from core runtime so both native and brows
 
 ### Phase A — Backend Interface Refactor
 
-- [ ] **A-1** Make `TuiContext` work without FFI `Pointer` — allow plain JS object for non-native backends
-- [ ] **A-2** Relax `CStruct` type in `TuiBackend` or introduce a generic context type so HTML backend doesn't need a fake pointer
-- [ ] **A-3** Make `RenderLoop` timer-configurable — allow `requestAnimationFrame` alongside `setImmediate`
+- [x] **A-1** Make `TuiContext` work without FFI `Pointer` — allow plain JS object for non-native backends
+- [x] **A-2** Relax `CStruct` type in `TuiBackend` or introduce a generic context type so HTML backend doesn't need a fake pointer
+- [x] **A-3** Make `RenderLoop` timer-configurable — allow `requestAnimationFrame` alongside `setImmediate`
 
 ### Phase B — Zig WASM Build
 
@@ -142,14 +142,14 @@ Phase 0 (platform abstraction) ← prerequisite, no business logic changes
 
 ## Estimated Effort
 
-| Phase | Effort | Notes |
-|---|---|---|
+| Phase                    | Effort   | Notes                                                                     |
+| ------------------------ | -------- | ------------------------------------------------------------------------- |
 | 0 — Platform abstraction | 2-3 days | Defensive guards + type abstractions, ~10 files, no business logic change |
-| A — Interface refactor | 1 day | Small, mostly type-level changes |
-| B — Zig WASM build | 1-2 days | Write 4 stub modules (~340 lines) + build config + new exports |
-| C — HTML backend | 1-2 days | Thin wrapper: WASM → ANSI → xterm.js |
-| D — Event bridge | 1-2 days | Factory functions + xterm.js event listeners |
-| E — Packaging & DX | 2-3 days | Package setup, example app, tree-shaking |
+| A — Interface refactor   | 1 day    | Small, mostly type-level changes                                          |
+| B — Zig WASM build       | 1-2 days | Write 4 stub modules (~340 lines) + build config + new exports            |
+| C — HTML backend         | 1-2 days | Thin wrapper: WASM → ANSI → xterm.js                                      |
+| D — Event bridge         | 1-2 days | Factory functions + xterm.js event listeners                              |
+| E — Packaging & DX       | 2-3 days | Package setup, example app, tree-shaking                                  |
 
 **Total: ~1.5-2 weeks**
 

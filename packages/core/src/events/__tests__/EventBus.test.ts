@@ -4,7 +4,7 @@ import {type TuiBackend, type TuiBackendEventHandler} from '../../app/TuiBackend
 import {TuiEventType} from '../types';
 import type {LogLevel} from '../../extern/app/types';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
-import type {CStruct} from '../../extern/types';
+import type {TuiContextLike} from '../../extern/app/TuiContext';
 
 class MockBackend implements TuiBackend {
   #handler: TuiBackendEventHandler | undefined;
@@ -14,8 +14,8 @@ class MockBackend implements TuiBackend {
   setupLogger(_logFileDir: string, _logName: string, _logLevel: LogLevel, _clearLog: boolean): void {}
   startApp(): void {}
   stopApp(): void {}
-  detectTermSize(_context: CStruct): void {}
-  renderDrawList(_context: CStruct, _buffer: DrawListBuffer): void {}
+  detectTermSize(_context: TuiContextLike): void {}
+  renderDrawList(_context: TuiContextLike, _buffer: DrawListBuffer): void {}
 
   startEvents(handler: TuiBackendEventHandler): void {
     this.#handler = handler;

@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
+export type Scheduler = {
+  schedule(fn: () => void): unknown;
+  cancel(handle: unknown): void;
+};
+
 export type TickHandle = ReturnType<typeof setImmediate>;
 
 const _setImmediate
@@ -11,6 +17,13 @@ const _clearImmediate
     : (id?: any) => {
       clearTimeout(id as unknown as ReturnType<typeof setTimeout>);
     };
+
+export const immediateScheduler: Scheduler = {
+  schedule: (fn: () => void) => _setImmediate(fn),
+  cancel(id: any) {
+    _clearImmediate(id as TickHandle);
+  },
+};
 
 export const nextTick = _setImmediate as (fn: (...args: unknown[]) => void) => TickHandle;
 export const cancelTick = _clearImmediate as (id?: TickHandle) => void;

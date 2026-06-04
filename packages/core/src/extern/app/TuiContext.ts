@@ -9,6 +9,16 @@ export const TuiResizeBehavior = {
 } as const;
 export type TuiResizeBehavior = Enum<typeof TuiResizeBehavior>;
 
+export type TuiContextLike = {
+  readonly tick: bigint;
+  x: number;
+  y: number;
+  rows: number;
+  cols: number;
+  resizeBehavior: TuiResizeBehavior;
+  debugMode: boolean;
+};
+
 const OFFSET_COUNTER = createOffsetCalculator();
 const OFFSETS = Object.freeze({
   tick: OFFSET_COUNTER.mark('u64'),
@@ -19,7 +29,7 @@ const OFFSETS = Object.freeze({
   resizeBehavior: OFFSET_COUNTER.mark('u8'),
   debugMode: OFFSET_COUNTER.mark('u8'),
 });
-export class TuiContext implements CStruct {
+export class TuiContext implements TuiContextLike, CStruct {
   readonly #buffer: ArrayBuffer;
   readonly #dataView: TuiDataViewWrapper;
 
@@ -77,6 +87,7 @@ export class TuiContext implements CStruct {
   }
 
   get resizeBehavior(): TuiResizeBehavior {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     return this.#dataView.getUint8(OFFSETS.resizeBehavior) as TuiResizeBehavior;
   }
 

@@ -81,12 +81,7 @@ const expose: FlatXoConfig = [
       'unicorn/require-module-specifiers': 'off',
       'complexity': ['error', {max: 35}],
       'max-params': ['error', {max: 6}],
-    },
-  },
-  {
-    files: ['packages/core/src/**/*.ts'],
-    rules: {
-      '@typescript-eslint/no-unsafe-type-assertion': 'off',
+      "@typescript-eslint/no-unsafe-function-type": "off",
     },
   },
   {

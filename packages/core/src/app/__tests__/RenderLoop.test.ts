@@ -3,7 +3,8 @@ import {RenderLoop} from '../RenderLoop';
 import type {TuiBackend} from '../TuiBackend';
 import type {TuiScene} from '../../extern/app/TuiScene';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
-import type {CStruct} from '../../extern/types';
+import type {TuiContextLike} from '../../extern/app/TuiContext';
+import TUI_CONTEXT_INSTANCE from '../../extern/app/TuiContext';
 
 class MockBackend implements TuiBackend {
   readonly renderCalls: DrawListBuffer[] = [];
@@ -15,7 +16,7 @@ class MockBackend implements TuiBackend {
   startEvents() {}
   stopEvents() {}
 
-  renderDrawList(_context: CStruct, buffer: DrawListBuffer): void {
+  renderDrawList(_context: TuiContextLike, buffer: DrawListBuffer): void {
     this.renderCalls.push(buffer);
   }
 }
@@ -34,20 +35,20 @@ describe('RenderLoop', () => {
   describe('start / stop lifecycle', () => {
     it('start does not throw', () => {
       const backend = new MockBackend();
-      renderLoop = new RenderLoop(() => createMockScene(false), backend);
+      renderLoop = new RenderLoop(() => createMockScene(false), backend, TUI_CONTEXT_INSTANCE);
       expect(() => renderLoop.start()).not.toThrow();
     });
 
     it('stop does not throw after start', () => {
       const backend = new MockBackend();
-      renderLoop = new RenderLoop(() => createMockScene(false), backend);
+      renderLoop = new RenderLoop(() => createMockScene(false), backend, TUI_CONTEXT_INSTANCE);
       renderLoop.start();
       expect(() => renderLoop.stop()).not.toThrow();
     });
 
     it('stop without start does not throw', () => {
       const backend = new MockBackend();
-      renderLoop = new RenderLoop(() => createMockScene(false), backend);
+      renderLoop = new RenderLoop(() => createMockScene(false), backend, TUI_CONTEXT_INSTANCE);
       expect(() => renderLoop.stop()).not.toThrow();
     });
   });
@@ -55,7 +56,7 @@ describe('RenderLoop', () => {
   describe('rendering', () => {
     it('renders visible scene after start', async () => {
       const backend = new MockBackend();
-      renderLoop = new RenderLoop(() => createMockScene(true), backend);
+      renderLoop = new RenderLoop(() => createMockScene(true), backend, TUI_CONTEXT_INSTANCE);
       renderLoop.start();
 
       // Wait for at least one tick
@@ -66,7 +67,7 @@ describe('RenderLoop', () => {
 
     it('does not render invisible scene', async () => {
       const backend = new MockBackend();
-      renderLoop = new RenderLoop(() => createMockScene(false), backend);
+      renderLoop = new RenderLoop(() => createMockScene(false), backend, TUI_CONTEXT_INSTANCE);
       renderLoop.start();
 
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -76,7 +77,7 @@ describe('RenderLoop', () => {
 
     it('stops rendering after stop', async () => {
       const backend = new MockBackend();
-      renderLoop = new RenderLoop(() => createMockScene(true), backend);
+      renderLoop = new RenderLoop(() => createMockScene(true), backend, TUI_CONTEXT_INSTANCE);
       renderLoop.start();
 
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -90,7 +91,7 @@ describe('RenderLoop', () => {
 
     it('does not render when scene is undefined', async () => {
       const backend = new MockBackend();
-      renderLoop = new RenderLoop(() => undefined, backend);
+      renderLoop = new RenderLoop(() => undefined, backend, TUI_CONTEXT_INSTANCE);
       renderLoop.start();
 
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -105,7 +106,7 @@ describe('RenderLoop', () => {
       const updateDts: number[] = [];
       const scene = createMockScene(true);
       scene.update = (dt: number) => { updateDts.push(dt); };
-      renderLoop = new RenderLoop(() => scene, backend, {tickRate: 60, renderRate: 1000});
+      renderLoop = new RenderLoop(() => scene, backend, TUI_CONTEXT_INSTANCE, {tickRate: 60, renderRate: 1000});
       renderLoop.start();
 
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -122,7 +123,7 @@ describe('RenderLoop', () => {
       const updateDts: number[] = [];
       const scene = createMockScene(true);
       scene.update = (dt: number) => { updateDts.push(dt); };
-      renderLoop = new RenderLoop(() => scene, backend, {tickRate: 10, renderRate: 1000});
+      renderLoop = new RenderLoop(() => scene, backend, TUI_CONTEXT_INSTANCE, {tickRate: 10, renderRate: 1000});
       renderLoop.start();
 
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -137,13 +138,13 @@ describe('RenderLoop', () => {
   describe('render rate', () => {
     it('renders fewer frames with low renderRate', async () => {
       const backendHigh = new MockBackend();
-      const loopHigh = new RenderLoop(() => createMockScene(true), backendHigh, {renderRate: 60, tickRate: 10});
+      const loopHigh = new RenderLoop(() => createMockScene(true), backendHigh, TUI_CONTEXT_INSTANCE, {renderRate: 60, tickRate: 10});
       loopHigh.start();
       await new Promise(resolve => setTimeout(resolve, 200));
       loopHigh.stop();
 
       const backendLow = new MockBackend();
-      const loopLow = new RenderLoop(() => createMockScene(true), backendLow, {renderRate: 5, tickRate: 10});
+      const loopLow = new RenderLoop(() => createMockScene(true), backendLow, TUI_CONTEXT_INSTANCE, {renderRate: 5, tickRate: 10});
       loopLow.start();
       await new Promise(resolve => setTimeout(resolve, 200));
       loopLow.stop();

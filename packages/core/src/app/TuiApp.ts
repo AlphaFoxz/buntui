@@ -47,9 +47,10 @@ export class TuiApp implements Disposable {
     const getScene = () => this.#currentScene;
     this.#focusManager = new FocusManager(getScene);
     this.#pointerManager = new PointerManager(getScene, this.#focusManager);
-    this.#renderLoop = new RenderLoop(getScene, this.#backend, {
+    this.#renderLoop = new RenderLoop(getScene, this.#backend, TUI_CONTEXT_INSTANCE, {
       tickRate: options?.tickRate,
       renderRate: options?.renderRate,
+      scheduler: options?.scheduler,
     });
     setAppInstance(this);
   }

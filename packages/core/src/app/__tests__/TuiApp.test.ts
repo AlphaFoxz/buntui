@@ -3,7 +3,7 @@ import {createApp, type TuiSFCModule} from '../index';
 import {type TuiBackend, type TuiBackendEventHandler} from '../TuiBackend';
 import type {LogLevel} from '../../extern/app/types';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
-import type {CStruct} from '../../extern/types';
+import type {TuiContextLike} from '../../extern/app/TuiContext';
 
 const noopModule: TuiSFCModule = {setup() {}};
 
@@ -23,11 +23,11 @@ class MockBackend implements TuiBackend {
     this.calls.push('stopApp');
   }
 
-  detectTermSize(_context: CStruct): void {
+  detectTermSize(_context: TuiContextLike): void {
     this.calls.push('detectTermSize');
   }
 
-  renderDrawList(_context: CStruct, _buffer: DrawListBuffer): void {
+  renderDrawList(_context: TuiContextLike, _buffer: DrawListBuffer): void {
     this.calls.push('renderDrawList');
   }
 

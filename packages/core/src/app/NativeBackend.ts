@@ -5,6 +5,7 @@ import {resolveNativeLibPath} from '../utils/ffi-native';
 import {toCstring} from '../utils/ffi';
 import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import type {CStruct} from '../extern/types';
+import type {TuiContextLike} from '../extern/app/TuiContext';
 import type {LogLevel} from '../extern/app/types';
 import TuiDataViewWrapper from '../extern/TuiDataViewWrapper';
 import {LOGGER, logLevelToNumber} from '../common/logger';
@@ -67,12 +68,12 @@ export class NativeBackend implements TuiBackend {
     loadLib().stopApp();
   }
 
-  detectTermSize(context: CStruct): void {
-    loadLib().detectTermSize(context.ptr as BunPointer);
+  detectTermSize(context: TuiContextLike): void {
+    loadLib().detectTermSize((context as unknown as CStruct).ptr as BunPointer);
   }
 
-  renderDrawList(context: CStruct, drawListBuffer: DrawListBuffer): void {
-    loadLib().renderDrawList(context.ptr, drawListBuffer.ptr, drawListBuffer.byteLength);
+  renderDrawList(context: TuiContextLike, drawListBuffer: DrawListBuffer): void {
+    loadLib().renderDrawList((context as unknown as CStruct).ptr, drawListBuffer.ptr, drawListBuffer.byteLength);
   }
 
   startEvents(handler: TuiBackendEventHandler): void {
