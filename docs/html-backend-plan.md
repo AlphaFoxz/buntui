@@ -107,27 +107,27 @@ Remove all hard Bun/Node dependencies from core runtime so both native and brows
 - [x] **B-4** Create WASM stub for `core/error.zig` — replace `process.exit` with `@trap()`
 - [x] **B-5** Add `wasm32` build target to `build.zig` with comptime module selection (stubs vs native)
 - [x] **B-6** New WASM exports: `renderDrawListToBuffer()`, `getOutputPtr()`/`getOutputLen()`, `setTerminalSize()`
-- [x] **B-7** Test WASM build locally — compile, load in browser, feed a DrawListBuffer, read ANSI output
+- [x] **B-7** New WASM exports for JS→WASM memory transfer: `allocWasmBuffer(size) -> ptr` / `deallocWasmBuffer(ptr)` so JS can copy `DrawListBuffer` and `TuiContext` data into WASM linear memory
+- [x] **B-8** New WASM exports for TuiContext lifecycle: `createTuiContext() -> ptr` / `updateTuiContext(ptr, tick, x, y, rows, cols, resizeBehavior, debugMode)` / `destroyTuiContext(ptr)` — `renderDrawListToBuffer` expects `*TuiContext` in WASM memory, but no export currently creates one
+- [x] **B-9** Test WASM build locally — compile, load in browser, feed a DrawListBuffer, read ANSI output
 
 ### Phase C — HTML Backend Implementation
 
-- [ ] **C-1** Implement `HtmlBackend` class — `startApp` creates xterm.js `Terminal` instance + DOM container
-- [ ] **C-2** Implement `detectTermSize` — read `Terminal.rows`/`Terminal.cols` from xterm.js
-- [ ] **C-3** Implement `renderDrawList` — pass `DrawListBuffer` to WASM, read ANSI output, call `Terminal.write()`
-- [ ] **C-4** Implement `setupLogger` — noop or bridge to browser console
+- [ ] **C-1** WASM module loader — load `.wasm` binary via `WebAssembly.instantiateStreaming`, handle async/sync mismatch with `TuiApp` constructor (e.g. deferred init: `HtmlBackend` stores a promise, `startApp()` awaits it). Expose WASM memory (`WebAssembly.Memory`) so JS can write into it
+- [ ] **C-2** Implement `HtmlBackend` class — constructor accepts `{container: HTMLElement, terminal?: Terminal}` (user controls mount point, not `startApp`). `startApp` initializes terminal size only, does not create DOM
+- [ ] **C-3** Implement `setupLogger` — bridge to browser `console`
+- [ ] **C-4** Implement `detectTermSize` — read `Terminal.rows`/`Terminal.cols` from xterm.js, write into WASM-side `TuiContext` via `updateTuiContext` export
+- [ ] **C-5** Implement `renderDrawList` — copy `DrawListBuffer.buffer` (JS ArrayBuffer) into WASM memory via `allocWasmBuffer`, call `renderDrawListToBuffer(wasm_ctx_ptr, wasm_buf_ptr, buf_len)`, read ANSI output via `getOutputPtr()`/`getOutputLen()`, call `Terminal.write()`, then `deallocWasmBuffer`
+- [ ] **C-6** Implement `startEvents`/`stopEvents` — attach to xterm.js `onKey`/`onMouse`/`onResize`, convert to TuiEvent via factory functions, feed into `handler`. Handle terminal resize from `onResize`. This merges old Phase D into C to keep `HtmlBackend` a complete `TuiBackend` implementation at the end of the phase
+- [ ] **C-7** Add factory functions for event classes (`fromDomEvent`) — construct `KeyboardEvent`/`MouseEvent`/`WheelEvent`/`TermResizeEvent` from xterm.js `IKeyboardEvent`/`IMouseEvent`/`IWheelEvent`/resize event
 
-### Phase D — Event Bridge
+### Phase D — Packaging & DX
 
-- [ ] **D-1** Add factory functions for event classes (`fromDomEvent`) that construct from xterm.js `KeyboardEvent`/`MouseEvent`/`WheelEvent`
-- [ ] **D-2** Implement `startEvents`/`stopEvents` — attach to xterm.js `onKey`/`onMouse`/`onResize` events, convert, feed into `handler`
-- [ ] **D-3** Handle terminal resize from xterm.js `onResize` event
-
-### Phase E — Packaging & DX
-
-- [ ] **E-1** Create `@buntui/html` package with `HtmlBackend` + WASM loader
-- [ ] **E-2** Add browser entry point / example app (xterm.js in a page, BuntUI rendering into it)
-- [ ] **E-3** Ensure tree-shaking works — native FFI code (`bun:ffi`, `.dll`/`.so`/`.dylib`) excluded from browser builds
-- [ ] **E-4** Dev server for browser target (Vite plugin?)
+- [ ] **D-1** Put `HtmlBackend` in `@buntui/core` — update `platform/browser.ts` to return `HtmlBackend` from `createBackend()`, resolve WASM binary path. No separate `@buntui/html` package needed (xterm.js is a peer dependency, no extra bundle cost for native users)
+- [ ] **D-2** Add browser entry point / example app in `playground-web` (xterm.js in a page, BuntUI rendering into it via `HtmlBackend`)
+- [ ] **D-3** Ensure tree-shaking works — native FFI code (`bun:ffi`, `.dll`/`.so`/`.dylib`) excluded from browser builds via conditional exports
+- [ ] **D-4** Dev server for browser target (Vite plugin?)
+- [ ] **D-5** Guard `ptr()` in browser platform — throw or log warning instead of silently returning 0, to catch accidental FFI pointer usage in browser path
 
 ## Dependency Graph
 
@@ -135,9 +135,8 @@ Remove all hard Bun/Node dependencies from core runtime so both native and brows
 Phase 0 (platform abstraction) ← prerequisite, no business logic changes
   └→ A (interface refactor)
       ├→ B (Zig WASM build) ← core workload, but mostly stubs not new code
-      │   └→ C (HTML backend implementation) ← wires WASM output to xterm.js
-      │       └→ D (event bridge) ← xterm.js events → TuiEvent
-      └→ E (packaging & DX) ← independent, can start early
+      │   └→ C (HTML backend implementation) ← WASM loader + xterm.js wiring + event bridge (all in one phase)
+      └→ D (packaging & DX) ← depends on C, but can start D-1/D-5 early
 ```
 
 ## Estimated Effort
@@ -146,10 +145,9 @@ Phase 0 (platform abstraction) ← prerequisite, no business logic changes
 | ------------------------ | -------- | ------------------------------------------------------------------------- |
 | 0 — Platform abstraction | 2-3 days | Defensive guards + type abstractions, ~10 files, no business logic change |
 | A — Interface refactor   | 1 day    | Small, mostly type-level changes                                          |
-| B — Zig WASM build       | 1-2 days | Write 4 stub modules (~340 lines) + build config + new exports            |
-| C — HTML backend         | 1-2 days | Thin wrapper: WASM → ANSI → xterm.js                                      |
-| D — Event bridge         | 1-2 days | Factory functions + xterm.js event listeners                              |
-| E — Packaging & DX       | 2-3 days | Package setup, example app, tree-shaking                                  |
+| B — Zig WASM build       | 1-2 days | 4 stub modules (~340 lines) + build config + new exports (B-7, B-8)      |
+| C — HTML backend         | 2-3 days | WASM loader + memory management + xterm.js rendering + event bridge       |
+| D — Packaging & DX       | 2-3 days | Browser platform wiring, example app, tree-shaking, dev server            |
 
 **Total: ~1.5-2 weeks**
 
@@ -159,3 +157,5 @@ Phase 0 (platform abstraction) ← prerequisite, no business logic changes
 - **xterm.js event API**: xterm.js exposes `onKey` (not raw `keydown`/`keyup`). Need to verify if modifier/key info is sufficient for the existing `KeyboardEvent` class.
 - **Terminal emulator compatibility**: the `TerminalBackend` abstraction should allow other browser terminals (not just xterm.js). Need to define a minimal adapter interface.
 - **WASM binary size**: estimate needed. The rasterizer + presenter + ansi_util is ~3000 lines of Zig, should produce a small WASM binary.
+- **WASM async loading**: `WebAssembly.instantiateStreaming` is async but `TuiApp` constructor is sync. Current plan is deferred init (backend stores a promise, `startApp()` awaits), but need to verify this works cleanly with the `RenderLoop` lifecycle.
+- **WASM memory ownership**: `allocWasmBuffer`/`deallocWasmBuffer` means JS manages WASM heap memory manually. Need to verify no leaks on rapid render frames (alloc per frame, dealloc after write). Alternatively, use a fixed-size reusable WASM buffer if max DrawList size is bounded.
