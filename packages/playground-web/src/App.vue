@@ -16,6 +16,7 @@ function handleResize() {
 
 onMounted(async () => {
     term = new Terminal({
+        fontFamily: 'Cascadia Code, JetBrains Mono, Fira Code, monospace',
         theme: {
             background: '#1a1b26',
             foreground: '#c0caf5',
