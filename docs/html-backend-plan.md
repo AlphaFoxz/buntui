@@ -113,13 +113,13 @@ Remove all hard Bun/Node dependencies from core runtime so both native and brows
 
 ### Phase C — HTML Backend Implementation
 
-- [ ] **C-1** WASM module loader — load `.wasm` binary via `WebAssembly.instantiateStreaming`, handle async/sync mismatch with `TuiApp` constructor (e.g. deferred init: `HtmlBackend` stores a promise, `startApp()` awaits it). Expose WASM memory (`WebAssembly.Memory`) so JS can write into it
-- [ ] **C-2** Implement `HtmlBackend` class — constructor accepts `{container: HTMLElement, terminal?: Terminal}` (user controls mount point, not `startApp`). `startApp` initializes terminal size only, does not create DOM
-- [ ] **C-3** Implement `setupLogger` — bridge to browser `console`
-- [ ] **C-4** Implement `detectTermSize` — read `Terminal.rows`/`Terminal.cols` from xterm.js, write into WASM-side `TuiContext` via `updateTuiContext` export
-- [ ] **C-5** Implement `renderDrawList` — copy `DrawListBuffer.buffer` (JS ArrayBuffer) into WASM memory via `allocWasmBuffer`, call `renderDrawListToBuffer(wasm_ctx_ptr, wasm_buf_ptr, buf_len)`, read ANSI output via `getOutputPtr()`/`getOutputLen()`, call `Terminal.write()`, then `deallocWasmBuffer`
-- [ ] **C-6** Implement `startEvents`/`stopEvents` — attach to xterm.js `onKey`/`onMouse`/`onResize`, convert to TuiEvent via factory functions, feed into `handler`. Handle terminal resize from `onResize`. This merges old Phase D into C to keep `HtmlBackend` a complete `TuiBackend` implementation at the end of the phase
-- [ ] **C-7** Add factory functions for event classes (`fromDomEvent`) — construct `KeyboardEvent`/`MouseEvent`/`WheelEvent`/`TermResizeEvent` from xterm.js `IKeyboardEvent`/`IMouseEvent`/`IWheelEvent`/resize event
+- [x] **C-1** WASM module loader — load `.wasm` binary via `WebAssembly.instantiateStreaming`, handle async/sync mismatch with `TuiApp` constructor (e.g. deferred init: `HtmlBackend` stores a promise, `startApp()` awaits it). Expose WASM memory (`WebAssembly.Memory`) so JS can write into it
+- [x] **C-2** Implement `HtmlBackend` class — constructor accepts `{container: HTMLElement, terminal?: Terminal}` (user controls mount point, not `startApp`). `startApp` initializes terminal size only, does not create DOM
+- [x] **C-3** Implement `setupLogger` — bridge to browser `console`
+- [x] **C-4** Implement `detectTermSize` — read `Terminal.rows`/`Terminal.cols` from xterm.js, write into WASM-side `TuiContext` via `updateTuiContext` export
+- [x] **C-5** Implement `renderDrawList` — copy `DrawListBuffer.buffer` (JS ArrayBuffer) into WASM memory via `allocWasmBuffer`, call `renderDrawListToBuffer(wasm_ctx_ptr, wasm_buf_ptr, buf_len)`, read ANSI output via `getOutputPtr()`/`getOutputLen()`, call `Terminal.write()`, then `deallocWasmBuffer`
+- [x] **C-6** Implement `startEvents`/`stopEvents` — attach to xterm.js `onKey`/`onMouse`/`onResize`, convert to TuiEvent via factory functions, feed into `handler`. Handle terminal resize from `onResize`. This merges old Phase D into C to keep `HtmlBackend` a complete `TuiBackend` implementation at the end of the phase
+- [x] **C-7** Add factory functions for event classes (`fromDomEvent`) — construct `KeyboardEvent`/`MouseEvent`/`WheelEvent`/`TermResizeEvent` from xterm.js `IKeyboardEvent`/`IMouseEvent`/`IWheelEvent`/resize event
 
 ### Phase D — Packaging & DX
 
