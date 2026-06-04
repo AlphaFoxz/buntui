@@ -24,12 +24,18 @@
             },
             "types": "./dist/platform/native.d.ts",
             "default": "./dist/platform/native.js"
+        },
+        "./wasm": {
+            "default": "./dist/buntui.wasm"
         }
     },
     "files": [
         "dist/"
     ],
     "sideEffects": false,
+    "browser": {
+        "./dist/platform/native.js": "./dist/platform/browser.js"
+    },
     "scripts": {
         "test": "bun test",
         "build": "tsc --project ./tsconfig.json && node -e \"require('fs').copyFileSync('src/global.d.ts','dist/global.d.ts')\"",

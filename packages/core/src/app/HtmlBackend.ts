@@ -6,6 +6,7 @@ import {
   KeyboardEvent as TuiKeyboardEvent,
   MouseEvent as TuiMouseEvent,
   TermResizeEvent as TuiTermResizeEvent,
+  WheelEvent as TuiWheelEvent,
 } from '../events/types';
 import TuiDataViewWrapper from '../extern/TuiDataViewWrapper';
 import type {WasmModule} from './wasm-module';
@@ -26,12 +27,13 @@ export type TerminalMouseEvent = {col: number; row: number; button: number; butt
 
 type TerminalResizeEvent = {cols: number; rows: number};
 
-type TerminalLike = {
+export type TerminalLike = {
   rows: number;
   cols: number;
   write(data: string): void;
+  onData?(handler: (data: string) => void): {dispose(): void};
   onKey(handler: (event: TerminalKeyEvent) => void): {dispose(): void};
-  onMouse(handler: (event: TerminalMouseEvent) => void): {dispose(): void};
+  onMouse?(handler: (event: TerminalMouseEvent) => void): {dispose(): void};
   onResize(handler: (event: TerminalResizeEvent) => void): {dispose(): void};
 };
 
@@ -55,6 +57,7 @@ export class HtmlBackend implements TuiBackend {
   readonly #wasm: WasmModule;
   #ctxPtr = 0;
   #eventDisposables: Array<{dispose(): void}> = [];
+  #mouseButtons = 0;
 
   constructor(options: HtmlBackendOptions) {
     this.#terminal = options.terminal;
@@ -116,20 +119,23 @@ export class HtmlBackend implements TuiBackend {
       handler(TuiEventType.KeyboardEvent, event);
     });
 
-    const mouseDisposable = this.#terminal.onMouse((mouseEvent: TerminalMouseEvent) => {
+    const mouseDisposable = this.#terminal.onMouse?.((mouseEvent: TerminalMouseEvent) => {
       const event = new TuiMouseEvent(serializeMouseEvent(mouseEvent));
       handler(TuiEventType.MouseEvent, event);
     });
+
+    const dataDisposable = this.#startMouseTracking(handler);
 
     const resizeDisposable = this.#terminal.onResize((resizeEvent: TerminalResizeEvent) => {
       const event = new TuiTermResizeEvent(serializeResizeEvent(resizeEvent.rows, resizeEvent.cols));
       handler(TuiEventType.TermResizeEvent, event);
     });
 
-    this.#eventDisposables = [keyDisposable, mouseDisposable, resizeDisposable];
+    this.#eventDisposables = [keyDisposable, mouseDisposable, dataDisposable, resizeDisposable].filter((d): d is {dispose(): void} => d !== undefined);
   }
 
   stopEvents(): void {
+    this.#terminal.write('\u001B[?1003l\u001B[?1006l');
     for (const disposable of this.#eventDisposables) {
       disposable.dispose();
     }
@@ -144,7 +150,7 @@ export class HtmlBackend implements TuiBackend {
 
     this.#wasm.exports.updateTuiContext(
       this.#ctxPtr,
-      Number(context.tick),
+      context.tick,
       context.x,
       context.y,
       context.rows,
@@ -152,6 +158,72 @@ export class HtmlBackend implements TuiBackend {
       context.resizeBehavior,
       context.debugMode ? 1 : 0,
     );
+  }
+
+  #startMouseTracking(handler: TuiBackendEventHandler): {dispose(): void} | undefined {
+    if (this.#terminal.onMouse || !this.#terminal.onData) {
+      return undefined;
+    }
+
+    this.#terminal.write('\u001B[?1003h\u001B[?1006h');
+
+    const sgrRegex = /\u001B\[<(\d+);(\d+);(\d+)([Mm])/g;
+
+    return this.#terminal.onData((data: string) => {
+      sgrRegex.lastIndex = 0;
+      let match: RegExpExecArray | null;
+      while ((match = sgrRegex.exec(data)) !== null) {
+        const cb = Number(match[1]!);
+        const col = Number(match[2]!) - 1;
+        const row = Number(match[3]!) - 1;
+        const isRelease = match[4] === 'm';
+
+        const button = cb & 3;
+        const isMotion = (cb & 32) !== 0;
+        const isWheel = cb >= 64;
+
+        if (isWheel) {
+          const event = new TuiWheelEvent(serializeWheelEvent(row, col, cb === 65 ? -1 : 1));
+          handler(TuiEventType.WheelEvent, event);
+          continue;
+        }
+
+        if (isRelease) {
+          this.#mouseButtons &= ~(1 << button);
+          const event = new TuiMouseEvent(serializeMouseEvent({
+            col,
+            row,
+            button: undefined as unknown as number,
+            buttons: undefined as unknown as number,
+            action: 'mouseup',
+          }));
+          handler(TuiEventType.MouseEvent, event);
+          continue;
+        }
+
+        if (isMotion) {
+          const event = new TuiMouseEvent(serializeMouseEvent({
+            col,
+            row,
+            button: undefined as unknown as number,
+            buttons: this.#mouseButtons,
+            action: 'mousemove',
+          }));
+          handler(TuiEventType.MouseEvent, event);
+          continue;
+        }
+
+        this.#mouseButtons |= 1 << button;
+        const event = new TuiMouseEvent(serializeMouseEvent({
+          col,
+          row,
+          button,
+          buttons: undefined as unknown as number,
+          action: 'mousedown',
+        }));
+        handler(TuiEventType.MouseEvent, event);
+      }
+    });
   }
 }
 
@@ -220,5 +292,18 @@ export function serializeResizeEvent(rows: number, cols: number): ArrayBuffer {
   const view = new TuiDataViewWrapper(buf);
   view.setUint16(0, rows, true);
   view.setUint16(2, cols, true);
+  return buf;
+}
+
+export function serializeWheelEvent(row: number, col: number, deltaY: number): ArrayBuffer {
+  const buf = new ArrayBuffer(9);
+  const view = new TuiDataViewWrapper(buf);
+  view.setUint8(0, 0);
+  view.setUint8(1, HAS_BUTTON);
+  view.setUint8(2, 0);
+  view.setUint8(3, 0);
+  view.setUint16(4, col + 1, true);
+  view.setUint16(6, row + 1, true);
+  view.setInt8(8, deltaY);
   return buf;
 }

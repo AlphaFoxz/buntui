@@ -117,6 +117,10 @@
       "name": "@buntui/native-linux-x64",
       "version": "0.1.0-alpha.3",
     },
+    "packages/native-platforms/wasm32-wasi": {
+      "name": "@buntui/native-wasm32-wasi",
+      "version": "0.1.0-alpha.3",
+    },
     "packages/native-platforms/win32-x64": {
       "name": "@buntui/native-win32-x64",
       "version": "0.1.0-alpha.3",
@@ -140,8 +144,9 @@
     },
     "packages/playground-web": {
       "name": "playground-web",
-      "version": "0.0.0",
+      "version": "0.1.0-alpha.3",
       "dependencies": {
+        "@buntui/core": "workspace:*",
         "@xterm/addon-fit": "^0.11.0",
         "@xterm/xterm": "^6.0.0",
         "vue": "^3.5.35",
@@ -250,6 +255,8 @@
     "@buntui/native-darwin-x64": ["@buntui/native-darwin-x64@workspace:packages/native-platforms/darwin-x64"],
 
     "@buntui/native-linux-x64": ["@buntui/native-linux-x64@workspace:packages/native-platforms/linux-x64"],
+
+    "@buntui/native-wasm32-wasi": ["@buntui/native-wasm32-wasi@workspace:packages/native-platforms/wasm32-wasi"],
 
     "@buntui/native-win32-x64": ["@buntui/native-win32-x64@workspace:packages/native-platforms/win32-x64"],
 

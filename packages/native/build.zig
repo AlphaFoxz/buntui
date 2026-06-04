@@ -36,6 +36,7 @@ pub fn build(b: *std.Build) void {
         .name = "buntui",
         .root_module = wasm_module,
     });
+    wasm_lib.rdynamic = true;
 
     const wasm_install = b.addInstallArtifact(wasm_lib, .{
         .dest_dir = .{ .override = .{ .custom = "wasm32-wasi" } },

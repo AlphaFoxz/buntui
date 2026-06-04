@@ -86,6 +86,12 @@ if (fs.existsSync(wasmFrom)) {
   await mkdir(wasmDest, {recursive: true});
   await cp(wasmFrom, wasmTo);
   console.log(`Copied: ${path.relative(nativeDir, wasmFrom)} -> ${path.relative(nativeDir, wasmTo)}`);
+
+  const coreDist = path.join(nativeDir, '..', 'core', 'dist');
+  await mkdir(coreDist, {recursive: true});
+  const coreWasm = path.join(coreDist, 'buntui.wasm');
+  await cp(wasmFrom, coreWasm);
+  console.log(`Copied: ${path.relative(nativeDir, wasmFrom)} -> ${path.relative(nativeDir, coreWasm)}`);
 } else {
   console.warn(`Warning: ${wasmFrom} not found`);
 }

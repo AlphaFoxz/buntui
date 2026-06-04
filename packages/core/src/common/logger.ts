@@ -40,22 +40,46 @@ export function logLevelToNumber(level: LogLevel): number {
 }
 
 class ConsoleLogSink implements LogSink {
+  readonly #log: typeof console.log;
+  readonly #error: typeof console.error;
+  readonly #warn: typeof console.warn;
+  readonly #info: typeof console.info;
+  readonly #debug: typeof console.debug;
+
+  constructor() {
+    this.#log = console.log.bind(console);
+    this.#error = console.error.bind(console);
+    this.#warn = console.warn.bind(console);
+    this.#info = console.info.bind(console);
+    this.#debug = console.debug.bind(console);
+  }
+
   write(level: string, message: string): void {
     const timestamp = `[${new Date().toISOString()}]`;
     const formatted = `${timestamp} ${level}: ${message}`;
     switch (level) {
       case 'error': {
-        console.error(formatted);
+        this.#error(formatted);
         break;
       }
 
       case 'warning': {
-        console.warn(formatted);
+        this.#warn(formatted);
+        break;
+      }
+
+      case 'info': {
+        this.#info(formatted);
+        break;
+      }
+
+      case 'debug': {
+        this.#debug(formatted);
         break;
       }
 
       default: {
-        console.log(formatted);
+        this.#log(formatted);
       }
     }
   }

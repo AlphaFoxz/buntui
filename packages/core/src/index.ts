@@ -81,3 +81,6 @@ export {
 } from './app/composables';
 export {LOGGER} from './common/logger';
 export {runSetup} from './app/scene-context';
+export {HtmlBackend} from './app/HtmlBackend';
+export type {HtmlBackendOptions, TerminalLike, TerminalMouseEvent} from './app/HtmlBackend';
+export {WasmModule} from './app/wasm-module';
