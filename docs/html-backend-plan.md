@@ -123,11 +123,23 @@ Remove all hard Bun/Node dependencies from core runtime so both native and brows
 
 ### Phase D — Packaging & DX
 
-- [ ] **D-1** Put `HtmlBackend` in `@buntui/core` — update `platform/browser.ts` to return `HtmlBackend` from `createBackend()`, resolve WASM binary path. No separate `@buntui/html` package needed (xterm.js is a peer dependency, no extra bundle cost for native users)
-- [ ] **D-2** Add browser entry point / example app in `playground-web` (xterm.js in a page, BuntUI rendering into it via `HtmlBackend`)
-- [ ] **D-3** Ensure tree-shaking works — native FFI code (`bun:ffi`, `.dll`/`.so`/`.dylib`) excluded from browser builds via conditional exports
-- [ ] **D-4** Dev server for browser target (Vite plugin?)
+User DX model: users bring their own web framework, create their own xterm.js (or compatible) `Terminal` instance, and pass it to BuntUI explicitly. BuntUI does not create DOM or manage the terminal lifecycle.
+
+```ts
+import {Terminal} from '@xterm/xterm';
+import {HtmlBackend, WasmModule, createApp} from '@buntui/core';
+
+const wasm = await WasmModule.load('/buntui.wasm');
+const app = createApp({backend: new HtmlBackend({terminal, wasmModule: wasm})});
+app.start();
+```
+
+- [ ] **D-1** Isolate `NativeBackend` from main barrel — remove `NativeBackend` export from `packages/core/src/index.ts` so browser bundlers never touch `bun:ffi`. `HtmlBackend` and `WasmModule` remain in the main barrel (no `bun:ffi` dependency, safe for both environments). `createBackend()` in `platform/browser.ts` keeps throwing — users must pass `backend` explicitly. `NativeBackend` is only reachable via `@buntui/core/platform` conditional export (native path, where `bun:ffi` exists). No separate `@buntui/html` package needed; xterm.js is a peer dependency
+- [ ] **D-2** Connect existing `playground-web/` to `HtmlBackend` — directory already exists with Vite + xterm.js setup. Wire up a demo app that loads WASM, creates `HtmlBackend`, and renders a BuntUI app into the xterm.js terminal
+- [ ] **D-3** Verify browser bundling with Vite — confirm `@buntui/core` main entry does not pull in `bun:ffi` or native shared libraries. `@buntui/core/platform` conditional export (`"browser"` → `browser.js`) resolves correctly. Run a production build of `playground-web/` and check bundle contents
+- [ ] **D-4** Configure `playground-web/vite.config.ts` for WASM — no custom Vite plugin needed; use Vite's built-in `?url` asset handling or `vite-plugin-wasm` for `.wasm` files, plus `optimizeDeps.exclude` for `@buntui/core`
 - [ ] **D-5** Guard `ptr()` in browser platform — throw or log warning instead of silently returning 0, to catch accidental FFI pointer usage in browser path
+- [ ] **D-6** WASM binary packaging — in `bun run build`, after Zig wasm32 build, copy `.wasm` output to `packages/core/dist/buntui.wasm`. Expose via `@buntui/core/wasm` sub-path export (returns URL string for `WebAssembly.instantiateStreaming`) or document that users serve the `.wasm` file from their own static assets
 
 ## Dependency Graph
 
@@ -136,7 +148,7 @@ Phase 0 (platform abstraction) ← prerequisite, no business logic changes
   └→ A (interface refactor)
       ├→ B (Zig WASM build) ← core workload, but mostly stubs not new code
       │   └→ C (HTML backend implementation) ← WASM loader + xterm.js wiring + event bridge (all in one phase)
-      └→ D (packaging & DX) ← depends on C, but can start D-1/D-5 early
+      └→ D (packaging & DX) ← depends on C; mostly validation + wiring, no new architecture
 ```
 
 ## Estimated Effort
@@ -147,15 +159,13 @@ Phase 0 (platform abstraction) ← prerequisite, no business logic changes
 | A — Interface refactor   | 1 day    | Small, mostly type-level changes                                          |
 | B — Zig WASM build       | 1-2 days | 4 stub modules (~340 lines) + build config + new exports (B-7, B-8)      |
 | C — HTML backend         | 2-3 days | WASM loader + memory management + xterm.js rendering + event bridge       |
-| D — Packaging & DX       | 2-3 days | Browser platform wiring, example app, tree-shaking, dev server            |
+| D — Packaging & DX       | 1-2 days | Barrel isolation, WASM packaging, playground-web demo, bundler validation |
 
-**Total: ~1.5-2 weeks**
+**Total: ~1.5 weeks**
 
 ## Open Questions
 
 - **WASI vs freestanding**: WASI provides `c_allocator` and is easier. Freestanding wasm32 needs a custom allocator. WASI is likely sufficient — all major browsers support it.
-- **xterm.js event API**: xterm.js exposes `onKey` (not raw `keydown`/`keyup`). Need to verify if modifier/key info is sufficient for the existing `KeyboardEvent` class.
-- **Terminal emulator compatibility**: the `TerminalBackend` abstraction should allow other browser terminals (not just xterm.js). Need to define a minimal adapter interface.
+- **Terminal emulator compatibility**: the `TerminalBackend` abstraction should allow other browser terminals (not just xterm.js). The `HtmlBackend` already accepts a `TerminalLike` interface (`onKey`, `onMouse`, `onResize`, `write`) so any compatible terminal library can be used.
 - **WASM binary size**: estimate needed. The rasterizer + presenter + ansi_util is ~3000 lines of Zig, should produce a small WASM binary.
-- **WASM async loading**: `WebAssembly.instantiateStreaming` is async but `TuiApp` constructor is sync. Current plan is deferred init (backend stores a promise, `startApp()` awaits), but need to verify this works cleanly with the `RenderLoop` lifecycle.
 - **WASM memory ownership**: `allocWasmBuffer`/`deallocWasmBuffer` means JS manages WASM heap memory manually. Need to verify no leaks on rapid render frames (alloc per frame, dealloc after write). Alternatively, use a fixed-size reusable WASM buffer if max DrawList size is bounded.

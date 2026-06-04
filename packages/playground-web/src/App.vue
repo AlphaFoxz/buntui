@@ -16,7 +16,7 @@ onMounted(() => {
     term = new Terminal()
     fitAddon = new FitAddon()
     term.loadAddon(fitAddon)
-    term.open(termRef.value!)
+    term.open(termRef.value ?? document.createElement('div'))
     fitAddon.fit()
     window.addEventListener('resize', onResize)
 })
