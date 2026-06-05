@@ -1,0 +1,78 @@
+name: Deploy Pages
+
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - 'packages/github-pages/**'
+            - 'packages/playground-wasm/src/**'
+            - 'packages/core/src/**'
+            - 'packages/native/src/**'
+            - 'packages/extensions/src/**'
+            - 'packages/compiler/src/**'
+            - '.github/workflows/pages.yml'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    pages: write
+    id-token: write
+
+concurrency:
+    group: pages
+    cancel-in-progress: true
+
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: mlugg/setup-zig@v2
+              with:
+                  version: '0.16.0'
+
+            - uses: oven-sh/setup-bun@v2
+
+            - run: bun install
+
+            - name: Build WASM binary
+              working-directory: packages/native
+              run: zig build wasm -Drelease=true
+
+            - name: Copy WASM to platform package
+              run: |
+                  mkdir -p packages/native-platforms/wasm32-wasi
+                  cp packages/native/zig-out/wasm32-wasi/buntui.wasm packages/native-platforms/wasm32-wasi/buntui.wasm
+
+            - name: Build core
+              run: bun run --cwd packages/core build
+
+            - name: Build compiler
+              run: bun run --cwd packages/compiler build
+
+            - name: Build playground-wasm
+              run: bun run --cwd packages/playground-wasm build
+
+            - name: Build github-pages
+              run: bun run --cwd packages/github-pages build-only
+
+            - name: Upload artifact
+              uses: actions/upload-pages-artifact@v3
+              with:
+                  path: packages/github-pages/dist
+
+    deploy:
+        needs: build
+        runs-on: ubuntu-latest
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4

@@ -32,7 +32,8 @@ onMounted(async () => {
     window.addEventListener('resize', handleResize)
 
     const wasm = new WasmModule()
-    await wasm.load(fetch('/buntui.wasm'))
+    const wasmUrl = `${import.meta.env.BASE_URL}buntui.wasm`
+    await wasm.load(fetch(wasmUrl))
 
     const backend = new HtmlBackend({ terminal: term, wasmModule: wasm })
     app = createApp({
