@@ -1,10 +1,10 @@
 <template>
-    <Box :x="0" :y="0" width="100%" :height="1" :direction="'horizontal'" :gap="1" :align="'center'">
-        <Text value="bunui" styleModifier="bold" />
+    <Box :x="0" :y="0" width="100%" :height="3" :direction="'horizontal'" :gap="1" :align="'center'" borderStyle="none">
+        <Text value="bunui" />
         <SelectButton :height="1" :options="pageOptions" v-model="currentPage" />
     </Box>
 
-    <Box :x="0" :y="1" width="100%" height="95%">
+    <ScrollBox :x="0" :y="3" width="100%" height="95%">
         <BoxDemo v-if="currentPage === 'Box'" />
         <TextDemo v-else-if="currentPage === 'Text'" />
         <InputDemo v-else-if="currentPage === 'Input'" />
@@ -18,7 +18,7 @@
         <TextareaDemo v-else-if="currentPage === 'Textarea'" />
         <TableDemo v-else-if="currentPage === 'Table'" />
         <ProgressDemo v-else-if="currentPage === 'Progress'" />
-    </Box>
+    </ScrollBox>
 </template>
 <script setup lang="ts">
 import { ref } from '@vue/reactivity'

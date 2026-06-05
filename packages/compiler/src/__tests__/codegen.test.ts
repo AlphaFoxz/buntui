@@ -88,7 +88,7 @@ describe('codegen', () => {
     it('generates export function setup(scene)', () => {
       const root = makeRoot([makeWidget()], [], new Set(['createBox']));
       const result = gen(root);
-      expect(result.code).toContain('export function setup(__scene) {');
+      expect(result.code).toContain('export function setup(__scene, __mt) {');
       expect(result.code).toContain('export default { setup };');
     });
 
@@ -318,8 +318,8 @@ describe('codegen', () => {
       expect(result.code).toContain('effect(() => {');
       expect(result.code).toMatch(/if\s*\(unref\(showA\)\)/);
       expect(result.code).toContain('else {');
-      expect(result.code).toContain('scene.mount(');
-      expect(result.code).toContain('scene.unmount(');
+      expect(result.code).toContain('__target.mount(');
+      expect(result.code).toContain('__target.unmount(');
     });
 
     it('declares widget vars as let null', () => {
@@ -644,12 +644,12 @@ describe('codegen', () => {
       );
       const result = gen(root);
       expect(result.code).toContain('return () => {');
-      expect(result.code).toContain('scene.unmount(');
+      expect(result.code).toContain('__target.unmount(');
     });
   });
 
   describe('edge cases: component with v-show', () => {
-    it('generates proxy scene pattern for component v-show', () => {
+    it('generates proxy mount target pattern for component v-show', () => {
       const component = makeWidget({
         tag: 'MyWidget',
         creator: 'MyWidget',
@@ -660,6 +660,7 @@ describe('codegen', () => {
       const result = gen(root);
       expect(result.code).toContain('_w = []');
       expect(result.code).toContain('setVisible');
+      expect(result.code).toContain('__runSetup(__scene, () => MyWidget.setup(__scene, {');
     });
   });
 

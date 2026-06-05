@@ -183,7 +183,7 @@ export class HtmlBackend implements TuiBackend {
         const isWheel = cb >= 64;
 
         if (isWheel) {
-          const event = new TuiWheelEvent(serializeWheelEvent(row, col, cb === 65 ? -1 : 1));
+          const event = new TuiWheelEvent(serializeWheelEvent(row, col, cb === 65 ? 1 : -1));
           handler(TuiEventType.WheelEvent, event);
           continue;
         }

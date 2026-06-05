@@ -386,8 +386,8 @@ export class BoxWidget extends TuiWidgetEntity {
     const totalGaps = Math.max(0, this.#layoutChildren.length - 1) * this.#gap;
     totalMain += totalGaps;
 
-    const hBorder = (this.#border.borderLeft ? 1 : 0) + (this.#border.borderRight ? 1 : 0);
-    const vBorder = (this.#border.borderTop ? 1 : 0) + (this.#border.borderBottom ? 1 : 0);
+    const hBorder = this.#border.borderStyle === 0 ? 0 : (this.#border.borderLeft ? 1 : 0) + (this.#border.borderRight ? 1 : 0);
+    const vBorder = this.#border.borderStyle === 0 ? 0 : (this.#border.borderTop ? 1 : 0) + (this.#border.borderBottom ? 1 : 0);
 
     if (this.#direction === 1) {
       return {
@@ -439,11 +439,11 @@ export class BoxWidget extends TuiWidgetEntity {
       });
     }
 
-    const borderH = (borderLeft ? 1 : 0) + (borderRight ? 1 : 0);
-    const borderV = (borderTop ? 1 : 0) + (borderBottom ? 1 : 0);
+    const borderH = borderStyle !== 0 ? (borderLeft ? 1 : 0) + (borderRight ? 1 : 0) : 0;
+    const borderV = borderStyle !== 0 ? (borderTop ? 1 : 0) + (borderBottom ? 1 : 0) : 0;
     const {paddingTop, paddingLeft} = this.#padding;
-    const contentX = x + paddingLeft + (borderLeft ? 1 : 0);
-    const contentY = y + paddingTop + (borderTop ? 1 : 0);
+    const contentX = x + paddingLeft + (borderStyle !== 0 && borderLeft ? 1 : 0);
+    const contentY = y + paddingTop + (borderStyle !== 0 && borderTop ? 1 : 0);
     const contentWidth = width - paddingLeft - this.#padding.paddingRight - borderH;
     const contentHeight = height - paddingTop - this.#padding.paddingBottom - borderV;
 
@@ -511,13 +511,13 @@ export class BoxWidget extends TuiWidgetEntity {
 
     const {x, y, width, height} = this.#rect;
     const {paddingTop, paddingLeft} = this.#padding;
-    const borderH = (this.#border.borderLeft ? 1 : 0) + (this.#border.borderRight ? 1 : 0);
-    const borderV = (this.#border.borderTop ? 1 : 0) + (this.#border.borderBottom ? 1 : 0);
+    const borderH = this.#border.borderStyle !== 0 ? (this.#border.borderLeft ? 1 : 0) + (this.#border.borderRight ? 1 : 0) : 0;
+    const borderV = this.#border.borderStyle !== 0 ? (this.#border.borderTop ? 1 : 0) + (this.#border.borderBottom ? 1 : 0) : 0;
     const hInset = paddingLeft + this.#padding.paddingRight + borderH;
     const vInset = paddingTop + this.#padding.paddingBottom + borderV;
 
-    const contentX = x + paddingLeft + (this.#border.borderLeft ? 1 : 0);
-    const contentY = y + paddingTop + (this.#border.borderTop ? 1 : 0);
+    const contentX = x + paddingLeft + (this.#border.borderStyle !== 0 && this.#border.borderLeft ? 1 : 0);
+    const contentY = y + paddingTop + (this.#border.borderStyle !== 0 && this.#border.borderTop ? 1 : 0);
     const contentWidth = width - hInset;
     const contentHeight = height - vInset;
 

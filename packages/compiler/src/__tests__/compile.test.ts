@@ -6,8 +6,8 @@ describe('compile', () => {
     it('compiles minimal template with single widget', () => {
       const result = compile('<template><Box x="1" y="2"/></template>');
       expect(result.code).toContain('createBox');
-      expect(result.code).toContain('__scene.mount');
-      expect(result.code).toContain('export function setup(__scene)');
+      expect(result.code).toContain('__target.mount');
+      expect(result.code).toContain('export function setup(__scene, __mt)');
       expect(result.code).toContain('export default { setup };');
       expect(result.imports.length).toBeGreaterThan(0);
       expect(result.imports.some(i => i.includes('createBox'))).toBe(true);
@@ -350,8 +350,8 @@ describe('compile', () => {
   describe('edge cases: empty template', () => {
     it('compiles empty template without error', () => {
       const result = compile('<template></template>');
-      expect(result.code).toContain('export function setup(__scene)');
-      expect(result.code).not.toContain('scene.mount');
+      expect(result.code).toContain('export function setup(__scene, __mt)');
+      expect(result.code).not.toContain('target.mount');
     });
   });
 
