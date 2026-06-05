@@ -14,9 +14,9 @@ import type {TableColumn, TableRow, TableWidgetOptions} from './types';
 type TableColors = {
   fg: number;
   bg: number;
-  borderColor: number;
-  headerColorFg: number;
-  headerColorBg: number;
+  colorBorder: number;
+  colorHeaderFg: number;
+  colorHeaderBg: number;
 };
 
 const TABLE_TOKEN_MAP = {
@@ -26,14 +26,14 @@ const TABLE_TOKEN_MAP = {
   colorBgFocused: 'surface',
   colorFgDisabled: 'textMuted',
   colorBgDisabled: 'surfaceDisabled',
-  borderColor: 'border',
+  colorBorder: 'border',
   borderStyle: 'border.normal',
-  headerColorFg: 'textMuted',
-  headerColorBg: 'surface',
-  selectionBgColor: 'selectionBg',
-  selectionFgColor: 'selectionFg',
-  scrollbarColor: 'scrollbar',
-  scrollbarTrackColor: 'scrollbarTrack',
+  colorHeaderFg: 'textMuted',
+  colorHeaderBg: 'surface',
+  colorSelectionBg: 'selectionBg',
+  colorSelectionFg: 'selectionFg',
+  colorScrollbar: 'scrollbar',
+  colorScrollbarTrack: 'scrollbarTrack',
 } as const;
 
 function getDefaultTableOptions(): TableWidgetOptions {
@@ -67,12 +67,12 @@ export class TableWidget extends InteractiveWidget {
 
   readonly #colors: ColorScheme<TableColors>;
   #borderStyle: number;
-  #headerColorFg: number;
-  #headerColorBg: number;
-  #selectionBgColor: number;
-  #selectionFgColor: number;
-  #scrollbarColor: number;
-  #scrollbarTrackColor: number;
+  #colorHeaderFg: number;
+  #colorHeaderBg: number;
+  #colorSelectionBg: number;
+  #colorSelectionFg: number;
+  #colorScrollbar: number;
+  #colorScrollbarTrack: number;
 
   #columns: ResolvedColumn[] = [];
   #rows: TableRow[] = [];
@@ -91,34 +91,34 @@ export class TableWidget extends InteractiveWidget {
       normal: {
         fg: parseColor(resolved.colorFgNormal!),
         bg: parseColor(resolved.colorBgNormal!),
-        borderColor: parseColor(resolved.borderColor!),
-        headerColorFg: parseColor(resolved.headerColorFg!),
-        headerColorBg: parseColor(resolved.headerColorBg!),
+        colorBorder: parseColor(resolved.colorBorder!),
+        colorHeaderFg: parseColor(resolved.colorHeaderFg!),
+        colorHeaderBg: parseColor(resolved.colorHeaderBg!),
       },
       focused: {
         fg: parseColor(resolved.colorFgFocused!),
         bg: parseColor(resolved.colorBgFocused!),
-        borderColor: parseColor(resolved.borderColor!),
-        headerColorFg: parseColor(resolved.headerColorFg!),
-        headerColorBg: parseColor(resolved.headerColorBg!),
+        colorBorder: parseColor(resolved.colorBorder!),
+        colorHeaderFg: parseColor(resolved.colorHeaderFg!),
+        colorHeaderBg: parseColor(resolved.colorHeaderBg!),
       },
       disabled: {
         fg: parseColor(resolved.colorFgDisabled!),
         bg: parseColor(resolved.colorBgDisabled!),
-        borderColor: parseColor(resolved.borderColor!),
-        headerColorFg: parseColor(resolved.headerColorFg!),
-        headerColorBg: parseColor(resolved.headerColorBg!),
+        colorBorder: parseColor(resolved.colorBorder!),
+        colorHeaderFg: parseColor(resolved.colorHeaderFg!),
+        colorHeaderBg: parseColor(resolved.colorHeaderBg!),
       },
     };
     this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
-    this.#headerColorFg = parseColor(resolved.headerColorFg!);
-    this.#headerColorBg = parseColor(resolved.headerColorBg!);
-    this.#selectionBgColor = parseColor(resolved.selectionBgColor!);
-    this.#selectionFgColor = parseColor(resolved.selectionFgColor!);
+    this.#colorHeaderFg = parseColor(resolved.colorHeaderFg!);
+    this.#colorHeaderBg = parseColor(resolved.colorHeaderBg!);
+    this.#colorSelectionBg = parseColor(resolved.colorSelectionBg!);
+    this.#colorSelectionFg = parseColor(resolved.colorSelectionFg!);
     this.setDisabled(resolved.disabled ?? false);
 
-    this.#scrollbarColor = parseColor(resolved.scrollbarColor!);
-    this.#scrollbarTrackColor = parseColor(resolved.scrollbarTrackColor!);
+    this.#colorScrollbar = parseColor(resolved.colorScrollbar!);
+    this.#colorScrollbarTrack = parseColor(resolved.colorScrollbarTrack!);
 
     if (resolved.columns) {
       this.#resolveColumns(resolved.columns);
@@ -221,28 +221,28 @@ export class TableWidget extends InteractiveWidget {
       this.#borderStyle = resolveBorderStyle(resolved.borderStyle as TuiBorderStyleName);
     }
 
-    if (resolved.headerColorFg !== undefined) {
-      this.#headerColorFg = parseColor(resolved.headerColorFg as number);
+    if (resolved.colorHeaderFg !== undefined) {
+      this.#colorHeaderFg = parseColor(resolved.colorHeaderFg as number);
     }
 
-    if (resolved.headerColorBg !== undefined) {
-      this.#headerColorBg = parseColor(resolved.headerColorBg as number);
+    if (resolved.colorHeaderBg !== undefined) {
+      this.#colorHeaderBg = parseColor(resolved.colorHeaderBg as number);
     }
 
-    if (resolved.selectionBgColor !== undefined) {
-      this.#selectionBgColor = parseColor(resolved.selectionBgColor as number);
+    if (resolved.colorSelectionBg !== undefined) {
+      this.#colorSelectionBg = parseColor(resolved.colorSelectionBg as number);
     }
 
-    if (resolved.selectionFgColor !== undefined) {
-      this.#selectionFgColor = parseColor(resolved.selectionFgColor as number);
+    if (resolved.colorSelectionFg !== undefined) {
+      this.#colorSelectionFg = parseColor(resolved.colorSelectionFg as number);
     }
 
-    if (resolved.scrollbarColor !== undefined) {
-      this.#scrollbarColor = parseColor(resolved.scrollbarColor as number);
+    if (resolved.colorScrollbar !== undefined) {
+      this.#colorScrollbar = parseColor(resolved.colorScrollbar as number);
     }
 
-    if (resolved.scrollbarTrackColor !== undefined) {
-      this.#scrollbarTrackColor = parseColor(resolved.scrollbarTrackColor as number);
+    if (resolved.colorScrollbarTrack !== undefined) {
+      this.#colorScrollbarTrack = parseColor(resolved.colorScrollbarTrack as number);
     }
   }
 
@@ -367,7 +367,7 @@ export class TableWidget extends InteractiveWidget {
         y: this.#y,
         width: this.#width,
         height: this.#height,
-        colorRgba: colors.borderColor,
+        colorRgba: colors.colorBorder,
         style: this.#borderStyle,
         sides: BorderSides.All,
       });
@@ -461,8 +461,8 @@ export class TableWidget extends InteractiveWidget {
         x: drawX,
         y,
         text,
-        fgRgba: this.#headerColorFg,
-        bgRgba: this.#headerColorBg,
+        fgRgba: this.#colorHeaderFg,
+        bgRgba: this.#colorHeaderBg,
       });
       drawX += col.width;
     }
@@ -506,8 +506,8 @@ export class TableWidget extends InteractiveWidget {
           x: drawX,
           y: screenY,
           text: cellText,
-          fgRgba: isSelected ? this.#selectionFgColor : colors.fg,
-          bgRgba: isSelected ? this.#selectionBgColor : 0x00_00_00_00,
+          fgRgba: isSelected ? this.#colorSelectionFg : colors.fg,
+          bgRgba: isSelected ? this.#colorSelectionBg : 0x00_00_00_00,
         });
         drawX += col.width;
       }
@@ -562,7 +562,7 @@ export class TableWidget extends InteractiveWidget {
         x,
         y: y + row,
         char: isThumb ? 0x25_88 : 0x25_02,
-        fgRgba: isThumb ? this.#scrollbarColor : this.#scrollbarTrackColor,
+        fgRgba: isThumb ? this.#colorScrollbar : this.#colorScrollbarTrack,
         bgRgba: 0x00_00_00_00,
       });
     }

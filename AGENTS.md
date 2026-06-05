@@ -93,7 +93,7 @@ Lock-free SPSC ring buffer. Zig emits binary events, TS polls/commits. Three-ste
 - **Zig error handling**: Never propagate error unions across FFI. Use status codes in exports, `core/error.zig` helpers for fatal errors.
 - **No comments in code** unless explicitly requested.
 - **Widget method naming** (`set*` vs `update*`):
-  - `set*` — direct scalar assignment with minimal side-effects. Accepts a single value (boolean, string, number, array). Examples: `setDisabled`, `setVisible`, `setChecked`, `setLabel`, `setGap`, `setAlign`, `setDirection`, `setMax`, `setOptions`.
+  - `set*` — direct scalar assignment with minimal side-effects. Accepts a single value (boolean, string, number, array). Examples: `setDisabled`, `setVisible`, `setChecked`, `setLabel`, `setGap`, `setAlign`, `setDirection`, `setMax`, `setOptions`, `setColorScrollbar`, `setColorScrollbarTrack`.
   - `update*` — structured `Partial<T>` merge and/or complex value transformation with cascading side-effects. Compiler batches multiple fields targeting the same method into one call. Examples: `updateRect`, `updateColor`, `updateBorder`, `updateShadow`, `updatePadding`, `updateStyle`, `updateValue`.
 
 ## CI

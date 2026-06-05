@@ -54,7 +54,7 @@
         :width="24"
         :height="5"
         :colorBg="'rgba(166,227,161,0.5)'"
-        :borderColor="'rgba(166,227,161,1)'"
+        :colorBorder="'rgba(166,227,161,1)'"
         borderStyle="rounded"
         :z-index="2"
     >
@@ -69,7 +69,7 @@
         :width="24"
         :height="5"
         :colorBg="'rgba(137,180,250,0.33)'"
-        :borderColor="'rgba(137,180,250,1)'"
+        :colorBorder="'rgba(137,180,250,1)'"
         :zIndex="1"
     >
         <Text value="zIndex=1 中间层" />
@@ -83,7 +83,7 @@
         :width="24"
         :height="5"
         :colorBg="'rgba(243,139,168,1)'"
-        :borderColor="'rgba(243,139,168,1)'"
+        :colorBorder="'rgba(243,139,168,1)'"
         border="1 0"
         :zIndex="0"
     >

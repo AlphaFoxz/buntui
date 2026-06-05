@@ -48,7 +48,7 @@ declare global {
     colorFg?: TuiColor;
     colorBg?: TuiColor;
     border?: TuiBorderSides;
-    borderColor?: TuiColor;
+    colorBorder?: TuiColor;
     borderStyle?: TuiBorderStyle;
     borderTop?: boolean;
     borderRight?: boolean;
@@ -58,7 +58,7 @@ declare global {
     styleModifier?: TuiFontStyle | TuiFontStyle[];
     shadowOffsetX?: number;
     shadowOffsetY?: number;
-    shadowColor?: TuiColor;
+    colorShadow?: TuiColor;
     shadowCovered?: boolean;
     draggable?: boolean;
     direction?: TuiLayoutDirection;
@@ -93,7 +93,7 @@ declare global {
     colorFg?: TuiColor;
     colorBg?: TuiColor;
     placeholder?: string;
-    placeholderColorFg?: TuiColor;
+    colorPlaceholder?: TuiColor;
     value?: string;
     type?: 'text' | 'password' | 'number';
     min?: number;
@@ -101,17 +101,17 @@ declare global {
     step?: number;
     modelValue?: string;
     label?: string;
-    borderColorUnfocused?: TuiColor;
-    borderColorFocused?: TuiColor;
+    colorBorderUnfocused?: TuiColor;
+    colorBorderFocused?: TuiColor;
     borderStyle?: TuiBorderStyle;
     maxLength?: number;
-    selectionBgColor?: TuiColor;
-    selectionFgColor?: TuiColor;
+    colorSelectionBg?: TuiColor;
+    colorSelectionFg?: TuiColor;
     readonly?: boolean;
     disabled?: boolean;
     colorFgDisabled?: TuiColor;
     colorBgDisabled?: TuiColor;
-    borderColorDisabled?: TuiColor;
+    colorBorderDisabled?: TuiColor;
   };
 
   type TuiButtonProps = {
@@ -123,23 +123,23 @@ declare global {
     disabled?: boolean;
     colorFgNormal?: TuiColor;
     colorBgNormal?: TuiColor;
-    borderColorNormal?: TuiColor;
+    colorBorderNormal?: TuiColor;
     borderStyleNormal?: TuiBorderStyle;
     colorFgHovered?: TuiColor;
     colorBgHovered?: TuiColor;
-    borderColorHovered?: TuiColor;
+    colorBorderHovered?: TuiColor;
     borderStyleHovered?: TuiBorderStyle;
     colorFgFocused?: TuiColor;
     colorBgFocused?: TuiColor;
-    borderColorFocused?: TuiColor;
+    colorBorderFocused?: TuiColor;
     borderStyleFocused?: TuiBorderStyle;
     colorFgPressed?: TuiColor;
     colorBgPressed?: TuiColor;
-    borderColorPressed?: TuiColor;
+    colorBorderPressed?: TuiColor;
     borderStylePressed?: TuiBorderStyle;
     colorFgDisabled?: TuiColor;
     colorBgDisabled?: TuiColor;
-    borderColorDisabled?: TuiColor;
+    colorBorderDisabled?: TuiColor;
     borderStyleDisabled?: TuiBorderStyle;
   };
 
@@ -240,13 +240,13 @@ declare global {
     height?: TuiSizeValue;
     colorFg?: TuiColor;
     colorBg?: TuiColor;
-    borderColor?: TuiColor;
+    colorBorder?: TuiColor;
     borderStyle?: TuiBorderStyle;
     borderTop?: boolean;
     borderRight?: boolean;
     borderBottom?: boolean;
     borderLeft?: boolean;
-    shadowColor?: TuiColor;
+    colorShadow?: TuiColor;
     shadowOffsetX?: number;
     shadowOffsetY?: number;
     shadowCovered?: boolean;
@@ -257,8 +257,8 @@ declare global {
     gap?: number;
     scrollSpeed?: number;
     alwaysShowScrollbar?: boolean;
-    scrollbarColor?: TuiColor;
-    scrollbarTrackColor?: TuiColor;
+    colorScrollbar?: TuiColor;
+    colorScrollbarTrack?: TuiColor;
   };
 
   type TuiProgressProps = {
@@ -350,16 +350,16 @@ declare global {
     colorFg?: TuiColor;
     colorBg?: TuiColor;
     placeholder?: string;
-    placeholderColorFg?: TuiColor;
+    colorPlaceholder?: TuiColor;
     value?: string;
     modelValue?: string;
     label?: string;
-    borderColorUnfocused?: TuiColor;
-    borderColorFocused?: TuiColor;
+    colorBorderUnfocused?: TuiColor;
+    colorBorderFocused?: TuiColor;
     borderStyle?: TuiBorderStyle;
     maxLength?: number;
-    selectionBgColor?: TuiColor;
-    selectionFgColor?: TuiColor;
+    colorSelectionBg?: TuiColor;
+    colorSelectionFg?: TuiColor;
     readonly?: boolean;
     disabled?: boolean;
     colorFgDisabled?: TuiColor;
@@ -398,9 +398,9 @@ declare global {
     colorBgHovered?: TuiColor;
     colorFgDisabled?: TuiColor;
     colorBgDisabled?: TuiColor;
-    borderColorUnfocused?: TuiColor;
-    borderColorFocused?: TuiColor;
-    borderColorDisabled?: TuiColor;
+    colorBorderUnfocused?: TuiColor;
+    colorBorderFocused?: TuiColor;
+    colorBorderDisabled?: TuiColor;
     borderStyle?: TuiBorderStyle;
     colorFgItem?: TuiColor;
     colorBgItem?: TuiColor;

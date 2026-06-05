@@ -34,9 +34,9 @@ export type SelectWidgetOptions = {
   colorBgDisabled?: TuiColor;
 
   // Border
-  borderColorUnfocused?: TuiColor;
-  borderColorFocused?: TuiColor;
-  borderColorDisabled?: TuiColor;
+  colorBorderUnfocused?: TuiColor;
+  colorBorderFocused?: TuiColor;
+  colorBorderDisabled?: TuiColor;
   borderStyle?: TuiBorderStyleName;
 
   // Dropdown item (open state)

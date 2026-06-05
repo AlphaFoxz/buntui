@@ -28,7 +28,7 @@ import {TuiWidgetEntity} from '../TuiWidgetEntity';
 
 export type BorderShorthand = boolean | string | number;
 
-export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & Partial<TuiWidgetShadow>, 'colorFg' | 'colorBg' | 'borderColor' | 'shadowColor' | 'borderStyle'>
+export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & Partial<TuiWidgetShadow>, 'colorFg' | 'colorBg' | 'colorBorder' | 'colorShadow' | 'borderStyle'>
   & Partial<TuiWidgetPadding>
   & {
     x?: TuiSizeValue;
@@ -37,8 +37,8 @@ export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & 
     height?: TuiSizeValue;
     colorFg?: TuiColor;
     colorBg?: TuiColor;
-    borderColor?: TuiColor;
-    shadowColor?: TuiColor;
+    colorBorder?: TuiColor;
+    colorShadow?: TuiColor;
     border?: BorderShorthand;
     borderStyle?: TuiBorderStyleName;
     direction?: TuiLayoutDirectionName;
@@ -150,7 +150,7 @@ function initBorder(options: BoxWidgetOptions): TuiWidgetBorder {
     ? undefined
     : expandBorderShorthand(options.border);
   return {
-    borderColor: parseColor(options.borderColor ?? theme.colors.border),
+    colorBorder: parseColor(options.colorBorder ?? theme.colors.border),
     borderStyle: resolveBorderStyle(options.borderStyle ?? 'none'),
     borderTop: options.borderTop ?? expansion?.borderTop ?? false,
     borderRight: options.borderRight ?? expansion?.borderRight ?? false,
@@ -187,7 +187,7 @@ export class BoxWidget extends TuiWidgetEntity {
     this.#shadow = {
       shadowOffsetX: options.shadowOffsetX ?? 0,
       shadowOffsetY: options.shadowOffsetY ?? 0,
-      shadowColor: parseColor(options.shadowColor ?? 0),
+      colorShadow: parseColor(options.colorShadow ?? 0),
       shadowCovered: options.shadowCovered ?? false,
     };
     this.#padding = {
@@ -261,8 +261,8 @@ export class BoxWidget extends TuiWidgetEntity {
       colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg as TuiColor),
       colorBg: resolved.colorBg === undefined ? undefined : parseColor(resolved.colorBg as TuiColor),
     });
-    if (resolved.borderColor !== undefined) {
-      this.updateBorder({borderColor: parseColor(resolved.borderColor as TuiColor)});
+    if (resolved.colorBorder !== undefined) {
+      this.updateBorder({colorBorder: parseColor(resolved.colorBorder as TuiColor)});
     }
   }
 
@@ -277,8 +277,8 @@ export class BoxWidget extends TuiWidgetEntity {
   }
 
   updateBorder(border: Omit<Partial<TuiWidgetBorder>, 'borderStyle'> & {border?: BorderShorthand; borderStyle?: TuiBorderStyleName}): void {
-    if (border.borderColor !== undefined) {
-      this.#border.borderColor = parseColor(border.borderColor);
+    if (border.colorBorder !== undefined) {
+      this.#border.colorBorder = parseColor(border.colorBorder);
     }
 
     if (border.borderStyle !== undefined) {
@@ -311,8 +311,8 @@ export class BoxWidget extends TuiWidgetEntity {
   }
 
   updateShadow(shadow: Partial<TuiWidgetShadow>): void {
-    if (shadow.shadowColor !== undefined) {
-      this.#shadow.shadowColor = parseColor(shadow.shadowColor);
+    if (shadow.colorShadow !== undefined) {
+      this.#shadow.colorShadow = parseColor(shadow.colorShadow);
     }
 
     if (shadow.shadowOffsetX !== undefined) {
@@ -411,7 +411,7 @@ export class BoxWidget extends TuiWidgetEntity {
 
     const {x, y, width, height} = this.#rect;
     const {colorBg} = this.#color;
-    const {borderColor, borderStyle, borderTop, borderRight, borderBottom, borderLeft} = this.#border;
+    const {colorBorder, borderStyle, borderTop, borderRight, borderBottom, borderLeft} = this.#border;
 
     buffer.pushClip(x, y, width, height);
 
@@ -433,7 +433,7 @@ export class BoxWidget extends TuiWidgetEntity {
         y,
         width,
         height,
-        colorRgba: borderColor,
+        colorRgba: colorBorder,
         style: borderStyle,
         sides,
       });
@@ -558,7 +558,7 @@ export class BoxWidget extends TuiWidgetEntity {
 const BOX_TOKEN_MAP = {
   colorFg: 'text',
   colorBg: 'background',
-  borderColor: 'border',
+  colorBorder: 'border',
 } as const;
 
 export function getDefaultBoxOptions(): BoxWidgetOptions {

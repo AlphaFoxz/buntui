@@ -54,7 +54,7 @@ const PH_STYLE: PropHandlers = {
 
 const PH_BORDER_FULL: PropHandlers = {
   border: {method: 'updateBorder', field: 'border'},
-  borderColor: {method: 'updateBorder', field: 'borderColor'},
+  colorBorder: {method: 'updateBorder', field: 'colorBorder'},
   borderStyle: {method: 'updateBorder', field: 'borderStyle'},
   borderTop: {method: 'updateBorder', field: 'borderTop'},
   borderRight: {method: 'updateBorder', field: 'borderRight'},
@@ -69,7 +69,7 @@ const PH_BORDER_STYLE_ONLY: PropHandlers = {
 const PH_SHADOW: PropHandlers = {
   shadowOffsetX: {method: 'updateShadow', field: 'shadowOffsetX'},
   shadowOffsetY: {method: 'updateShadow', field: 'shadowOffsetY'},
-  shadowColor: {method: 'updateShadow', field: 'shadowColor'},
+  colorShadow: {method: 'updateShadow', field: 'colorShadow'},
   shadowCovered: {method: 'updateShadow', field: 'shadowCovered'},
 };
 
@@ -124,15 +124,15 @@ const BUTTON_PROP_HANDLERS: PropHandlers = {
   value: {method: 'updateValue'},
   colorFgNormal: {method: 'updateNormalStyle', field: 'colorFgNormal'},
   colorBgNormal: {method: 'updateNormalStyle', field: 'colorBgNormal'},
-  borderColorNormal: {method: 'updateNormalStyle', field: 'borderColorNormal'},
+  colorBorderNormal: {method: 'updateNormalStyle', field: 'colorBorderNormal'},
   borderStyleNormal: {method: 'updateNormalStyle', field: 'borderStyleNormal'},
   colorFgHovered: {method: 'updateHoveredStyle', field: 'colorFgHovered'},
   colorBgHovered: {method: 'updateHoveredStyle', field: 'colorBgHovered'},
-  borderColorHovered: {method: 'updateHoveredStyle', field: 'borderColorHovered'},
+  colorBorderHovered: {method: 'updateHoveredStyle', field: 'colorBorderHovered'},
   borderStyleHovered: {method: 'updateHoveredStyle', field: 'borderStyleHovered'},
   colorFgPressed: {method: 'updatePressedStyle', field: 'colorFgPressed'},
   colorBgPressed: {method: 'updatePressedStyle', field: 'colorBgPressed'},
-  borderColorPressed: {method: 'updatePressedStyle', field: 'borderColorPressed'},
+  colorBorderPressed: {method: 'updatePressedStyle', field: 'colorBorderPressed'},
   borderStylePressed: {method: 'updatePressedStyle', field: 'borderStylePressed'},
   ...PH_DISABLED, ...PH_VISIBLE,
 };
@@ -172,8 +172,8 @@ const SCROLL_BOX_PROP_HANDLERS: PropHandlers = {
   ...PH_RECT, ...PH_COLOR, ...PH_BORDER_FULL, ...PH_SHADOW, ...PH_PADDING,
   gap: {method: 'setGap'},
   alwaysShowScrollbar: {method: 'setAlwaysShowScrollbar'},
-  scrollbarColor: {method: 'setScrollbarColor'},
-  scrollbarTrackColor: {method: 'setScrollbarTrackColor'},
+  colorScrollbar: {method: 'setColorScrollbar'},
+  colorScrollbarTrack: {method: 'setColorScrollbarTrack'},
   ...PH_DISABLED, ...PH_VISIBLE,
 };
 

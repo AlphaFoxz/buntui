@@ -18,7 +18,7 @@ import {
 } from '../scrollbar-helper';
 import type {SelectOption, SelectWidgetOptions} from './types';
 
-type SelectColors = {fg: number; bg: number; borderColor: number};
+type SelectColors = {fg: number; bg: number; colorBorder: number};
 
 type DropdownColors = {
   item: {fg: number; bg: number};
@@ -35,9 +35,9 @@ const SELECT_TOKEN_MAP = {
   colorBgHovered: 'surfaceHover',
   colorFgDisabled: 'textMuted',
   colorBgDisabled: 'surfaceDisabled',
-  borderColorUnfocused: 'border',
-  borderColorFocused: 'borderFocused',
-  borderColorDisabled: 'border',
+  colorBorderUnfocused: 'border',
+  colorBorderFocused: 'borderFocused',
+  colorBorderDisabled: 'border',
   borderStyle: 'border.normal',
   colorFgItem: 'text',
   colorBgItem: 'surface',
@@ -77,8 +77,8 @@ export class SelectWidget extends InteractiveWidget {
   #hoveredIndex = -1;
   #focusedIndex = -1;
   #scrollOffset = 0;
-  readonly #scrollbarColor: number;
-  readonly #scrollbarTrackColor: number;
+  readonly #colorScrollbar: number;
+  readonly #colorScrollbarTrack: number;
 
   #thumbDragging = false;
   #thumbDragStartY = 0;
@@ -99,29 +99,29 @@ export class SelectWidget extends InteractiveWidget {
     this.setDisabled(resolved.disabled);
 
     const theme = getTheme();
-    this.#scrollbarColor = parseColor(theme.colors.scrollbar);
-    this.#scrollbarTrackColor = parseColor(theme.colors.scrollbarTrack);
+    this.#colorScrollbar = parseColor(theme.colors.scrollbar);
+    this.#colorScrollbarTrack = parseColor(theme.colors.scrollbarTrack);
 
     this.#triggerColors = {
       normal: {
         fg: parseColor(resolved.colorFgNormal),
         bg: parseColor(resolved.colorBgNormal),
-        borderColor: parseColor(resolved.borderColorUnfocused),
+        colorBorder: parseColor(resolved.colorBorderUnfocused),
       },
       focused: {
         fg: parseColor(resolved.colorFgFocused),
         bg: parseColor(resolved.colorBgFocused),
-        borderColor: parseColor(resolved.borderColorFocused),
+        colorBorder: parseColor(resolved.colorBorderFocused),
       },
       hovered: {
         fg: parseColor(resolved.colorFgHovered),
         bg: parseColor(resolved.colorBgHovered),
-        borderColor: parseColor(resolved.borderColorUnfocused),
+        colorBorder: parseColor(resolved.colorBorderUnfocused),
       },
       disabled: {
         fg: parseColor(resolved.colorFgDisabled),
         bg: parseColor(resolved.colorBgDisabled),
-        borderColor: parseColor(resolved.borderColorDisabled),
+        colorBorder: parseColor(resolved.colorBorderDisabled),
       },
     };
 
@@ -473,7 +473,7 @@ export class SelectWidget extends InteractiveWidget {
         y,
         width,
         height,
-        colorRgba: colors.borderColor,
+        colorRgba: colors.colorBorder,
         style: this.#borderStyle,
         sides: BorderSides.All,
       });
@@ -545,7 +545,7 @@ export class SelectWidget extends InteractiveWidget {
     if (needsScrollbar) {
       const geometry = computeScrollbarGeometry(ddH, this.#options.length, this.#scrollOffset);
       renderScrollbar({
-        buffer, x: x + width - 1, trackY: startY, trackHeight: ddH, geometry, thumbColor: this.#scrollbarColor, trackColor: this.#scrollbarTrackColor,
+        buffer, x: x + width - 1, trackY: startY, trackHeight: ddH, geometry, thumbColor: this.#colorScrollbar, trackColor: this.#colorScrollbarTrack,
       });
     }
 

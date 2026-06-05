@@ -27,9 +27,9 @@ Defined as `Record<string, PropHandler>` in `runtime-helpers.ts`:
 | `PH_RECT` | `x`, `y`, `width`, `height` | `updateRect` with field |
 | `PH_COLOR` | `colorFg`, `colorBg` | `updateColor` with field |
 | `PH_STYLE` | `zIndex`, `styleModifier` | `updateStyle` with field |
-| `PH_BORDER_FULL` | `border`, `borderColor`, `borderStyle`, `borderTop`, `borderRight`, `borderBottom`, `borderLeft` | `updateBorder` with field |
+| `PH_BORDER_FULL` | `border`, `colorBorder`, `borderStyle`, `borderTop`, `borderRight`, `borderBottom`, `borderLeft` | `updateBorder` with field |
 | `PH_BORDER_STYLE_ONLY` | `borderStyle` | `updateBorder` with field |
-| `PH_SHADOW` | `shadowOffsetX`, `shadowOffsetY`, `shadowColor`, `shadowCovered` | `updateShadow` with field |
+| `PH_SHADOW` | `shadowOffsetX`, `shadowOffsetY`, `colorShadow`, `shadowCovered` | `updateShadow` with field |
 | `PH_PADDING` | `paddingTop`, `paddingBottom`, `paddingLeft`, `paddingRight` | `updatePadding` with field |
 | `PH_VISIBLE` | `visible` | `setVisible` (no field) |
 | `PH_DRAGGABLE` | `draggable` | `setDraggable` (no field) |
@@ -45,7 +45,7 @@ Each widget gets a `*_PROP_HANDLERS` constant composed from relevant fragments p
 
 **INPUT_PROP_HANDLERS**: `PH_RECT`, `PH_COLOR`, `PH_BORDER_STYLE_ONLY`, `PH_DISABLED`, `PH_VISIBLE` + `value→updateValue`, `max→setMax`, `maxLength→setMaxLength`, `placeholder→setPlaceholder`, `label→setLabel`, `readonly→setReadonly`
 
-**BUTTON_PROP_HANDLERS**: `PH_RECT`, `PH_DISABLED`, `PH_VISIBLE` + `value→updateValue`, plus 12 per-state style entries: `colorFgNormal→updateNormalStyle`, `colorBgNormal→updateNormalStyle`, `borderColorNormal→updateNormalStyle`, `borderStyleNormal→updateNormalStyle`, `colorFgHovered→updateHoveredStyle`, `colorBgHovered→updateHoveredStyle`, `borderColorHovered→updateHoveredStyle`, `borderStyleHovered→updateHoveredStyle`, `colorFgPressed→updatePressedStyle`, `colorBgPressed→updatePressedStyle`, `borderColorPressed→updatePressedStyle`, `borderStylePressed→updatePressedStyle`
+**BUTTON_PROP_HANDLERS**: `PH_RECT`, `PH_DISABLED`, `PH_VISIBLE` + `value→updateValue`, plus 12 per-state style entries: `colorFgNormal→updateNormalStyle`, `colorBgNormal→updateNormalStyle`, `colorBorderNormal→updateNormalStyle`, `borderStyleNormal→updateNormalStyle`, `colorFgHovered→updateHoveredStyle`, `colorBgHovered→updateHoveredStyle`, `colorBorderHovered→updateHoveredStyle`, `borderStyleHovered→updateHoveredStyle`, `colorFgPressed→updatePressedStyle`, `colorBgPressed→updatePressedStyle`, `colorBorderPressed→updatePressedStyle`, `borderStylePressed→updatePressedStyle`
 
 **CHECKBOX_PROP_HANDLERS**: `PH_RECT`, `PH_DISABLED`, `PH_VISIBLE` + `checked→setChecked`, `indeterminate→setIndeterminate`, `label→setLabel`
 
@@ -55,7 +55,7 @@ Each widget gets a `*_PROP_HANDLERS` constant composed from relevant fragments p
 
 **SELECT_BUTTON_PROP_HANDLERS**: `PH_RECT`, `PH_DISABLED`, `PH_VISIBLE` + `value→updateValue`, `options→setOptions`, `tabs→setOptions`
 
-**SCROLL_BOX_PROP_HANDLERS**: `PH_RECT`, `PH_COLOR`, `PH_BORDER_FULL`, `PH_SHADOW`, `PH_PADDING`, `PH_DISABLED`, `PH_VISIBLE` + `gap→setGap`, `alwaysShowScrollbar→setAlwaysShowScrollbar`, `scrollbarColor→setScrollbarColor`, `scrollbarTrackColor→setScrollbarTrackColor`
+**SCROLL_BOX_PROP_HANDLERS**: `PH_RECT`, `PH_COLOR`, `PH_BORDER_FULL`, `PH_SHADOW`, `PH_PADDING`, `PH_DISABLED`, `PH_VISIBLE` + `gap→setGap`, `alwaysShowScrollbar→setAlwaysShowScrollbar`, `colorScrollbar→setColorScrollbar`, `colorScrollbarTrack→setColorScrollbarTrack`
 
 **PROGRESS_PROP_HANDLERS**: `PH_RECT`, `PH_DISABLED`, `PH_VISIBLE` + `value→updateValue`, `max→setMax`
 
@@ -132,8 +132,8 @@ If a new widget class exists in `packages/core/src/widgets/` but has no entry in
 | `setIndeterminate` | CheckboxWidget | |
 | `setOptions` | SelectButtonWidget, RadioGroupWidget | Also handles `tabs` prop |
 | `setAlwaysShowScrollbar` | ScrollBoxWidget | |
-| `setScrollbarColor` | ScrollBoxWidget | |
-| `setScrollbarTrackColor` | ScrollBoxWidget | |
+| `setColorScrollbar` | ScrollBoxWidget | |
+| `setColorScrollbarTrack` | ScrollBoxWidget | |
 
 ## How to Fix a Missing Method
 

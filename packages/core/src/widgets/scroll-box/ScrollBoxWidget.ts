@@ -25,8 +25,8 @@ export class ScrollBoxWidget extends InteractiveWidget {
   #gap: number;
   readonly #scrollSpeed: number;
   #alwaysShowScrollbar: boolean;
-  #scrollbarColor: number;
-  #scrollbarTrackColor: number;
+  #colorScrollbar: number;
+  #colorScrollbarTrack: number;
 
   #dragScrolling = false;
   #dragStartY = 0;
@@ -46,13 +46,13 @@ export class ScrollBoxWidget extends InteractiveWidget {
       width: this.#rect.width,
       height: this.#rect.height,
       colorBg: options.colorBg,
-      borderColor: options.borderColor,
+      colorBorder: options.colorBorder,
       borderStyle: options.borderStyle,
       borderTop: options.borderTop,
       borderRight: options.borderRight,
       borderBottom: options.borderBottom,
       borderLeft: options.borderLeft,
-      shadowColor: options.shadowColor,
+      colorShadow: options.colorShadow,
       shadowOffsetX: options.shadowOffsetX,
       shadowOffsetY: options.shadowOffsetY,
       shadowCovered: options.shadowCovered,
@@ -66,8 +66,8 @@ export class ScrollBoxWidget extends InteractiveWidget {
     this.#scrollSpeed = options.scrollSpeed ?? 3;
     this.#alwaysShowScrollbar = options.alwaysShowScrollbar ?? false;
     const theme = getTheme();
-    this.#scrollbarColor = parseColor(options.scrollbarColor ?? theme.colors.scrollbar);
-    this.#scrollbarTrackColor = parseColor(options.scrollbarTrackColor ?? theme.colors.scrollbarTrack);
+    this.#colorScrollbar = parseColor(options.colorScrollbar ?? theme.colors.scrollbar);
+    this.#colorScrollbarTrack = parseColor(options.colorScrollbarTrack ?? theme.colors.scrollbarTrack);
 
     this.on('wheel', data => {
       this.scrollBy(data.wheelDeltaY * this.#scrollSpeed);
@@ -266,16 +266,16 @@ export class ScrollBoxWidget extends InteractiveWidget {
       this.updateColor({colorBg: parseColor(resolved.colorBg as number)});
     }
 
-    if (resolved.borderColor !== undefined) {
-      this.updateBorder({borderColor: parseColor(resolved.borderColor as number)});
+    if (resolved.colorBorder !== undefined) {
+      this.updateBorder({colorBorder: parseColor(resolved.colorBorder as number)});
     }
 
-    if (resolved.scrollbarColor !== undefined) {
-      this.setScrollbarColor(parseColor(resolved.scrollbarColor as number));
+    if (resolved.colorScrollbar !== undefined) {
+      this.setColorScrollbar(parseColor(resolved.colorScrollbar as number));
     }
 
-    if (resolved.scrollbarTrackColor !== undefined) {
-      this.setScrollbarTrackColor(parseColor(resolved.scrollbarTrackColor as number));
+    if (resolved.colorScrollbarTrack !== undefined) {
+      this.setColorScrollbarTrack(parseColor(resolved.colorScrollbarTrack as number));
     }
   }
 
@@ -308,12 +308,12 @@ export class ScrollBoxWidget extends InteractiveWidget {
     this.#alwaysShowScrollbar = value;
   }
 
-  setScrollbarColor(value: number): void {
-    this.#scrollbarColor = parseColor(value);
+  setColorScrollbar(value: number): void {
+    this.#colorScrollbar = parseColor(value);
   }
 
-  setScrollbarTrackColor(value: number): void {
-    this.#scrollbarTrackColor = parseColor(value);
+  setColorScrollbarTrack(value: number): void {
+    this.#colorScrollbarTrack = parseColor(value);
   }
 
   // -- Child management --
@@ -457,7 +457,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
     const geometry = computeScrollbarGeometry(viewport.height, contentHeight, this.#scrollOffsetY);
     renderScrollbar({
-      buffer, x: viewport.x + viewport.width, trackY: viewport.y, trackHeight: viewport.height, geometry, thumbColor: this.#scrollbarColor, trackColor: this.#scrollbarTrackColor,
+      buffer, x: viewport.x + viewport.width, trackY: viewport.y, trackHeight: viewport.height, geometry, thumbColor: this.#colorScrollbar, trackColor: this.#colorScrollbarTrack,
     });
   }
 
@@ -486,9 +486,9 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
 const SCROLLBOX_TOKEN_MAP = {
   colorBg: 'background',
-  borderColor: 'border',
-  scrollbarColor: 'scrollbar',
-  scrollbarTrackColor: 'scrollbarTrack',
+  colorBorder: 'border',
+  colorScrollbar: 'scrollbar',
+  colorScrollbarTrack: 'scrollbarTrack',
 } as const;
 
 function getDefaultScrollBoxOptions(): ScrollBoxWidgetOptions {

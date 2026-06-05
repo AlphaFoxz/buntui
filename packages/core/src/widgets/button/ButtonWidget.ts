@@ -13,30 +13,30 @@ import type {ButtonWidgetOptions} from './types';
 type ButtonColors = {
   fg: number;
   bg: number;
-  borderColor: number;
+  colorBorder: number;
   borderStyle: number;
 };
 
 const BUTTON_TOKEN_MAP = {
   colorFgNormal: 'text',
   colorBgNormal: 'surface',
-  borderColorNormal: 'border',
+  colorBorderNormal: 'border',
   borderStyleNormal: 'border.normal',
   colorFgFocused: 'text',
   colorBgFocused: 'surfaceFocused',
-  borderColorFocused: 'borderFocused',
+  colorBorderFocused: 'borderFocused',
   borderStyleFocused: 'border.focused',
   colorFgHovered: 'text',
   colorBgHovered: 'surfaceHover',
-  borderColorHovered: 'border',
+  colorBorderHovered: 'border',
   borderStyleHovered: 'border.normal',
   colorFgPressed: 'text',
   colorBgPressed: 'surfacePressed',
-  borderColorPressed: 'borderFocused',
+  colorBorderPressed: 'borderFocused',
   borderStylePressed: 'border.pressed',
   colorFgDisabled: 'textMuted',
   colorBgDisabled: 'surfaceDisabled',
-  borderColorDisabled: 'surfaceFocused',
+  colorBorderDisabled: 'surfaceFocused',
   borderStyleDisabled: 'border.disabled',
 } as const;
 
@@ -73,31 +73,31 @@ export class ButtonWidget extends InteractiveWidget {
       normal: {
         fg: parseColor(resolved.colorFgNormal),
         bg: parseColor(resolved.colorBgNormal),
-        borderColor: parseColor(resolved.borderColorNormal),
+        colorBorder: parseColor(resolved.colorBorderNormal),
         borderStyle: resolveBorderStyle(resolved.borderStyleNormal),
       },
       focused: {
         fg: parseColor(resolved.colorFgFocused),
         bg: parseColor(resolved.colorBgFocused),
-        borderColor: parseColor(resolved.borderColorFocused),
+        colorBorder: parseColor(resolved.colorBorderFocused),
         borderStyle: resolveBorderStyle(resolved.borderStyleFocused),
       },
       hovered: {
         fg: parseColor(resolved.colorFgHovered),
         bg: parseColor(resolved.colorBgHovered),
-        borderColor: parseColor(resolved.borderColorHovered),
+        colorBorder: parseColor(resolved.colorBorderHovered),
         borderStyle: resolveBorderStyle(resolved.borderStyleHovered),
       },
       pressed: {
         fg: parseColor(resolved.colorFgPressed),
         bg: parseColor(resolved.colorBgPressed),
-        borderColor: parseColor(resolved.borderColorPressed),
+        colorBorder: parseColor(resolved.colorBorderPressed),
         borderStyle: resolveBorderStyle(resolved.borderStylePressed),
       },
       disabled: {
         fg: parseColor(resolved.colorFgDisabled),
         bg: parseColor(resolved.colorBgDisabled),
-        borderColor: parseColor(resolved.borderColorDisabled),
+        colorBorder: parseColor(resolved.colorBorderDisabled),
         borderStyle: resolveBorderStyle(resolved.borderStyleDisabled),
       },
     };
@@ -130,7 +130,7 @@ export class ButtonWidget extends InteractiveWidget {
     this.#value = value;
   }
 
-  updateNormalStyle(options: {colorFgNormal?: TuiColor; colorBgNormal?: TuiColor; borderColorNormal?: TuiColor; borderStyleNormal?: TuiBorderStyleName}): void {
+  updateNormalStyle(options: {colorFgNormal?: TuiColor; colorBgNormal?: TuiColor; colorBorderNormal?: TuiColor; borderStyleNormal?: TuiBorderStyleName}): void {
     if (options.colorFgNormal !== undefined) {
       this.#colors.normal.fg = parseColor(options.colorFgNormal);
     }
@@ -139,8 +139,8 @@ export class ButtonWidget extends InteractiveWidget {
       this.#colors.normal.bg = parseColor(options.colorBgNormal);
     }
 
-    if (options.borderColorNormal !== undefined) {
-      this.#colors.normal.borderColor = parseColor(options.borderColorNormal);
+    if (options.colorBorderNormal !== undefined) {
+      this.#colors.normal.colorBorder = parseColor(options.colorBorderNormal);
     }
 
     if (options.borderStyleNormal !== undefined) {
@@ -148,7 +148,7 @@ export class ButtonWidget extends InteractiveWidget {
     }
   }
 
-  updateHoveredStyle(options: {colorFgHovered?: TuiColor; colorBgHovered?: TuiColor; borderColorHovered?: TuiColor; borderStyleHovered?: TuiBorderStyleName}): void {
+  updateHoveredStyle(options: {colorFgHovered?: TuiColor; colorBgHovered?: TuiColor; colorBorderHovered?: TuiColor; borderStyleHovered?: TuiBorderStyleName}): void {
     if (options.colorFgHovered !== undefined) {
       this.#colors.hovered!.fg = parseColor(options.colorFgHovered);
     }
@@ -157,8 +157,8 @@ export class ButtonWidget extends InteractiveWidget {
       this.#colors.hovered!.bg = parseColor(options.colorBgHovered);
     }
 
-    if (options.borderColorHovered !== undefined) {
-      this.#colors.hovered!.borderColor = parseColor(options.borderColorHovered);
+    if (options.colorBorderHovered !== undefined) {
+      this.#colors.hovered!.colorBorder = parseColor(options.colorBorderHovered);
     }
 
     if (options.borderStyleHovered !== undefined) {
@@ -166,7 +166,7 @@ export class ButtonWidget extends InteractiveWidget {
     }
   }
 
-  updatePressedStyle(options: {colorFgPressed?: TuiColor; colorBgPressed?: TuiColor; borderColorPressed?: TuiColor; borderStylePressed?: TuiBorderStyleName}): void {
+  updatePressedStyle(options: {colorFgPressed?: TuiColor; colorBgPressed?: TuiColor; colorBorderPressed?: TuiColor; borderStylePressed?: TuiBorderStyleName}): void {
     if (options.colorFgPressed !== undefined) {
       this.#colors.pressed!.fg = parseColor(options.colorFgPressed);
     }
@@ -175,8 +175,8 @@ export class ButtonWidget extends InteractiveWidget {
       this.#colors.pressed!.bg = parseColor(options.colorBgPressed);
     }
 
-    if (options.borderColorPressed !== undefined) {
-      this.#colors.pressed!.borderColor = parseColor(options.borderColorPressed);
+    if (options.colorBorderPressed !== undefined) {
+      this.#colors.pressed!.colorBorder = parseColor(options.colorBorderPressed);
     }
 
     if (options.borderStylePressed !== undefined) {
@@ -240,7 +240,7 @@ export class ButtonWidget extends InteractiveWidget {
         y,
         width,
         height,
-        colorRgba: colors.borderColor,
+        colorRgba: colors.colorBorder,
         style: colors.borderStyle,
         sides: BorderSides.All,
       });

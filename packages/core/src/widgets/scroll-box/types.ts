@@ -10,13 +10,13 @@ export type ScrollBoxWidgetOptions = {
   // Visual chrome (passed through to internal BoxWidget)
   colorFg?: TuiColor;
   colorBg?: TuiColor;
-  borderColor?: TuiColor;
+  colorBorder?: TuiColor;
   borderStyle?: TuiBorderStyleName;
   borderTop?: boolean;
   borderRight?: boolean;
   borderBottom?: boolean;
   borderLeft?: boolean;
-  shadowColor?: TuiColor;
+  colorShadow?: TuiColor;
   shadowOffsetX?: number;
   shadowOffsetY?: number;
   shadowCovered?: boolean;
@@ -31,6 +31,6 @@ export type ScrollBoxWidgetOptions = {
   alwaysShowScrollbar?: boolean;
 
   // Scrollbar visual
-  scrollbarColor?: TuiColor;
-  scrollbarTrackColor?: TuiColor;
+  colorScrollbar?: TuiColor;
+  colorScrollbarTrack?: TuiColor;
 };

@@ -98,7 +98,7 @@ export function resolveFontStyle(value: TuiFontStyleInput | undefined): U16 {
  * @summary 96 bits = 12 bytes
  */
 export type TuiWidgetBorder = {
-  borderColor: U32;
+  colorBorder: U32;
   borderStyle: U8;
   borderTop: BOOL;
   borderRight: BOOL;
@@ -171,7 +171,7 @@ export function resolveBorderStyle(value: TuiBorderStyleName | U8): U8 {
 export type TuiWidgetShadow = {
   shadowOffsetX: U16;
   shadowOffsetY: U16;
-  shadowColor: U32;
+  colorShadow: U32;
   /**
      * @description
      * - true:  The shadow will be drawn over the others with character "█".

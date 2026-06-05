@@ -12,7 +12,7 @@ import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
 import {getClipboard} from '../../clipboard';
 import type {TextareaWidgetOptions} from './types';
 
-type TextareaColors = {fg: number; bg: number; borderColor: number};
+type TextareaColors = {fg: number; bg: number; colorBorder: number};
 
 function charIndexAtColumn(text: string, column: number): number {
   let width = 0;
@@ -56,17 +56,17 @@ const TEXTAREA_TOKEN_MAP = {
   colorBgNormal: 'surface',
   colorFgFocused: 'text',
   colorBgFocused: 'surface',
-  borderColorUnfocused: 'border',
-  borderColorFocused: 'borderFocused',
-  borderColorDisabled: 'border',
+  colorBorderUnfocused: 'border',
+  colorBorderFocused: 'borderFocused',
+  colorBorderDisabled: 'border',
   borderStyle: 'border.normal',
-  placeholderColorFg: 'placeholder',
-  selectionBgColor: 'selectionBg',
-  selectionFgColor: 'selectionFg',
+  colorPlaceholder: 'placeholder',
+  colorSelectionBg: 'selectionBg',
+  colorSelectionFg: 'selectionFg',
   colorFgDisabled: 'textMuted',
   colorBgDisabled: 'surfaceDisabled',
-  scrollbarColor: 'scrollbar',
-  scrollbarTrackColor: 'scrollbarTrack',
+  colorScrollbar: 'scrollbar',
+  colorScrollbarTrack: 'scrollbarTrack',
 } as const;
 
 function getDefaultTextareaOptions(): TextareaWidgetOptions {
@@ -108,13 +108,13 @@ export class TextareaWidget extends InteractiveWidget {
   #borderStyle: number;
   #maxLength: number;
   #placeholder: string;
-  #placeholderColorFg: number;
-  #selectionBgColor: number;
-  #selectionFgColor: number;
+  #colorPlaceholder: number;
+  #colorSelectionBg: number;
+  #colorSelectionFg: number;
   #label: string;
   #isReadonly: boolean;
-  #scrollbarColor: number;
-  #scrollbarTrackColor: number;
+  #colorScrollbar: number;
+  #colorScrollbarTrack: number;
 
   #value: string;
   #logicalLines: string[] = [];
@@ -143,32 +143,32 @@ export class TextareaWidget extends InteractiveWidget {
       normal: {
         fg: parseColor(resolved.colorFgNormal!),
         bg: parseColor(resolved.colorBgNormal!),
-        borderColor: parseColor(resolved.borderColorUnfocused!),
+        colorBorder: parseColor(resolved.colorBorderUnfocused!),
       },
       focused: {
         fg: parseColor(resolved.colorFgFocused!),
         bg: parseColor(resolved.colorBgFocused!),
-        borderColor: parseColor(resolved.borderColorFocused!),
+        colorBorder: parseColor(resolved.colorBorderFocused!),
       },
       disabled: {
         fg: parseColor(resolved.colorFgDisabled!),
         bg: parseColor(resolved.colorBgDisabled!),
-        borderColor: parseColor(resolved.borderColorDisabled!),
+        colorBorder: parseColor(resolved.colorBorderDisabled!),
       },
     };
     this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
     this.#maxLength = resolved.maxLength ?? 0;
     this.#placeholder = resolved.placeholder ?? '';
-    this.#placeholderColorFg = parseColor(resolved.placeholderColorFg!);
-    this.#selectionBgColor = parseColor(resolved.selectionBgColor!);
-    this.#selectionFgColor = parseColor(resolved.selectionFgColor!);
+    this.#colorPlaceholder = parseColor(resolved.colorPlaceholder!);
+    this.#colorSelectionBg = parseColor(resolved.colorSelectionBg!);
+    this.#colorSelectionFg = parseColor(resolved.colorSelectionFg!);
     this.#label = resolved.label ?? '';
     this.#isReadonly = resolved.readonly ?? false;
     this.#value = resolved.value ?? '';
     this.setDisabled(resolved.disabled ?? false);
 
-    this.#scrollbarColor = parseColor(resolved.scrollbarColor!);
-    this.#scrollbarTrackColor = parseColor(resolved.scrollbarTrackColor!);
+    this.#colorScrollbar = parseColor(resolved.colorScrollbar!);
+    this.#colorScrollbarTrack = parseColor(resolved.colorScrollbarTrack!);
 
     this.#rebuildLines();
     this.#cursorLine = Math.max(0, this.#logicalLines.length - 1);
@@ -482,24 +482,24 @@ export class TextareaWidget extends InteractiveWidget {
       this.#borderStyle = resolveBorderStyle(resolved.borderStyle as TuiBorderStyleName);
     }
 
-    if (resolved.placeholderColorFg !== undefined) {
-      this.#placeholderColorFg = parseColor(resolved.placeholderColorFg as number);
+    if (resolved.colorPlaceholder !== undefined) {
+      this.#colorPlaceholder = parseColor(resolved.colorPlaceholder as number);
     }
 
-    if (resolved.selectionBgColor !== undefined) {
-      this.#selectionBgColor = parseColor(resolved.selectionBgColor as number);
+    if (resolved.colorSelectionBg !== undefined) {
+      this.#colorSelectionBg = parseColor(resolved.colorSelectionBg as number);
     }
 
-    if (resolved.selectionFgColor !== undefined) {
-      this.#selectionFgColor = parseColor(resolved.selectionFgColor as number);
+    if (resolved.colorSelectionFg !== undefined) {
+      this.#colorSelectionFg = parseColor(resolved.colorSelectionFg as number);
     }
 
-    if (resolved.scrollbarColor !== undefined) {
-      this.#scrollbarColor = parseColor(resolved.scrollbarColor as number);
+    if (resolved.colorScrollbar !== undefined) {
+      this.#colorScrollbar = parseColor(resolved.colorScrollbar as number);
     }
 
-    if (resolved.scrollbarTrackColor !== undefined) {
-      this.#scrollbarTrackColor = parseColor(resolved.scrollbarTrackColor as number);
+    if (resolved.colorScrollbarTrack !== undefined) {
+      this.#colorScrollbarTrack = parseColor(resolved.colorScrollbarTrack as number);
     }
   }
 
@@ -537,7 +537,7 @@ export class TextareaWidget extends InteractiveWidget {
           x: viewport.x,
           y: viewport.y + i,
           text: truncateToWidth(line, viewport.width),
-          fgRgba: this.#placeholderColorFg,
+          fgRgba: this.#colorPlaceholder,
           bgRgba: 0x00_00_00_00,
         });
       }
@@ -551,7 +551,7 @@ export class TextareaWidget extends InteractiveWidget {
         y: this.#y,
         width: this.#width,
         height: this.#height,
-        colorRgba: colors.borderColor,
+        colorRgba: colors.colorBorder,
         style: this.#borderStyle,
         sides: BorderSides.All,
       });
@@ -1395,8 +1395,8 @@ export class TextareaWidget extends InteractiveWidget {
           x: drawX,
           y: screenY,
           text: seg2,
-          fgRgba: this.#selectionFgColor,
-          bgRgba: this.#selectionBgColor,
+          fgRgba: this.#colorSelectionFg,
+          bgRgba: this.#colorSelectionBg,
         });
         drawX += stringDisplayWidth(seg2);
       }
@@ -1443,7 +1443,7 @@ export class TextareaWidget extends InteractiveWidget {
         x: scrollbarX,
         y: viewport.y + row,
         char: isThumb ? 0x25_88 : 0x25_02,
-        fgRgba: isThumb ? this.#scrollbarColor : this.#scrollbarTrackColor,
+        fgRgba: isThumb ? this.#colorScrollbar : this.#colorScrollbarTrack,
         bgRgba: 0x00_00_00_00,
       });
     }

@@ -11,31 +11,31 @@ export type ButtonWidgetOptions = {
   // Normal state
   colorFgNormal?: TuiColor;
   colorBgNormal?: TuiColor;
-  borderColorNormal?: TuiColor;
+  colorBorderNormal?: TuiColor;
   borderStyleNormal?: TuiBorderStyleName;
 
   // Hovered state (mouseover)
   colorFgHovered?: TuiColor;
   colorBgHovered?: TuiColor;
-  borderColorHovered?: TuiColor;
+  colorBorderHovered?: TuiColor;
   borderStyleHovered?: TuiBorderStyleName;
 
   // Focused state
   colorFgFocused?: TuiColor;
   colorBgFocused?: TuiColor;
-  borderColorFocused?: TuiColor;
+  colorBorderFocused?: TuiColor;
   borderStyleFocused?: TuiBorderStyleName;
 
   // Pressed state
   colorFgPressed?: TuiColor;
   colorBgPressed?: TuiColor;
-  borderColorPressed?: TuiColor;
+  colorBorderPressed?: TuiColor;
   borderStylePressed?: TuiBorderStyleName;
 
   // Disabled state
   colorFgDisabled?: TuiColor;
   colorBgDisabled?: TuiColor;
-  borderColorDisabled?: TuiColor;
+  colorBorderDisabled?: TuiColor;
   borderStyleDisabled?: TuiBorderStyleName;
 
   disabled?: boolean;

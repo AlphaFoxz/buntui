@@ -30,7 +30,7 @@ describe('theme binding in factory functions', () => {
     setTheme(altTheme);
     expect(box.color.colorFg).toBe(altTheme.colors.text as U32);
     expect(box.color.colorBg).toBe(altTheme.colors.background as U32);
-    expect(box.border.borderColor).toBe(altTheme.colors.border as U32);
+    expect(box.border.colorBorder).toBe(altTheme.colors.border as U32);
 
     parent.removeChild(box);
     cleanup();
@@ -97,14 +97,14 @@ describe('theme binding in factory functions', () => {
   });
 
   it('no subscription when all theme props are overridden', () => {
-    const box = createBox({colorFg: 0xFF_FF_FF_FF, colorBg: 0x00_00_00_00, borderColor: 0xFF_FF_FF_FF});
+    const box = createBox({colorFg: 0xFF_FF_FF_FF, colorBg: 0x00_00_00_00, colorBorder: 0xFF_FF_FF_FF});
     const parent = createBox({width: 80, height: 24});
     parent.addChild(box);
 
     setTheme(altTheme);
     expect(box.color.colorFg).toBe(0xFF_FF_FF_FF);
     expect(box.color.colorBg).toBe(0x00_00_00_00);
-    expect(box.border.borderColor).toBe(0xFF_FF_FF_FF);
+    expect(box.border.colorBorder).toBe(0xFF_FF_FF_FF);
 
     parent.removeChild(box);
     cleanup();

@@ -12,7 +12,7 @@ import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
 import {getClipboard} from '../../clipboard';
 import type {InputWidgetOptions} from './types';
 
-type InputColors = {fg: number; bg: number; borderColor: number};
+type InputColors = {fg: number; bg: number; colorBorder: number};
 
 function charIndexAtColumn(text: string, column: number): number {
   let width = 0;
@@ -56,13 +56,13 @@ const INPUT_TOKEN_MAP = {
   colorBgNormal: 'surface',
   colorFgFocused: 'text',
   colorBgFocused: 'surface',
-  borderColorUnfocused: 'border',
-  borderColorFocused: 'borderFocused',
-  borderColorDisabled: 'border',
+  colorBorderUnfocused: 'border',
+  colorBorderFocused: 'borderFocused',
+  colorBorderDisabled: 'border',
   borderStyle: 'border.normal',
-  placeholderColorFg: 'placeholder',
-  selectionBgColor: 'selectionBg',
-  selectionFgColor: 'selectionFg',
+  colorPlaceholder: 'placeholder',
+  colorSelectionBg: 'selectionBg',
+  colorSelectionFg: 'selectionFg',
   colorFgDisabled: 'textMuted',
   colorBgDisabled: 'surfaceDisabled',
 } as const;
@@ -94,9 +94,9 @@ export class InputWidget extends InteractiveWidget {
   #borderStyle: number;
   #maxLength: number;
   #placeholder: string;
-  #placeholderColorFg: number;
-  #selectionBgColor: number;
-  #selectionFgColor: number;
+  #colorPlaceholder: number;
+  #colorSelectionBg: number;
+  #colorSelectionFg: number;
   #label: string;
   #isReadonly: boolean;
 
@@ -129,25 +129,25 @@ export class InputWidget extends InteractiveWidget {
       normal: {
         fg: parseColor(resolved.colorFgNormal!),
         bg: parseColor(resolved.colorBgNormal!),
-        borderColor: parseColor(resolved.borderColorUnfocused!),
+        colorBorder: parseColor(resolved.colorBorderUnfocused!),
       },
       focused: {
         fg: parseColor(resolved.colorFgFocused!),
         bg: parseColor(resolved.colorBgFocused!),
-        borderColor: parseColor(resolved.borderColorFocused!),
+        colorBorder: parseColor(resolved.colorBorderFocused!),
       },
       disabled: {
         fg: parseColor(resolved.colorFgDisabled!),
         bg: parseColor(resolved.colorBgDisabled!),
-        borderColor: parseColor(resolved.borderColorDisabled!),
+        colorBorder: parseColor(resolved.colorBorderDisabled!),
       },
     };
     this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
     this.#maxLength = resolved.maxLength ?? 0;
     this.#placeholder = resolved.placeholder ?? '';
-    this.#placeholderColorFg = parseColor(resolved.placeholderColorFg!);
-    this.#selectionBgColor = parseColor(resolved.selectionBgColor!);
-    this.#selectionFgColor = parseColor(resolved.selectionFgColor!);
+    this.#colorPlaceholder = parseColor(resolved.colorPlaceholder!);
+    this.#colorSelectionBg = parseColor(resolved.colorSelectionBg!);
+    this.#colorSelectionFg = parseColor(resolved.colorSelectionFg!);
     this.#label = resolved.label ?? '';
     this.#isReadonly = resolved.readonly ?? false;
     this.#password = (resolved.type ?? 'text') === 'password';
@@ -482,16 +482,16 @@ export class InputWidget extends InteractiveWidget {
       this.#borderStyle = resolveBorderStyle(resolved.borderStyle as TuiBorderStyleName);
     }
 
-    if (resolved.placeholderColorFg !== undefined) {
-      this.#placeholderColorFg = parseColor(resolved.placeholderColorFg as number);
+    if (resolved.colorPlaceholder !== undefined) {
+      this.#colorPlaceholder = parseColor(resolved.colorPlaceholder as number);
     }
 
-    if (resolved.selectionBgColor !== undefined) {
-      this.#selectionBgColor = parseColor(resolved.selectionBgColor as number);
+    if (resolved.colorSelectionBg !== undefined) {
+      this.#colorSelectionBg = parseColor(resolved.colorSelectionBg as number);
     }
 
-    if (resolved.selectionFgColor !== undefined) {
-      this.#selectionFgColor = parseColor(resolved.selectionFgColor as number);
+    if (resolved.colorSelectionFg !== undefined) {
+      this.#colorSelectionFg = parseColor(resolved.colorSelectionFg as number);
     }
   }
 
@@ -561,8 +561,8 @@ export class InputWidget extends InteractiveWidget {
             x: drawX,
             y: textY,
             text: clipped2,
-            fgRgba: this.#selectionFgColor,
-            bgRgba: this.#selectionBgColor,
+            fgRgba: this.#colorSelectionFg,
+            bgRgba: this.#colorSelectionBg,
           });
           drawX += stringDisplayWidth(clipped2);
         }
@@ -587,7 +587,7 @@ export class InputWidget extends InteractiveWidget {
         x: textX,
         y: textY,
         text: this.#placeholder.slice(0, visibleWidth),
-        fgRgba: this.#placeholderColorFg,
+        fgRgba: this.#colorPlaceholder,
         bgRgba: 0x00_00_00_00,
       });
     }
@@ -598,7 +598,7 @@ export class InputWidget extends InteractiveWidget {
         y: this.#y,
         width: this.#width,
         height: this.#height,
-        colorRgba: colors.borderColor,
+        colorRgba: colors.colorBorder,
         style: this.#borderStyle,
         sides: BorderSides.All,
       });

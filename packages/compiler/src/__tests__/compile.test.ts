@@ -725,7 +725,7 @@ describe('compile', () => {
     });
 
     it('throws on unknown prop when widget has propHandlers', () => {
-      expect(() => compile('<template><Input :borderColor="c"/></template>')).toThrow(/Unknown prop "borderColor" on <Input>/);
+      expect(() => compile('<template><Input :colorBorder="c"/></template>')).toThrow(/Unknown prop "colorBorder" on <Input>/);
     });
 
     it('throws on unknown prop with suggestion of valid props', () => {

@@ -30,7 +30,7 @@ const FIELD_MAP: Readonly<Record<string, string>> = {
   colorDim: 'dim',
   colorTrack: 'track',
   colorFill: 'fill',
-  borderColor: 'borderColor',
+  colorBorder: 'colorBorder',
 };
 
 export function applyColorSchemeUpdates(

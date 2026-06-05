@@ -79,7 +79,7 @@ export class LoggerWidget extends TuiWidgetEntity {
       borderBottom: true,
       borderLeft: true,
       borderStyle: 'solid',
-      borderColor: this.#colorFg,
+      colorBorder: this.#colorFg,
     });
     this.#panel.setVisible(false);
 
