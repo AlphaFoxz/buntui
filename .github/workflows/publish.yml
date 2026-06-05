@@ -150,6 +150,9 @@ jobs:
                     fi
                   done
 
+            - name: Copy fresh WASM to core/dist
+              run: cp packages/native-platforms/wasm32-wasi/buntui.wasm packages/core/dist/buntui.wasm
+
             - name: Build create-buntui
               run: bun packages/cli/dist/buntui.js build --cwd packages/create-buntui
 
@@ -172,7 +175,7 @@ jobs:
             - name: Verify build artifacts
               run: |
                   for pkg in packages/core packages/extensions packages/compiler packages/buntui packages/cli packages/create-buntui; do
-                    if [ ! -f "$pkg/dist/index.js" ] && [ ! -f "$pkg/dist/buntui.js" ] && [ ! -f "$pkg/dist/index.d.ts" ]; then
+                    if [ ! -f "$pkg/dist/index.js" ] && [ ! -f "$pkg/dist/buntui.js" ] && [ ! -f "$pkg/dist/main.js" ] && [ ! -f "$pkg/dist/index.d.ts" ]; then
                       echo "ERROR: Missing build output in $pkg/dist/"
                       exit 1
                     fi

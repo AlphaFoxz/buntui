@@ -47,6 +47,8 @@ if (!result.success) {
     process.exit(1);
 }
 
+fs.copyFileSync(path.join(rootDir, 'package.json'), path.join(distDir, 'package.json'));
+
 for (const output of result.outputs) {
     const name = path.basename(output.path);
     console.log(`  ${name} (${(output.size / 1024).toFixed(1)} KB)`);

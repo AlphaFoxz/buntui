@@ -1,16 +1,19 @@
 #!/usr/bin/env bun
 import process from 'node:process';
 import path from 'node:path';
+import fs from 'node:fs';
 import {Command} from 'commander';
 import {devCommand} from './commands/dev.ts';
 import {buildCommand} from './commands/build.ts';
+
+const {version} = JSON.parse(fs.readFileSync(path.join(import.meta.dir, '..', 'package.json'), 'utf-8')) as {version: string};
 
 const program = new Command();
 
 program
   .name('buntui')
   .description('BunTUI framework CLI')
-  .version('0.1.0-alpha.3')
+  .version(version)
   .option('--cwd <dir>', 'set working directory', (value: string) => {
     process.chdir(path.resolve(value));
   });

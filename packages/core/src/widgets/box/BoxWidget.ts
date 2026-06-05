@@ -439,8 +439,8 @@ export class BoxWidget extends TuiWidgetEntity {
       });
     }
 
-    const borderH = borderStyle !== 0 ? (borderLeft ? 1 : 0) + (borderRight ? 1 : 0) : 0;
-    const borderV = borderStyle !== 0 ? (borderTop ? 1 : 0) + (borderBottom ? 1 : 0) : 0;
+    const borderH = borderStyle === 0 ? 0 : (borderLeft ? 1 : 0) + (borderRight ? 1 : 0);
+    const borderV = borderStyle === 0 ? 0 : (borderTop ? 1 : 0) + (borderBottom ? 1 : 0);
     const {paddingTop, paddingLeft} = this.#padding;
     const contentX = x + paddingLeft + (borderStyle !== 0 && borderLeft ? 1 : 0);
     const contentY = y + paddingTop + (borderStyle !== 0 && borderTop ? 1 : 0);
@@ -511,8 +511,8 @@ export class BoxWidget extends TuiWidgetEntity {
 
     const {x, y, width, height} = this.#rect;
     const {paddingTop, paddingLeft} = this.#padding;
-    const borderH = this.#border.borderStyle !== 0 ? (this.#border.borderLeft ? 1 : 0) + (this.#border.borderRight ? 1 : 0) : 0;
-    const borderV = this.#border.borderStyle !== 0 ? (this.#border.borderTop ? 1 : 0) + (this.#border.borderBottom ? 1 : 0) : 0;
+    const borderH = this.#border.borderStyle === 0 ? 0 : (this.#border.borderLeft ? 1 : 0) + (this.#border.borderRight ? 1 : 0);
+    const borderV = this.#border.borderStyle === 0 ? 0 : (this.#border.borderTop ? 1 : 0) + (this.#border.borderBottom ? 1 : 0);
     const hInset = paddingLeft + this.#padding.paddingRight + borderH;
     const vInset = paddingTop + this.#padding.paddingBottom + borderV;
 
