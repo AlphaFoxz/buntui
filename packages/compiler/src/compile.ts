@@ -207,10 +207,12 @@ function assembleOutput(
 
   const allImports = [...codegenResult.imports, ...extraScriptImports];
 
-  const code = [
+  const jsCode = [
     ...allImports,
     codegenResult.body,
   ].join('\n');
+
+  const code = stripTypeScript(jsCode);
 
   return {
     code,
@@ -269,4 +271,134 @@ function rewriteImport(
   }
 
   return lines.length > 0 ? lines : [line];
+}
+
+function stripTypeScript(code: string): string {
+  const lines = code.split('\n');
+  const out: string[] = [];
+
+  for (const line of lines) {
+    const trimmed = line.trimStart();
+
+    if (/^import\s+type\s+/.test(trimmed)) {
+      continue;
+    }
+
+    if (/^import\s/.test(trimmed)) {
+      out.push(line);
+      continue;
+    }
+
+    let result = line;
+
+    result = result.replaceAll(/(function\s+\w+)\s*\(([^)]*)\)/g, (_full: string, prefix: string, parameters: string) => {
+      const cleaned = stripParameterTypes(parameters);
+      return `${prefix}(${cleaned})`;
+    });
+
+    result = result.replaceAll(/\bas\s+([A-Z]\w*(?:<[^>]*>)?|const|unknown|any|string|number|boolean|void|never|null|undefined|object)(?![$\w])/g, '');
+    result = result.replaceAll(/([)\w]])!(\s*[;,)\]}\n\r=])/g, '$1$2');
+    result = result.replace(/([)\w]])!$/m, '$1');
+
+    out.push(result);
+  }
+
+  return out.join('\n');
+}
+
+function stripParameterTypes(parameters: string): string {
+  const cleaned: string[] = [];
+  let depth = 0;
+  let current = '';
+  let i = 0;
+
+  while (i < parameters.length) {
+    const ch = parameters[i];
+
+    if (ch === '(' || ch === '[' || ch === '{') {
+      depth++;
+      current += ch;
+      i++;
+    } else if (ch === ')' || ch === ']' || ch === '}') {
+      depth--;
+      current += ch;
+      i++;
+    } else if (depth === 0 && ch === ':') {
+      let name = current.trim();
+      if (name.endsWith('?')) {
+        name = name.slice(0, -1);
+      }
+
+      cleaned.push(name || current);
+      current = '';
+
+      i = skipTypeAnnotation(parameters, i + 1);
+    } else if (depth === 0 && ch === ',' && isTopLevelComma(parameters, i)) {
+      if (current.trim()) {
+        cleaned.push(current.trim());
+      }
+
+      current = '';
+      i++;
+      while (i < parameters.length && parameters[i] === ' ') {
+        i++;
+      }
+    } else {
+      current += ch;
+      i++;
+    }
+  }
+
+  if (current.trim()) {
+    cleaned.push(current.trim());
+  }
+
+  return cleaned.join(', ');
+}
+
+function skipTypeAnnotation(parameters: string, start: number): number {
+  let depth = 0;
+  let i = start;
+
+  while (i < parameters.length) {
+    const ch = parameters[i];
+
+    if (ch === '(' || ch === '[' || ch === '{' || ch === '<') {
+      depth++;
+      i++;
+    } else if (ch === ')' || ch === ']' || ch === '}' || ch === '>') {
+      if (depth > 0) {
+        depth--;
+        i++;
+      } else {
+        break;
+      }
+    } else if (depth === 0 && ch === ',') {
+      break;
+    } else if (depth === 0 && ch === '=' && !isArrowContext(parameters, i)) {
+      break;
+    } else {
+      i++;
+    }
+  }
+
+  return i;
+}
+
+function isTopLevelComma(parameters: string, index: number): boolean {
+  let depth = 0;
+  for (let j = 0; j < index; j++) {
+    const ch = parameters[j]!;
+    if (ch === '(' || ch === '[' || ch === '{' || ch === '<') {
+      depth++;
+    } else if (ch === ')' || ch === ']' || ch === '}' || ch === '>') {
+      depth--;
+    }
+  }
+
+  return depth === 0;
+}
+
+function isArrowContext(parameters: string, index: number): boolean {
+  return index + 1 < parameters.length && parameters[index + 1] === '>';
 }

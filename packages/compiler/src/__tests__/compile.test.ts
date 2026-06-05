@@ -659,12 +659,12 @@ describe('compile', () => {
       expect(result.imports.some(i => i.includes('onTick') && i.includes('useTemplateRef') && i.includes('@buntui/core'))).toBe(true);
     });
 
-    it('does not rewrite import type', () => {
+    it('strips import type from output', () => {
       const result = compile(
         '<template><Text :value="msg"/></template>'
         + '<script setup>import type {Ref} from "vue";\nconst msg = "hello";</script>',
       );
-      expect(result.code).toContain('import type {Ref} from "vue"');
+      expect(result.code).not.toContain('import type');
     });
 
     it('resolves custom coreModuleId for symbolRedirects', () => {
