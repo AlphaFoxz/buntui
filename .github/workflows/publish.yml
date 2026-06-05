@@ -151,7 +151,7 @@ jobs:
                   done
 
             - name: Build create-buntui
-              run: bun run --cwd packages/create-buntui build
+              run: node node_modules/@buntui/cli/dist/buntui.js build --cwd packages/create-buntui
 
             - uses: actions/setup-node@v6
               with:
