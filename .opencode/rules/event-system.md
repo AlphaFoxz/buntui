@@ -90,6 +90,9 @@ Same as MouseEvent (8 bytes) + `[wheel_delta_y:i8]`.
 import {EVENT_BUS} from './events';
 import {TuiEventType} from './events/types';
 
+// Attach backend (required before start)
+EVENT_BUS.attach(backend);
+
 // Start consuming
 EVENT_BUS.start();
 
@@ -98,11 +101,14 @@ EVENT_BUS.on(TuiEventType.KeyboardEvent, (event) => {
   console.log(event.key, event.ctrlKey);
 });
 
+// Unsubscribe
+EVENT_BUS.off(TuiEventType.KeyboardEvent, handler);
+
 // Stop consuming
 EVENT_BUS.stop();
 ```
 
-The consumer runs on `setImmediate` loop - it polls continuously while running.
+The consumer runs on a `nextTick()` loop (wraps `setImmediate` in Bun) — it polls continuously while running.
 
 ## Zig-side Emission
 

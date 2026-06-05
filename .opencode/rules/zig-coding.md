@@ -75,7 +75,7 @@ Zig 0.16 removed many Win32 wrappers from `std.os.windows.kernel32`. Follow thes
 
 ### BOOL is an enum
 ```zig
-// Correct:
+// std.os.windows.BOOL — compare with .FALSE/.TRUE:
 if (result == .FALSE) { ... }
 if (result != .TRUE) { ... }
 
@@ -83,6 +83,8 @@ if (result != .TRUE) { ... }
 if (result == 0) { ... }
 if (result == windows.FALSE) { ... }
 ```
+
+Note: `typedef.Bool` (custom enum in `core/typedef.zig`) uses `.False`/`.True` (PascalCase), which is different from `std.os.windows.BOOL`.
 
 ### Declare Win32 functions directly
 ```zig

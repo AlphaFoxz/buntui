@@ -2,11 +2,13 @@
 
 ## Core vs Extension Widget Resolution
 
-The compiler resolves template tags with a two-tier strategy:
+The compiler resolves template tags with a three-tier strategy (highest priority first):
 
-1. **Core widgets** — resolved via `CORE_REGISTRY` (`compiler/src/runtime-helpers.ts`). Tags `<Box>`, `<Text>`, `<Input>`, `<Button>`, `<Checkbox>`, `<RadioGroup>`, `<SelectButton>`, `<Switch>`, `<ScrollBox>`, `<Progress>` map to creator functions from `@buntui/core`. The codegen auto-generates the import.
+1. **User .vue components** — tags matching an imported `.vue` file (`<script setup>` imports with `.vue` source) are treated as child components, not widgets.
 
 2. **Extension/custom widgets** — resolved via explicit imports in `<script setup>`. The compiler detects any PascalCase default or named import that is NOT in the registry and treats it as a widget creator. Without the import, the tag throws `Unknown component` at compile time.
+
+3. **Core widgets** — resolved via `CORE_REGISTRY` (`compiler/src/runtime-helpers.ts`). Tags `<Box>`, `<Text>`, `<Input>`, `<Button>`, `<Checkbox>`, `<RadioGroup>`, `<SelectButton>`, `<Select>`, `<Switch>`, `<ScrollBox>`, `<Textarea>`, `<Table>`, `<Progress>` map to creator functions from `@buntui/core`. The codegen auto-generates the import.
 
 ## Extension Package Structure
 
@@ -50,8 +52,8 @@ import Matrix from '@buntui/extensions/matrix'
 
 ## Build and Dev Setup
 
-- `vue-plugin.ts`, `dev.ts`, and `build.ts` use `CORE_REGISTRY` only — never merge `EXTENSION_REGISTRY`
-- The barrel `index.ts` re-exports `EXTENSION_REGISTRY` for consumers who want global registration, but playground and recommended usage rely on explicit imports
+- `vue-plugin.ts` (in `packages/compiler/src/` and `packages/cli/src/lib/`), `dev.ts`, and `build.ts` (in `packages/cli/src/commands/`) use `CORE_REGISTRY` only — never merge `EXTENSION_REGISTRY`
+- The barrel `index.ts` re-exports `EXTENSION_REGISTRY` for consumers who want global registration, but CLI and recommended usage rely on explicit imports
 
 ## Adding a New Extension Widget
 

@@ -4,17 +4,20 @@ This document defines the protocol for Zig/TypeScript FFI communication.
 
 ## Type Mapping Table
 
-| Zig Type     | Bun FFIType      | TS Branded Type | Size (64-bit) |
-|--------------|-------------------|-----------------|---------------|
-| `u8`         | `FFIType.u8`      | `U8`            | 1 byte        |
-| `u16`        | `FFIType.u16`     | `U16`           | 2 bytes       |
-| `u32`        | `FFIType.u32`     | `U32`           | 4 bytes       |
-| `i32`        | `FFIType.i32`     | `I32`           | 4 bytes       |
-| `u64`        | `FFIType.uint64_t`| `U64`           | 8 bytes       |
-| `usize`      | `FFIType.uint64_t`| -               | 8 bytes (64-bit) |
-| `bool` / `Bool` | `FFIType.u8`   | `BOOL`          | 1 byte (0=false, 1=true) |
-| `*T` (pointer)| `FFIType.pointer` | `Pointer`      | 8 bytes (64-bit) |
+| Zig Type     | Bun FFIType      | TS Type          | Size (64-bit) |
+|--------------|-------------------|------------------|---------------|
+| `u8`         | `FFIType.u8`      | `U8`             | 1 byte        |
+| `u16`        | `FFIType.u16`     | `U16`            | 2 bytes       |
+| `u32`        | `FFIType.u32`     | `U32`            | 4 bytes       |
+| `i32`        | `FFIType.i32`     | `I32`            | 4 bytes       |
+| `u64`        | `FFIType.uint64_t`| `U64`            | 8 bytes       |
+| `usize`      | `FFIType.uint64_t`| -                | 8 bytes (64-bit) |
+| `bool` / `Bool` | `FFIType.u8`   | `BOOL`           | 1 byte (0=false, 1=true) |
+| `*T` (pointer)| `FFIType.pointer` | `Pointer`       | 8 bytes (64-bit) |
+| `[*]const u8` | `FFIType.pointer` | `Pointer` (via buffer `.ptr`) | 8 bytes (64-bit) |
 | `[*:0]const u8` | `FFIType.cstring` | `Uint8Array` (via `toCstring()`) | variable |
+
+Branded types (`U8`, `U16`, `U32`, `I32`, `BOOL`, etc.) are defined in root `global.d.ts`. `Pointer` is defined in `packages/core/src/platform/pointer.ts`.
 
 ## String Transfer
 
@@ -34,7 +37,7 @@ This document defines the protocol for Zig/TypeScript FFI communication.
 **Lifecycle**:
 - `setupLogger`, `startApp`, `stopApp`, `detectTermSize`
 
-**Event bus** (TS-side FFI bindings exist only for `poll`/`commit`; `setup`, `emit`, and `stats` are Zig-internal):
+**Event bus** (`setup`, `emit`, and `stats` are exported but not consumed by TS; TS-side FFI bindings exist only for `poll`/`commit`):
 - `event_bus_setup`, `event_bus_emit`, `event_bus_poll`, `event_bus_commit`, `event_bus_stats`
 
 **ANSI utilities** (not consumed by TS via FFI; inline logic in lib.zig):

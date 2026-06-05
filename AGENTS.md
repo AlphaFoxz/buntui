@@ -23,22 +23,25 @@ There is no dedicated typecheck script. TypeScript checking is done per-package 
 
 ## Build Order
 
-`bun run build` runs `sync` then `scripts/build.ts`, which does topological sort:
-**native → core → extensions → compiler → playground → buntui**
+`bun run build` runs `sync` then `scripts/build.ts`, which does a topological sort of all packages under `packages/` and builds them in dependency order. The typical order is:
+
+**native → core → extensions → compiler → cli → playground → buntui → create-buntui**
 
 Native must build first because `core` copies the shared library (`.dll`/`.dylib`/`.so`) from `packages/native-platforms/<platform>/` into `packages/core/src/utils/`. If you skip native, core's `sync` script warns but continues, and runtime FFI will fail.
 
 ## Monorepo Layout
 
 ```
-packages/native/          Zig rendering engine → shared library (buntui.dll/.dylib/.so)
-packages/native-platforms/ Pre-built binaries: win32-x64, linux-x64, darwin-x64, darwin-arm64
+packages/native/          Zig rendering engine → shared library (buntui.dll/.dylib/.so/.wasm)
+packages/native-platforms/ Pre-built binaries: win32-x64, linux-x64, darwin-x64, darwin-arm64, wasm32-wasi
 packages/core/            TS runtime: widget system, FFI bindings, event bus, draw list
 packages/extensions/      Extra widgets with sub-path exports (matrix, snake, etc.)
 packages/compiler/        SFC compiler (.vue → TS) using Vue compiler-core
+packages/cli/             CLI tool (buntui bin): dev server + build commands
 packages/playground/      Multi-app playground: `bun run dev <app-name>` (apps: demo, video-player)
 packages/buntui/          Umbrella package re-exporting core + extensions
 packages/create-buntui/   CLI scaffolding tool (bunx create-buntui)
+packages/github-pages/    Private package: WASM web demo (Vite + xterm.js)
 ```
 
 ## Testing
@@ -67,7 +70,8 @@ packages/create-buntui/   CLI scaffolding tool (bunx create-buntui)
 ### FFI Boundary
 - Zig exports C ABI functions from `packages/native/src/lib.zig` (thin wrappers only — logic lives in separate modules).
 - TS consumes them via `bun:ffi` `dlopen()` in `packages/core/src/app/NativeBackend.ts`.
-- Branded types (`U8`, `U16`, `U32`, `I32`, `BOOL`, `Pointer`) from `global.d.ts` represent C types.
+- Branded types (`U8`, `U16`, `U32`, `I32`, `BOOL`, etc.) are defined in root `global.d.ts`. `Pointer` is defined in `packages/core/src/platform/pointer.ts`.
+- Core has dual platform support: `platform/native.ts` (Bun FFI) and `platform/browser.ts` (WASM/web). The `browser` field in `core/package.json` swaps the implementation.
 
 ### Rendering Pipeline
 TS widgets → `emitDrawCommands()` → `DrawListBuffer` (binary) → FFI `renderDrawList()` → Zig rasterizer → ANSI output.
@@ -76,14 +80,14 @@ TS widgets → `emitDrawCommands()` → `DrawListBuffer` (binary) → FFI `rende
 Lock-free SPSC ring buffer. Zig emits binary events, TS polls/commits. Three-step protocol: `poll()` → read → `commit()` (must always pair).
 
 ### SFC Compiler
-`compiler/src/compile.ts`: parse → transform → codegen. Core widget tags (`<Box>`, `<Text>`, etc.) auto-resolve via `CORE_REGISTRY`. Extension widgets require explicit `import X from '@buntui/extensions/x'` in `<script setup>`.
+`compiler/src/compile.ts`: parse → transform → codegen. Three-tier resolution: (1) `.vue` component imports, (2) explicit widget imports, (3) `CORE_REGISTRY` auto-resolve for core widgets (`<Box>`, `<Text>`, `<Input>`, `<Button>`, `<Checkbox>`, `<RadioGroup>`, `<SelectButton>`, `<Select>`, `<Switch>`, `<ScrollBox>`, `<Textarea>`, `<Table>`, `<Progress>`). Extension widgets require explicit `import X from '@buntui/extensions/x'` in `<script setup>`.
 
 ## Key Conventions
 
 - **`undefined` vs `null`**: `undefined` = technical absence (not yet loaded), `null` = domain-level absence.
 - **Type imports**: `import {type Foo} from 'bar'` or `import type {Foo} from 'bar'`.
 - **Zig naming**: functions `camelCase`, locals `snake_case`, globals `SCREAMING_SNAKE_CASE`, types `PascalCase`. Paired lifecycles: `create/destroy`, `init/deinit`, `start/stop`.
-- **Zig 0.16 Windows**: `BOOL` is an enum — compare with `.FALSE`/`.TRUE`, not integers. Declare Win32 functions as `extern "kernel32"` directly.
+- **Zig 0.16 Windows**: `std.os.windows.BOOL` is an enum — compare with `.FALSE`/`.TRUE`, not integers. Custom `typedef.Bool` (in `core/typedef.zig`) uses `.False`/`.True` (PascalCase). Declare Win32 functions as `extern "kernel32"` directly.
 - **Zig error handling**: Never propagate error unions across FFI. Use status codes in exports, `core/error.zig` helpers for fatal errors.
 - **No comments in code** unless explicitly requested.
 - **Widget method naming** (`set*` vs `update*`):
@@ -92,4 +96,4 @@ Lock-free SPSC ring buffer. Zig emits binary events, TS polls/commits. Three-ste
 
 ## CI
 
-`.github/workflows/publish.yml` cross-compiles the Zig native library for 4 targets (win32-x64, linux-x64, darwin-x64, darwin-arm64) using Zig 0.16.0 with `-Drelease=true`, then publishes all packages to npm. Triggered on `v*` tag pushes and manual dispatch.
+`.github/workflows/publish.yml` cross-compiles the Zig native library for 5 targets (win32-x64, linux-x64, darwin-x64, darwin-arm64, wasm32-wasi) using Zig 0.16.0 with `-Drelease=true`, then publishes all packages to npm. Triggered on `v*` tag pushes and manual dispatch. Pre-release tags (alpha/beta/rc) are automatically mapped to matching npm dist-tags.
