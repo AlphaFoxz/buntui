@@ -774,7 +774,12 @@ export class TextareaWidget extends InteractiveWidget {
       return {line: ll, col: this.#logicalLines[ll]!.length};
     }
 
-    const colInVisual = charIndexAtColumn(vl.text, relX);
+    let colInVisual = charIndexAtColumn(vl.text, relX);
+    const textWidth = stringDisplayWidth(vl.text);
+    if (textWidth > 0 && relX >= textWidth - 1 && colInVisual < vl.charCount) {
+      colInVisual = vl.charCount;
+    }
+
     return {line: vl.logicalLine, col: vl.startCol + colInVisual};
   }
 

@@ -13,6 +13,7 @@ import type {WasmModule} from './wasm-module';
 import type {TuiBackend, TuiBackendEventHandler} from './TuiBackend';
 
 type DomKeyboardEvent = {
+  readonly key?: string;
   readonly shiftKey: boolean;
   readonly ctrlKey: boolean;
   readonly altKey: boolean;
@@ -115,7 +116,8 @@ export class HtmlBackend implements TuiBackend {
     this.stopEvents();
 
     const keyDisposable = this.#terminal.onKey((keyEvent: TerminalKeyEvent) => {
-      const event = new TuiKeyboardEvent(serializeKeyboardEvent(keyEvent.key, keyEvent.domEvent));
+      const key = keyEvent.domEvent?.key ?? keyEvent.key;
+      const event = new TuiKeyboardEvent(serializeKeyboardEvent(key, keyEvent.domEvent));
       handler(TuiEventType.KeyboardEvent, event);
     });
 
@@ -193,8 +195,8 @@ export class HtmlBackend implements TuiBackend {
           const event = new TuiMouseEvent(serializeMouseEvent({
             col,
             row,
-            button: undefined as unknown as number,
-            buttons: undefined as unknown as number,
+            button,
+            buttons: this.#mouseButtons,
             action: 'mouseup',
           }));
           handler(TuiEventType.MouseEvent, event);

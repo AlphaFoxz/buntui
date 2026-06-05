@@ -9,6 +9,7 @@ export type TuiAppOptions = {
   backendLogName: string;
   clearLog: boolean;
   debugMode: boolean;
+  quitOnQ?: boolean;
   tickRate?: number;
   renderRate?: number;
   scheduler?: Scheduler;

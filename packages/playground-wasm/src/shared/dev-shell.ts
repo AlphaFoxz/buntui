@@ -16,7 +16,7 @@ const appName: string = BUNTUI_APP_NAME;
 const App: TuiSFCModule = (await import(`../apps/${appName}/App.vue`)).default;
 /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, unicorn/no-await-expression-member */
 
-const termElement = document.querySelector('#terminal')!;
+const termElement: HTMLElement = document.querySelector('#terminal')!;
 
 const term = new Terminal({
   fontFamily: 'Cascadia Code, JetBrains Mono, Fira Code, monospace',

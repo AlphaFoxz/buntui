@@ -16,6 +16,7 @@ export function runApp(vueComponent: TuiSFCModule, options: {logFilePath?: strin
     logLevel: 'debug',
     clearLog: true,
     debugMode: true,
+    quitOnQ: true,
     tickRate: 60,
     renderRate: 48,
     ...options,

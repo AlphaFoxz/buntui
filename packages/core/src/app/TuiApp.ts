@@ -19,6 +19,7 @@ export type TuiSFCModule = Record<string, unknown>;
 
 export class TuiApp implements Disposable {
   readonly #debugMode: boolean;
+  readonly #quitOnQ: boolean;
   readonly #backend: TuiBackend;
   #scenes: TuiScene[] = [];
   #currentScene: TuiScene | undefined = undefined;
@@ -36,6 +37,7 @@ export class TuiApp implements Disposable {
     const clearLog = options?.clearLog ?? false;
     this.#backend.setupLogger(logFileDir, backendLogName, logLevel, clearLog);
     this.#debugMode = options?.debugMode ?? false;
+    this.#quitOnQ = options?.quitOnQ ?? false;
     LOGGER.init({
       logFileDir,
       logLevel,
@@ -73,7 +75,7 @@ export class TuiApp implements Disposable {
     this.#focusManager.start();
 
     EVENT_BUS.on(TuiEventType.KeyboardEvent, data => {
-      if (data.key === 'q' || data.key === 'Q') {
+      if (this.#quitOnQ && (data.key === 'q' || data.key === 'Q')) {
         setTimeout(() => {
           this.stop();
         });
