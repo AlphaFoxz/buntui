@@ -33,16 +33,16 @@ function createWasiImports(): Record<string, Record<string, (...args: number[]) 
   return {
     wasi_snapshot_preview1: {
       args_get: (): number => WASI_ESUCCESS,
-      args_sizes_get: (_p: number, _q: number): number => {
+      args_sizes_get(_p: number, _q: number): number {
         dv().setUint32(_p, 0, true);
         dv().setUint32(_q, 0, true);
         return WASI_ESUCCESS;
       },
-      clock_res_get: (_id: number, out: number): number => {
+      clock_res_get(_id: number, out: number): number {
         dv().setBigUint64(out, 1_000_000n, true);
         return WASI_ESUCCESS;
       },
-      clock_time_get: (_id: number, _precision: number, out: number): number => {
+      clock_time_get(_id: number, _precision: number, out: number): number {
         dv().setBigUint64(out, BigInt(Date.now()) * 1_000_000n, true);
         return WASI_ESUCCESS;
       },
@@ -60,10 +60,10 @@ function createWasiImports(): Record<string, Record<string, (...args: number[]) 
       fd_readdir: (): number => WASI_EBADF,
       fd_seek: (): number => WASI_EBADF,
       fd_sync: (): number => WASI_EBADF,
-      fd_write: (_fd: number, iovs: number, iovsLen: number, out: number): number => {
+      fd_write(_fd: number, iovs: number, iovsLength: number, out: number): number {
         const v = dv();
         let written = 0;
-        for (let i = 0; i < iovsLen; i++) {
+        for (let i = 0; i < iovsLength; i++) {
           const base = iovs + i * 8;
           written += v.getUint32(base + 4, true);
         }
@@ -81,16 +81,16 @@ function createWasiImports(): Record<string, Record<string, (...args: number[]) 
       path_rename: (): number => WASI_EBADF,
       path_symlink: (): number => WASI_EBADF,
       path_unlink_file: (): number => WASI_EBADF,
-      poll_oneoff: (_in: number, _out: number, _n: number, outCount: number): number => {
+      poll_oneoff(_in: number, _out: number, _n: number, outCount: number): number {
         dv().setUint32(outCount, 0, true);
         return WASI_ESUCCESS;
       },
-      proc_exit: (code: number) => {
+      proc_exit(code: number) {
         throw new Error(`WASM proc_exit(${code})`);
       },
-      random_get: (buf: number, len: number): number => {
+      random_get(buf: number, length: number): number {
         const v = dv();
-        for (let i = 0; i < len; i++) {
+        for (let i = 0; i < length; i++) {
           v.setUint8(buf + i, (Math.random() * 256) | 0);
         }
 

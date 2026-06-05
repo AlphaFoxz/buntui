@@ -2,7 +2,7 @@
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createApp, HtmlBackend, WasmModule, createBox, createTextWidget, onTick, type TuiScene } from '@buntui/core'
+import { createApp, HtmlBackend, WasmModule, createBox, createTextWidget, onTick, animationFrameScheduler, type TuiScene } from '@buntui/core'
 
 const termRef = ref<HTMLDivElement | null>(null)
 
@@ -34,7 +34,7 @@ onMounted(async () => {
     await wasm.load(fetch('/buntui.wasm'))
 
     const backend = new HtmlBackend({ terminal: term, wasmModule: wasm })
-    app = createApp({ backend, logLevel: 'debug', debugMode: true, tickRate: 60, renderRate: 30 })
+    app = createApp({ backend, logLevel: 'info', tickRate: 60, renderRate: 30, scheduler: animationFrameScheduler })
 
     const sceneModule = {
         setup(scene: TuiScene) {

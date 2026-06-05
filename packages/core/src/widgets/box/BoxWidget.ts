@@ -169,7 +169,6 @@ export class BoxWidget extends TuiWidgetEntity {
   #direction: TuiLayoutDirection;
   #gap: U16;
   #align: TuiLayoutAlignment;
-  #layoutDirty = false;
   readonly #layoutChildren: TuiWidgetEntity[] = [];
 
   constructor(options: BoxWidgetOptions) {
@@ -200,7 +199,6 @@ export class BoxWidget extends TuiWidgetEntity {
     this.#direction = resolveLayoutDirection(options.direction ?? 'vertical');
     this.#gap = options.gap ?? 0;
     this.#align = resolveLayoutAlignment(options.align ?? 'stretch');
-    this.#layoutDirty = true;
 
     if (options.draggable) {
       this.setDraggable(true);
@@ -243,9 +241,9 @@ export class BoxWidget extends TuiWidgetEntity {
     const oldX = this.#rect.x;
     const oldY = this.#rect.y;
     Object.assign(this.#rect, rect);
-    this.#layoutDirty = true;
-
-    this.propagatePositionDelta(this.#rect.x - oldX, this.#rect.y - oldY);
+    if (rect.x !== undefined || rect.y !== undefined) {
+      this.propagatePositionDelta(this.#rect.x - oldX, this.#rect.y - oldY);
+    }
   }
 
   updateColor(color: Partial<TuiWidgetColor>): void {
@@ -332,22 +330,18 @@ export class BoxWidget extends TuiWidgetEntity {
 
   updatePadding(padding: Partial<TuiWidgetPadding>): void {
     Object.assign(this.#padding, padding);
-    this.#layoutDirty = true;
   }
 
   setDirection(direction: TuiLayoutDirectionName): void {
     this.#direction = resolveLayoutDirection(direction);
-    this.#layoutDirty = true;
   }
 
   setGap(gap: U16): void {
     this.#gap = gap;
-    this.#layoutDirty = true;
   }
 
   setAlign(align: TuiLayoutAlignmentName): void {
     this.#align = resolveLayoutAlignment(align);
-    this.#layoutDirty = true;
   }
 
   // -- Child management --
@@ -355,7 +349,6 @@ export class BoxWidget extends TuiWidgetEntity {
   override addChild(child: TuiWidgetEntity): void {
     super.addChild(child);
     this.#layoutChildren.push(child);
-    this.#layoutDirty = true;
   }
 
   override removeChild(child: TuiWidgetEntity): void {
@@ -365,8 +358,6 @@ export class BoxWidget extends TuiWidgetEntity {
     if (index !== -1) {
       this.#layoutChildren.splice(index, 1);
     }
-
-    this.#layoutDirty = true;
   }
 
   // -- Intrinsic size --
@@ -416,9 +407,7 @@ export class BoxWidget extends TuiWidgetEntity {
   // -- Rendering --
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    if (this.#layoutDirty) {
-      this.#computeLayout();
-    }
+    this.#computeLayout();
 
     const {x, y, width, height} = this.#rect;
     const {colorBg} = this.#color;
@@ -517,7 +506,6 @@ export class BoxWidget extends TuiWidgetEntity {
 
     const children = this.#layoutChildren;
     if (children.length === 0) {
-      this.#layoutDirty = false;
       return;
     }
 
@@ -564,8 +552,6 @@ export class BoxWidget extends TuiWidgetEntity {
       child.updateRect(childRect);
       mainPos += mainExtent + this.#gap;
     }
-
-    this.#layoutDirty = false;
   }
 }
 

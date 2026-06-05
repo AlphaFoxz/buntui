@@ -5,7 +5,7 @@
     "": {
       "name": "buntui",
       "devDependencies": {
-        "@types/bun": "^1.3.14",
+        "@types/bun": "1.3.14",
         "eslint-config-xo-typescript": "^11.0.0",
         "vue-tsc": "^3.3.3",
         "xo": "^2.0.2",
@@ -22,7 +22,7 @@
         "@buntui/extensions": "workspace:*",
       },
       "devDependencies": {
-        "@types/bun": "^1.3.14",
+        "@types/bun": "1.3.14",
       },
     },
     "packages/cli": {
@@ -40,7 +40,7 @@
       },
       "devDependencies": {
         "@buntui/native": "workspace:*",
-        "@types/bun": "^1.3.14",
+        "@types/bun": "1.3.14",
         "vue": "^3.5.35",
         "vue-tsc": "^3.3.3",
       },
@@ -56,7 +56,7 @@
       },
       "devDependencies": {
         "@buntui/core": "workspace:*",
-        "@types/bun": "^1.3.14",
+        "@types/bun": "1.3.14",
       },
     },
     "packages/core": {
@@ -66,7 +66,7 @@
         "@buntui/native": "workspace:*",
       },
       "devDependencies": {
-        "@types/bun": "^1.3.14",
+        "@types/bun": "1.3.14",
         "string-width": "^8.2.1",
       },
     },
@@ -82,7 +82,7 @@
         "@vue/reactivity": "^3.5.35",
       },
       "devDependencies": {
-        "@types/bun": "^1.3.14",
+        "@types/bun": "1.3.14",
       },
     },
     "packages/extensions": {
@@ -92,7 +92,16 @@
         "@buntui/core": "workspace:*",
       },
       "devDependencies": {
-        "@types/bun": "^1.3.14",
+        "@types/bun": "1.3.14",
+      },
+    },
+    "packages/github-pages": {
+      "name": "github-pages",
+      "devDependencies": {
+        "@types/bun": "latest",
+      },
+      "peerDependencies": {
+        "typescript": "^5",
       },
     },
     "packages/native": {
@@ -137,7 +146,7 @@
       },
       "devDependencies": {
         "@buntui/cli": "workspace:*",
-        "@types/bun": "^1.3.14",
+        "@types/bun": "1.3.14",
         "vue": "^3.5.35",
         "vue-tsc": "^3.3.3",
       },
@@ -857,6 +866,8 @@
     "get-symbol-description": ["get-symbol-description@1.1.0", "", { "dependencies": { "call-bound": "^1.0.3", "es-errors": "^1.3.0", "get-intrinsic": "^1.2.6" } }, "sha512-w9UMqWwJxHNOvoNzSJ2oPF5wvYcvP7jUvYzhp67yEhTi17ZDBBC1z9pTdGuzjD+EFIqLSYRweZjqfiPzQ06Ebg=="],
 
     "get-tsconfig": ["get-tsconfig@4.14.0", "", { "dependencies": { "resolve-pkg-maps": "^1.0.0" } }, "sha512-yTb+8DXzDREzgvYmh6s9vHsSVCHeC0G3PI5bEXNBHtmshPnO+S5O7qgLEOn0I5QvMy6kpZN8K1NKGyilLb93wA=="],
+
+    "github-pages": ["github-pages@workspace:packages/github-pages"],
 
     "glob": ["glob@10.5.0", "", { "dependencies": { "foreground-child": "^3.1.0", "jackspeak": "^3.1.2", "minimatch": "^9.0.4", "minipass": "^7.1.2", "package-json-from-dist": "^1.0.0", "path-scurry": "^1.11.1" }, "bin": { "glob": "dist/esm/bin.mjs" } }, "sha512-DfXN8DfhJ7NH3Oe7cFmu3NCu1wKbkReJ8TorzSAFbSKrlNaQSKfIzqYqVY8zlbs2NLBbWpRiU52GX2PbaBVNkg=="],
 
