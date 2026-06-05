@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.json",
+  "vueCompilerOptions": {
+    "target": 3.5,
+    "strictTemplates": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "dev-server.ts",
+    "vite-plugin.ts",
+    "scripts/*.ts",
+    "node_modules/@buntui/core/dist/global.d.ts"
+  ]
+}

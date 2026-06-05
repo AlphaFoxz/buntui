@@ -10,6 +10,7 @@
 |---|---|
 | Full build (sync versions + topological build) | `bun run build` |
 | Dev server (playground + HMR) | `bun run dev <app-name>` (e.g., `bun run dev demo`) |
+| Dev server (WASM playground) | `bun run wasm [app-name]` (e.g., `bun run wasm main`, default: `main`) |
 | Run all TS tests | `bun run test:ts` |
 | Run all Zig tests | `bun run test:zig` |
 | Run a single TS test | `bun test packages/core/src/widgets/box/__tests__/BoxWidget.test.ts` |
@@ -25,7 +26,7 @@ There is no dedicated typecheck script. TypeScript checking is done per-package 
 
 `bun run build` runs `sync` then `scripts/build.ts`, which does a topological sort of all packages under `packages/` and builds them in dependency order. The typical order is:
 
-**native → core → extensions → compiler → cli → playground → buntui → create-buntui**
+**native → core → extensions → compiler → cli → playground → buntui → create-buntui → playground-wasm → github-pages**
 
 Native must build first because `core` copies the shared library (`.dll`/`.dylib`/`.so`) from `packages/native-platforms/<platform>/` into `packages/core/src/utils/`. If you skip native, core's `sync` script warns but continues, and runtime FFI will fail.
 
@@ -41,7 +42,8 @@ packages/cli/             CLI tool (buntui bin): dev server + build commands
 packages/playground/      Multi-app playground: `bun run dev <app-name>` (apps: demo, video-player)
 packages/buntui/          Umbrella package re-exporting core + extensions
 packages/create-buntui/   CLI scaffolding tool (bunx create-buntui)
-packages/github-pages/    Private package: WASM web demo (Vite + xterm.js)
+packages/playground-wasm/ WASM playground: SFC-based TUI apps compiled for browser (Vite dev + Bun.build, multi-app under src/apps/)
+packages/github-pages/    Private package: WASM web demo shell (Vite + xterm.js), imports compiled apps from playground-wasm/dist/
 ```
 
 ## Testing

@@ -6,6 +6,7 @@
         "build": "bun run sync && bun run ./scripts/build.ts",
         "check": "bunx xo --fix --config ./xo.config.ts",
         "dev": "bun run --cwd ./packages/playground dev",
+        "wasm": "bun run --cwd ./packages/playground-wasm dev",
         "cli": "bun run --cwd ./packages/create-buntui dev",
         "sync": "bun run ./scripts/sync-version.ts",
         "test": "bun test:zig && bun test:ts",

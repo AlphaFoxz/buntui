@@ -1,0 +1,29 @@
+{
+    "name": "@buntui/playground-wasm",
+    "private": true,
+    "version": "0.1.0-alpha.3",
+    "type": "module",
+    "exports": {
+        "./dist/main.js": {
+            "types": "./dist/main.d.ts",
+            "default": "./dist/main.js"
+        }
+    },
+    "scripts": {
+        "copy-wasm": "bun run scripts/copy-wasm.ts",
+        "dev": "bun run copy-wasm && bun run dev-server.ts",
+        "build": "bun run scripts/build.ts",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@buntui/core": "workspace:*",
+        "@vue/reactivity": "^3.5.35",
+        "@xterm/addon-fit": "^0.11.0",
+        "@xterm/xterm": "^6.0.0"
+    },
+    "devDependencies": {
+        "@buntui/compiler": "workspace:*",
+        "@types/node": "^24.12.4",
+        "vite": "^8.0.16"
+    }
+}

@@ -2,7 +2,8 @@
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createApp, HtmlBackend, WasmModule, createBox, createTextWidget, onTick, animationFrameScheduler, type TuiScene } from '@buntui/core'
+import { createApp, HtmlBackend, WasmModule, animationFrameScheduler } from '@buntui/core'
+import { App as TuiApp } from '@buntui/playground-wasm/dist/main.js'
 
 const termRef = ref<HTMLDivElement | null>(null)
 
@@ -34,62 +35,15 @@ onMounted(async () => {
     await wasm.load(fetch('/buntui.wasm'))
 
     const backend = new HtmlBackend({ terminal: term, wasmModule: wasm })
-    app = createApp({ backend, logLevel: 'info', tickRate: 60, renderRate: 30, scheduler: animationFrameScheduler })
+    app = createApp({
+        backend,
+        logLevel: 'info',
+        tickRate: 60,
+        renderRate: 30,
+        scheduler: animationFrameScheduler,
+    })
 
-    const sceneModule = {
-        setup(scene: TuiScene) {
-            const title = createTextWidget({ value: ' BuntUI Browser Demo ', colorFg: '#7aa2f7' })
-            const titleBox = createBox({
-                x: 1,
-                y: 1,
-                width: '100%-2',
-                height: 1,
-                colorBg: '#1a1b26',
-                direction: 'horizontal',
-                align: 'center',
-            })
-            titleBox.addChild(title)
-            scene.mount(titleBox)
-
-            const counterText = createTextWidget({ value: 'Tick: 0', colorFg: '#9ece6a' })
-            const counterBox = createBox({
-                x: 1,
-                y: 3,
-                width: 30,
-                height: 3,
-                border: true,
-                borderStyle: 'rounded',
-                draggable: true,
-                direction: 'vertical',
-                align: 'center',
-            })
-            counterBox.addChild(counterText)
-            scene.mount(counterBox)
-
-            const infoText = createTextWidget({ value: 'Rendering via WASM + xterm.js', colorFg: '#565f89' })
-            const infoBox = createBox({
-                x: 32,
-                y: 3,
-                width: 35,
-                height: 3,
-                border: true,
-                borderStyle: 'solid',
-                borderColor: '#bb9af7',
-                direction: 'vertical',
-                align: 'center',
-            })
-            infoBox.addChild(infoText)
-            scene.mount(infoBox)
-
-            let count = 0
-            onTick(() => {
-                count++
-                counterText.updateValue(`Tick: ${count}`)
-            })
-        },
-    }
-
-    app.createScene(sceneModule, { visible: true })
+    app.createScene(TuiApp, { visible: true })
     app.start()
 })
 

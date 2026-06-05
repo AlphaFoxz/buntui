@@ -19,6 +19,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['@buntui/core'],
+    exclude: ['@buntui/core', '@buntui/playground-wasm'],
   },
 });
