@@ -39,6 +39,7 @@ export async function devCommand(appName?: string): Promise<void> {
     });
     const component = await import(app.entryVue) as TuiSFCModule;
     scene = tuiApp.createScene(component, {visible: true});
+    tuiApp.start();
   }
 
   let errorOverlay: HmrErrorOverlayHandle | undefined;
@@ -63,6 +64,6 @@ export async function devCommand(appName?: string): Promise<void> {
     },
   } satisfies DevServerOptions);
 
-  console.log(`\n  Dev server started for "${app.name}"`);
-  console.log(`  Watching: ${vueFile}\n`);
+  console.log(`  Dev server started for "${app.name}"`);
+  console.log(`  Watching: ${vueFile}`);
 }
