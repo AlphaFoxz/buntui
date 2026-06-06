@@ -741,4 +741,110 @@ describe('compile', () => {
       expect(result.code).not.toContain('updateColor');
     });
   });
+
+  describe('TypeScript stripping', () => {
+    it('strips non-null assertion before property access', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const x = arr[0]!.value;</script>',
+      );
+      expect(result.code).toContain('arr[0].value');
+      expect(result.code).not.toContain('arr[0]!');
+    });
+
+    it('strips non-null assertion before function call', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const x = fn!();</script>',
+      );
+      expect(result.code).toContain('fn()');
+      expect(result.code).not.toContain('fn!');
+    });
+
+    it('strips non-null assertion before index access', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const x = items![0];</script>',
+      );
+      expect(result.code).toContain('items[0]');
+      expect(result.code).not.toContain('items!');
+    });
+
+    it('strips non-null assertion at end of line', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const x = maybeNull!;\nconst y = 1;</script>',
+      );
+      expect(result.code).toContain('const x = maybeNull;');
+      expect(result.code).not.toContain('maybeNull!');
+    });
+
+    it('strips non-null assertion before arithmetic operator', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const x = val! + 1;</script>',
+      );
+      expect(result.code).toContain('val + 1');
+      expect(result.code).not.toContain('val!');
+    });
+
+    it('strips non-null assertion after function call with property access', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const x = getRef()!.prop;</script>',
+      );
+      expect(result.code).toContain('getRef().prop');
+      expect(result.code).not.toContain('getRef()!');
+    });
+
+    it('preserves strict inequality operator !==', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const x = a !== b;</script>',
+      );
+      expect(result.code).toContain('a !== b');
+    });
+
+    it('preserves loose inequality operator !=', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const x = a != b;</script>',
+      );
+      expect(result.code).toContain('a != b');
+    });
+
+    it('preserves logical NOT operator', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const x = !flag;</script>',
+      );
+      expect(result.code).toContain('!flag');
+    });
+
+    it('strips as type assertions', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const x = val as string;</script>',
+      );
+      expect(result.code).not.toContain('as string');
+    });
+
+    it('strips as const assertions', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const x = [1, 2] as const;</script>',
+      );
+      expect(result.code).not.toContain('as const');
+    });
+
+    it('strips function parameter type annotations', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>function greet(name: string, age: number): void {}</script>',
+      );
+      expect(result.code).toContain('function greet(name, age)');
+      expect(result.code).not.toContain(': string');
+      expect(result.code).not.toContain(': number');
+    });
+  });
 });

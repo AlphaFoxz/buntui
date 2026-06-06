@@ -202,7 +202,9 @@ const TABLE_PROP_HANDLERS: PropHandlers = {
 };
 
 const SELECT_PROP_HANDLERS: PropHandlers = {
-  ...PH_RECT,
+  x: {method: 'updateRect', field: 'x'},
+  y: {method: 'updateRect', field: 'y'},
+  width: {method: 'updateRect', field: 'width'},
   value: {method: 'updateValue'},
   options: {method: 'setOptions'},
   placeholder: {method: 'setPlaceholder'},

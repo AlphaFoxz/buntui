@@ -80,6 +80,8 @@ describe('SelectWidget scrollbar mouse interaction', () => {
   it('clicking item in dropdown selects and closes', () => {
     const select = openSelect();
     select.dispatch('mousedown' as any, mouseEvent({x: 12, y: 6, button: 0}));
+    expect(select.open).toBe(true);
+    select.dispatch('mouseup' as any, mouseEvent({x: 12, y: 6, button: 0, isRelease: true}));
     expect(select.open).toBe(false);
   });
 
@@ -101,6 +103,7 @@ describe('SelectWidget scrollbar mouse interaction', () => {
   it('clicking non-scrollbar area closes and selects', () => {
     const select = openSelect();
     select.dispatch('mousedown' as any, mouseEvent({x: 15, y: 7, button: 0}));
+    select.dispatch('mouseup' as any, mouseEvent({x: 15, y: 7, button: 0, isRelease: true}));
     expect(select.open).toBe(false);
   });
 });

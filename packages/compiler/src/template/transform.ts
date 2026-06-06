@@ -278,6 +278,7 @@ const V_MODEL_TAG_CONFIG: Record<string, {prop: string; event: string; payloadKe
   Switch: {prop: 'checked', event: 'change', payloadKey: 'checked'},
   RadioGroup: {prop: 'value', event: 'change', payloadKey: 'value'},
   SelectButton: {prop: 'value', event: 'change', payloadKey: 'value'},
+  Select: {prop: 'value', event: 'change', payloadKey: 'value'},
 };
 
 const V_MODEL_DEFAULT_CONFIG = {prop: 'value', event: 'input', payloadKey: 'value'} as const;

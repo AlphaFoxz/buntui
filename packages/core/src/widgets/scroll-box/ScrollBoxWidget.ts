@@ -70,7 +70,12 @@ export class ScrollBoxWidget extends InteractiveWidget {
     this.#colorScrollbarTrack = parseColor(options.colorScrollbarTrack ?? theme.colors.scrollbarTrack);
 
     this.on('wheel', data => {
+      const before = this.#scrollOffsetY;
       this.scrollBy(data.wheelDeltaY * this.#scrollSpeed);
+      const after = this.#scrollOffsetY;
+      if (before !== after) {
+        this.stopPropagation();
+      }
     });
 
     this.on('mousedown', data => {
@@ -81,19 +86,19 @@ export class ScrollBoxWidget extends InteractiveWidget {
           this.#thumbDragging = true;
           this.#thumbDragStartY = data.y;
           this.#thumbDragStartOffset = this.#scrollOffsetY;
-
+          this.stopPropagation();
           break;
         }
 
         case 'track-above': {
           this.scrollBy(-this.#computeViewport().height);
-
+          this.stopPropagation();
           break;
         }
 
         case 'track-below': {
           this.scrollBy(this.#computeViewport().height);
-
+          this.stopPropagation();
           break;
         }
 
@@ -101,6 +106,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
           this.#dragScrolling = true;
           this.#dragStartY = data.y;
           this.#dragStartOffset = this.#scrollOffsetY;
+          this.stopPropagation();
           break;
         }
       }
@@ -117,6 +123,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
         const viewport = this.#computeViewport();
         const geometry = computeScrollbarGeometry(viewport.height, this.#computeContentHeight(), this.#thumbDragStartOffset);
         this.scrollTo(computeThumbDragOffset(delta, this.#thumbDragStartOffset, geometry));
+        this.stopPropagation();
         return;
       }
 
@@ -130,12 +137,16 @@ export class ScrollBoxWidget extends InteractiveWidget {
       }
 
       const delta = data.y - this.#dragStartY;
-      this.scrollTo(this.#dragStartOffset + delta);
+      this.scrollTo(this.#dragStartOffset - delta);
+      this.stopPropagation();
     });
 
     this.on('mouseup', () => {
-      this.#dragScrolling = false;
-      this.#thumbDragging = false;
+      if (this.#dragScrolling || this.#thumbDragging) {
+        this.#dragScrolling = false;
+        this.#thumbDragging = false;
+        this.stopPropagation();
+      }
     });
   }
 

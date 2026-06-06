@@ -2,8 +2,6 @@ name: Deploy Pages
 
 on:
     push:
-        tags:
-            - 'v*'
         paths:
             - 'packages/github-pages/**'
             - 'packages/playground-wasm/src/**'

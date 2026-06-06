@@ -40,8 +40,18 @@ window.addEventListener('resize', () => {
 const wasm = new WasmModule();
 await wasm.load(fetch('/buntui.wasm'));
 
-const backend = new HtmlBackend({terminal: term, wasmModule: wasm});
-const app = createApp({
+let app: ReturnType<typeof createApp> | undefined; // eslint-disable-line prefer-const
+
+const backend = new HtmlBackend({
+  terminal: term,
+  wasmModule: wasm,
+  isTextInputFocused() {
+    const w = app?.focusedWidget;
+    return w !== null && w !== undefined && 'getSelection' in w;
+  },
+});
+
+app = createApp({
   backend,
   logLevel: 'debug',
   tickRate: 60,

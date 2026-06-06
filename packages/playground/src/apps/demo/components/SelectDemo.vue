@@ -4,7 +4,6 @@
         :x="1"
         :y="4"
         :width="22"
-        :height="1"
         :options="languageOptions"
         :value="selectedLanguage"
         placeholder="Choose..."
@@ -14,20 +13,18 @@
         :x="26"
         :y="4"
         :width="22"
-        :height="1"
         :options="themeOptions"
         :value="selectedTheme"
         placeholder="Pick a theme"
         @change="handleThemeChange"
     />
-    <Select :x="51" :y="4" :width="22" :height="1" :options="languageOptions" :value="'ts'" :disabled="true" />
+    <Select :x="51" :y="4" :width="22" :options="languageOptions" :value="'ts'" :disabled="true" />
 
     <Text :x="1" :y="7" value="▶ With Label & Border" />
     <Select
         :x="1"
         :y="8"
         :width="22"
-        :height="3"
         label="Language"
         borderStyle="rounded"
         :options="languageOptions"
@@ -38,7 +35,6 @@
         :x="26"
         :y="8"
         :width="22"
-        :height="3"
         label="Theme"
         borderStyle="rounded"
         :options="themeOptions"
@@ -50,7 +46,6 @@
         :x="51"
         :y="8"
         :width="22"
-        :height="3"
         label="Font Size"
         borderStyle="rounded"
         :options="fontSizeOptions"
@@ -63,7 +58,6 @@
         :x="76"
         :y="8"
         :width="22"
-        :height="3"
         label="Country"
         borderStyle="rounded"
         :options="countryOptions"

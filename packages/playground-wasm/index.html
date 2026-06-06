@@ -1,29 +1,27 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BuntUI WASM Playground</title>
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: #1a1b26;
-      }
-      .xterm .xterm-viewport {
-        overflow: auto !important;
-      }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>BuntUI WASM Playground</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                background: #1a1b26;
+            }
       #terminal {
-        width: 100%;
-        height: 100%;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="terminal"></div>
-    <script type="module" src="/src/shared/dev-shell.ts"></script>
-  </body>
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="terminal"></div>
+        <script type="module" src="/src/shared/dev-shell.ts"></script>
+    </body>
 </html>

@@ -297,8 +297,7 @@ function stripTypeScript(code: string): string {
     });
 
     result = result.replaceAll(/\bas\s+([A-Z]\w*(?:<[^>]*>)?|const|unknown|any|string|number|boolean|void|never|null|undefined|object)(?![$\w])/g, '');
-    result = result.replaceAll(/([)\w]])!(\s*[;,)\]}\n\r=])/g, '$1$2');
-    result = result.replace(/([)\w]])!$/m, '$1');
+    result = result.replaceAll(/([)\w\]])!(?!=)/g, '$1');
 
     out.push(result);
   }

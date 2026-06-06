@@ -1,10 +1,9 @@
 <template>
-    <Box :x="0" :y="0" width="100%" :height="3" :direction="'horizontal'" :gap="1" :align="'center'" borderStyle="none">
-        <Text value="bunui" />
-        <SelectButton :height="1" :options="pageOptions" v-model="currentPage" />
-    </Box>
+    <Text :x="0" :y="0" value="Buntui" styleModifier="bold" />
+    <Select :x="0" :y="1" width="50%" label="Core Widget" :options="pageOptions" v-model="currentPage" />
+    <Select x="50%" :y="1" width="50%" label="Color Theme" :options="themeOptions" v-model="currentTheme" @change="handleThemeChange" />
 
-    <ScrollBox :x="0" :y="3" width="100%" height="95%">
+    <ScrollBox :x="0" :y="4" width="100%" height="95%">
         <BoxDemo v-if="currentPage === 'Box'" />
         <TextDemo v-else-if="currentPage === 'Text'" />
         <InputDemo v-else-if="currentPage === 'Input'" />
@@ -22,6 +21,7 @@
 </template>
 <script setup lang="ts">
 import { ref } from '@vue/reactivity'
+import { setTheme, tokyoNightMoon, tokyoNightStorm, rosePineMoon, rosePineDawn, highContrast } from '@buntui/core'
 import BoxDemo from './components/BoxDemo.vue'
 import TextDemo from './components/TextDemo.vue'
 import InputDemo from './components/InputDemo.vue'
@@ -37,19 +37,27 @@ import TableDemo from './components/TableDemo.vue'
 import ProgressDemo from './components/ProgressDemo.vue'
 
 const pageOptions = ref([
-    'Box',
-    'Text',
-    'Input',
-    'Button',
-    'Checkbox',
-    'RadioGroup',
-    'SelectButton',
-    'Select',
-    'Switch',
-    'ScrollBox',
-    'Textarea',
-    'Table',
-    'Progress',
+    { value: 'Box', label: 'Box' },
+    { value: 'Text', label: 'Text' },
+    { value: 'Input', label: 'Input' },
+    { value: 'Button', label: 'Button' },
+    { value: 'Checkbox', label: 'Checkbox' },
+    { value: 'RadioGroup', label: 'RadioGroup' },
+    { value: 'SelectButton', label: 'SelectButton' },
+    { value: 'Select', label: 'Select' },
+    { value: 'Switch', label: 'Switch' },
+    { value: 'ScrollBox', label: 'ScrollBox' },
+    { value: 'Textarea', label: 'Textarea' },
+    { value: 'Table', label: 'Table' },
+    { value: 'Progress', label: 'Progress' },
 ])
-const currentPage = ref(pageOptions.value[0]!)
+const currentPage = ref(pageOptions.value[0]!.value)
+
+const themes = [tokyoNightMoon, tokyoNightStorm, rosePineMoon, rosePineDawn, highContrast] as const
+const themeOptions = ref(themes.map((t) => ({ value: t.name, label: t.name })))
+const currentTheme = ref(tokyoNightMoon.name)
+function handleThemeChange(data: { value: string }) {
+    const t = themes.find((t) => t.name === data.value)
+    if (t) setTheme(t)
+}
 </script>

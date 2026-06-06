@@ -28,10 +28,38 @@ export type TerminalMouseEvent = {col: number; row: number; button: number; butt
 
 type TerminalResizeEvent = {cols: number; rows: number};
 
+type DomTouch = {
+  readonly clientX: number;
+  readonly clientY: number;
+};
+
+type DomTouchEvent = {
+  readonly touches: readonly DomTouch[];
+  readonly changedTouches: readonly DomTouch[];
+  preventDefault(): void;
+};
+
+type DomRect = {
+  readonly width: number;
+  readonly height: number;
+  readonly left: number;
+  readonly top: number;
+};
+
+type DomElement = {
+  readonly style: Record<string, string>;
+  querySelector(selector: string): DomElement | null;
+  getBoundingClientRect(): DomRect;
+  addEventListener(type: string, listener: (event: DomTouchEvent) => void, options?: {passive?: boolean}): void;
+  removeEventListener(type: string, listener: (event: DomTouchEvent) => void): void;
+};
+
 export type TerminalLike = {
   rows: number;
   cols: number;
+  element?: unknown;
   write(data: string): void;
+  focus?(): void;
   onData?(handler: (data: string) => void): {dispose(): void};
   onKey(handler: (event: TerminalKeyEvent) => void): {dispose(): void};
   onMouse?(handler: (event: TerminalMouseEvent) => void): {dispose(): void};
@@ -41,6 +69,7 @@ export type TerminalLike = {
 export type HtmlBackendOptions = {
   terminal: TerminalLike;
   wasmModule: WasmModule;
+  isTextInputFocused?: () => boolean;
 };
 
 const MOD_SHIFT = 0x01;
@@ -56,6 +85,7 @@ const IS_RELEASE = 0x10;
 export class HtmlBackend implements TuiBackend {
   readonly #terminal: TerminalLike;
   readonly #wasm: WasmModule;
+  readonly #isTextInputFocused?: () => boolean;
   #ctxPtr = 0;
   #eventDisposables: Array<{dispose(): void}> = [];
   #mouseButtons = 0;
@@ -63,6 +93,7 @@ export class HtmlBackend implements TuiBackend {
   constructor(options: HtmlBackendOptions) {
     this.#terminal = options.terminal;
     this.#wasm = options.wasmModule;
+    this.#isTextInputFocused = options.isTextInputFocused;
   }
 
   setupLogger(_logFileDir: string, _logName: string, _logLevel: LogLevel, _clearLog: boolean): void {
@@ -127,13 +158,14 @@ export class HtmlBackend implements TuiBackend {
     });
 
     const dataDisposable = this.#startMouseTracking(handler);
+    const touchDisposable = this.#startTouchTracking(handler);
 
     const resizeDisposable = this.#terminal.onResize((resizeEvent: TerminalResizeEvent) => {
       const event = new TuiTermResizeEvent(serializeResizeEvent(resizeEvent.rows, resizeEvent.cols));
       handler(TuiEventType.TermResizeEvent, event);
     });
 
-    this.#eventDisposables = [keyDisposable, mouseDisposable, dataDisposable, resizeDisposable].filter((d): d is {dispose(): void} => d !== undefined);
+    this.#eventDisposables = [keyDisposable, mouseDisposable, dataDisposable, touchDisposable, resizeDisposable].filter((d): d is {dispose(): void} => d !== undefined);
   }
 
   stopEvents(): void {
@@ -226,6 +258,159 @@ export class HtmlBackend implements TuiBackend {
         handler(TuiEventType.MouseEvent, event);
       }
     });
+  }
+
+  #startTouchTracking(handler: TuiBackendEventHandler): {dispose(): void} | undefined {
+    /* eslint-disable unicorn/prevent-abbreviations */
+    const element = this.#terminal.element as DomElement | null | undefined;
+    if (!element) {
+      return undefined;
+    }
+
+    element.style.touchAction = 'none';
+    const viewport = element.querySelector('.xterm-viewport');
+    if (viewport) {
+      viewport.style.overflow = 'hidden';
+    }
+
+    let startTouchX = 0;
+    let startTouchY = 0;
+    let startCol = 0;
+    let startRow = 0;
+    let isScrolling = false;
+    let touchActive = false;
+    let dragEmitted = false;
+
+    const SCROLL_THRESHOLD = 10;
+
+    const getScreenRect = (): DomRect => {
+      const screenElement = element.querySelector('.xterm-screen');
+      return (screenElement ?? element).getBoundingClientRect();
+    };
+
+    const touchToCell = (clientX: number, clientY: number): {col: number; row: number} => {
+      const rect = getScreenRect();
+      const cellWidth = rect.width / this.#terminal.cols;
+      const cellHeight = rect.height / this.#terminal.rows;
+      return {
+        col: Math.max(0, Math.min(this.#terminal.cols - 1, Math.floor((clientX - rect.left) / cellWidth))),
+        row: Math.max(0, Math.min(this.#terminal.rows - 1, Math.floor((clientY - rect.top) / cellHeight))),
+      };
+    };
+
+    const onTouchStart = (e: DomTouchEvent) => {
+      if (e.touches.length !== 1) {
+        return;
+      }
+
+      e.preventDefault();
+      const touch = e.touches[0]!;
+      startTouchX = touch.clientX;
+      startTouchY = touch.clientY;
+      const cell = touchToCell(touch.clientX, touch.clientY);
+      startCol = cell.col;
+      startRow = cell.row;
+      isScrolling = false;
+      touchActive = true;
+      dragEmitted = false;
+    };
+
+    const onTouchMove = (e: DomTouchEvent) => {
+      if (!touchActive || e.touches.length !== 1) {
+        return;
+      }
+
+      e.preventDefault();
+      const touch = e.touches[0]!;
+
+      if (!isScrolling) {
+        const dx = touch.clientX - startTouchX;
+        const dy = touch.clientY - startTouchY;
+        if (((dx * dx) + (dy * dy)) < (SCROLL_THRESHOLD * SCROLL_THRESHOLD)) {
+          return;
+        }
+
+        isScrolling = true;
+      }
+
+      if (!dragEmitted) {
+        dragEmitted = true;
+        handler(TuiEventType.MouseEvent, new TuiMouseEvent(serializeMouseEvent({
+          col: startCol,
+          row: startRow,
+          button: 0,
+          buttons: 1,
+          action: 'mousedown',
+        })));
+      }
+
+      const {col, row} = touchToCell(touch.clientX, touch.clientY);
+      handler(TuiEventType.MouseEvent, new TuiMouseEvent(serializeMouseEvent({
+        col,
+        row,
+        button: undefined as unknown as number,
+        buttons: 1,
+        action: 'mousemove',
+      })));
+    };
+
+    const onTouchEnd = (e: DomTouchEvent) => {
+      if (!touchActive) {
+        return;
+      }
+
+      e.preventDefault();
+      touchActive = false;
+
+      if (!isScrolling) {
+        const touch = e.changedTouches[0]!;
+        const {col, row} = touchToCell(touch.clientX, touch.clientY);
+        handler(TuiEventType.MouseEvent, new TuiMouseEvent(serializeMouseEvent({
+          col,
+          row,
+          button: 0,
+          buttons: 1,
+          action: 'mousedown',
+        })));
+        handler(TuiEventType.MouseEvent, new TuiMouseEvent(serializeMouseEvent({
+          col,
+          row,
+          button: 0,
+          buttons: 0,
+          action: 'mouseup',
+        })));
+        if (this.#isTextInputFocused?.()) {
+          this.#terminal.focus?.();
+        }
+      } else if (dragEmitted) {
+        const touch = e.changedTouches[0]!;
+        const {col, row} = touchToCell(touch.clientX, touch.clientY);
+        handler(TuiEventType.MouseEvent, new TuiMouseEvent(serializeMouseEvent({
+          col,
+          row,
+          button: 0,
+          buttons: 0,
+          action: 'mouseup',
+        })));
+      }
+
+      isScrolling = false;
+    };
+
+    element.addEventListener('touchstart', onTouchStart, {passive: false});
+    element.addEventListener('touchmove', onTouchMove, {passive: false});
+    element.addEventListener('touchend', onTouchEnd, {passive: false});
+    element.addEventListener('touchcancel', onTouchEnd, {passive: false});
+
+    return {
+      dispose() {
+        element.removeEventListener('touchstart', onTouchStart);
+        element.removeEventListener('touchmove', onTouchMove);
+        element.removeEventListener('touchend', onTouchEnd);
+        element.removeEventListener('touchcancel', onTouchEnd);
+      },
+    };
+    /* eslint-enable unicorn/prevent-abbreviations */
   }
 }
 

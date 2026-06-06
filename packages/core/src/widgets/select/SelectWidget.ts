@@ -49,7 +49,7 @@ const SELECT_TOKEN_MAP = {
 
 const DROPDOWN_MAX_VISIBLE = 8;
 
-function getDefaultSelectOptions(): Required<SelectWidgetOptions> {
+function getDefaultSelectOptions(): Required<SelectWidgetOptions> & {height: number} {
   return {
     x: 0,
     y: 0,
@@ -83,6 +83,12 @@ export class SelectWidget extends InteractiveWidget {
   #thumbDragging = false;
   #thumbDragStartY = 0;
   #thumbDragStartOffset = 0;
+
+  #dragScrolling = false;
+  #dragStartY = 0;
+  #dragStartOffset = 0;
+  #didDrag = false;
+  #justOpened = false;
 
   readonly #triggerColors: ColorScheme<SelectColors>;
   readonly #dropdownColors: DropdownColors;
@@ -132,6 +138,7 @@ export class SelectWidget extends InteractiveWidget {
     };
 
     this.on('mousedown', mouseData => {
+      this.#didDrag = false;
       if (this.#opened) {
         const hit = this.#scrollbarHitTest();
         const result = hit ? scrollbarHitTest(mouseData.x, mouseData.y, hit) : {type: 'none'} as const;
@@ -139,26 +146,28 @@ export class SelectWidget extends InteractiveWidget {
           this.#thumbDragging = true;
           this.#thumbDragStartY = mouseData.y;
           this.#thumbDragStartOffset = this.#scrollOffset;
+          this.#didDrag = true;
           return;
         }
 
         if (result.type === 'track-above') {
           this.#scrollBy(-this.#dropdownHeight());
+          this.#didDrag = true;
           return;
         }
 
         if (result.type === 'track-below') {
           this.#scrollBy(this.#dropdownHeight());
+          this.#didDrag = true;
           return;
         }
 
-        const index = this.#hitTestDropdown(mouseData.y);
-        if (index >= 0) {
-          this.#select(index);
-        }
-
-        this.#close();
+        this.#dragScrolling = true;
+        this.#dragStartY = mouseData.y;
+        this.#dragStartOffset = this.#scrollOffset;
+        this.#hoveredIndex = this.#hitTestDropdown(mouseData.y);
       } else {
+        this.#justOpened = true;
         this.#openDropdown();
       }
     });
@@ -178,13 +187,43 @@ export class SelectWidget extends InteractiveWidget {
         return;
       }
 
+      if (this.#dragScrolling) {
+        if ((mouseData.buttons ?? 0) === 0) {
+          this.#dragScrolling = false;
+          return;
+        }
+
+        const delta = mouseData.y - this.#dragStartY;
+        if (Math.abs(delta) >= 1) {
+          this.#didDrag = true;
+          this.#scrollOffset = Math.max(0, Math.min(this.#dragStartOffset - delta, this.#maxScrollOffset()));
+          this.#hoveredIndex = -1;
+        }
+
+        return;
+      }
+
       if (this.#opened) {
         this.#hoveredIndex = this.#hitTestDropdown(mouseData.y);
       }
     });
 
-    this.on('mouseup', () => {
+    this.on('mouseup', mouseData => {
       this.#thumbDragging = false;
+      this.#dragScrolling = false;
+      if (this.#justOpened) {
+        this.#justOpened = false;
+        return;
+      }
+
+      if (this.#opened && !this.#didDrag) {
+        const index = this.#hitTestDropdown(mouseData.y);
+        if (index >= 0) {
+          this.#select(index);
+        }
+
+        this.#close();
+      }
     });
 
     this.on('mouseover', mouseData => {
@@ -349,6 +388,7 @@ export class SelectWidget extends InteractiveWidget {
 
   setLabel(text: string): void {
     this.#label = text;
+    this.#rect.height = text.length > 0 ? Math.max(this.#rect.height, 3) : Math.min(this.#rect.height, 1);
   }
 
   updateBorder(border: {borderStyle?: TuiBorderStyleName}): void {
@@ -668,7 +708,12 @@ export class SelectWidget extends InteractiveWidget {
 }
 
 export function createSelectWidget(options?: Partial<SelectWidgetOptions>): SelectWidget {
-  const widget = new SelectWidget({...getDefaultSelectOptions(), ...options});
+  const defaults = getDefaultSelectOptions();
+  if ((options?.label ?? '').length > 0) {
+    defaults.height = 3;
+  }
+
+  const widget = new SelectWidget({...defaults, ...options});
   bindThemeToWidget(widget, SELECT_TOKEN_MAP, options ?? {}, resolved => {
     widget.updateThemeColors(resolved);
   });

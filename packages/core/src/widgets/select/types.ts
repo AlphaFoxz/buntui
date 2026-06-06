@@ -10,7 +10,6 @@ export type SelectWidgetOptions = {
   x?: TuiSizeValue;
   y?: TuiSizeValue;
   width?: TuiSizeValue;
-  height?: TuiSizeValue;
   options?: SelectOption[];
   value?: string;
   placeholder?: string;

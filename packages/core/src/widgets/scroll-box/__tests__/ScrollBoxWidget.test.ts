@@ -150,6 +150,7 @@ describe('scroll event', () => {
       sb.addChild(createBox({height: 5}));
     }
 
+    sb.scrollTo(5);
     const events: unknown[] = [];
     sb.on('scroll', data => events.push(data));
     sb.dispatch('mousedown', mouse({x: 4, y: 4, button: 0}));
@@ -424,19 +425,20 @@ describe('drag scroll', () => {
     return sb;
   }
 
-  it('dragging down scrolls content up', () => {
+  it('dragging down decreases offset (natural scroll)', () => {
     const sb = createScrollable();
+    sb.scrollTo(5);
     sb.dispatch('mousedown', mouse({x: 4, y: 4, button: 0}));
     sb.dispatch('mousemove', mouse({x: 4, y: 7, buttons: 1}));
-    expect(sb.scrollOffsetY).toBe(3);
+    expect(sb.scrollOffsetY).toBe(2);
   });
 
-  it('dragging up scrolls content down', () => {
+  it('dragging up increases offset (natural scroll)', () => {
     const sb = createScrollable();
     sb.scrollTo(5);
     sb.dispatch('mousedown', mouse({x: 4, y: 7, button: 0}));
     sb.dispatch('mousemove', mouse({x: 4, y: 4, buttons: 1}));
-    expect(sb.scrollOffsetY).toBe(2);
+    expect(sb.scrollOffsetY).toBe(8);
   });
 
   it('mouseup stops drag scrolling', () => {
@@ -456,8 +458,9 @@ describe('drag scroll', () => {
 
   it('clamps drag scroll to valid range', () => {
     const sb = createScrollable();
-    sb.dispatch('mousedown', mouse({x: 4, y: 4, button: 0}));
-    sb.dispatch('mousemove', mouse({x: 4, y: 49, buttons: 1}));
+    sb.scrollTo(5);
+    sb.dispatch('mousedown', mouse({x: 4, y: 49, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 4, y: 4, buttons: 1}));
     expect(sb.scrollOffsetY).toBe(sb.maxScrollY);
   });
 
@@ -524,9 +527,10 @@ describe('scrollbar thumb drag', () => {
 
   it('clicking on content area does not trigger thumb drag', () => {
     const sb = createScrollable();
+    sb.scrollTo(5);
     sb.dispatch('mousedown', mouse({x: 4, y: 1, button: 0}));
     sb.dispatch('mousemove', mouse({x: 4, y: 6, buttons: 1}));
-    expect(sb.scrollOffsetY).toBe(5);
+    expect(sb.scrollOffsetY).toBe(0);
   });
 
   it('thumb drag clamps to valid range', () => {

@@ -35,7 +35,14 @@ onMounted(async () => {
     const wasmUrl = `${import.meta.env.BASE_URL}buntui.wasm`
     await wasm.load(fetch(wasmUrl))
 
-    const backend = new HtmlBackend({ terminal: term, wasmModule: wasm })
+    const backend = new HtmlBackend({
+        terminal: term,
+        wasmModule: wasm,
+        isTextInputFocused: () => {
+            const w = app?.focusedWidget
+            return w !== null && w !== undefined && 'getSelection' in w
+        },
+    })
     app = createApp({
         backend,
         logLevel: 'info',
@@ -69,9 +76,6 @@ body,
     height: 100%;
     overflow: hidden;
     background: #1a1b26;
-}
-.xterm .xterm-viewport {
-    overflow: auto !important;
 }
 .terminal {
     width: 100%;
