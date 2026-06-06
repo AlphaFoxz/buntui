@@ -198,6 +198,7 @@ export class TextareaWidget extends InteractiveWidget {
         this.#cursorCol = this.#logicalLines[targetPos.line]!.length;
         this.#isSelecting = true;
         this.#clampScrollOffset();
+        this.stopPropagation();
         return;
       }
 
@@ -208,6 +209,7 @@ export class TextareaWidget extends InteractiveWidget {
         this.#cursorCol = end;
         this.#isSelecting = true;
         this.#clampScrollOffset();
+        this.stopPropagation();
         return;
       }
 
@@ -223,6 +225,7 @@ export class TextareaWidget extends InteractiveWidget {
       this.#cursorCol = targetPos.col;
       this.#isSelecting = true;
       this.#clampScrollOffset();
+      this.stopPropagation();
     });
 
     this.on('mousemove', mouseData => {
@@ -244,6 +247,7 @@ export class TextareaWidget extends InteractiveWidget {
           this.#cursorCol = vl.startCol;
         }
 
+        this.stopPropagation();
         return;
       }
 
@@ -256,6 +260,7 @@ export class TextareaWidget extends InteractiveWidget {
         }
 
         this.#clampScrollOffset();
+        this.stopPropagation();
         return;
       }
 
@@ -265,10 +270,15 @@ export class TextareaWidget extends InteractiveWidget {
         this.#cursorCol = targetPos.col;
         this.#clampScrollOffset();
       }
+
+      this.stopPropagation();
     });
 
     this.on('mouseup', () => {
-      this.#isSelecting = false;
+      if (this.#isSelecting) {
+        this.#isSelecting = false;
+        this.stopPropagation();
+      }
     });
 
     this.on('wheel', data => {

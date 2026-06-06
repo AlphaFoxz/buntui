@@ -10,9 +10,8 @@
         }
     },
     "scripts": {
-        "copy-wasm": "bun run scripts/copy-wasm.ts",
-        "dev": "bun run copy-wasm && bun run dev-server.ts",
-        "build": "bun run scripts/build.ts",
+        "dev": "buntui wasm dev",
+        "build": "buntui wasm build",
         "preview": "vite preview"
     },
     "dependencies": {
@@ -23,6 +22,7 @@
         "@xterm/xterm": "^6.0.0"
     },
     "devDependencies": {
+        "@buntui/cli": "workspace:*",
         "@buntui/compiler": "workspace:*",
         "@types/node": "^24.12.4",
         "vite": "^8.0.16"

@@ -39,6 +39,7 @@ const result = await Bun.build({
         '@buntui/native',
         '@vue/reactivity',
         'commander',
+        'vite',
     ],
 });
 

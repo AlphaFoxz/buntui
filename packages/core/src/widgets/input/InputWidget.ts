@@ -170,11 +170,13 @@ export class InputWidget extends InteractiveWidget {
           const textY = this.#y + 1;
           if (mouseData.y === textY) {
             this.#increment();
+            this.stopPropagation();
             return;
           }
 
           if (this.#height === 3 && mouseData.y === textY + 1) {
             this.#decrement();
+            this.stopPropagation();
             return;
           }
         }
@@ -196,6 +198,7 @@ export class InputWidget extends InteractiveWidget {
         this.#cursorPos = this.#value.length;
         this.#isSelecting = true;
         this.#clampScrollOffset();
+        this.stopPropagation();
         return;
       }
 
@@ -205,6 +208,7 @@ export class InputWidget extends InteractiveWidget {
         this.#cursorPos = end;
         this.#isSelecting = true;
         this.#clampScrollOffset();
+        this.stopPropagation();
         return;
       }
 
@@ -219,6 +223,7 @@ export class InputWidget extends InteractiveWidget {
       this.#cursorPos = targetPos;
       this.#isSelecting = true;
       this.#clampScrollOffset();
+      this.stopPropagation();
     });
 
     this.on('mousemove', mouseData => {
@@ -234,17 +239,17 @@ export class InputWidget extends InteractiveWidget {
       const textX = this.#x + 1;
       const textEndX = this.#isNumber ? this.#x + this.#width - 3 : this.#x + this.#width - 1;
 
-      // Auto-scroll backward when dragging left past text area
       if (mouse0 < textX && this.#scrollOffset > 0) {
         this.#scrollOffset--;
         this.#cursorPos = this.#scrollOffset;
+        this.stopPropagation();
         return;
       }
 
-      // Auto-scroll forward when dragging right past text area
       if (mouse0 >= textEndX && this.#cursorPos < this.#value.length) {
         this.#cursorPos++;
         this.#clampScrollOffset();
+        this.stopPropagation();
         return;
       }
 
@@ -253,10 +258,15 @@ export class InputWidget extends InteractiveWidget {
         this.#cursorPos = targetPos;
         this.#clampScrollOffset();
       }
+
+      this.stopPropagation();
     });
 
     this.on('mouseup', () => {
-      this.#isSelecting = false;
+      if (this.#isSelecting) {
+        this.#isSelecting = false;
+        this.stopPropagation();
+      }
     });
 
     this.on('wheel', data => {
