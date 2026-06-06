@@ -1,6 +1,7 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
-import type {TuiWidgetRect, TuiWidgetSize} from '../types';
+import {BorderSides} from '../../draw_list/types';
+import {resolveBorderStyle, type TuiWidgetRect, type TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
@@ -36,6 +37,8 @@ const SWITCH_TOKEN_MAP = {
   colorCrossDisabled: 'border',
   colorCheckDisabled: 'border',
   colorDimDisabled: 'surfaceFocused',
+  colorBorderFocused: 'borderFocused',
+  borderStyleFocused: 'border.focused',
 } as const;
 
 function getDefaultSwitchOptions(): Required<SwitchWidgetOptions> {
@@ -58,6 +61,7 @@ export class SwitchWidget extends InteractiveWidget {
   #checked: boolean;
 
   readonly #colors: ColorScheme<SwitchColors>;
+  readonly #focusBorder: {colorBorder: number; borderStyle: number};
 
   constructor(options: SwitchWidgetOptions = {}) {
     super();
@@ -96,6 +100,11 @@ export class SwitchWidget extends InteractiveWidget {
         check: parseColor(resolved.colorCheckDisabled),
         dim: parseColor(resolved.colorDimDisabled),
       },
+    };
+
+    this.#focusBorder = {
+      colorBorder: parseColor(resolved.colorBorderFocused),
+      borderStyle: resolveBorderStyle(resolved.borderStyleFocused),
     };
 
     this.on('click', () => {
@@ -139,6 +148,14 @@ export class SwitchWidget extends InteractiveWidget {
 
   updateThemeColors(resolved: Record<string, unknown>): void {
     applyColorSchemeUpdates(this.#colors, resolved);
+
+    if (resolved.colorBorderFocused !== undefined) {
+      this.#focusBorder.colorBorder = parseColor(resolved.colorBorderFocused);
+    }
+
+    if (resolved.borderStyleFocused !== undefined) {
+      this.#focusBorder.borderStyle = resolveBorderStyle(resolved.borderStyleFocused);
+    }
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
@@ -201,6 +218,18 @@ export class SwitchWidget extends InteractiveWidget {
           bgRgba: 0x00_00_00_00,
         });
       }
+    }
+
+    if (this.focused && !this.disabled && this.#focusBorder.borderStyle !== 0) {
+      buffer.drawBorder({
+        x,
+        y,
+        width,
+        height,
+        colorRgba: this.#focusBorder.colorBorder,
+        style: this.#focusBorder.borderStyle,
+        sides: BorderSides.All,
+      });
     }
 
     buffer.popClip();

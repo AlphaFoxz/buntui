@@ -13,6 +13,7 @@ export type TuiThemeColors = {
   textMuted: TuiColor;
 
   border: TuiColor;
+  borderHover: TuiColor;
   borderFocused: TuiColor;
 
   accent: TuiColor;

@@ -45,6 +45,8 @@ const SELECT_TOKEN_MAP = {
   colorBgItemSelected: 'surfaceFocused',
   colorFgItemHovered: 'text',
   colorBgItemHovered: 'surfaceHover',
+  colorScrollbar: 'scrollbar',
+  colorScrollbarTrack: 'scrollbarTrack',
 } as const;
 
 const DROPDOWN_MAX_VISIBLE = 8;
@@ -77,8 +79,8 @@ export class SelectWidget extends InteractiveWidget {
   #hoveredIndex = -1;
   #focusedIndex = -1;
   #scrollOffset = 0;
-  readonly #colorScrollbar: number;
-  readonly #colorScrollbarTrack: number;
+  #colorScrollbar: number;
+  #colorScrollbarTrack: number;
 
   #thumbDragging = false;
   #thumbDragStartY = 0;
@@ -105,8 +107,8 @@ export class SelectWidget extends InteractiveWidget {
     this.setDisabled(resolved.disabled);
 
     const theme = getTheme();
-    this.#colorScrollbar = parseColor(theme.colors.scrollbar);
-    this.#colorScrollbarTrack = parseColor(theme.colors.scrollbarTrack);
+    this.#colorScrollbar = parseColor(resolved.colorScrollbar ?? theme.colors.scrollbar);
+    this.#colorScrollbarTrack = parseColor(resolved.colorScrollbarTrack ?? theme.colors.scrollbarTrack);
 
     this.#triggerColors = {
       normal: {
@@ -444,6 +446,14 @@ export class SelectWidget extends InteractiveWidget {
 
     if (resolved.colorBgItemHovered !== undefined) {
       this.#dropdownColors.itemHovered.bg = parseColor(resolved.colorBgItemHovered);
+    }
+
+    if (resolved.colorScrollbar !== undefined) {
+      this.#colorScrollbar = parseColor(resolved.colorScrollbar);
+    }
+
+    if (resolved.colorScrollbarTrack !== undefined) {
+      this.#colorScrollbarTrack = parseColor(resolved.colorScrollbarTrack);
     }
   }
 

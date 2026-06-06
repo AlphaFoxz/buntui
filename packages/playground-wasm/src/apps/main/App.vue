@@ -64,7 +64,7 @@ const currentPage = ref(pageOptions.value[0]!.value)
 const themes = [tokyoNightMoon, tokyoNightStorm, rosePineMoon, rosePineDawn, highContrast] as const
 const themeOptions = ref(themes.map((t) => ({ value: t.name, label: t.name })))
 const currentTheme = ref(tokyoNightMoon.name)
-function handleThemeChange(data: { value: string }) {
+function handleThemeChange(data: TuiSelectChangeEvent) {
     const t = themes.find((t) => t.name === data.value)
     if (t) setTheme(t)
 }

@@ -28,7 +28,7 @@ const BUTTON_TOKEN_MAP = {
   borderStyleFocused: 'border.focused',
   colorFgHovered: 'text',
   colorBgHovered: 'surfaceHover',
-  colorBorderHovered: 'border',
+  colorBorderHovered: 'borderHover',
   borderStyleHovered: 'border.normal',
   colorFgPressed: 'text',
   colorBgPressed: 'surfacePressed',

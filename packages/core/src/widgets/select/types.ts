@@ -49,4 +49,8 @@ export type SelectWidgetOptions = {
   // Hovered item in dropdown
   colorFgItemHovered?: TuiColor;
   colorBgItemHovered?: TuiColor;
+
+  // Scrollbar
+  colorScrollbar?: TuiColor;
+  colorScrollbarTrack?: TuiColor;
 };

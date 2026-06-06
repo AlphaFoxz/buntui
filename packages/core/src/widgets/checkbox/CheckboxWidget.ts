@@ -1,6 +1,9 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
-import type {TuiWidgetRect, TuiWidgetSize} from '../types';
+import {BorderSides} from '../../draw_list/types';
+import {
+  resolveBorderStyle, type TuiWidgetRect, type TuiWidgetSize,
+} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
@@ -12,6 +15,11 @@ type CheckboxColors = {
   bg: number;
 };
 
+type CheckboxBorderColors = {
+  colorBorder: number;
+  borderStyle: number;
+};
+
 const CHECKBOX_TOKEN_MAP = {
   colorFgNormal: 'text',
   colorBgNormal: 'surface',
@@ -19,6 +27,8 @@ const CHECKBOX_TOKEN_MAP = {
   colorBgHovered: 'surfaceHover',
   colorFgFocused: 'text',
   colorBgFocused: 'surfaceFocused',
+  colorBorderFocused: 'borderFocused',
+  borderStyleFocused: 'border.focused',
   colorFgDisabled: 'textMuted',
   colorBgDisabled: 'surfaceDisabled',
 } as const;
@@ -45,6 +55,7 @@ export class CheckboxWidget extends InteractiveWidget {
   #indeterminate: boolean;
 
   readonly #colors: ColorScheme<CheckboxColors>;
+  readonly #focusBorder: CheckboxBorderColors;
 
   constructor(options: CheckboxWidgetOptions = {}) {
     super();
@@ -72,6 +83,11 @@ export class CheckboxWidget extends InteractiveWidget {
         fg: parseColor(resolved.colorFgDisabled),
         bg: parseColor(resolved.colorBgDisabled),
       },
+    };
+
+    this.#focusBorder = {
+      colorBorder: parseColor(resolved.colorBorderFocused),
+      borderStyle: resolveBorderStyle(resolved.borderStyleFocused),
     };
 
     this.on('click', () => {
@@ -123,6 +139,14 @@ export class CheckboxWidget extends InteractiveWidget {
 
   updateThemeColors(resolved: Record<string, unknown>): void {
     applyColorSchemeUpdates(this.#colors, resolved);
+
+    if (resolved.colorBorderFocused !== undefined) {
+      this.#focusBorder.colorBorder = parseColor(resolved.colorBorderFocused);
+    }
+
+    if (resolved.borderStyleFocused !== undefined) {
+      this.#focusBorder.borderStyle = resolveBorderStyle(resolved.borderStyleFocused);
+    }
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
@@ -170,6 +194,18 @@ export class CheckboxWidget extends InteractiveWidget {
           bgRgba: 0x00_00_00_00,
         });
       }
+    }
+
+    if (this.focused && !this.disabled && this.#focusBorder.borderStyle !== 0) {
+      buffer.drawBorder({
+        x,
+        y,
+        width,
+        height,
+        colorRgba: this.#focusBorder.colorBorder,
+        style: this.#focusBorder.borderStyle,
+        sides: BorderSides.All,
+      });
     }
 
     buffer.popClip();

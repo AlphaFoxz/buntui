@@ -1,5 +1,5 @@
 import type {TuiColor} from '../../utils/color';
-import type {TuiSizeValue} from '../types';
+import type {TuiBorderStyleName, TuiSizeValue} from '../types';
 
 export type CheckboxWidgetOptions = {
   x?: TuiSizeValue;
@@ -26,4 +26,8 @@ export type CheckboxWidgetOptions = {
   // Disabled state
   colorFgDisabled?: TuiColor;
   colorBgDisabled?: TuiColor;
+
+  // Focused border
+  colorBorderFocused?: TuiColor;
+  borderStyleFocused?: TuiBorderStyleName;
 };

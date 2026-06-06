@@ -1,5 +1,5 @@
 import type {TuiColor} from '../../utils/color';
-import type {TuiSizeValue} from '../types';
+import type {TuiBorderStyleName, TuiSizeValue} from '../types';
 
 export type SwitchWidgetOptions = {
   x?: TuiSizeValue;
@@ -37,4 +37,8 @@ export type SwitchWidgetOptions = {
   colorCrossDisabled?: TuiColor;
   colorCheckDisabled?: TuiColor;
   colorDimDisabled?: TuiColor;
+
+  // Focused border
+  colorBorderFocused?: TuiColor;
+  borderStyleFocused?: TuiBorderStyleName;
 };
