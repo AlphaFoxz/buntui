@@ -1,6 +1,8 @@
 {
   "compilerOptions": {
-    "lib": ["ESNext"],
+    "lib": [
+      "ESNext"
+    ],
     "target": "ESNext",
     "module": "Preserve",
     "moduleDetection": "force",
@@ -14,7 +16,9 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "erasableSyntaxOnly": true,
-    "types": ["bun"],
+    "types": [
+      "bun"
+    ],
     "vueCompilerOptions": {
       "target": 3.5,
       "strictTemplates": true

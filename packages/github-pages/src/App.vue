@@ -1,26 +1,38 @@
 <script setup lang="ts">
-import { Terminal } from '@xterm/xterm'
-import { FitAddon } from '@xterm/addon-fit'
+import type { Terminal } from '@xterm/xterm'
+import type { FitAddon } from '@xterm/addon-fit'
 import { ref, onMounted, onUnmounted } from 'vue'
-import { createApp, HtmlBackend, WasmModule, animationFrameScheduler } from '@buntui/core'
-import { App as TuiApp } from '@buntui/playground-wasm/dist/main.js'
+
+type TuiAppInstance = ReturnType<(typeof import('@buntui/core'))['createApp']>
 
 const termRef = ref<HTMLDivElement | null>(null)
 
-let term: Terminal
-let fitAddon: FitAddon
-let app: ReturnType<typeof createApp> | undefined
+let term: Terminal | undefined
+let fitAddon: FitAddon | undefined
+let app: TuiAppInstance | undefined
 
 function handleResize() {
-    fitAddon.fit()
+    fitAddon?.fit()
 }
 
 onMounted(async () => {
-    term = new Terminal({
-        fontFamily: 'Cascadia Code, JetBrains Mono, Fira Code, monospace',
+    const [
+        { Terminal: XTerm },
+        { FitAddon: FitAddonCtor },
+        { createApp, HtmlBackend, WasmModule, animationFrameScheduler },
+        { App: TuiApp },
+    ] = await Promise.all([
+        import('@xterm/xterm'),
+        import('@xterm/addon-fit'),
+        import('@buntui/core'),
+        import('@buntui/playground-wasm/dist/main.js'),
+    ])
+
+    term = new XTerm({
+        fontFamily: 'Cascadia Code, SF Mono, Menlo, Consolas, Liberation Mono, Courier New, monospace',
         cursorBlink: true,
     })
-    fitAddon = new FitAddon()
+    fitAddon = new FitAddonCtor()
     term.loadAddon(fitAddon)
     term.open(termRef.value ?? document.createElement('div'))
     fitAddon.fit()

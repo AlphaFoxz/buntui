@@ -19,12 +19,7 @@ const App: TuiSFCModule = (await import(`./apps/${appName}/App.vue`)).default;
 const termElement: HTMLElement = document.querySelector('#terminal')!;
 
 const term = new Terminal({
-  fontFamily: 'Cascadia Code, JetBrains Mono, Fira Code, monospace',
-  theme: {
-    background: '#1a1b26',
-    foreground: '#c0caf5',
-    cursor: '#c0caf5',
-  },
+  fontFamily: 'Cascadia Code, Fira Code, SF Mono, Menlo, Consolas, Liberation Mono, Courier New, monospace',
   cursorBlink: true,
 });
 
