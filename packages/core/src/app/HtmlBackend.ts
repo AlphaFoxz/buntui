@@ -60,6 +60,7 @@ export type TerminalLike = {
   element?: unknown;
   write(data: string): void;
   focus?(): void;
+  blur?(): void;
   onData?(handler: (data: string) => void): {dispose(): void};
   onKey(handler: (event: TerminalKeyEvent) => void): {dispose(): void};
   onMouse?(handler: (event: TerminalMouseEvent) => void): {dispose(): void};
@@ -89,6 +90,7 @@ export class HtmlBackend implements TuiBackend {
   #ctxPtr = 0;
   #eventDisposables: Array<{dispose(): void}> = [];
   #mouseButtons = 0;
+  #lastKeyTime = 0;
 
   constructor(options: HtmlBackendOptions) {
     this.#terminal = options.terminal;
@@ -150,6 +152,7 @@ export class HtmlBackend implements TuiBackend {
       const key = keyEvent.domEvent?.key ?? keyEvent.key;
       const event = new TuiKeyboardEvent(serializeKeyboardEvent(key, keyEvent.domEvent));
       handler(TuiEventType.KeyboardEvent, event);
+      this.#lastKeyTime = Date.now();
     });
 
     const mouseDisposable = this.#terminal.onMouse?.((mouseEvent: TerminalMouseEvent) => {
@@ -206,7 +209,12 @@ export class HtmlBackend implements TuiBackend {
     return this.#terminal.onData((data: string) => {
       sgrRegex.lastIndex = 0;
       let match: RegExpExecArray | null;
+      let lastIdx = 0;
       while ((match = sgrRegex.exec(data)) !== null) {
+        if (match.index > lastIdx) {
+          dispatchKeyboardFromData(data.slice(lastIdx, match.index), this.#lastKeyTime, handler);
+        }
+
         const cb = Number(match[1]!);
         const col = Number(match[2]!) - 1;
         const row = Number(match[3]!) - 1;
@@ -256,6 +264,12 @@ export class HtmlBackend implements TuiBackend {
           action: 'mousedown',
         }));
         handler(TuiEventType.MouseEvent, event);
+
+        lastIdx = sgrRegex.lastIndex;
+      }
+
+      if (lastIdx < data.length) {
+        dispatchKeyboardFromData(data.slice(lastIdx), this.#lastKeyTime, handler);
       }
     });
   }
@@ -303,7 +317,6 @@ export class HtmlBackend implements TuiBackend {
         return;
       }
 
-      e.preventDefault();
       const touch = e.touches[0]!;
       startTouchX = touch.clientX;
       startTouchY = touch.clientY;
@@ -381,6 +394,8 @@ export class HtmlBackend implements TuiBackend {
         })));
         if (this.#isTextInputFocused?.()) {
           this.#terminal.focus?.();
+        } else {
+          this.#terminal.blur?.();
         }
       } else if (dragEmitted) {
         const touch = e.changedTouches[0]!;
@@ -493,4 +508,20 @@ export function serializeWheelEvent(row: number, col: number, deltaY: number): A
   view.setUint16(6, row + 1, true);
   view.setInt8(8, deltaY);
   return buf;
+}
+
+function dispatchKeyboardFromData(data: string, dedupTime: number, handler: TuiBackendEventHandler): void {
+  if (Date.now() - dedupTime < 50) {
+    return;
+  }
+
+  for (const char of data) {
+    if (char === '\r' || char === '\n') {
+      handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeKeyboardEvent('Enter')));
+    } else if (char === '\u007F' || char === '\u0008') {
+      handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeKeyboardEvent('Backspace')));
+    } else if (char >= ' ') {
+      handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeKeyboardEvent(char)));
+    }
+  }
 }

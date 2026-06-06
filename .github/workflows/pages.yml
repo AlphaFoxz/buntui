@@ -1,15 +1,6 @@
 name: Deploy Pages
 
 on:
-    push:
-        paths:
-            - 'packages/github-pages/**'
-            - 'packages/playground-wasm/src/**'
-            - 'packages/core/src/**'
-            - 'packages/native/src/**'
-            - 'packages/extensions/src/**'
-            - 'packages/compiler/src/**'
-            - '.github/workflows/pages.yml'
     workflow_dispatch:
 
 permissions:
