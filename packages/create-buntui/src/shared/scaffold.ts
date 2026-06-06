@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {readPackageVersion} from './utils';
 
-export type TemplateName = 'basic' | 'sfc' | 'full';
+export type TemplateName = 'basic' | 'sfc' | 'full' | 'wasm';
 
 function resolveSelfResource(...segments: string[]): string {
   const candidates = [

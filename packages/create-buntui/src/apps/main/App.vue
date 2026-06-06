@@ -31,7 +31,7 @@
 
             <Text width="100%" :height="1" value="Template:" />
 
-            <RadioGroup width="100%" :height="3" :options="['Basic', 'SFC', 'Full']" v-model="templateIndex" />
+            <RadioGroup width="100%" :height="4" :options="['Basic', 'SFC', 'Full', 'WASM']" v-model="templateIndex" />
 
             <Text width="100%" :height="1" :value="templateDescription" overflow="clip" />
 
@@ -133,11 +133,12 @@ import { scaffoldCopy, scaffoldCleanup, type TemplateName } from '../../shared/s
 import { validateProjectName } from '../../shared/validate'
 import { LOGGER } from '@buntui/core'
 
-const TEMPLATE_NAMES: TemplateName[] = ['basic', 'sfc', 'full']
+const TEMPLATE_NAMES: TemplateName[] = ['basic', 'sfc', 'full', 'wasm']
 const TEMPLATE_DESCRIPTIONS = [
     'A minimal starting point with Box, Text, Button, and a clock demo.',
     'SFC compiler + HMR hot reload + dev server setup.',
     'All core widgets showcase with tabbed navigation and theme support.',
+    'WASM/browser target with xterm.js, runs in the browser.',
 ]
 
 const currentTab = ref('Template')

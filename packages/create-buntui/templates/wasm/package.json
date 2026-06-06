@@ -1,0 +1,22 @@
+{
+    "name": "{{name}}",
+    "version": "0.0.1",
+    "type": "module",
+    "scripts": {
+        "dev": "buntui wasm dev",
+        "build": "buntui wasm build"
+    },
+    "dependencies": {
+        "@buntui/core": "{{version}}",
+        "@buntui/extensions": "{{version}}",
+        "@vue/reactivity": "^3.5.34",
+        "@xterm/addon-fit": "^0.11.0",
+        "@xterm/xterm": "^6.0.0"
+    },
+    "devDependencies": {
+        "@buntui/cli": "{{version}}",
+        "@buntui/compiler": "{{version}}",
+        "@types/bun": "latest",
+        "vite": "^8.0.16"
+    }
+}

@@ -1,0 +1,5 @@
+node_modules/
+dist/
+public/buntui.wasm
+*.log
+.DS_Store
