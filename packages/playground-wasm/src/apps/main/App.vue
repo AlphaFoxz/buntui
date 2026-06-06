@@ -1,9 +1,17 @@
 <template>
     <Text :x="0" :y="0" value="Buntui" styleModifier="bold" />
     <Select :x="0" :y="1" width="50%" label="Core Widget" :options="pageOptions" v-model="currentPage" />
-    <Select x="50%" :y="1" width="50%" label="Color Theme" :options="themeOptions" v-model="currentTheme" @change="handleThemeChange" />
+    <Select
+        x="50%"
+        :y="1"
+        width="50%"
+        label="Color Theme"
+        :options="themeOptions"
+        v-model="currentTheme"
+        @change="handleThemeChange"
+    />
 
-    <ScrollBox :x="0" :y="4" width="100%" height="95%">
+    <ScrollBox :x="0" :y="4" width="100%" height="90%">
         <BoxDemo v-if="currentPage === 'Box'" />
         <TextDemo v-else-if="currentPage === 'Text'" />
         <InputDemo v-else-if="currentPage === 'Input'" />

@@ -12,6 +12,8 @@ export class PointerManager {
   #isDragging = false;
   #dragOffsetX = 0;
   #dragOffsetY = 0;
+  #pressX = 0;
+  #pressY = 0;
   #mouseHandler: ((data: MouseEvent) => void) | undefined;
   #wheelHandler: ((data: WheelEvent) => void) | undefined;
   readonly #getScene: () => TuiScene | undefined;
@@ -103,6 +105,8 @@ export class PointerManager {
       if (!data.isRelease) {
         const hitTarget = scene.hitTest(data);
         this.#pressTarget = hitTarget;
+        this.#pressX = data.x;
+        this.#pressY = data.y;
         if (hitTarget) {
           hitTarget.dispatch('mousedown', data);
 
@@ -142,7 +146,11 @@ export class PointerManager {
 
         const releaseTarget = scene.hitTest(data);
         if (releaseTarget === this.#pressTarget) {
-          this.#pressTarget.dispatch('click', data);
+          const dx = data.x - this.#pressX;
+          const dy = data.y - this.#pressY;
+          if (((dx * dx) + (dy * dy)) <= 1) {
+            this.#pressTarget.dispatch('click', data);
+          }
         }
 
         this.#pressTarget = undefined;

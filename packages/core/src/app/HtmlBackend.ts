@@ -215,6 +215,8 @@ export class HtmlBackend implements TuiBackend {
           dispatchKeyboardFromData(data.slice(lastIdx, match.index), this.#lastKeyTime, handler);
         }
 
+        lastIdx = sgrRegex.lastIndex;
+
         const cb = Number(match[1]!);
         const col = Number(match[2]!) - 1;
         const row = Number(match[3]!) - 1;
@@ -264,8 +266,6 @@ export class HtmlBackend implements TuiBackend {
           action: 'mousedown',
         }));
         handler(TuiEventType.MouseEvent, event);
-
-        lastIdx = sgrRegex.lastIndex;
       }
 
       if (lastIdx < data.length) {

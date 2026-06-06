@@ -402,7 +402,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
     const innerX = x + paddingLeft + (borderLeft ? 1 : 0);
     const innerY = y + paddingTop + (borderTop ? 1 : 0);
-    const innerWidth = width - paddingLeft - paddingRight - borderH - 1; // -1 for scrollbar column
+    const innerWidth = width - paddingLeft - paddingRight - borderH;
     const innerHeight = height - paddingTop - paddingBottom - borderV;
 
     return {
@@ -467,8 +467,9 @@ export class ScrollBoxWidget extends InteractiveWidget {
     }
 
     const geometry = computeScrollbarGeometry(viewport.height, contentHeight, this.#scrollOffsetY);
+    const scrollbarX = this.#rect.x + this.#rect.width - 1;
     renderScrollbar({
-      buffer, x: viewport.x + viewport.width, trackY: viewport.y, trackHeight: viewport.height, geometry, thumbColor: this.#colorScrollbar, trackColor: this.#colorScrollbarTrack,
+      buffer, x: scrollbarX, trackY: viewport.y, trackHeight: viewport.height, geometry, thumbColor: this.#colorScrollbar, trackColor: this.#colorScrollbarTrack,
     });
   }
 
@@ -485,8 +486,9 @@ export class ScrollBoxWidget extends InteractiveWidget {
     }
 
     const geometry = computeScrollbarGeometry(viewport.height, contentHeight, this.#scrollOffsetY);
+    const scrollbarX = this.#rect.x + this.#rect.width - 1;
     return {
-      x: viewport.x + viewport.width,
+      x: scrollbarX,
       trackY: viewport.y,
       trackHeight: viewport.height,
       thumbY: viewport.y + geometry.thumbOffset,

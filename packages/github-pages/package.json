@@ -1,6 +1,6 @@
 {
     "name": "github-pages",
-    "version": "0.1.0-alpha.4",
+    "version": "0.1.0-alpha.5",
     "private": true,
     "type": "module",
     "scripts": {
@@ -25,13 +25,12 @@
         "@types/jsdom": "^28.0.3",
         "@types/node": "^24.12.4",
         "@vitejs/plugin-vue": "^6.0.7",
-        "@vue/test-utils": "^2.4.10",
+        "@vue/test-utils": "^2.4.11",
         "@vue/tsconfig": "^0.9.1",
         "jsdom": "^29.1.1",
         "npm-run-all2": "^8.0.4",
         "typescript": "~6.0.3",
         "vite": "^8.0.16",
-        "vite-plugin-vue-devtools": "^8.1.2",
         "vitest": "^4.1.8",
         "vue-tsc": "^3.3.3"
     },

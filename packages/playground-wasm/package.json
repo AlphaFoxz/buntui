@@ -1,7 +1,7 @@
 {
     "name": "@buntui/playground-wasm",
     "private": true,
-    "version": "0.1.0-alpha.4",
+    "version": "0.1.0-alpha.5",
     "type": "module",
     "exports": {
         "./dist/main.js": {
@@ -17,6 +17,7 @@
     },
     "dependencies": {
         "@buntui/core": "workspace:*",
+        "@buntui/extensions": "workspace:*",
         "@vue/reactivity": "^3.5.35",
         "@xterm/addon-fit": "^0.11.0",
         "@xterm/xterm": "^6.0.0"

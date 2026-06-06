@@ -275,15 +275,6 @@ export class SelectWidget extends InteractiveWidget {
     }
 
     if (!this.#opened) {
-      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-        this.#openDropdown();
-        if (this.#focusedIndex < 0 && this.#options.length > 0) {
-          this.#focusedIndex = this.#selectedIndex();
-        }
-
-        return;
-      }
-
       return;
     }
 
