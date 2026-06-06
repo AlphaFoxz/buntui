@@ -27,6 +27,7 @@ export function resolveWidgetColors<M extends Record<string, ThemeToken>>(tokenM
     result[key] = resolveToken(theme, String(token));
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
   return result as ResolveTokens<M>;
 }
 
@@ -40,6 +41,7 @@ function resolveToken(theme: TuiTheme, token: string): unknown {
     return undefined;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
   return theme.colors[token as keyof TuiThemeColors];
 }
 

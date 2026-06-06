@@ -12,6 +12,7 @@ const expose: FlatXoConfig = [
       'designs/**',
       '**/scripts/**',
       'packages/create-buntui/templates/**',
+      'packages/github-pages/**',
       'xo.config.ts'
     ],
   },
@@ -73,6 +74,7 @@ const expose: FlatXoConfig = [
       '@typescript-eslint/no-redeclare': 'off',
       'unicorn/text-encoding-identifier-case': 'off',
       'no-bitwise': 'off',
+      'unicorn/prefer-math-trunc': 'off',
       '@typescript-eslint/class-literal-property-style': 'off',
       'import-x/extensions': 'off',
       'no-useless-call': 'off',

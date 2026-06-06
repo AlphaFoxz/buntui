@@ -274,19 +274,19 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
   updateThemeColors(resolved: Record<string, unknown>): void {
     if (resolved.colorBg !== undefined) {
-      this.updateColor({colorBg: parseColor(resolved.colorBg as number)});
+      this.updateColor({colorBg: parseColor(resolved.colorBg)});
     }
 
     if (resolved.colorBorder !== undefined) {
-      this.updateBorder({colorBorder: parseColor(resolved.colorBorder as number)});
+      this.updateBorder({colorBorder: parseColor(resolved.colorBorder)});
     }
 
     if (resolved.colorScrollbar !== undefined) {
-      this.setColorScrollbar(parseColor(resolved.colorScrollbar as number));
+      this.setColorScrollbar(parseColor(resolved.colorScrollbar));
     }
 
     if (resolved.colorScrollbarTrack !== undefined) {
-      this.setColorScrollbarTrack(parseColor(resolved.colorScrollbarTrack as number));
+      this.setColorScrollbarTrack(parseColor(resolved.colorScrollbarTrack));
     }
   }
 

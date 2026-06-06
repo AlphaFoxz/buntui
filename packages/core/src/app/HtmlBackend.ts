@@ -24,7 +24,7 @@ type DomKeyboardEvent = {
 
 type TerminalKeyEvent = {key: string; domEvent?: DomKeyboardEvent};
 
-export type TerminalMouseEvent = {col: number; row: number; button: number; buttons: number; action: string};
+export type TerminalMouseEvent = {col: number; row: number; button?: number; buttons?: number; action: string};
 
 type TerminalResizeEvent = {cols: number; rows: number};
 
@@ -47,7 +47,7 @@ type DomRect = {
 };
 
 type DomElement = {
-  readonly style: Record<string, string>;
+  readonly style: Record<string, any>;
   querySelector(selector: string): DomElement | null;
   getBoundingClientRect(): DomRect;
   addEventListener(type: string, listener: (event: DomTouchEvent) => void, options?: {passive?: boolean}): void;
@@ -57,7 +57,7 @@ type DomElement = {
 export type TerminalLike = {
   rows: number;
   cols: number;
-  element?: unknown;
+  element?: DomElement | null;
   write(data: string): void;
   focus?(): void;
   blur?(): void;
@@ -198,13 +198,14 @@ export class HtmlBackend implements TuiBackend {
   }
 
   #startMouseTracking(handler: TuiBackendEventHandler): {dispose(): void} | undefined {
-    if (this.#terminal.onMouse || !this.#terminal.onData) {
+    if (this.#terminal.onMouse ?? !this.#terminal.onData) {
       return undefined;
     }
 
     this.#terminal.write('\u001B[?1003h\u001B[?1006h');
 
-    const sgrRegex = /\u001B\[<(\d+);(\d+);(\d+)([Mm])/g;
+    // eslint-disable-next-line no-control-regex
+    const sgrRegex = /\u001B\[<(\d+);(\d+);(\d+)([Mm])/gv;
 
     return this.#terminal.onData((data: string) => {
       sgrRegex.lastIndex = 0;
@@ -249,7 +250,7 @@ export class HtmlBackend implements TuiBackend {
           const event = new TuiMouseEvent(serializeMouseEvent({
             col,
             row,
-            button: undefined as unknown as number,
+            button: undefined,
             buttons: this.#mouseButtons,
             action: 'mousemove',
           }));
@@ -262,7 +263,7 @@ export class HtmlBackend implements TuiBackend {
           col,
           row,
           button,
-          buttons: undefined as unknown as number,
+          buttons: undefined,
           action: 'mousedown',
         }));
         handler(TuiEventType.MouseEvent, event);
@@ -275,8 +276,7 @@ export class HtmlBackend implements TuiBackend {
   }
 
   #startTouchTracking(handler: TuiBackendEventHandler): {dispose(): void} | undefined {
-    /* eslint-disable unicorn/prevent-abbreviations */
-    const element = this.#terminal.element as DomElement | null | undefined;
+    const {element} = this.#terminal;
     if (!element) {
       return undefined;
     }
@@ -312,12 +312,12 @@ export class HtmlBackend implements TuiBackend {
       };
     };
 
-    const onTouchStart = (e: DomTouchEvent) => {
-      if (e.touches.length !== 1) {
+    const onTouchStart = (event: DomTouchEvent) => {
+      if (event.touches.length !== 1) {
         return;
       }
 
-      const touch = e.touches[0]!;
+      const touch = event.touches[0]!;
       startTouchX = touch.clientX;
       startTouchY = touch.clientY;
       const cell = touchToCell(touch.clientX, touch.clientY);
@@ -328,13 +328,13 @@ export class HtmlBackend implements TuiBackend {
       dragEmitted = false;
     };
 
-    const onTouchMove = (e: DomTouchEvent) => {
-      if (!touchActive || e.touches.length !== 1) {
+    const onTouchMove = (event: DomTouchEvent) => {
+      if (!touchActive || event.touches.length !== 1) {
         return;
       }
 
-      e.preventDefault();
-      const touch = e.touches[0]!;
+      event.preventDefault();
+      const touch = event.touches[0]!;
 
       if (!isScrolling) {
         const dx = touch.clientX - startTouchX;
@@ -361,22 +361,22 @@ export class HtmlBackend implements TuiBackend {
       handler(TuiEventType.MouseEvent, new TuiMouseEvent(serializeMouseEvent({
         col,
         row,
-        button: undefined as unknown as number,
+        button: undefined,
         buttons: 1,
         action: 'mousemove',
       })));
     };
 
-    const onTouchEnd = (e: DomTouchEvent) => {
+    const onTouchEnd = (event: DomTouchEvent) => {
       if (!touchActive) {
         return;
       }
 
-      e.preventDefault();
+      event.preventDefault();
       touchActive = false;
 
       if (!isScrolling) {
-        const touch = e.changedTouches[0]!;
+        const touch = event.changedTouches[0]!;
         const {col, row} = touchToCell(touch.clientX, touch.clientY);
         handler(TuiEventType.MouseEvent, new TuiMouseEvent(serializeMouseEvent({
           col,
@@ -398,7 +398,7 @@ export class HtmlBackend implements TuiBackend {
           this.#terminal.blur?.();
         }
       } else if (dragEmitted) {
-        const touch = e.changedTouches[0]!;
+        const touch = event.changedTouches[0]!;
         const {col, row} = touchToCell(touch.clientX, touch.clientY);
         handler(TuiEventType.MouseEvent, new TuiMouseEvent(serializeMouseEvent({
           col,
@@ -425,7 +425,6 @@ export class HtmlBackend implements TuiBackend {
         element.removeEventListener('touchcancel', onTouchEnd);
       },
     };
-    /* eslint-enable unicorn/prevent-abbreviations */
   }
 }
 

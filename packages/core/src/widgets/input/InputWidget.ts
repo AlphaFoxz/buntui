@@ -489,19 +489,19 @@ export class InputWidget extends InteractiveWidget {
   updateThemeColors(resolved: Record<string, unknown>): void {
     applyColorSchemeUpdates(this.#colors, resolved);
     if (resolved.borderStyle !== undefined) {
-      this.#borderStyle = resolveBorderStyle(resolved.borderStyle as TuiBorderStyleName);
+      this.#borderStyle = resolveBorderStyle(resolved.borderStyle);
     }
 
     if (resolved.colorPlaceholder !== undefined) {
-      this.#colorPlaceholder = parseColor(resolved.colorPlaceholder as number);
+      this.#colorPlaceholder = parseColor(resolved.colorPlaceholder);
     }
 
     if (resolved.colorSelectionBg !== undefined) {
-      this.#colorSelectionBg = parseColor(resolved.colorSelectionBg as number);
+      this.#colorSelectionBg = parseColor(resolved.colorSelectionBg);
     }
 
     if (resolved.colorSelectionFg !== undefined) {
-      this.#colorSelectionFg = parseColor(resolved.colorSelectionFg as number);
+      this.#colorSelectionFg = parseColor(resolved.colorSelectionFg);
     }
   }
 

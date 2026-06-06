@@ -39,18 +39,15 @@ export class OverlayManager {
   open(widget: TuiWidgetEntity, options?: OverlayOptions): OverlayHandle {
     const entry: OverlayEntry = {
       widget,
-      handle: undefined as unknown as OverlayHandleImpl,
+      handle: new OverlayHandleImpl(widget, () => {
+        this.#closeEntry(entry);
+      }),
       options: options ?? {},
       zIndex: this.#nextZIndex++,
       previousZIndex: widget.zIndex,
       previousPortal: widget.portal,
       savedFocus: undefined,
     };
-
-    const handle = new OverlayHandleImpl(widget, () => {
-      this.#closeEntry(entry);
-    });
-    entry.handle = handle;
 
     widget.setPortal(true);
     widget.setZIndex(entry.zIndex);
@@ -65,7 +62,7 @@ export class OverlayManager {
     }
 
     this.#stack.push(entry);
-    return handle;
+    return entry.handle;
   }
 
   close(handle: OverlayHandle): void {

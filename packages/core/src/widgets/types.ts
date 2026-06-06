@@ -150,12 +150,17 @@ const BORDER_STYLE_MAP: Record<TuiBorderStyleName, U8> = {
   outsetdouble: 8,
 };
 
-export function resolveBorderStyle(value: TuiBorderStyleName | U8): U8 {
+export function resolveBorderStyle(value: unknown): U8 {
   if (typeof value === 'string') {
-    return BORDER_STYLE_MAP[value] ?? 0;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+    return BORDER_STYLE_MAP[value as TuiBorderStyleName] ?? 0;
   }
 
-  return value;
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  return 0;
 }
 
 /**

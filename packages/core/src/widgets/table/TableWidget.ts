@@ -218,31 +218,31 @@ export class TableWidget extends InteractiveWidget {
   updateThemeColors(resolved: Record<string, unknown>): void {
     applyColorSchemeUpdates(this.#colors, resolved);
     if (resolved.borderStyle !== undefined) {
-      this.#borderStyle = resolveBorderStyle(resolved.borderStyle as TuiBorderStyleName);
+      this.#borderStyle = resolveBorderStyle(resolved.borderStyle);
     }
 
     if (resolved.colorHeaderFg !== undefined) {
-      this.#colorHeaderFg = parseColor(resolved.colorHeaderFg as number);
+      this.#colorHeaderFg = parseColor(resolved.colorHeaderFg);
     }
 
     if (resolved.colorHeaderBg !== undefined) {
-      this.#colorHeaderBg = parseColor(resolved.colorHeaderBg as number);
+      this.#colorHeaderBg = parseColor(resolved.colorHeaderBg);
     }
 
     if (resolved.colorSelectionBg !== undefined) {
-      this.#colorSelectionBg = parseColor(resolved.colorSelectionBg as number);
+      this.#colorSelectionBg = parseColor(resolved.colorSelectionBg);
     }
 
     if (resolved.colorSelectionFg !== undefined) {
-      this.#colorSelectionFg = parseColor(resolved.colorSelectionFg as number);
+      this.#colorSelectionFg = parseColor(resolved.colorSelectionFg);
     }
 
     if (resolved.colorScrollbar !== undefined) {
-      this.#colorScrollbar = parseColor(resolved.colorScrollbar as number);
+      this.#colorScrollbar = parseColor(resolved.colorScrollbar);
     }
 
     if (resolved.colorScrollbarTrack !== undefined) {
-      this.#colorScrollbarTrack = parseColor(resolved.colorScrollbarTrack as number);
+      this.#colorScrollbarTrack = parseColor(resolved.colorScrollbarTrack);
     }
   }
 
@@ -500,6 +500,7 @@ export class TableWidget extends InteractiveWidget {
 
         const cellWidth = Math.min(col.width, x + width - drawX);
         const rawValue = row[col.key];
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
         const cellValue = typeof rawValue === 'string' ? rawValue : (rawValue as number | boolean | undefined)?.toString() ?? '';
         const cellText = this.#alignText(truncateToWidth(cellValue, cellWidth - 1), cellWidth - 1, col.align);
         buffer.drawText({

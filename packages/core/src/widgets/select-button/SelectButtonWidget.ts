@@ -201,7 +201,7 @@ export class SelectButtonWidget extends InteractiveWidget {
   updateThemeColors(resolved: Record<string, unknown>): void {
     applyColorSchemeUpdates(this.#colors, resolved);
     if (resolved.colorFgSeparator !== undefined) {
-      this.#colorSeparator = parseColor(resolved.colorFgSeparator as number);
+      this.#colorSeparator = parseColor(resolved.colorFgSeparator);
     }
   }
 

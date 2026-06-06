@@ -280,23 +280,25 @@ function stripTypeScript(code: string): string {
   for (const line of lines) {
     const trimmed = line.trimStart();
 
-    if (/^import\s+type\s+/.test(trimmed)) {
+    if (/^import\s+type\s+/v.test(trimmed)) {
       continue;
     }
 
-    if (/^import\s/.test(trimmed)) {
+    if (/^import\s/v.test(trimmed)) {
       out.push(line);
       continue;
     }
 
     let result = line;
 
+    // eslint-disable-next-line require-unicode-regexp
     result = result.replaceAll(/(function\s+\w+)\s*\(([^)]*)\)/g, (_full: string, prefix: string, parameters: string) => {
       const cleaned = stripParameterTypes(parameters);
       return `${prefix}(${cleaned})`;
     });
 
-    result = result.replaceAll(/\bas\s+([A-Z]\w*(?:<[^>]*>)?|const|unknown|any|string|number|boolean|void|never|null|undefined|object)(?![$\w])/g, '');
+    result = result.replaceAll(/\bas\s+([A-Z]\w*(?:<[^>]*>)?|const|unknown|any|string|number|boolean|void|never|null|undefined|object)(?![$\w])/gv, '');
+    // eslint-disable-next-line require-unicode-regexp
     result = result.replaceAll(/([)\w\]])!(?!=)/g, '$1');
 
     out.push(result);

@@ -78,7 +78,7 @@ export class TextWidget extends TuiWidgetEntity {
 
   updateThemeColors(resolved: Record<string, unknown>): void {
     this.updateColor({
-      colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg as TuiColor),
+      colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg),
     });
   }
 

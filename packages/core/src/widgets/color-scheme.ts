@@ -56,7 +56,7 @@ export function applyColorSchemeUpdates(
 
       const state = anyScheme[stateKey];
       if (state !== undefined) {
-        state[field] = parseColor(value as number);
+        state[field] = parseColor(value);
       }
 
       break;
@@ -70,7 +70,7 @@ export function applyColorSchemeUpdates(
 
         const state = anyScheme[stateKey];
         if (state !== undefined && 'borderStyle' in state) {
-          (state as Record<string, unknown>).borderStyle = resolveBorderStyle(value as TuiBorderStyleName);
+          (state as Record<string, unknown>).borderStyle = resolveBorderStyle(value);
         }
 
         break;

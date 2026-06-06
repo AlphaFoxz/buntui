@@ -258,11 +258,11 @@ export class BoxWidget extends TuiWidgetEntity {
 
   updateThemeColors(resolved: Record<string, unknown>): void {
     this.updateColor({
-      colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg as TuiColor),
-      colorBg: resolved.colorBg === undefined ? undefined : parseColor(resolved.colorBg as TuiColor),
+      colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg),
+      colorBg: resolved.colorBg === undefined ? undefined : parseColor(resolved.colorBg),
     });
     if (resolved.colorBorder !== undefined) {
-      this.updateBorder({colorBorder: parseColor(resolved.colorBorder as TuiColor)});
+      this.updateBorder({colorBorder: parseColor(resolved.colorBorder)});
     }
   }
 

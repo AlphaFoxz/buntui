@@ -1,3 +1,5 @@
+import {TuiDataViewWrapper} from '../extern/TuiDataViewWrapper';
+
 export type WasmExports = {
   memory: WebAssembly.Memory;
   allocWasmBuffer(size: number): number;
@@ -22,8 +24,8 @@ export type WasmExports = {
 
 let linkedMemory: WebAssembly.Memory | undefined;
 
-function dv(): DataView {
-  return new DataView(linkedMemory!.buffer);
+function dv(): TuiDataViewWrapper {
+  return new TuiDataViewWrapper(linkedMemory!.buffer);
 }
 
 const WASI_ESUCCESS = 0;
@@ -64,7 +66,7 @@ function createWasiImports(): Record<string, Record<string, (...args: number[]) 
         const v = dv();
         let written = 0;
         for (let i = 0; i < iovsLength; i++) {
-          const base = iovs + i * 8;
+          const base = iovs + (i * 8);
           written += v.getUint32(base + 4, true);
         }
 

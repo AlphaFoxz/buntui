@@ -69,10 +69,12 @@ export class NativeBackend implements TuiBackend {
   }
 
   detectTermSize(context: TuiContextLike): void {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     loadLib().detectTermSize((context as unknown as CStruct).ptr as BunPointer);
   }
 
   renderDrawList(context: TuiContextLike, drawListBuffer: DrawListBuffer): void {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     loadLib().renderDrawList((context as unknown as CStruct).ptr, drawListBuffer.ptr, drawListBuffer.byteLength);
   }
 

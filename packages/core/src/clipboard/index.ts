@@ -20,12 +20,13 @@ function createDefaultProvider(): ClipboardProvider {
         return '';
       },
       write(text: string): void {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
         void (navigator as unknown as {clipboard: {writeText(t: string): Promise<void>}}).clipboard.writeText(text);
       },
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, unicorn/prefer-module
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion, @typescript-eslint/no-require-imports, unicorn/prefer-module
   const mod = require('./SystemClipboard') as {SystemClipboard: new () => ClipboardProvider};
   return new mod.SystemClipboard();
 }

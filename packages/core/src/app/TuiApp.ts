@@ -15,7 +15,10 @@ import {RenderLoop} from './RenderLoop';
 import {type TuiBackend} from './TuiBackend';
 import {runSetup} from './scene-context';
 
-export type TuiSFCModule = Record<string, unknown>;
+export type TuiSFCModule = {
+  [key: string]: unknown;
+  setup: (scene: TuiScene, mountTarget?: TuiScene) => (() => void) | void;
+};
 
 export class TuiApp implements Disposable {
   readonly #debugMode: boolean;
@@ -144,12 +147,8 @@ export class TuiApp implements Disposable {
   createScene<T extends TuiSFCModule>(module: T, options?: Partial<TuiSceneOptions>): TuiScene {
     const scene = new TuiScene(options);
 
-    const moduleRecord = module as Record<string, unknown>;
-    if (typeof moduleRecord.setup === 'function') {
-      const setup = moduleRecord.setup as (scene: TuiScene) => (() => void) | void;
-      const cleanup = runSetup(scene, () => setup(scene));
-      this.#cleanups.set(scene.id, cleanup);
-    }
+    const cleanup = runSetup(scene, () => module.setup(scene));
+    this.#cleanups.set(scene.id, cleanup);
 
     this.#scenes.push(scene);
 

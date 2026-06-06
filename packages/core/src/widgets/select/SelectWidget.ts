@@ -419,31 +419,31 @@ export class SelectWidget extends InteractiveWidget {
     applyColorSchemeUpdates(this.#triggerColors, resolved);
 
     if (resolved.borderStyle !== undefined) {
-      this.#borderStyle = resolveBorderStyle(resolved.borderStyle as TuiBorderStyleName);
+      this.#borderStyle = resolveBorderStyle(resolved.borderStyle);
     }
 
     if (resolved.colorFgItem !== undefined) {
-      this.#dropdownColors.item.fg = parseColor(resolved.colorFgItem as number);
+      this.#dropdownColors.item.fg = parseColor(resolved.colorFgItem);
     }
 
     if (resolved.colorBgItem !== undefined) {
-      this.#dropdownColors.item.bg = parseColor(resolved.colorBgItem as number);
+      this.#dropdownColors.item.bg = parseColor(resolved.colorBgItem);
     }
 
     if (resolved.colorFgItemSelected !== undefined) {
-      this.#dropdownColors.itemSelected.fg = parseColor(resolved.colorFgItemSelected as number);
+      this.#dropdownColors.itemSelected.fg = parseColor(resolved.colorFgItemSelected);
     }
 
     if (resolved.colorBgItemSelected !== undefined) {
-      this.#dropdownColors.itemSelected.bg = parseColor(resolved.colorBgItemSelected as number);
+      this.#dropdownColors.itemSelected.bg = parseColor(resolved.colorBgItemSelected);
     }
 
     if (resolved.colorFgItemHovered !== undefined) {
-      this.#dropdownColors.itemHovered.fg = parseColor(resolved.colorFgItemHovered as number);
+      this.#dropdownColors.itemHovered.fg = parseColor(resolved.colorFgItemHovered);
     }
 
     if (resolved.colorBgItemHovered !== undefined) {
-      this.#dropdownColors.itemHovered.bg = parseColor(resolved.colorBgItemHovered as number);
+      this.#dropdownColors.itemHovered.bg = parseColor(resolved.colorBgItemHovered);
     }
   }
 
