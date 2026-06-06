@@ -41,6 +41,9 @@ jobs:
             - name: Build core
               run: bun run --cwd packages/core build
 
+            - name: Build extensions
+              run: bun run --cwd packages/extensions build
+
             - name: Build compiler
               run: bun run --cwd packages/compiler build
 
