@@ -23,8 +23,7 @@ The built output is in `dist/`.
 ```
 index.html        Browser shell (Vite dev entry)
 src/
+  dev-shell.ts    Browser bootstrap (xterm.js + WASM)
   apps/main/
     App.vue       Root SFC component
-  shared/
-    dev-shell.ts  Browser bootstrap (xterm.js + WASM)
 ```

@@ -4,8 +4,9 @@ import fs from 'node:fs';
 import {createDevServer, type DevServerOptions} from '@buntui/compiler';
 import {createApp, type TuiSFCModule, type TuiScene} from '@buntui/core';
 import {mountHmrErrorOverlay, type HmrErrorOverlayHandle} from '@buntui/extensions/hmr-error-overlay';
-import {resolveApp, getDevDir} from '../lib/app-resolver.ts';
-import {DEFAULT_COMPILE_OPTIONS} from '../lib/constants.ts';
+import {resolveApp, getDevDir, getCwd} from '../lib/app-resolver.ts';
+import {DEFAULT_COMPILE_OPTIONS, DEFAULT_APP_OPTIONS} from '../lib/constants.ts';
+import {loadConfig} from '../lib/config.ts';
 
 type AppModule = {
   ENTRY: string;
@@ -13,6 +14,7 @@ type AppModule = {
 };
 
 export async function devCommand(appName?: string): Promise<void> {
+  const cwd = getCwd();
   const app = resolveApp(appName);
   const devDir = getDevDir();
   const appDevDir = path.join(devDir, app.name);
@@ -29,12 +31,10 @@ export async function devCommand(appName?: string): Promise<void> {
     scene = result.scene;
   } else {
     vueFile = app.entryVue;
+    const config = await loadConfig(cwd);
     const tuiApp = createApp({
-      logLevel: 'debug',
-      clearLog: true,
-      debugMode: true,
-      tickRate: 60,
-      renderRate: 48,
+      ...DEFAULT_APP_OPTIONS,
+      ...config.app,
       logFilePath: appDevDir,
     });
     const component = await import(app.entryVue) as TuiSFCModule;

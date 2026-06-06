@@ -218,6 +218,10 @@ function setAppInstance(instance: TuiApp | undefined) {
   appInstance = instance;
 }
 
+export function getCurrentApp(): TuiApp | undefined {
+  return appInstance;
+}
+
 type ConsoleMethod = (...args: unknown[]) => void;
 
 const originalConsoleLog: ConsoleMethod = console.log;

@@ -1,6 +1,12 @@
 import type {Scheduler} from '../../platform/next-tick';
 
-export type LogLevel = 'debug' | 'info' | 'warning' | 'error';
+const LogLevel = {
+  Debug: 'debug',
+  Info: 'info',
+  Warning: 'warning',
+  Error: 'error',
+} as const;
+export type LogLevel = Enum<typeof LogLevel>;
 
 export type TuiAppOptions = {
   logLevel: LogLevel;

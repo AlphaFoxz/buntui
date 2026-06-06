@@ -21,10 +21,8 @@ The built output is in `dist/`.
 ## Project Structure
 
 ```
+buntui.config.ts  App configuration (optional)
 src/
-  apps/main/     App entry point
-    App.vue      Root SFC component
-    main.ts      Production & dev entry
-  shared/
-    runApp.ts    App bootstrap helper
+  apps/main/
+    App.vue       Root SFC component
 ```

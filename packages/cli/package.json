@@ -9,6 +9,12 @@
     "bin": {
         "buntui": "./dist/buntui.js"
     },
+    "exports": {
+        ".": {
+            "types": "./dist/config.d.ts",
+            "default": "./dist/config.js"
+        }
+    },
     "files": [
         "dist/"
     ],

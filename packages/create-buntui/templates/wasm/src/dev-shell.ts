@@ -12,9 +12,7 @@ import {
 declare const BUNTUI_APP_NAME: string;
 
 const appName: string = BUNTUI_APP_NAME;
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, unicorn/no-await-expression-member */
-const App: TuiSFCModule = (await import(`../apps/${appName}/App.vue`)).default;
-/* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, unicorn/no-await-expression-member */
+const App: TuiSFCModule = (await import(`./apps/${appName}/App.vue`)).default;
 
 const termElement: HTMLElement = document.querySelector('#terminal')!;
 
@@ -40,7 +38,7 @@ window.addEventListener('resize', () => {
 const wasm = new WasmModule();
 await wasm.load(fetch('/buntui.wasm'));
 
-let app: ReturnType<typeof createApp> | undefined; // eslint-disable-line prefer-const
+let app: ReturnType<typeof createApp> | undefined;
 
 const backend = new HtmlBackend({
   terminal: term,

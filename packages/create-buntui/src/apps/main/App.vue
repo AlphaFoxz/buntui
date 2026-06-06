@@ -128,10 +128,12 @@
 <script setup lang="ts">
 import process from 'node:process'
 import { ref, computed } from '@vue/reactivity'
-import { getApp, getDefaultProjectName } from '../../shared/app-context'
-import { scaffoldCopy, scaffoldCleanup, type TemplateName } from '../../shared/scaffold'
-import { validateProjectName } from '../../shared/validate'
-import { LOGGER } from '@buntui/core'
+import { useApp, LOGGER } from '@buntui/core'
+import { getDefaultProjectName } from '../../cli-args'
+import { scaffoldCopy, scaffoldCleanup, type TemplateName } from '../../scaffold'
+import { validateProjectName } from '../../validate'
+
+const { dispose } = useApp()
 
 const TEMPLATE_NAMES: TemplateName[] = ['basic', 'sfc', 'full', 'wasm']
 const TEMPLATE_DESCRIPTIONS = [
@@ -207,7 +209,7 @@ async function handleCreate() {
         }
 
         setTimeout(() => {
-            getApp().dispose()
+            dispose()
             process.exit(0)
         }, 800)
     } catch (error) {
@@ -222,7 +224,7 @@ async function handleCreate() {
 }
 
 function handleCancel() {
-    getApp().dispose()
+    dispose()
     process.exit(0)
 }
 </script>

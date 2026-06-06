@@ -89,7 +89,7 @@ export async function buildCommand(): Promise<void> {
 
     for (const output of result.outputs) {
       const relative = path.relative(distDir, output.path).replaceAll('\\', '/');
-      const appMatch = /^(.+?)[\\/]main\.js$/u.exec(relative);
+      const appMatch = /^(.+?)[\\/][^.]+\.js$/u.exec(relative);
       if (appMatch) {
         fileMap.set(output.path, `${appMatch[1]!}.js`);
       } else if (relative.endsWith('.js')) {

@@ -9,6 +9,31 @@ const distDir = path.join(rootDir, 'dist');
 
 fs.mkdirSync(distDir, {recursive: true});
 
+const configResult = await Bun.build({
+    entrypoints: [path.join(rootDir, 'src', 'config.ts')],
+    outdir: distDir,
+    target: 'bun',
+    minify: true,
+    naming: 'config.[ext]',
+    external: [
+        '@buntui/core',
+    ],
+});
+
+if (!configResult.success) {
+    for (const error of configResult.logs) console.error(error);
+    process.exit(1);
+}
+
+for (const output of configResult.outputs) {
+    const name = path.basename(output.path);
+    console.log(`  ${name} (${(output.size / 1024).toFixed(1)} KB)`);
+}
+
+const {execSync} = await import('node:child_process');
+execSync('tsc --project tsconfig.emit.json', {cwd: rootDir, stdio: 'inherit'});
+console.log('  config.d.ts');
+
 const vuePlugin = {
     name: 'buntui-vue',
     setup(build: Bun.PluginBuilder) {

@@ -77,7 +77,7 @@ export {getTheme, setTheme, onThemeChange} from './theme/provider';
 export type {ThemeChangeListener} from './theme/provider';
 export {useTheme} from './theme/use-theme';
 export {
-  onTick, onMounted, onUnmounted, useTemplateRef,
+  onTick, onMounted, onUnmounted, useTemplateRef, useApp,
 } from './app/composables';
 export {LOGGER} from './common/logger';
 export {runSetup} from './app/scene-context';
@@ -86,3 +86,4 @@ export type {HtmlBackendOptions, TerminalLike, TerminalMouseEvent} from './app/H
 export {WasmModule} from './app/wasm-module';
 export {animationFrameScheduler} from './platform/next-tick';
 export type {Scheduler} from './platform/next-tick';
+export type {LogLevel} from './extern/app/types';
