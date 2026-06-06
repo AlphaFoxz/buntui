@@ -16,7 +16,6 @@
     },
     "dependencies": {
         "@buntui/core": "workspace:*",
-        "@buntui/extensions": "workspace:*",
         "@vue/reactivity": "^3.5.35",
         "@xterm/addon-fit": "^0.11.0",
         "@xterm/xterm": "^6.0.0"
