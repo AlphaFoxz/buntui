@@ -289,6 +289,14 @@ function stripTypeScript(code: string): string {
       continue;
     }
 
+    if (/^export\s+type\s+/v.test(trimmed) || /^type\s+\w+\s*=/v.test(trimmed)) {
+      continue;
+    }
+
+    if (/^export\s+interface\s+/v.test(trimmed) || /^interface\s+/v.test(trimmed)) {
+      continue;
+    }
+
     let result = line;
 
     // eslint-disable-next-line require-unicode-regexp
@@ -296,6 +304,9 @@ function stripTypeScript(code: string): string {
       const cleaned = stripParameterTypes(parameters);
       return `${prefix}(${cleaned})`;
     });
+
+    result = stripFunctionReturnType(result);
+    result = stripVarTypeAnnotation(result);
 
     result = result.replaceAll(/\bas\s+([A-Z]\w*(?:<[^>]*>)?|const|unknown|any|string|number|boolean|void|never|null|undefined|object)(?![$\w])/gv, '');
     // eslint-disable-next-line require-unicode-regexp
@@ -305,6 +316,88 @@ function stripTypeScript(code: string): string {
   }
 
   return out.join('\n');
+}
+
+function stripVarTypeAnnotation(line: string): string {
+  // eslint-disable-next-line require-unicode-regexp
+  const match = /^(\s*)(let|var|const)\s+(\w+)\s*:/.exec(line);
+  if (!match) {
+    return line;
+  }
+
+  const indent = match[1]!;
+  const keyword = match[2]!;
+  const varName = match[3]!;
+  const rest = line.slice(match[0].length);
+
+  let depth = 0;
+  let i = 0;
+  while (i < rest.length) {
+    const ch = rest[i];
+    if (ch === '<' || ch === '(' || ch === '{' || ch === '[') {
+      depth++;
+      i++;
+    } else if (ch === '>' || ch === ')' || ch === '}' || ch === ']') {
+      if (depth > 0) {
+        depth--;
+      } else {
+        break;
+      }
+
+      i++;
+    } else if (depth === 0 && ch === '=') {
+      if (i + 1 < rest.length && rest[i + 1] === '>') {
+        i += 2;
+      } else {
+        break;
+      }
+    } else if (depth === 0 && ch === ';') {
+      break;
+    } else {
+      i++;
+    }
+  }
+
+  return indent + keyword + ' ' + varName + (rest[i] === '=' ? ' ' : '') + rest.slice(i);
+}
+
+function stripFunctionReturnType(line: string): string {
+  const match = /^(\s*)(function\s+\w+\s*\([^\)]*\))\s*:/v.exec(line);
+  if (!match) {
+    return line;
+  }
+
+  const indent = match[1]!;
+  const before = match[2]!;
+  const rest = line.slice(match[0].length);
+
+  let depth = 0;
+  let i = 0;
+  while (i < rest.length) {
+    const ch = rest[i];
+    if (ch === '<' || ch === '(' || ch === '[') {
+      depth++;
+      i++;
+    } else if (ch === '>' || ch === ')' || ch === ']') {
+      if (depth > 0) {
+        depth--;
+      } else {
+        break;
+      }
+
+      i++;
+    } else if (depth === 0 && ch === '{') {
+      break;
+    } else {
+      i++;
+    }
+  }
+
+  if (i >= rest.length) {
+    return line;
+  }
+
+  return indent + before + ' ' + rest.slice(i).trimStart();
 }
 
 function stripParameterTypes(parameters: string): string {

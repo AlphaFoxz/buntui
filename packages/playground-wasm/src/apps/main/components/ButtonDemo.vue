@@ -72,7 +72,7 @@
 
     <Text :x="2" :y="26" value="▸ Toggle Disabled Demo" styleModifier="bold" />
     <Button :x="2" :y="27" :width="20" :height="3" value="Toggle disabled" @click="handleToggleClick" />
-    <Button :x="24" :y="27" :width="24" :height="3" :disabled="buttonDisabled" :value="buttonLabel" />
+    <Button :x="24" :y="27" :width="24" :height="3" :disabled="!buttonEnabled" :value="buttonLabel" />
 
     <Text :x="2" :y="31" value="▸ Events: click (Enter/Space)" styleModifier="bold" />
 </template>
@@ -80,11 +80,11 @@
 import { computed, ref } from '@vue/reactivity'
 
 const clickLog = ref('(click a button)')
-const buttonDisabled = ref(true)
+const buttonEnabled = ref(false)
 const countdown = ref(5)
 
 const buttonLabel = computed(() => {
-    return buttonDisabled.value ? 'Disabled' : `Enabled (${countdown.value}s)`
+    return buttonEnabled.value ? `Enabled (${countdown.value}s)` : 'Disabled'
 })
 
 function handleClick(name: string) {
@@ -93,15 +93,29 @@ function handleClick(name: string) {
     clickLog.value = `[${ts}] ${name}`
 }
 
+let timer: ReturnType<typeof setInterval> | undefined
 function handleToggleClick() {
-    buttonDisabled.value = false
+    if (timer) {
+        clearInterval(timer)
+        timer = undefined
+    }
+
+    if (buttonEnabled.value) {
+        buttonEnabled.value = false
+        countdown.value = 5
+        return
+    }
+
+    buttonEnabled.value = true
     countdown.value = 5
-    const timer = setInterval(() => {
+
+    timer = setInterval(() => {
         countdown.value -= 1
         if (countdown.value <= 0) {
-            buttonDisabled.value = true
+            buttonEnabled.value = false
             countdown.value = 5
             clearInterval(timer)
+            timer = undefined
         }
     }, 1000)
 }

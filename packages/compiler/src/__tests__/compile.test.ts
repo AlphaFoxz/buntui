@@ -845,6 +845,61 @@ describe('compile', () => {
       expect(result.code).toContain('function greet(name, age)');
       expect(result.code).not.toContain(': string');
       expect(result.code).not.toContain(': number');
+      expect(result.code).not.toContain(': void');
+    });
+
+    it('strips variable type annotation without initializer', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>let timer: NodeJS.Timer | undefined</script>',
+      );
+      expect(result.code).toContain('let timer');
+      expect(result.code).not.toContain('NodeJS');
+    });
+
+    it('strips variable type annotation with initializer', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const x: string = "hello"</script>',
+      );
+      expect(result.code).toContain('const x = "hello"');
+      expect(result.code).not.toContain(': string');
+    });
+
+    it('strips variable type annotation with generic type', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const m: Map<string, number> = new Map()</script>',
+      );
+      expect(result.code).toContain('const m = new Map()');
+      expect(result.code).not.toContain(': Map');
+    });
+
+    it('strips type alias declaration', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>type Foo = string | number\nconst x = 1</script>',
+      );
+      expect(result.code).not.toContain('type Foo');
+      expect(result.code).toContain('const x = 1');
+    });
+
+    it('strips interface declaration', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>interface Config { verbose: boolean }\nconst x = 1</script>',
+      );
+      expect(result.code).not.toContain('interface');
+      expect(result.code).toContain('const x = 1');
+    });
+
+    it('strips function return type annotation', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>function getValue(): string { return "x" }</script>',
+      );
+      expect(result.code).toContain('function getValue() {');
+      expect(result.code).not.toContain(': string');
     });
   });
 });
