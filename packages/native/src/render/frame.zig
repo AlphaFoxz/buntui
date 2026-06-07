@@ -38,6 +38,7 @@ pub const TuiFrame = struct {
 pub var prev_frame: TuiFrame = .{ .width = 0, .height = 0 };
 pub var next_frame: TuiFrame = .{ .width = 0, .height = 0 };
 pub var dirty: std.DynamicBitSet = undefined;
+pub var dirty_initialized: bool = false;
 
 fn resizeFrame(f: *TuiFrame, rows: TuiScale, cols: TuiScale) void {
     const allocator = glo_alloc.allocator();
@@ -91,15 +92,23 @@ pub fn swap() void {
 }
 
 pub fn init() void {
+    if (dirty_initialized) {
+        dirty.setRangeValue(.{ .start = 0, .end = dirty.capacity() }, false);
+        return;
+    }
     const allocator = glo_alloc.allocator();
     dirty = std.DynamicBitSet.initEmpty(allocator, 1) catch {
         err.outOfMemory();
     };
+    dirty_initialized = true;
 }
 
 pub fn deinit() void {
+    if (dirty_initialized) {
+        dirty.deinit();
+        dirty_initialized = false;
+    }
     const allocator = glo_alloc.allocator();
-    dirty.deinit();
     if (prev_frame.width > 0) {
         allocator.free(prev_frame.cells);
     }

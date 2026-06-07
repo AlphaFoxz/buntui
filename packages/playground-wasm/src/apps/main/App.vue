@@ -1,4 +1,5 @@
 <template>
+    <Matrix width="100%" height="100%"></Matrix>
     <Text :x="0" :y="0" value="Buntui" styleModifier="bold" />
     <Select :x="0" :y="1" width="50%" label="Core Widget" :options="pageOptions" v-model="currentPage" />
     <Select
@@ -11,7 +12,7 @@
         @change="handleThemeChange"
     />
 
-    <ScrollBox :x="0" :y="4" width="100%" height="90%">
+    <ScrollBox :x="0" :y="5" width="100%" height="90%" colorBg="rgba(0, 0, 0, 0.7)">
         <BoxDemo v-if="currentPage === 'Box'" />
         <TextDemo v-else-if="currentPage === 'Text'" />
         <InputDemo v-else-if="currentPage === 'Input'" />
@@ -43,6 +44,7 @@ import ScrollBoxDemo from './components/ScrollBoxDemo.vue'
 import TextareaDemo from './components/TextareaDemo.vue'
 import TableDemo from './components/TableDemo.vue'
 import ProgressDemo from './components/ProgressDemo.vue'
+import Matrix from '@buntui/extensions/matrix'
 
 const pageOptions = ref([
     { value: 'Box', label: 'Box' },

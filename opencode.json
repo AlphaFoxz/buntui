@@ -13,12 +13,13 @@
             "*": "ask",
             "bun *": "allow",
             "bunx *": "allow",
+            "ffmpeg *": "allow",
             "gh *": "allow",
             "git log *": "allow",
-            "zig *": "allow",
             "ls": "allow",
-            "ffmpeg *": "allow",
-            "yt-dlp *": "allow"
+            "rg *": "allow",
+            "yt-dlp *": "allow",
+            "zig *": "allow"
         }
     }
 }
