@@ -17,8 +17,9 @@ export async function createBuntuiVitePlugin(): Promise<Plugin> {
       const result = compile(source, {
         filename: id,
         ...DEFAULT_COMPILE_OPTIONS,
+        sourceMap: true,
       });
-      return {code: result.code, map: null};
+      return {code: result.code, map: result.sourceMap ?? null};
     },
   };
 }

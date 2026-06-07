@@ -347,6 +347,41 @@ describe('createDevServer integration', () => {
     expect(lastError!.message).toContain('Unknown component');
   });
 
+  it('enriches runtime error with .vue file and line number', async () => {
+    const entry = path.join(ITMP, 'App.vue');
+    writeFile(entry, [
+      '<template><Box/></template>',
+      '<script setup>',
+      'const x = 1',
+      'asdasd',
+      'const y = 2',
+      '</script>',
+    ].join('\n'));
+
+    let lastError: Error | undefined;
+    activeServer = createDevServer({
+      file: entry,
+      tempDir: ITMP,
+      debounceMs: DEBOUNCE,
+      onClear() {},
+      onReload(setup) {
+        setup({});
+      },
+      onError(error) {
+        lastError = error;
+      },
+    });
+
+    await wait(50);
+    touch(entry);
+
+    await waitFor(() => lastError !== undefined, 8000);
+
+    expect(lastError!.message).toContain('App.vue');
+    expect(lastError!.message).toMatch(/App\.vue:\d+/);
+    expect(lastError!.message).toContain('asdasd');
+  });
+
   it('reloads incrementally when child .vue file changes', async () => {
     const entry = path.join(ITMP, 'App.vue');
     const child = path.join(ITMP, 'Child.vue');

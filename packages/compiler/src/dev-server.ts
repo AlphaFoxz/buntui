@@ -8,6 +8,7 @@ import {
   mkdirSync,
 } from 'node:fs';
 import {compile, type CompileOptions} from './compile';
+import {type RawSourceMap, buildLineLookup} from './source-map';
 
 export type DevServerOptions = {
   /** Path to the .vue SFC file to watch */
@@ -128,7 +129,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
   let closed = false;
 
   // Persistent state across reloads for incremental compilation
-  const compiledCache = new Map<string, string>(); // ResolvedPath -> compiled code
+  const compiledCache = new Map<string, {code: string; sourceMap?: RawSourceMap}>(); // ResolvedPath -> compiled code
   const childTemporaryMap = new Map<string, string>(); // ResolvedPath -> temp file path
   const allTemporaryFiles = new Set<string>();
   let firstLoad = true;
@@ -148,8 +149,9 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
       const result = compile(source, {
         filename: vueFile,
         ...compileOptions,
+        sourceMap: true,
       });
-      compiledCache.set(vueFile, result.code);
+      compiledCache.set(vueFile, {code: result.code, sourceMap: result.sourceMap});
     }
 
     // Delete old child temp files
@@ -166,7 +168,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
     const childFiles = allVueFiles.filter(f => f !== file);
     const childWrites: Array<Promise<void>> = [];
     for (const vueFile of childFiles) {
-      let childCode = compiledCache.get(vueFile)!;
+      let childCode = compiledCache.get(vueFile)!.code;
       const childDir = path.dirname(vueFile);
 
       // Replace transitive .vue imports with already-assigned temp files
@@ -199,8 +201,9 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
     const result = compile(source, {
       filename: changedFile,
       ...compileOptions,
+      sourceMap: true,
     });
-    compiledCache.set(changedFile, result.code);
+    compiledCache.set(changedFile, {code: result.code, sourceMap: result.sourceMap});
 
     let childCode = result.code;
     const childDir = path.dirname(changedFile);
@@ -239,7 +242,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
    * then import it and call onReload.
    */
   async function writeAndImportRoot() {
-    let rootCode = compiledCache.get(file)!;
+    let rootCode = compiledCache.get(file)!.code;
     for (const [resolvedChild, temporaryPath] of childTemporaryMap) {
       const importPath = findVueImportPath(rootCode, resolvedChild, baseDir);
       if (importPath) {
@@ -374,12 +377,12 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
 
 type PositionData = {
   line: number;
-  lineText: string;
+  lineText?: string;
 };
 
 function extractPosition(error: unknown): PositionData | undefined {
   if (typeof error !== 'object' || error === null || !('position' in error)) {
-    return undefined;
+    return extractFromStack(error);
   }
 
   const pos = (error).position;
@@ -388,6 +391,26 @@ function extractPosition(error: unknown): PositionData | undefined {
     const p = pos as Record<string, unknown>;
     if (typeof p.line === 'number' && typeof p.lineText === 'string') {
       return {line: p.line, lineText: p.lineText};
+    }
+  }
+
+  return extractFromStack(error);
+}
+
+const stackLineRe = /at .+ \((.+):(\d+):\d+\)|at (.+):(\d+):\d+/v;
+
+function extractFromStack(error: unknown): PositionData | undefined {
+  if (!(error instanceof Error) || !error.stack) {
+    return undefined;
+  }
+
+  for (const line of error.stack.split('\n')) {
+    const match = stackLineRe.exec(line);
+    if (match) {
+      const lineNumber = Number(match[1] === undefined ? match[4] : match[2]);
+      if (Number.isFinite(lineNumber)) {
+        return {line: lineNumber};
+      }
     }
   }
 
@@ -467,31 +490,36 @@ function mapGenLineToVueLine(vueSource: string, genCode: string, genLine: number
 async function probeChildErrors(
   originalError: unknown,
   rootFile: string,
-  compiledCache: Map<string, string>,
+  compiledCache: Map<string, {code: string; sourceMap?: RawSourceMap}>,
   childTemporaryMap: Map<string, string>,
   temporaryDir: string,
   baseDir: string,
 ): Promise<Error> {
   for (const [vueFile] of childTemporaryMap) {
-    const genCode = compiledCache.get(vueFile);
-    if (!genCode) {
+    const entry = compiledCache.get(vueFile);
+    if (!entry) {
       continue;
     }
 
     const probeTemporary = path.join(temporaryDir, `_hmr_probe_${temporaryCounter++}.ts`);
     // eslint-disable-next-line no-await-in-loop
-    await Bun.write(probeTemporary, genCode);
+    await Bun.write(probeTemporary, entry.code);
     try {
       // eslint-disable-next-line no-await-in-loop
       await import(probeTemporary);
     } catch (probeError) {
       // eslint-disable-next-line no-await-in-loop
       await Bun.file(probeTemporary).unlink().catch(ignoreCleanupError);
-      return enrichWithVueLocation(probeError, vueFile, genCode, baseDir);
+      return enrichWithVueLocation(probeError, vueFile, entry.code, baseDir, entry.sourceMap);
     }
 
     // eslint-disable-next-line no-await-in-loop
     await Bun.file(probeTemporary).unlink().catch(ignoreCleanupError);
+  }
+
+  const rootEntry = compiledCache.get(rootFile);
+  if (rootEntry) {
+    return enrichWithVueLocation(originalError, rootFile, rootEntry.code, baseDir, rootEntry.sourceMap);
   }
 
   const rootRelPath = path.relative(baseDir, rootFile).replaceAll('\\', '/');
@@ -499,7 +527,7 @@ async function probeChildErrors(
   return new Error(`${rootRelPath}\n${rootMessage}`);
 }
 
-function enrichWithVueLocation(probeError: unknown, vueFile: string, genCode: string, baseDir: string): Error {
+function enrichWithVueLocation(probeError: unknown, vueFile: string, genCode: string, baseDir: string, sourceMap?: RawSourceMap): Error {
   const vueRelPath = path.relative(baseDir, vueFile).replaceAll('\\', '/');
   const pos = extractPosition(probeError);
   const message = probeError instanceof Error
@@ -513,7 +541,18 @@ function enrichWithVueLocation(probeError: unknown, vueFile: string, genCode: st
     const vueSource = readFileSync(vueFile, 'utf-8');
 
     if (pos) {
-      const vueLine = findLineByText(vueSource, pos.lineText) ?? mapGenLineToVueLine(vueSource, genCode, pos.line);
+      let vueLine: number | undefined;
+
+      if (sourceMap) {
+        const lookup = buildLineLookup(sourceMap);
+        vueLine = (lookup.get(pos.line - 1) ?? undefined);
+        if (vueLine !== undefined) {
+          vueLine += 1;
+        }
+      }
+
+      vueLine ??= (pos.lineText ? findLineByText(vueSource, pos.lineText) : undefined) ?? mapGenLineToVueLine(vueSource, genCode, pos.line);
+
       if (vueLine) {
         const vueLines = vueSource.split('\n');
         const sourceLine = vueLines[vueLine - 1]?.trim() ?? '';

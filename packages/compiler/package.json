@@ -30,7 +30,8 @@
         "@vue/compiler-core": "^3.5.35",
         "@vue/compiler-sfc": "^3.5.35",
         "@vue/reactivity": "^3.5.35",
-        "@vue/shared": "^3.5.35"
+        "@vue/shared": "^3.5.35",
+        "sucrase": "^3.35.1"
     },
     "devDependencies": {
         "@types/bun": "1.3.14",

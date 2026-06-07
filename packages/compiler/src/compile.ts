@@ -1,9 +1,11 @@
 import {baseParse, type RootNode} from '@vue/compiler-core';
 import {type SFCDescriptor, type SFCScriptBlock, compileScript} from '@vue/compiler-sfc';
+import {transform as sucraseTransform} from 'sucrase';
 import {parse} from './parse';
 import {transform, type TransformOptions} from './template/transform';
 import {generate, type CodegenOptions, type CodegenResult} from './template/codegen';
 import {type TuiComponentRegistry, CORE_REGISTRY} from './runtime-helpers';
+import {adjustSourceMapLines, type RawSourceMap} from './source-map';
 
 export type CompileOptions = {
   filename?: string;
@@ -12,6 +14,7 @@ export type CompileOptions = {
   codegen?: CodegenOptions;
   moduleRewrites?: Record<string, string>;
   symbolRedirects?: Record<string, string>;
+  sourceMap?: boolean;
 };
 
 export type CompileResult = {
@@ -19,11 +22,13 @@ export type CompileResult = {
   imports: string[];
   templateAst?: RootNode;
   descriptor: SFCDescriptor;
+  sourceMap?: RawSourceMap;
 };
 
 type ScriptAnalysis = {
   scriptImports: string[];
   scriptBody: string[];
+  bodyLineIndices: number[];
   componentMap: Record<string, string>;
   widgetImportMap: Record<string, string>;
 };
@@ -74,7 +79,11 @@ export function compile(source: string, options?: CompileOptions): CompileResult
     const moduleRewrites = {...DEFAULT_MODULE_REWRITES, ...options?.moduleRewrites};
     const symbolRedirects = {...DEFAULT_SYMBOL_REDIRECTS, ...options?.symbolRedirects};
 
-    return assembleOutput(codegenResult, analysis.scriptImports, descriptor, templateAst, {coreModuleId, moduleRewrites, symbolRedirects});
+    return assembleOutput(codegenResult, analysis.scriptImports, descriptor, templateAst, {
+      coreModuleId, moduleRewrites, symbolRedirects, filename, sourceMap: options?.sourceMap,
+      bodyLineIndices: analysis.bodyLineIndices, vueSource: source,
+      scriptSetupStartLine: descriptor.scriptSetup?.loc.start.line,
+    });
   } catch (error) {
     if (!(error instanceof Error)) {
       throw new Error(`${filename} - ${String(error)}`, {cause: error});
@@ -99,30 +108,33 @@ function analyzeScript(
 
   if (!content) {
     return {
-      scriptImports: [], scriptBody: [], componentMap: {}, widgetImportMap: {},
+      scriptImports: [], scriptBody: [], bodyLineIndices: [], componentMap: {}, widgetImportMap: {},
     };
   }
 
-  const {scriptImports, scriptBody} = splitScript(content);
+  const {scriptImports, scriptBody, bodyLineIndices} = splitScript(content);
 
   if (!descriptor.scriptSetup) {
     return {
-      scriptImports, scriptBody, componentMap: {}, widgetImportMap: {},
+      scriptImports, scriptBody, bodyLineIndices, componentMap: {}, widgetImportMap: {},
     };
   }
 
   const {componentMap, widgetImportMap} = analyzeImportsFromAst(descriptor, filename, registry);
   return {
-    scriptImports, scriptBody, componentMap, widgetImportMap,
+    scriptImports, scriptBody, bodyLineIndices, componentMap, widgetImportMap,
   };
 }
 
-function splitScript(content: string): {scriptImports: string[]; scriptBody: string[]} {
+function splitScript(content: string): {scriptImports: string[]; scriptBody: string[]; bodyLineIndices: number[]} {
   const scriptImports: string[] = [];
   const scriptBody: string[] = [];
+  const bodyLineIndices: number[] = [];
   let inMultilineImport = false;
 
-  for (const line of content.split('\n')) {
+  const lines = content.split('\n');
+  for (const [i, line_] of lines.entries()) {
+    const line = line_;
     if (inMultilineImport) {
       scriptImports.push(line);
       if (line.includes('}')) {
@@ -140,10 +152,11 @@ function splitScript(content: string): {scriptImports: string[]; scriptBody: str
       }
     } else {
       scriptBody.push(line);
+      bodyLineIndices.push(i);
     }
   }
 
-  return {scriptImports, scriptBody};
+  return {scriptImports, scriptBody, bodyLineIndices};
 }
 
 function analyzeImportsFromAst(
@@ -191,6 +204,11 @@ type RewriteContext = {
   coreModuleId: string;
   moduleRewrites: Record<string, string>;
   symbolRedirects: Record<string, string>;
+  filename: string;
+  sourceMap?: boolean;
+  bodyLineIndices: number[];
+  vueSource: string;
+  scriptSetupStartLine?: number;
 };
 
 function assembleOutput(
@@ -207,18 +225,46 @@ function assembleOutput(
 
   const allImports = [...codegenResult.imports, ...extraScriptImports];
 
-  const jsCode = [
+  const tsCode = [
     ...allImports,
     codegenResult.body,
   ].join('\n');
 
-  const code = stripTypeScript(jsCode);
+  const {filename, sourceMap, bodyLineIndices, vueSource, scriptSetupStartLine} = rewriteCtx;
+  const transformed = sucraseTransform(tsCode, {
+    transforms: ['typescript'],
+    keepUnusedImports: true,
+    ...(sourceMap
+      ? {
+        filePath: filename,
+        sourceMapOptions: {compiledFilename: filename.replace(/\.vue$/v, '.js')},
+      }
+      : {}),
+  });
+
+  let adjustedSourceMap = transformed.sourceMap;
+  if (transformed.sourceMap && scriptSetupStartLine !== undefined && bodyLineIndices.length > 0) {
+    const tsBodyStart = allImports.length + 3;
+    const tsToVue = new Map<number, number>();
+    for (const [i, bodyLineIndex] of bodyLineIndices.entries()) {
+      const tsLine = tsBodyStart + i;
+      const vueLine = (scriptSetupStartLine + bodyLineIndex) - 1;
+      tsToVue.set(tsLine, vueLine);
+    }
+
+    adjustedSourceMap = adjustSourceMapLines(
+      transformed.sourceMap,
+      tsLine => tsToVue.get(tsLine),
+      vueSource,
+    );
+  }
 
   return {
-    code,
+    code: transformed.code,
     imports: allImports,
     templateAst,
     descriptor,
+    ...(adjustedSourceMap ? {sourceMap: adjustedSourceMap} : {}),
   };
 }
 
@@ -271,228 +317,4 @@ function rewriteImport(
   }
 
   return lines.length > 0 ? lines : [line];
-}
-
-function stripTypeScript(code: string): string {
-  const lines = code.split('\n');
-  const out: string[] = [];
-
-  for (const line of lines) {
-    const trimmed = line.trimStart();
-
-    if (/^import\s+type\s+/v.test(trimmed)) {
-      continue;
-    }
-
-    if (/^import\s/v.test(trimmed)) {
-      out.push(line);
-      continue;
-    }
-
-    if (/^export\s+type\s+/v.test(trimmed) || /^type\s+\w+\s*=/v.test(trimmed)) {
-      continue;
-    }
-
-    if (/^export\s+interface\s+/v.test(trimmed) || /^interface\s+/v.test(trimmed)) {
-      continue;
-    }
-
-    let result = line;
-
-    // eslint-disable-next-line require-unicode-regexp
-    result = result.replaceAll(/(function\s+\w+)\s*\(([^)]*)\)/g, (_full: string, prefix: string, parameters: string) => {
-      const cleaned = stripParameterTypes(parameters);
-      return `${prefix}(${cleaned})`;
-    });
-
-    result = stripFunctionReturnType(result);
-    result = stripVarTypeAnnotation(result);
-
-    result = result.replaceAll(/\bas\s+([A-Z]\w*(?:<[^>]*>)?|const|unknown|any|string|number|boolean|void|never|null|undefined|object)(?![$\w])/gv, '');
-    // eslint-disable-next-line require-unicode-regexp
-    result = result.replaceAll(/([)\w\]])!(?!=)/g, '$1');
-
-    out.push(result);
-  }
-
-  return out.join('\n');
-}
-
-function stripVarTypeAnnotation(line: string): string {
-  // eslint-disable-next-line require-unicode-regexp
-  const match = /^(\s*)(let|var|const)\s+(\w+)\s*:/.exec(line);
-  if (!match) {
-    return line;
-  }
-
-  const indent = match[1]!;
-  const keyword = match[2]!;
-  const varName = match[3]!;
-  const rest = line.slice(match[0].length);
-
-  let depth = 0;
-  let i = 0;
-  while (i < rest.length) {
-    const ch = rest[i];
-    if (ch === '<' || ch === '(' || ch === '{' || ch === '[') {
-      depth++;
-      i++;
-    } else if (ch === '>' || ch === ')' || ch === '}' || ch === ']') {
-      if (depth > 0) {
-        depth--;
-      } else {
-        break;
-      }
-
-      i++;
-    } else if (depth === 0 && ch === '=') {
-      if (i + 1 < rest.length && rest[i + 1] === '>') {
-        i += 2;
-      } else {
-        break;
-      }
-    } else if (depth === 0 && ch === ';') {
-      break;
-    } else {
-      i++;
-    }
-  }
-
-  return indent + keyword + ' ' + varName + (rest[i] === '=' ? ' ' : '') + rest.slice(i);
-}
-
-function stripFunctionReturnType(line: string): string {
-  const match = /^(\s*)(function\s+\w+\s*\([^\)]*\))\s*:/v.exec(line);
-  if (!match) {
-    return line;
-  }
-
-  const indent = match[1]!;
-  const before = match[2]!;
-  const rest = line.slice(match[0].length);
-
-  let depth = 0;
-  let i = 0;
-  while (i < rest.length) {
-    const ch = rest[i];
-    if (ch === '<' || ch === '(' || ch === '[') {
-      depth++;
-      i++;
-    } else if (ch === '>' || ch === ')' || ch === ']') {
-      if (depth > 0) {
-        depth--;
-      } else {
-        break;
-      }
-
-      i++;
-    } else if (depth === 0 && ch === '{') {
-      break;
-    } else {
-      i++;
-    }
-  }
-
-  if (i >= rest.length) {
-    return line;
-  }
-
-  return indent + before + ' ' + rest.slice(i).trimStart();
-}
-
-function stripParameterTypes(parameters: string): string {
-  const cleaned: string[] = [];
-  let depth = 0;
-  let current = '';
-  let i = 0;
-
-  while (i < parameters.length) {
-    const ch = parameters[i];
-
-    if (ch === '(' || ch === '[' || ch === '{') {
-      depth++;
-      current += ch;
-      i++;
-    } else if (ch === ')' || ch === ']' || ch === '}') {
-      depth--;
-      current += ch;
-      i++;
-    } else if (depth === 0 && ch === ':') {
-      let name = current.trim();
-      if (name.endsWith('?')) {
-        name = name.slice(0, -1);
-      }
-
-      cleaned.push(name || current);
-      current = '';
-
-      i = skipTypeAnnotation(parameters, i + 1);
-    } else if (depth === 0 && ch === ',' && isTopLevelComma(parameters, i)) {
-      if (current.trim()) {
-        cleaned.push(current.trim());
-      }
-
-      current = '';
-      i++;
-      while (i < parameters.length && parameters[i] === ' ') {
-        i++;
-      }
-    } else {
-      current += ch;
-      i++;
-    }
-  }
-
-  if (current.trim()) {
-    cleaned.push(current.trim());
-  }
-
-  return cleaned.join(', ');
-}
-
-function skipTypeAnnotation(parameters: string, start: number): number {
-  let depth = 0;
-  let i = start;
-
-  while (i < parameters.length) {
-    const ch = parameters[i];
-
-    if (ch === '(' || ch === '[' || ch === '{' || ch === '<') {
-      depth++;
-      i++;
-    } else if (ch === ')' || ch === ']' || ch === '}' || ch === '>') {
-      if (depth > 0) {
-        depth--;
-        i++;
-      } else {
-        break;
-      }
-    } else if (depth === 0 && ch === ',') {
-      break;
-    } else if (depth === 0 && ch === '=' && !isArrowContext(parameters, i)) {
-      break;
-    } else {
-      i++;
-    }
-  }
-
-  return i;
-}
-
-function isTopLevelComma(parameters: string, index: number): boolean {
-  let depth = 0;
-  for (let j = 0; j < index; j++) {
-    const ch = parameters[j]!;
-    if (ch === '(' || ch === '[' || ch === '{' || ch === '<') {
-      depth++;
-    } else if (ch === ')' || ch === ']' || ch === '}' || ch === '>') {
-      depth--;
-    }
-  }
-
-  return depth === 0;
-}
-
-function isArrowContext(parameters: string, index: number): boolean {
-  return index + 1 < parameters.length && parameters[index + 1] === '>';
 }
