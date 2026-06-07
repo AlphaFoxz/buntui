@@ -1,6 +1,7 @@
 import type {ClipboardProvider} from './types';
 
 let provider: ClipboardProvider | undefined;
+let pasteBuffer = '';
 
 export function getClipboard(): ClipboardProvider {
   provider ??= createDefaultProvider();
@@ -13,11 +14,17 @@ export function setClipboard(p: ClipboardProvider): ClipboardProvider {
   return previous!;
 }
 
+export function setPasteBuffer(text: string): void {
+  pasteBuffer = text;
+}
+
 function createDefaultProvider(): ClipboardProvider {
   if (typeof navigator !== 'undefined' && 'clipboard' in navigator) {
     return {
       read(): string {
-        return '';
+        const text = pasteBuffer;
+        pasteBuffer = '';
+        return text;
       },
       write(text: string): void {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion

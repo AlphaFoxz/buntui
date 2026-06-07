@@ -1,6 +1,7 @@
 import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import type {TuiContextLike} from '../extern/app/TuiContext';
 import type {LogLevel} from '../extern/app/types';
+import {setPasteBuffer} from '../clipboard';
 import {
   TuiEventType,
   KeyboardEvent as TuiKeyboardEvent,
@@ -150,6 +151,21 @@ export class HtmlBackend implements TuiBackend {
 
     const keyDisposable = this.#terminal.onKey((keyEvent: TerminalKeyEvent) => {
       const key = keyEvent.domEvent?.key ?? keyEvent.key;
+      if (this.#terminal.onData && keyEvent.domEvent?.ctrlKey && key === 'v') {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+        void ((navigator as unknown as {clipboard: {readText(): Promise<string>}}).clipboard.readText().then((text: string) => {
+          if (text.length > 0) {
+            setPasteBuffer(text);
+            handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeCtrlV()));
+            this.#lastKeyTime = Date.now();
+          }
+        }) /* c8 ignore next */
+          .catch(() => {
+          // Clipboard API may reject if permission denied
+          }));
+        return;
+      }
+
       const event = new TuiKeyboardEvent(serializeKeyboardEvent(key, keyEvent.domEvent));
       handler(TuiEventType.KeyboardEvent, event);
       this.#lastKeyTime = Date.now();
@@ -160,7 +176,8 @@ export class HtmlBackend implements TuiBackend {
       handler(TuiEventType.MouseEvent, event);
     });
 
-    const dataDisposable = this.#startMouseTracking(handler);
+    const dataDisposable = this.#startDataListener(handler);
+    const mouseTrackDisposable = this.#startMouseTracking(handler);
     const touchDisposable = this.#startTouchTracking(handler);
 
     const resizeDisposable = this.#terminal.onResize((resizeEvent: TerminalResizeEvent) => {
@@ -168,7 +185,7 @@ export class HtmlBackend implements TuiBackend {
       handler(TuiEventType.TermResizeEvent, event);
     });
 
-    this.#eventDisposables = [keyDisposable, mouseDisposable, dataDisposable, touchDisposable, resizeDisposable].filter((d): d is {dispose(): void} => d !== undefined);
+    this.#eventDisposables = [keyDisposable, mouseDisposable, dataDisposable, mouseTrackDisposable, touchDisposable, resizeDisposable].filter((d): d is {dispose(): void} => d !== undefined);
   }
 
   stopEvents(): void {
@@ -195,6 +212,42 @@ export class HtmlBackend implements TuiBackend {
       context.resizeBehavior,
       context.debugMode ? 1 : 0,
     );
+  }
+
+  #startDataListener(handler: TuiBackendEventHandler): {dispose(): void} | undefined {
+    if (!this.#terminal.onData) {
+      return undefined;
+    }
+
+    const ESC = '\u001B';
+
+    return this.#terminal.onData((data: string) => {
+      if (data.length === 0) {
+        return;
+      }
+
+      if (data.includes(ESC)) {
+        return;
+      }
+
+      if (data.length > 1) {
+        setPasteBuffer(data);
+        handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeCtrlV()));
+        this.#lastKeyTime = Date.now();
+        return;
+      }
+
+      const char = data[0]!;
+      if (char === '\r' || char === '\n') {
+        handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeKeyboardEvent('Enter')));
+      } else if (char === '\u007F' || char === '\u0008') {
+        handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeKeyboardEvent('Backspace')));
+      } else if (char >= ' ') {
+        handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeKeyboardEvent(char)));
+      }
+
+      this.#lastKeyTime = Date.now();
+    });
   }
 
   #startMouseTracking(handler: TuiBackendEventHandler): {dispose(): void} | undefined {
@@ -506,6 +559,17 @@ export function serializeWheelEvent(row: number, col: number, deltaY: number): A
   view.setUint16(4, col + 1, true);
   view.setUint16(6, row + 1, true);
   view.setInt8(8, deltaY);
+  return buf;
+}
+
+function serializeCtrlV(): ArrayBuffer {
+  const buf = new ArrayBuffer(4 + 1);
+  const view = new TuiDataViewWrapper(buf);
+  view.setUint8(0, MOD_CTRL);
+  view.setUint16(1, 86, true);
+  view.setUint8(3, 1);
+  const encoded = new TextEncoder().encode('v');
+  new Uint8Array(buf).set(encoded, 4);
   return buf;
 }
 
