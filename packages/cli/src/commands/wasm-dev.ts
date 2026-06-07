@@ -1,6 +1,7 @@
 import process from 'node:process';
 import path from 'node:path';
 import fs from 'node:fs';
+import {binaryPath} from '@buntui/native-wasm32-wasi';
 import {resolveApp, getCwd} from '../lib/app-resolver.ts';
 import {createBuntuiVitePlugin} from '../lib/vite-plugin.ts';
 
@@ -9,17 +10,11 @@ export async function wasmDevCommand(appName?: string): Promise<void> {
   const app = resolveApp(appName, cwd);
 
   const publicDir = path.join(cwd, 'public');
-  const wasmSrc = path.resolve(cwd, '../../native-platforms/wasm32-wasi/buntui.wasm');
   const wasmDest = path.join(publicDir, 'buntui.wasm');
 
   fs.mkdirSync(publicDir, {recursive: true});
-  if (fs.existsSync(wasmSrc)) {
-    fs.copyFileSync(wasmSrc, wasmDest);
-    console.log('  Copied buntui.wasm to public/');
-  } else if (!fs.existsSync(wasmDest)) {
-    console.error('WASM binary not found. Run "bun run --cwd ./packages/native build" first.');
-    process.exit(1);
-  }
+  fs.copyFileSync(binaryPath, wasmDest);
+  console.log('  Copied buntui.wasm to public/');
 
   const indexHtml = path.join(cwd, 'index.html');
   if (!fs.existsSync(indexHtml)) {

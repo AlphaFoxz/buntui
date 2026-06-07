@@ -162,11 +162,21 @@ export class WasmModule {
     const source = ArrayBuffer.isView(jsBuffer)
       ? new Uint8Array(jsBuffer.buffer, jsBuffer.byteOffset, jsBuffer.byteLength)
       : new Uint8Array(jsBuffer);
+    const memByteLength = this.memory.buffer.byteLength;
+    if (wasmPtr < 0 || wasmPtr + source.byteLength > memByteLength) {
+      throw new Error(`copyToWasm: out of bounds (ptr=${wasmPtr}, len=${source.byteLength}, mem=${memByteLength})`);
+    }
+
     const dest = new Uint8Array(this.memory.buffer, wasmPtr, source.byteLength);
     dest.set(source);
   }
 
   readString(ptr: number, length: number): string {
+    const memByteLength = this.memory.buffer.byteLength;
+    if (ptr < 0 || ptr + length > memByteLength) {
+      throw new Error(`readString: out of bounds (ptr=${ptr}, len=${length}, mem=${memByteLength})`);
+    }
+
     const bytes = new Uint8Array(this.memory.buffer, ptr, length);
     return new TextDecoder('utf-8').decode(bytes);
   }

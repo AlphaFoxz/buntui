@@ -62,6 +62,7 @@ const result = await Bun.build({
         '@buntui/core',
         '@buntui/extensions',
         '@buntui/native',
+        '@buntui/native-wasm32-wasi',
         '@vue/reactivity',
         'commander',
         'vite',

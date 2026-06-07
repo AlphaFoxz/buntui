@@ -24,6 +24,7 @@
     "devDependencies": {
         "@buntui/cli": "workspace:*",
         "@buntui/compiler": "workspace:*",
+        "@buntui/native-wasm32-wasi": "workspace:*",
         "@types/node": "^24.12.4",
         "vite": "^8.0.16"
     }

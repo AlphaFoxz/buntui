@@ -1,6 +1,7 @@
 import process from 'node:process';
 import path from 'node:path';
 import fs from 'node:fs';
+import {binaryPath} from '@buntui/native-wasm32-wasi';
 import {listApps, getDistDir, getCwd} from '../lib/app-resolver.ts';
 import {createVuePlugin} from '../lib/vue-plugin.ts';
 
@@ -69,6 +70,12 @@ export async function wasmBuildCommand(): Promise<void> {
   }
 
   console.log(`Building ${apps.length} app(s): ${apps.map(a => a.name).join(', ')}\n`);
+
+  const publicDir = path.join(cwd, 'public');
+  const wasmDest = path.join(publicDir, 'buntui.wasm');
+  fs.mkdirSync(publicDir, {recursive: true});
+  fs.copyFileSync(binaryPath, wasmDest);
+  console.log('  Copied buntui.wasm to public/');
 
   let chain: Promise<void> = Promise.resolve();
   for (const app of apps) {

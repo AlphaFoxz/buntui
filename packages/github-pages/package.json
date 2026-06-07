@@ -21,6 +21,7 @@
         "vue-router": "^5.1.0"
     },
     "devDependencies": {
+        "@buntui/native-wasm32-wasi": "workspace:*",
         "@tsconfig/node24": "^24.0.4",
         "@types/jsdom": "^28.0.3",
         "@types/node": "^24.12.4",
