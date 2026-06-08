@@ -1,4 +1,7 @@
 import {extractPercentSpec, isPercent} from '../utils/percent';
+import {isThemedColorRef, resolveThemedColor} from '../theme/themed-color';
+import type {TuiThemeColors} from '../theme/types';
+import {parseColor} from '../utils/color';
 import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
 import type {Mountable} from '../extern/types';
 import type {KeyboardEvent, MouseEvent, WheelEvent} from '../events/types';
@@ -57,6 +60,7 @@ export abstract class TuiWidgetEntity implements Mountable {
   #percentSpec: TuiWidgetPercentSpec | undefined = undefined;
   #propagationStopped = false;
   readonly #cleanupFns: Array<() => void> = [];
+  #themedTokenMap: Record<string, string> | undefined = undefined;
 
   get hasPercentLayout(): boolean {
     return this.#percentSpec !== undefined;
@@ -262,7 +266,23 @@ export abstract class TuiWidgetEntity implements Mountable {
     void _dt;
   }
 
+  initTokenMap(map: Record<string, string>): void {
+    this.#themedTokenMap = map;
+  }
+
   abstract emitDrawCommands(buf: DrawListBuffer): void;
+
+  protected _resolveColorValue(value: unknown, key: string): U32 {
+    if (isThemedColorRef(value)) {
+      const token = this.#themedTokenMap?.[key];
+      if (token) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+        return resolveThemedColor(value, token as keyof TuiThemeColors);
+      }
+    }
+
+    return parseColor(value);
+  }
 
   protected getZIndexOverride(): number | undefined {
     return this.#zIndexOverride;

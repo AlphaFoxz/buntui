@@ -1,5 +1,5 @@
 import {genId} from '../../utils/genId';
-import {parseColor} from '../../utils/color';
+import {parseColor, type TuiColor} from '../../utils/color';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import type {MouseEvent} from '../../events/types';
 import {isFocusable, type Focusable} from '../../widgets/Focusable';
@@ -293,8 +293,8 @@ export class TuiScene implements Entity {
     }
   }
 
-  #resolveBgColor(color: number | string | {r: number; g: number; b: number}): number {
-    if (typeof color === 'object') {
+  #resolveBgColor(color: TuiColor | {r: number; g: number; b: number}): number {
+    if (typeof color === 'object' && 'r' in color && 'g' in color && 'b' in color) {
       return parseColor(`rgb(${color.r},${color.g},${color.b})`);
     }
 

@@ -41,6 +41,8 @@ export function wrapExpr(expr: string): string {
         result += ident;
       } else if (CONDITION_KEYWORDS.has(ident)) {
         result += ident;
+      } else if (isObjectKey(expr, i, end)) {
+        result += ident;
       } else {
         result += `${UNREF}(${ident})`;
       }
@@ -122,6 +124,25 @@ function parseIdentifier(expr: string, start: number): {ident: string; end: numb
   return {ident: expr.slice(start, i), end: i};
 }
 
+function isObjectKey(expr: string, identStart: number, identEnd: number): boolean {
+  if (identEnd >= expr.length || expr[identEnd]! !== ':') {
+    return false;
+  }
+
+  for (let j = identStart - 1; j >= 0; j--) {
+    const c = expr[j]!;
+    if (c === '{' || c === ',') {
+      return true;
+    }
+
+    if (c !== ' ' && c !== '\t' && c !== '\n' && c !== '\r') {
+      return false;
+    }
+  }
+
+  return false;
+}
+
 function wrapIdentifiers(expr: string): string {
   let result = '';
   let i = 0;
@@ -143,6 +164,8 @@ function wrapIdentifiers(expr: string): string {
       } else if (i > 0 && expr[i - 1] === '.') {
         result += ident;
       } else if (CONDITION_KEYWORDS.has(ident)) {
+        result += ident;
+      } else if (isObjectKey(expr, i, end)) {
         result += ident;
       } else {
         result += `${UNREF}(${ident})`;

@@ -1,6 +1,7 @@
 import type {TuiWidgetEntity} from '../widgets/TuiWidgetEntity';
 import type {TuiTheme, TuiThemeBorderStyle, TuiThemeColors} from './types';
 import {getTheme, onThemeChange} from './provider';
+import {isThemedColorRef, resolveThemedColorFromTheme, type TuiThemedColorRef} from './themed-color';
 
 export type ThemeToken = keyof TuiThemeColors | `border.${keyof TuiThemeBorderStyle}`;
 
@@ -51,7 +52,17 @@ export function bindThemeToWidget<M extends Record<string, ThemeToken>>(
   userOverrides: Record<string, unknown>,
   apply: (resolved: Record<string, unknown>) => void,
 ): void {
-  const tracked = Object.fromEntries(Object.entries(tokenMap).filter(([key]) => userOverrides[key] === undefined));
+  const themedRefs: Record<string, TuiThemedColorRef> = {};
+
+  const tracked = Object.fromEntries(Object.entries(tokenMap).filter(([key]) => {
+    const override = userOverrides[key];
+    if (isThemedColorRef(override)) {
+      themedRefs[key] = override;
+      return true;
+    }
+
+    return override === undefined;
+  }));
 
   if (Object.keys(tracked).length === 0) {
     return;
@@ -60,7 +71,14 @@ export function bindThemeToWidget<M extends Record<string, ThemeToken>>(
   const unsub = onThemeChange(theme => {
     const resolved: Record<string, unknown> = {};
     for (const [key, token] of Object.entries(tracked)) {
-      resolved[key] = resolveToken(theme, String(token));
+      const ref = themedRefs[key];
+      if (ref === undefined) {
+        resolved[key] = resolveToken(theme, String(token));
+      } else {
+        const tokenString = String(token);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+        resolved[key] = tokenString.startsWith('border.') ? resolveToken(theme, tokenString) : resolveThemedColorFromTheme(theme, ref, tokenString as keyof TuiThemeColors);
+      }
     }
 
     apply(resolved);

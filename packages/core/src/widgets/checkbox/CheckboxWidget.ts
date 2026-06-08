@@ -8,6 +8,7 @@ import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
+import {resolveThemedOverrides} from '../../theme/themed-color';
 import type {CheckboxWidgetOptions} from './types';
 
 type CheckboxColors = {
@@ -224,7 +225,9 @@ export class CheckboxWidget extends InteractiveWidget {
 }
 
 export function createCheckboxWidget(options?: Partial<CheckboxWidgetOptions>): CheckboxWidget {
-  const widget = new CheckboxWidget({...getDefaultCheckboxOptions(), ...options});
+  const ctorOptions = resolveThemedOverrides(options ?? {}, CHECKBOX_TOKEN_MAP);
+  const widget = new CheckboxWidget({...getDefaultCheckboxOptions(), ...ctorOptions});
+  widget.initTokenMap(CHECKBOX_TOKEN_MAP);
   bindThemeToWidget(widget, CHECKBOX_TOKEN_MAP, options ?? {}, resolved => {
     widget.updateThemeColors(resolved);
   });

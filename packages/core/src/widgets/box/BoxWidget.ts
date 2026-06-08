@@ -3,6 +3,7 @@ import {BorderSides} from '../../draw_list/types';
 import {parseColor, type TuiColor} from '../../utils/color';
 import {getTheme} from '../../theme/provider';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
+import {resolveThemedOverrides} from '../../theme/themed-color';
 import {
   TuiLayoutAlignment as LayoutAlignmentEnum,
   resolveBorderStyle,
@@ -248,21 +249,21 @@ export class BoxWidget extends TuiWidgetEntity {
 
   updateColor(color: Partial<TuiWidgetColor>): void {
     if (color.colorFg !== undefined) {
-      this.#color.colorFg = parseColor(color.colorFg);
+      this.#color.colorFg = this._resolveColorValue(color.colorFg, 'colorFg');
     }
 
     if (color.colorBg !== undefined) {
-      this.#color.colorBg = parseColor(color.colorBg);
+      this.#color.colorBg = this._resolveColorValue(color.colorBg, 'colorBg');
     }
   }
 
   updateThemeColors(resolved: Record<string, unknown>): void {
     this.updateColor({
-      colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg),
-      colorBg: resolved.colorBg === undefined ? undefined : parseColor(resolved.colorBg),
+      colorFg: resolved.colorFg === undefined ? undefined : this._resolveColorValue(resolved.colorFg, 'colorFg'),
+      colorBg: resolved.colorBg === undefined ? undefined : this._resolveColorValue(resolved.colorBg, 'colorBg'),
     });
     if (resolved.colorBorder !== undefined) {
-      this.updateBorder({colorBorder: parseColor(resolved.colorBorder)});
+      this.updateBorder({colorBorder: this._resolveColorValue(resolved.colorBorder, 'colorBorder')});
     }
   }
 
@@ -278,7 +279,7 @@ export class BoxWidget extends TuiWidgetEntity {
 
   updateBorder(border: Omit<Partial<TuiWidgetBorder>, 'borderStyle'> & {border?: BorderShorthand; borderStyle?: TuiBorderStyleName}): void {
     if (border.colorBorder !== undefined) {
-      this.#border.colorBorder = parseColor(border.colorBorder);
+      this.#border.colorBorder = this._resolveColorValue(border.colorBorder, 'colorBorder');
     }
 
     if (border.borderStyle !== undefined) {
@@ -312,7 +313,7 @@ export class BoxWidget extends TuiWidgetEntity {
 
   updateShadow(shadow: Partial<TuiWidgetShadow>): void {
     if (shadow.colorShadow !== undefined) {
-      this.#shadow.colorShadow = parseColor(shadow.colorShadow);
+      this.#shadow.colorShadow = this._resolveColorValue(shadow.colorShadow, 'colorShadow');
     }
 
     if (shadow.shadowOffsetX !== undefined) {
@@ -574,8 +575,10 @@ export function getDefaultBoxOptions(): BoxWidgetOptions {
 }
 
 export function createBox(options: Partial<BoxWidgetOptions> = {}): BoxWidget {
-  const widget = new BoxWidget({...getDefaultBoxOptions(), ...options});
-  bindThemeToWidget(widget, BOX_TOKEN_MAP, options ?? {}, resolved => {
+  const ctorOptions = resolveThemedOverrides(options, BOX_TOKEN_MAP);
+  const widget = new BoxWidget({...getDefaultBoxOptions(), ...ctorOptions});
+  widget.initTokenMap(BOX_TOKEN_MAP);
+  bindThemeToWidget(widget, BOX_TOKEN_MAP, options, resolved => {
     widget.updateThemeColors(resolved);
   });
   return widget;

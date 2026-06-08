@@ -3,6 +3,7 @@ import {type KeyboardEvent} from '../../events/types';
 import {parseColor} from '../../utils/color';
 import {getTheme} from '../../theme/provider';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
+import {resolveThemedOverrides} from '../../theme/themed-color';
 import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import type {TuiWidgetEntity} from '../TuiWidgetEntity';
@@ -320,11 +321,11 @@ export class ScrollBoxWidget extends InteractiveWidget {
   }
 
   setColorScrollbar(value: number): void {
-    this.#colorScrollbar = parseColor(value);
+    this.#colorScrollbar = this._resolveColorValue(value, 'colorScrollbar');
   }
 
   setColorScrollbarTrack(value: number): void {
-    this.#colorScrollbarTrack = parseColor(value);
+    this.#colorScrollbarTrack = this._resolveColorValue(value, 'colorScrollbarTrack');
   }
 
   // -- Child management --
@@ -523,7 +524,9 @@ function getDefaultScrollBoxOptions(): ScrollBoxWidgetOptions {
 }
 
 export function createScrollBoxWidget(options: Partial<ScrollBoxWidgetOptions> = {}): ScrollBoxWidget {
-  const widget = new ScrollBoxWidget({...getDefaultScrollBoxOptions(), ...options});
+  const ctorOptions = resolveThemedOverrides(options, SCROLLBOX_TOKEN_MAP);
+  const widget = new ScrollBoxWidget({...getDefaultScrollBoxOptions(), ...ctorOptions});
+  widget.initTokenMap(SCROLLBOX_TOKEN_MAP);
   bindThemeToWidget(widget, SCROLLBOX_TOKEN_MAP, options ?? {}, resolved => {
     widget.updateThemeColors(resolved);
   });

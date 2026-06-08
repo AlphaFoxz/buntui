@@ -5,6 +5,7 @@ import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
+import {resolveThemedOverrides} from '../../theme/themed-color';
 import type {SelectButtonWidgetOptions} from './types';
 
 type SelectButtonColors = {fg: number; bg: number};
@@ -318,7 +319,9 @@ export class SelectButtonWidget extends InteractiveWidget {
 }
 
 export function createSelectButtonWidget(options?: Partial<SelectButtonWidgetOptions>): SelectButtonWidget {
-  const widget = new SelectButtonWidget({...getDefaultSelectButtonOptions(), ...options});
+  const ctorOptions = resolveThemedOverrides(options ?? {}, SELECT_BUTTON_TOKEN_MAP);
+  const widget = new SelectButtonWidget({...getDefaultSelectButtonOptions(), ...ctorOptions});
+  widget.initTokenMap(SELECT_BUTTON_TOKEN_MAP);
   bindThemeToWidget(widget, SELECT_BUTTON_TOKEN_MAP, options ?? {}, resolved => {
     widget.updateThemeColors(resolved);
   });

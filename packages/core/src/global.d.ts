@@ -1,8 +1,9 @@
 import type {DefineComponent} from 'vue';
+import type {TuiThemedColorRef} from './theme/themed-color';
 
 declare global {
   type TuiSizeValue = number | `${number}%`;
-  type TuiColor = number | string;
+  type TuiColor = number | string | TuiThemedColorRef;
 
   type TuiPointerEvent = {
     readonly x: number;

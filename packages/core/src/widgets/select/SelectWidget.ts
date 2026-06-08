@@ -10,6 +10,7 @@ import {truncateToWidth} from '../../utils/string-width';
 import {getTheme} from '../../theme/provider';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
+import {resolveThemedOverrides} from '../../theme/themed-color';
 import {
   computeScrollbarGeometry,
   renderScrollbar,
@@ -714,7 +715,9 @@ export function createSelectWidget(options?: Partial<SelectWidgetOptions>): Sele
     defaults.height = 3;
   }
 
-  const widget = new SelectWidget({...defaults, ...options});
+  const ctorOptions = resolveThemedOverrides(options ?? {}, SELECT_TOKEN_MAP);
+  const widget = new SelectWidget({...defaults, ...ctorOptions});
+  widget.initTokenMap(SELECT_TOKEN_MAP);
   bindThemeToWidget(widget, SELECT_TOKEN_MAP, options ?? {}, resolved => {
     widget.updateThemeColors(resolved);
   });

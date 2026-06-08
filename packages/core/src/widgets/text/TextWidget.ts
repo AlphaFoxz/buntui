@@ -3,6 +3,7 @@ import {parseColor, type TuiColor} from '../../utils/color';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {getTheme} from '../../theme/provider';
 import {bindThemeToWidget} from '../../theme/resolve';
+import {resolveThemedOverrides} from '../../theme/themed-color';
 import {
   type TuiSizeValue,
   type TuiWidgetColor,
@@ -78,17 +79,17 @@ export class TextWidget extends TuiWidgetEntity {
 
   updateThemeColors(resolved: Record<string, unknown>): void {
     this.updateColor({
-      colorFg: resolved.colorFg === undefined ? undefined : parseColor(resolved.colorFg),
+      colorFg: resolved.colorFg === undefined ? undefined : this._resolveColorValue(resolved.colorFg, 'colorFg'),
     });
   }
 
   updateColor(color: Partial<TuiWidgetColor>) {
     if (color.colorFg !== undefined) {
-      this.#color.colorFg = parseColor(color.colorFg);
+      this.#color.colorFg = this._resolveColorValue(color.colorFg, 'colorFg');
     }
 
     if (color.colorBg !== undefined) {
-      this.#color.colorBg = parseColor(color.colorBg);
+      this.#color.colorBg = this._resolveColorValue(color.colorBg, 'colorBg');
     }
   }
 
@@ -300,16 +301,19 @@ export function createTextWidget(value: string): TextWidget;
 export function createTextWidget(options: string | (Partial<TextWidgetOptions> & {value: string})) {
   if (typeof options === 'string') {
     const widget = new TextWidget({...DEFAULT_TEXT_OPTIONS, value: options});
+    widget.initTokenMap(TEXT_TOKEN_MAP);
     bindThemeToWidget(widget, TEXT_TOKEN_MAP, {}, resolved => {
       widget.updateThemeColors(resolved);
     });
     return widget;
   }
 
+  const ctorOptions = resolveThemedOverrides(options, TEXT_TOKEN_MAP);
   const widget = new TextWidget({
     ...DEFAULT_TEXT_OPTIONS,
-    ...options,
+    ...ctorOptions,
   });
+  widget.initTokenMap(TEXT_TOKEN_MAP);
   bindThemeToWidget(widget, TEXT_TOKEN_MAP, options, resolved => {
     widget.updateThemeColors(resolved);
   });

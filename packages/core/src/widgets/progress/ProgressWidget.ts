@@ -4,6 +4,7 @@ import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
+import {resolveThemedOverrides} from '../../theme/themed-color';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import type {ProgressWidgetOptions} from './types';
 
@@ -187,7 +188,9 @@ export class ProgressWidget extends InteractiveWidget {
 }
 
 export function createProgressWidget(options?: Partial<ProgressWidgetOptions>): ProgressWidget {
-  const widget = new ProgressWidget({...getDefaultProgressOptions(), ...options});
+  const ctorOptions = resolveThemedOverrides(options ?? {}, PROGRESS_TOKEN_MAP);
+  const widget = new ProgressWidget({...getDefaultProgressOptions(), ...ctorOptions});
+  widget.initTokenMap(PROGRESS_TOKEN_MAP);
   bindThemeToWidget(widget, PROGRESS_TOKEN_MAP, options ?? {}, resolved => {
     widget.updateThemeColors(resolved);
   });

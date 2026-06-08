@@ -6,6 +6,7 @@ import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
+import {resolveThemedOverrides} from '../../theme/themed-color';
 import type {SwitchWidgetOptions} from './types';
 
 type SwitchColors = {
@@ -242,7 +243,9 @@ export class SwitchWidget extends InteractiveWidget {
 }
 
 export function createSwitchWidget(options?: Partial<SwitchWidgetOptions>): SwitchWidget {
-  const widget = new SwitchWidget({...getDefaultSwitchOptions(), ...options});
+  const ctorOptions = resolveThemedOverrides(options ?? {}, SWITCH_TOKEN_MAP);
+  const widget = new SwitchWidget({...getDefaultSwitchOptions(), ...ctorOptions});
+  widget.initTokenMap(SWITCH_TOKEN_MAP);
   bindThemeToWidget(widget, SWITCH_TOKEN_MAP, options ?? {}, resolved => {
     widget.updateThemeColors(resolved);
   });

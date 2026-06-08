@@ -9,6 +9,7 @@ import {parseColor} from '../../utils/color';
 import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
+import {resolveThemedOverrides} from '../../theme/themed-color';
 import {getClipboard} from '../../clipboard';
 import type {InputWidgetOptions} from './types';
 
@@ -320,13 +321,13 @@ export class InputWidget extends InteractiveWidget {
 
   updateColor(color: {colorFg?: number; colorBg?: number}): void {
     if (color.colorFg !== undefined) {
-      const parsed = parseColor(color.colorFg);
+      const parsed = this._resolveColorValue(color.colorFg, 'colorFgNormal');
       this.#colors.normal.fg = parsed;
       this.#colors.focused!.fg = parsed;
     }
 
     if (color.colorBg !== undefined) {
-      const parsed = parseColor(color.colorBg);
+      const parsed = this._resolveColorValue(color.colorBg, 'colorBgNormal');
       this.#colors.normal.bg = parsed;
       this.#colors.focused!.bg = parsed;
     }
@@ -1200,7 +1201,9 @@ export class InputWidget extends InteractiveWidget {
 }
 
 export function createInputWidget(options?: Partial<InputWidgetOptions>): InputWidget {
-  const widget = new InputWidget({...getDefaultInputOptions(), ...options});
+  const ctorOptions = resolveThemedOverrides(options ?? {}, INPUT_TOKEN_MAP);
+  const widget = new InputWidget({...getDefaultInputOptions(), ...ctorOptions});
+  widget.initTokenMap(INPUT_TOKEN_MAP);
   bindThemeToWidget(widget, INPUT_TOKEN_MAP, options ?? {}, resolved => {
     widget.updateThemeColors(resolved);
   });

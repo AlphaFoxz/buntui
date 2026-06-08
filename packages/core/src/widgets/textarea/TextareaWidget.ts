@@ -9,6 +9,7 @@ import {parseColor} from '../../utils/color';
 import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
+import {resolveThemedOverrides} from '../../theme/themed-color';
 import {getClipboard} from '../../clipboard';
 import type {TextareaWidgetOptions} from './types';
 
@@ -312,13 +313,13 @@ export class TextareaWidget extends InteractiveWidget {
 
   updateColor(color: {colorFg?: number; colorBg?: number}): void {
     if (color.colorFg !== undefined) {
-      const parsed = parseColor(color.colorFg);
+      const parsed = this._resolveColorValue(color.colorFg, 'colorFgNormal');
       this.#colors.normal.fg = parsed;
       this.#colors.focused!.fg = parsed;
     }
 
     if (color.colorBg !== undefined) {
-      const parsed = parseColor(color.colorBg);
+      const parsed = this._resolveColorValue(color.colorBg, 'colorBgNormal');
       this.#colors.normal.bg = parsed;
       this.#colors.focused!.bg = parsed;
     }
@@ -1466,7 +1467,9 @@ export class TextareaWidget extends InteractiveWidget {
 }
 
 export function createTextareaWidget(options?: Partial<TextareaWidgetOptions>): TextareaWidget {
-  const widget = new TextareaWidget({...getDefaultTextareaOptions(), ...options});
+  const ctorOptions = resolveThemedOverrides(options ?? {}, TEXTAREA_TOKEN_MAP);
+  const widget = new TextareaWidget({...getDefaultTextareaOptions(), ...ctorOptions});
+  widget.initTokenMap(TEXTAREA_TOKEN_MAP);
   bindThemeToWidget(widget, TEXTAREA_TOKEN_MAP, options ?? {}, resolved => {
     widget.updateThemeColors(resolved);
   });

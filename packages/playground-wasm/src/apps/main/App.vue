@@ -12,7 +12,7 @@
         @change="handleThemeChange"
     />
 
-    <ScrollBox :x="0" :y="5" width="100%" height="90%" colorBg="rgba(0, 0, 0, 0.7)">
+    <ScrollBox :x="0" :y="4" width="100%" height="90%" :colorBg="colorThemed({ alpha: 0.6 })">
         <BoxDemo v-if="currentPage === 'Box'" />
         <TextDemo v-else-if="currentPage === 'Text'" />
         <InputDemo v-else-if="currentPage === 'Input'" />
@@ -30,6 +30,7 @@
 </template>
 <script setup lang="ts">
 import { ref } from '@vue/reactivity'
+import { colorThemed } from '@buntui/core'
 import { setTheme, tokyoNightMoon, tokyoNightStorm, rosePineMoon, rosePineDawn, highContrast } from '@buntui/core'
 import BoxDemo from './components/BoxDemo.vue'
 import TextDemo from './components/TextDemo.vue'

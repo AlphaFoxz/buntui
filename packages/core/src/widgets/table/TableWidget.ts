@@ -9,6 +9,7 @@ import {parseColor} from '../../utils/color';
 import {stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
+import {resolveThemedOverrides} from '../../theme/themed-color';
 import type {TableColumn, TableRow, TableWidgetOptions} from './types';
 
 type TableColors = {
@@ -197,13 +198,13 @@ export class TableWidget extends InteractiveWidget {
 
   updateColor(color: {colorFg?: number; colorBg?: number}): void {
     if (color.colorFg !== undefined) {
-      const parsed = parseColor(color.colorFg);
+      const parsed = this._resolveColorValue(color.colorFg, 'colorFgNormal');
       this.#colors.normal.fg = parsed;
       this.#colors.focused!.fg = parsed;
     }
 
     if (color.colorBg !== undefined) {
-      const parsed = parseColor(color.colorBg);
+      const parsed = this._resolveColorValue(color.colorBg, 'colorBgNormal');
       this.#colors.normal.bg = parsed;
       this.#colors.focused!.bg = parsed;
     }
@@ -571,7 +572,9 @@ export class TableWidget extends InteractiveWidget {
 }
 
 export function createTableWidget(options?: Partial<TableWidgetOptions>): TableWidget {
-  const widget = new TableWidget({...getDefaultTableOptions(), ...options});
+  const ctorOptions = resolveThemedOverrides(options ?? {}, TABLE_TOKEN_MAP);
+  const widget = new TableWidget({...getDefaultTableOptions(), ...ctorOptions});
+  widget.initTokenMap(TABLE_TOKEN_MAP);
   bindThemeToWidget(widget, TABLE_TOKEN_MAP, options ?? {}, resolved => {
     widget.updateThemeColors(resolved);
   });

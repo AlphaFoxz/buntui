@@ -8,6 +8,7 @@ import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor, type TuiColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
+import {resolveThemedOverrides} from '../../theme/themed-color';
 import type {ButtonWidgetOptions} from './types';
 
 type ButtonColors = {
@@ -132,15 +133,15 @@ export class ButtonWidget extends InteractiveWidget {
 
   updateNormalStyle(options: {colorFgNormal?: TuiColor; colorBgNormal?: TuiColor; colorBorderNormal?: TuiColor; borderStyleNormal?: TuiBorderStyleName}): void {
     if (options.colorFgNormal !== undefined) {
-      this.#colors.normal.fg = parseColor(options.colorFgNormal);
+      this.#colors.normal.fg = this._resolveColorValue(options.colorFgNormal, 'colorFgNormal');
     }
 
     if (options.colorBgNormal !== undefined) {
-      this.#colors.normal.bg = parseColor(options.colorBgNormal);
+      this.#colors.normal.bg = this._resolveColorValue(options.colorBgNormal, 'colorBgNormal');
     }
 
     if (options.colorBorderNormal !== undefined) {
-      this.#colors.normal.colorBorder = parseColor(options.colorBorderNormal);
+      this.#colors.normal.colorBorder = this._resolveColorValue(options.colorBorderNormal, 'colorBorderNormal');
     }
 
     if (options.borderStyleNormal !== undefined) {
@@ -150,15 +151,15 @@ export class ButtonWidget extends InteractiveWidget {
 
   updateHoveredStyle(options: {colorFgHovered?: TuiColor; colorBgHovered?: TuiColor; colorBorderHovered?: TuiColor; borderStyleHovered?: TuiBorderStyleName}): void {
     if (options.colorFgHovered !== undefined) {
-      this.#colors.hovered!.fg = parseColor(options.colorFgHovered);
+      this.#colors.hovered!.fg = this._resolveColorValue(options.colorFgHovered, 'colorFgHovered');
     }
 
     if (options.colorBgHovered !== undefined) {
-      this.#colors.hovered!.bg = parseColor(options.colorBgHovered);
+      this.#colors.hovered!.bg = this._resolveColorValue(options.colorBgHovered, 'colorBgHovered');
     }
 
     if (options.colorBorderHovered !== undefined) {
-      this.#colors.hovered!.colorBorder = parseColor(options.colorBorderHovered);
+      this.#colors.hovered!.colorBorder = this._resolveColorValue(options.colorBorderHovered, 'colorBorderHovered');
     }
 
     if (options.borderStyleHovered !== undefined) {
@@ -168,15 +169,15 @@ export class ButtonWidget extends InteractiveWidget {
 
   updatePressedStyle(options: {colorFgPressed?: TuiColor; colorBgPressed?: TuiColor; colorBorderPressed?: TuiColor; borderStylePressed?: TuiBorderStyleName}): void {
     if (options.colorFgPressed !== undefined) {
-      this.#colors.pressed!.fg = parseColor(options.colorFgPressed);
+      this.#colors.pressed!.fg = this._resolveColorValue(options.colorFgPressed, 'colorFgPressed');
     }
 
     if (options.colorBgPressed !== undefined) {
-      this.#colors.pressed!.bg = parseColor(options.colorBgPressed);
+      this.#colors.pressed!.bg = this._resolveColorValue(options.colorBgPressed, 'colorBgPressed');
     }
 
     if (options.colorBorderPressed !== undefined) {
-      this.#colors.pressed!.colorBorder = parseColor(options.colorBorderPressed);
+      this.#colors.pressed!.colorBorder = this._resolveColorValue(options.colorBorderPressed, 'colorBorderPressed');
     }
 
     if (options.borderStylePressed !== undefined) {
@@ -255,7 +256,9 @@ export class ButtonWidget extends InteractiveWidget {
 }
 
 export function createButtonWidget(options?: Partial<ButtonWidgetOptions>): ButtonWidget {
-  const widget = new ButtonWidget({...getDefaultButtonOptions(), ...options});
+  const ctorOptions = resolveThemedOverrides(options ?? {}, BUTTON_TOKEN_MAP);
+  const widget = new ButtonWidget({...getDefaultButtonOptions(), ...ctorOptions});
+  widget.initTokenMap(BUTTON_TOKEN_MAP);
   bindThemeToWidget(widget, BUTTON_TOKEN_MAP, options ?? {}, resolved => {
     widget.updateThemeColors(resolved);
   });

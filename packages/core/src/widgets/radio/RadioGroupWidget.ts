@@ -5,6 +5,7 @@ import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
+import {resolveThemedOverrides} from '../../theme/themed-color';
 import type {RadioGroupWidgetOptions} from './types';
 
 type RadioColors = {fg: number; bg: number};
@@ -252,7 +253,9 @@ export class RadioGroupWidget extends InteractiveWidget {
 }
 
 export function createRadioGroupWidget(options?: Partial<RadioGroupWidgetOptions>): RadioGroupWidget {
-  const widget = new RadioGroupWidget({...getDefaultRadioOptions(), ...options});
+  const ctorOptions = resolveThemedOverrides(options ?? {}, RADIO_TOKEN_MAP);
+  const widget = new RadioGroupWidget({...getDefaultRadioOptions(), ...ctorOptions});
+  widget.initTokenMap(RADIO_TOKEN_MAP);
   bindThemeToWidget(widget, RADIO_TOKEN_MAP, options ?? {}, resolved => {
     widget.updateThemeColors(resolved);
   });
