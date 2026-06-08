@@ -36,27 +36,37 @@ bun dev
 ## 架构
 
 ```text
-┌─────────────── TypeScript (Bun) ─────────────────┐
-│                                                  │
-│  .vue SFC ──→ Widget Tree ──→ emitDrawCommands() │
-│       (compiler)   (Vue reactivity)       │      │
-│                                           ▼      │
-│                                   DrawListBuffer │
-│                                  (shared memory) │
-└──────────────────────┬───────────────────────────┘
-                       │ FFI: renderDrawList(ctx, buf, len)
-                       ▼
-┌─────────────── Zig (Native) ─────────────────────┐
-│                                                  │
-│  Parse Commands ──→ Rasterize ──→ Cell Grid      │
-│  (draw_list/)      (per-cmd)    (TuiFrame)       │
-│                                      │           │
-│                                      ▼           │
-│                                 Diff + ANSI ───────────► Terminal
-└──────────────────────────────────────────────────┘
+                        ┌──────────── TypeScript ──────────────┐
+                        │                                      │
+                        │  .vue SFC ──→ Widget Tree            │
+                        │   (compiler)   (Vue reactivity)      │
+                        │                    │                 │
+                        │                    ▼                 │
+                        │            emitDrawCommands()        │
+                        │                    │                 │
+                        │                    ▼                 │
+                        │            DrawListBuffer (binary)   │
+                        └────────┬───────────┬─────────────────┘
+                                 │           │
+                    ┌────────────┘           └──────────────┐
+                    ▼                                       ▼
+         NativeBackend (Bun)                      HtmlBackend (Browser)
+         dlopen() + FFI ptr                       WasmModule + xterm.js
+                    │                                       │
+                    ▼                                       ▼
+         ┌──── Zig .dll / .dylib / .so ────┐    ┌─── Zig .wasm ─────────┐
+         │                                 │    │                       │
+         │  Parse ──→ Rasterize ──→ Diff   │    │  Parse ──→ Rasterize  │
+         │            (per-cmd)     │      │    │            (per-cmd)  │
+         │                          ▼      │    │                │      │
+         │                     ANSI output │    │                ▼      │
+         └──────────────────┬──────────────┘    │      in-memory buf    │
+                            │                   └────────────┬──────────┘
+                            ▼                                ▼
+                      Real Terminal                 xterm.js Terminal
 ```
 
-每帧流程：重置缓冲区 → 组件树生成绘制命令 → FFI 传给 Zig → 光栅化到单元格网格 → 差分脏区 → 输出 ANSI。
+每帧流程：重置缓冲区 → 组件树生成绘制命令 → Zig 光栅化（原生 FFI 或 WASM）→ 差分脏区 → 输出 ANSI。
 
 ## 示例
 
@@ -117,14 +127,17 @@ import FrameRate   from '@buntui/extensions/framerate'
 
 ```text
 packages/
-├── native/              Zig 渲染引擎 → 共享库（.dll / .dylib / .so）
-├── native-platforms/    预编译二进制（win32-x64、linux-x64、darwin-x64、darwin-arm64）
-├── core/                TS 运行时：组件系统、FFI、事件总线、绘制列表
+├── native/              Zig 渲染引擎 → 共享库（.dll / .dylib / .so / .wasm）
+├── native-platforms/    预编译二进制（win32-x64、linux-x64、darwin-x64、darwin-arm64、wasm32-wasi）
+├── core/                TS 运行时：组件系统、FFI + WASM 后端、事件总线、绘制列表
 ├── extensions/          扩展组件，支持 sub-path 导出
 ├── compiler/            SFC 编译器（.vue → TS），基于 Vue compiler-core
-├── playground/          演示应用
+├── cli/                 CLI 工具：开发服务器 + 构建命令
+├── playground/          终端演示应用（Bun 运行时）
+├── playground-wasm/     WASM 演示应用（浏览器 + xterm.js）
 ├── buntui/              聚合包（core + extensions）
-└── create-buntui/       CLI 脚手架工具
+├── create-buntui/       CLI 脚手架工具
+└── github-pages/        WASM Web 演示外壳，用于部署
 ```
 
 ## 开源协议

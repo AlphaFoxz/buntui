@@ -36,27 +36,37 @@ bun dev
 ## Architecture
 
 ```text
-┌─────────────── TypeScript (Bun) ─────────────────┐
-│                                                  │
-│  .vue SFC ──→ Widget Tree ──→ emitDrawCommands() │
-│       (compiler)   (Vue reactivity)       │      │
-│                                           ▼      │
-│                                   DrawListBuffer │
-│                                  (shared memory) │
-└──────────────────────┬───────────────────────────┘
-                       │ FFI: renderDrawList(ctx, buf, len)
-                       ▼
-┌─────────────── Zig (Native) ─────────────────────┐
-│                                                  │
-│  Parse Commands ──→ Rasterize ──→ Cell Grid      │
-│  (draw_list/)      (per-cmd)    (TuiFrame)       │
-│                                      │           │
-│                                      ▼           │
-│                                 Diff + ANSI ───────────► Terminal
-└──────────────────────────────────────────────────┘
+                        ┌──────────── TypeScript ──────────────┐
+                        │                                      │
+                        │  .vue SFC ──→ Widget Tree            │
+                        │   (compiler)   (Vue reactivity)      │
+                        │                    │                 │
+                        │                    ▼                 │
+                        │            emitDrawCommands()        │
+                        │                    │                 │
+                        │                    ▼                 │
+                        │            DrawListBuffer (binary)   │
+                        └────────┬───────────┬─────────────────┘
+                                 │           │
+                    ┌────────────┘           └──────────────┐
+                    ▼                                       ▼
+         NativeBackend (Bun)                      HtmlBackend (Browser)
+         dlopen() + FFI ptr                       WasmModule + xterm.js
+                    │                                       │
+                    ▼                                       ▼
+         ┌──── Zig .dll / .dylib / .so ────┐    ┌─── Zig .wasm ─────────┐
+         │                                 │    │                       │
+         │  Parse ──→ Rasterize ──→ Diff   │    │  Parse ──→ Rasterize  │
+         │            (per-cmd)     │      │    │            (per-cmd)  │
+         │                          ▼      │    │                │      │
+         │                     ANSI output │    │                ▼      │
+         └──────────────────┬──────────────┘    │      in-memory buf    │
+                            │                   └────────────┬──────────┘
+                            ▼                                ▼
+                      Real Terminal                 xterm.js Terminal
 ```
 
-Per-frame: reset buffer → widget tree emits draw commands → FFI → Zig rasterizes → diff dirty cells → ANSI output.
+Per-frame: reset buffer → widget tree emits draw commands → Zig rasterizes (native FFI or WASM) → diff dirty cells → ANSI output.
 
 ## Example
 
@@ -117,14 +127,17 @@ import FrameRate   from '@buntui/extensions/framerate'
 
 ```text
 packages/
-├── native/              Zig rendering engine → shared library (.dll / .dylib / .so)
-├── native-platforms/    Pre-built binaries (win32-x64, linux-x64, darwin-x64, darwin-arm64)
-├── core/                TS runtime: widgets, FFI, event bus, draw list
+├── native/              Zig rendering engine → shared library (.dll / .dylib / .so / .wasm)
+├── native-platforms/    Pre-built binaries (win32-x64, linux-x64, darwin-x64, darwin-arm64, wasm32-wasi)
+├── core/                TS runtime: widgets, FFI + WASM backends, event bus, draw list
 ├── extensions/          Extra widgets with sub-path exports
 ├── compiler/            SFC compiler (.vue → TS) based on Vue compiler-core
-├── playground/          Demo app
+├── cli/                 CLI tool: dev server + build commands
+├── playground/          Terminal demo app (Bun runtime)
+├── playground-wasm/     WASM demo app (browser + xterm.js)
 ├── buntui/              Umbrella package (core + extensions)
-└── create-buntui/       CLI scaffolding tool
+├── create-buntui/       CLI scaffolding tool
+└── github-pages/        WASM web demo shell for deployment
 ```
 
 ## License
