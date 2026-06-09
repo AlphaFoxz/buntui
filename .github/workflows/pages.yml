@@ -55,6 +55,9 @@ jobs:
             - name: Build playground-wasm
               run: bun packages/cli/dist/buntui.js wasm build --cwd packages/playground-wasm
 
+            - name: Copy WASM to github-pages
+              run: bun run --cwd packages/github-pages copy-wasm
+
             - name: Build github-pages
               run: bun run --cwd packages/github-pages build-only
 

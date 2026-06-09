@@ -37,3 +37,6 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# WASM binary (copied from @buntui/native-wasm32-wasi via copy-wasm script)
+public/buntui.wasm

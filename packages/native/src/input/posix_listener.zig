@@ -202,7 +202,7 @@ const Parser = struct {
                 } else if (byte < 32) {
                     // Control character (Ctrl+A through Ctrl+Z, etc.)
                     var letter_buf = [_]u8{0};
-                    letter_buf[0] = @as(u8, @intCast(byte + 0x40)); // Convert to uppercase letter
+                    letter_buf[0] = @as(u8, @intCast(byte + 0x60)); // Convert to lowercase letter (ctrlKey=true, shiftKey=false)
                     emitKeyboardEvent(
                         buildModifiers(false, false, true, false, false),
                         byte,
@@ -822,7 +822,7 @@ test "Parser: Ctrl+letter (0x01-0x07) produces Ctrl modifier" {
         const key_len: u8 = @intCast(@min(s[3], 236));
         const key = s[4 .. 4 + key_len];
         try std.testing.expect(modifiers & payloads.MOD_CTRL != 0);
-        try std.testing.expectEqualStrings("A", key);
+        try std.testing.expectEqualStrings("a", key);
         event_bus.event_bus_commit();
     }
 }
