@@ -41,6 +41,11 @@ it('parses CSS named colors', () => {
   expect(parseColor('black')).toBe(0x00_00_00_FF);
 });
 
+it('parses "none" and "transparent" as fully transparent', () => {
+  expect(parseColor('none')).toBe(0x00_00_00_00);
+  expect(parseColor('transparent')).toBe(0x00_00_00_00);
+});
+
 it('is case-insensitive for hex', () => {
   expect(parseColor('#FF00FF')).toBe(0xFF_00_FF_FF);
   expect(parseColor('#Ff00Ff')).toBe(0xFF_00_FF_FF);

@@ -11,7 +11,7 @@ export {createTextWidget, TextWidget} from './widgets/text/TextWidget';
 export type {TextWidgetOptions, TextOverflow} from './widgets/text/types';
 export {rgbToRgba, withAlpha} from './utils/styles';
 export {parseColor} from './utils/color';
-export type {TuiColor} from './utils/color';
+export type {TuiColor, TuiColorString} from './utils/color';
 export {colorThemed} from './theme/themed-color';
 export type {TuiThemedColorRef, TuiThemedColorOptions} from './theme/themed-color';
 export {TuiWidgetEntity} from './widgets/TuiWidgetEntity';

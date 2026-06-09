@@ -1,6 +1,8 @@
 <template>
     <Matrix width="100%" height="100%"></Matrix>
-    <Text :x="0" :y="0" value="Buntui" styleModifier="bold" />
+    <Box width="100%" :height="1" align="center" borderStyle="none" colorBg="none">
+        <Text :x="0" :y="0" value="Buntui" styleModifier="bold" />
+    </Box>
     <Select :x="0" :y="1" width="50%" label="Core Widget" :options="pageOptions" v-model="currentPage" />
     <Select
         x="50%"

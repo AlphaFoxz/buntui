@@ -216,7 +216,12 @@ function normalizeToHex(color: string): number | undefined {
     return (rgb << 8) | 0xFF;
   }
 
-  const named = CSS_COLORS[s.toLowerCase()];
+  const lower = s.toLowerCase();
+  if (lower === 'none' || lower === 'transparent') {
+    return 0x00_00_00_00;
+  }
+
+  const named = CSS_COLORS[lower];
   if (named !== undefined) {
     return (named << 8) | 0xFF;
   }
