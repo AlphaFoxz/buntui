@@ -36,34 +36,34 @@ bun dev
 ## Architecture
 
 ```text
-                        ┌──────────── TypeScript ──────────────┐
-                        │                                      │
-                        │  .vue SFC ──→ Widget Tree            │
-                        │   (compiler)   (Vue reactivity)      │
-                        │                    │                 │
-                        │                    ▼                 │
-                        │            emitDrawCommands()        │
-                        │                    │                 │
-                        │                    ▼                 │
-                        │            DrawListBuffer (binary)   │
-                        └────────┬───────────┬─────────────────┘
-                                 │           │
-                    ┌────────────┘           └──────────────┐
-                    ▼                                       ▼
-         NativeBackend (Bun)                      HtmlBackend (Browser)
-         dlopen() + FFI ptr                       WasmModule + xterm.js
-                    │                                       │
-                    ▼                                       ▼
-         ┌──── Zig .dll / .dylib / .so ────┐    ┌─── Zig .wasm ─────────┐
-         │                                 │    │                       │
-         │  Parse ──→ Rasterize ──→ Diff   │    │  Parse ──→ Rasterize  │
-         │            (per-cmd)     │      │    │            (per-cmd)  │
-         │                          ▼      │    │                │      │
-         │                     ANSI output │    │                ▼      │
-         └──────────────────┬──────────────┘    │      in-memory buf    │
-                            │                   └────────────┬──────────┘
-                            ▼                                ▼
-                      Real Terminal                 xterm.js Terminal
+                 ┌──────────── TypeScript ──────────────┐
+                 │                                      │
+                 │  .vue SFC ──→ Widget Tree            │
+                 │   (compiler)   (Vue reactivity)      │
+                 │                    │                 │
+                 │                    ▼                 │
+                 │            emitDrawCommands()        │
+                 │                    │                 │
+                 │                    ▼                 │
+                 │            DrawListBuffer (binary)   │
+                 └────────┬───────────┬─────────────────┘
+                          │           │
+             ┌────────────┘           └──────────────┐
+             ▼                                       ▼
+  NativeBackend (Bun)                      HtmlBackend (Browser)
+  dlopen() + FFI ptr                       WasmModule + xterm.js
+             │                                       │
+             ▼                                       ▼
+  ┌──── Zig .dll / .dylib / .so ────┐    ┌─── Zig .wasm ─────────┐
+  │                                 │    │                       │
+  │  Parse ──→ Rasterize ──→ Diff   │    │  Parse ──→ Rasterize  │
+  │            (per-cmd)     │      │    │            (per-cmd)  │
+  │                          ▼      │    │                │      │
+  │                     ANSI output │    │                ▼      │
+  └──────────────────┬──────────────┘    │      in-memory buf    │
+                     │                   └────────────┬──────────┘
+                     ▼                                ▼
+               Real Terminal                 xterm.js Terminal
 ```
 
 Per-frame: reset buffer → widget tree emits draw commands → Zig rasterizes (native FFI or WASM) → diff dirty cells → ANSI output.

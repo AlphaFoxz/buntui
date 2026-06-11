@@ -615,6 +615,344 @@ describe('codegen', () => {
       const result = gen(root);
       expect(result.code).toContain('unref(items)');
       expect(result.code).toContain('.active');
+      expect(result.code).not.toContain('unref(x)');
+    });
+
+    it('wraps arrow function parameter identifiers with unref', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: "() => name", loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('() => unref(name)');
+    });
+
+    it('wraps arrow function with block body', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: "() => { return val }", loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('() => { return unref(val) }');
+    });
+
+    it('does not wrap arrow function params', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: "(x) => x + val", loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('(x) => x + unref(val)');
+      expect(result.code).not.toContain('unref(x)');
+    });
+
+    it('handles single-param arrow without parens', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: "x => x + val", loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('x => x + unref(val)');
+      expect(result.code).not.toContain('unref(x)');
+    });
+
+    it('handles multi-param arrow function', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: "(a, b) => a + b + c", loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('(a, b) => a + b + unref(c)');
+      expect(result.code).not.toContain('unref(a)');
+      expect(result.code).not.toContain('unref(b)');
+    });
+
+    it('handles nested arrow functions', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: "(x) => (y) => x + y + z", loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('(x) => (y) => x + y + unref(z)');
+      expect(result.code).not.toContain('unref(x)');
+      expect(result.code).not.toContain('unref(y)');
+    });
+
+    it('handles function call with arguments', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'foo(bar)', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('foo(unref(bar))');
+      expect(result.code).not.toContain('unref(foo)');
+    });
+
+    it('handles function call with multiple arguments', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'format(a, b, c)', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('format(unref(a), unref(b), unref(c))');
+    });
+
+    it('handles method call on reactive object', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'items.map(x => x)', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(items).map(x => x)');
+    });
+
+    it('handles chained method calls', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'items.filter(x => x.active).map(x => x.name)', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(items).filter(x => x.active).map(x => x.name)');
+    });
+
+    it('handles logical OR expression', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'a || b', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(a) || unref(b)');
+    });
+
+    it('handles nullish coalescing expression', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'val ?? defaultVal', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(val) ?? unref(defaultVal)');
+    });
+
+    it('handles optional chaining', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'data?.name', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(data)?.name');
+    });
+
+    it('handles optional chaining with method call', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'items?.find(x => x.id === id)', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(items)?.find(x => x.id === unref(id))');
+      expect(result.code).not.toContain('unref(x)');
+    });
+
+    it('handles string concatenation', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: "'prefix-' + name", loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain("'prefix-' + unref(name)");
+    });
+
+    it('handles unary NOT expression', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: '!flag', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('!unref(flag)');
+    });
+
+    it('handles typeof expression', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'typeof val', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('typeof unref(val)');
+    });
+
+    it('handles instanceof expression (rhs is also wrapped)', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'val instanceof MyClass', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(val) instanceof unref(MyClass)');
+    });
+
+    it('handles object expression with dynamic values', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: '{name: user.name, age: count}', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('{name: unref(user).name, age: unref(count)}');
+    });
+
+    it('does not wrap object keys in object expression', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: '{label: text, value: id}', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('label');
+      expect(result.code).toContain('value: unref(id)');
+      expect(result.code).not.toContain('unref(label)');
+    });
+
+    it('handles array expression', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: '[a, b, c]', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('[unref(a), unref(b), unref(c)]');
+    });
+
+    it('handles array expression with mixed types', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: "['static', dynamicVar, 42]", loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain("'static'");
+      expect(result.code).toContain('unref(dynamicVar)');
+      expect(result.code).toContain('42');
+    });
+
+    it('handles spread in array expression', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: '[...items, extra]', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('...unref(items)');
+      expect(result.code).toContain('unref(extra)');
+    });
+
+    it('handles dynamic boolean prop', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'disabled', expression: 'isDisabled', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createInputWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('disabled: unref(isDisabled)');
+    });
+
+    it('handles parenthesized expression', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: '(a + b)', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('(unref(a) + unref(b))');
+    });
+
+    it('handles nested ternary expression', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'a ? b ? c : d : e', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(a) ? unref(b) ? unref(c) : unref(d) : unref(e)');
+    });
+
+    it('handles Math expression (Math wrapped as identifier)', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'Math.max(a, b)', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(Math).max(unref(a), unref(b))');
+    });
+
+    it('handles deeply nested member access', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'state.form.fields.name', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(state).form.fields.name');
+    });
+
+    it('handles mixed logical operators', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'a && b || c', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(a) && unref(b) || unref(c)');
+    });
+
+    it('handles null literal', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'val ?? null', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(val) ?? null');
+    });
+
+    it('handles undefined literal', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'val ?? undefined', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(val) ?? undefined');
+    });
+
+    it('handles new expression', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'new Set(items)', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('new Set(unref(items))');
+    });
+
+    it('handles Number constructor call', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'Number(val)', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('Number(unref(val))');
+    });
+
+    it('handles String constructor call', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'String(count)', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('String(unref(count))');
+    });
+
+    it('handles array index with dynamic index', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'items[index]', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(items)[unref(index)]');
+    });
+
+    it('handles complex expression with nested function calls (global object wrapped)', () => {
+      const widget = makeWidget({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'value', expression: 'JSON.stringify(data)', loc: STUB_LOC}],
+      });
+      const root = makeRoot([widget], [], new Set(['createTextWidget']));
+      const result = gen(root);
+      expect(result.code).toContain('unref(JSON).stringify(unref(data))');
     });
   });
 

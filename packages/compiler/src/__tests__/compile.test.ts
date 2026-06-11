@@ -742,6 +742,121 @@ describe('compile', () => {
     });
   });
 
+  describe('dynamic prop expressions', () => {
+    it('handles arrow function returning identifier', () => {
+      const result = compile('<template><Text :value="() => name"/></template>');
+      expect(result.code).toContain('() => unref(name)');
+    });
+
+    it('handles function call with reactive argument', () => {
+      const result = compile('<template><Text :value="foo(bar)"/></template>');
+      expect(result.code).toContain('foo(unref(bar))');
+      expect(result.code).not.toContain('unref(foo)');
+    });
+
+    it('handles method call on reactive object', () => {
+      const result = compile('<template><Text :value="items.length"/></template>');
+      expect(result.code).toContain('unref(items).length');
+    });
+
+    it('handles JSON.stringify with reactive argument', () => {
+      const result = compile('<template><Text :value="JSON.stringify(data)"/></template>');
+      expect(result.code).toContain('unref(JSON).stringify(unref(data))');
+    });
+
+    it('handles optional chaining via _optionalChain helper', () => {
+      const result = compile('<template><Text :value="user?.name"/></template>');
+      expect(result.code).toContain('_optionalChain');
+      expect(result.code).toContain("'optionalAccess'");
+      expect(result.code).toContain('name');
+    });
+
+    it('handles nullish coalescing via _nullishCoalesce helper', () => {
+      const result = compile('<template><Text :value="val ?? fallback"/></template>');
+      expect(result.code).toContain('_nullishCoalesce');
+      expect(result.code).toContain('unref(val)');
+      expect(result.code).toContain('unref(fallback)');
+    });
+
+    it('handles logical OR', () => {
+      const result = compile('<template><Text :value="a || b"/></template>');
+      expect(result.code).toContain('unref(a) || unref(b)');
+    });
+
+    it('handles string concatenation', () => {
+      const result = compile('<template><Text :value="\'hello \' + name"/></template>');
+      expect(result.code).toContain("'hello ' + unref(name)");
+    });
+
+    it('handles object expression with named values', () => {
+      const result = compile('<template><Text :value="{name: label, age: count}"/></template>');
+      expect(result.code).toContain('{name: unref(label), age: unref(count)}');
+    });
+
+    it('handles array expression with reactive values', () => {
+      const result = compile('<template><Text :value="[a, b, c]"/></template>');
+      expect(result.code).toContain('[unref(a), unref(b), unref(c)]');
+    });
+
+    it('handles spread in array expression', () => {
+      const result = compile('<template><Text :value="[...items, extra]"/></template>');
+      expect(result.code).toContain('...unref(items)');
+      expect(result.code).toContain('unref(extra)');
+    });
+
+    it('handles new expression with reactive argument', () => {
+      const result = compile('<template><Text :value="new Set(items)"/></template>');
+      expect(result.code).toContain('new Set(unref(items))');
+    });
+
+    it('handles dynamic boolean prop', () => {
+      const result = compile('<template><Input :disabled="isDisabled"/></template>');
+      expect(result.code).toContain('disabled: unref(isDisabled)');
+    });
+
+    it('handles typeof expression', () => {
+      const result = compile('<template><Text :value="typeof val"/></template>');
+      expect(result.code).toContain('typeof unref(val)');
+    });
+
+    it('handles Number/String constructor call', () => {
+      const result = compile('<template><Text :value="Number(count)"/></template>');
+      expect(result.code).toContain('Number(unref(count))');
+    });
+
+    it('handles Math.max with reactive arguments', () => {
+      const result = compile('<template><Text :value="Math.max(a, b)"/></template>');
+      expect(result.code).toContain('unref(Math).max(unref(a), unref(b))');
+    });
+
+    it('handles deeply nested member access', () => {
+      const result = compile('<template><Text :value="state.form.name"/></template>');
+      expect(result.code).toContain('unref(state).form.name');
+    });
+
+    it('handles nested ternary', () => {
+      const result = compile('<template><Text :value="a ? b ? c : d : e"/></template>');
+      expect(result.code).toContain('unref(a) ? unref(b) ? unref(c) : unref(d) : unref(e)');
+    });
+
+    it('handles multiple dynamic props on same widget targeting different methods', () => {
+      const result = compile('<template><Box :x="posX" :colorFg="c"/></template>');
+      expect(result.code).toContain('updateRect');
+      expect(result.code).toContain('updateColor');
+    });
+
+    it('handles dynamic prop with array index access using reactive index', () => {
+      const result = compile('<template><Text :value="items[index]"/></template>');
+      expect(result.code).toContain('unref(items)[unref(index)]');
+    });
+
+    it('handles complex template literal with multiple interpolations', () => {
+      const result = compile('<template><Text :value="`${user.name}: ${items.length} items`"/></template>');
+      expect(result.code).toContain('unref(user).name');
+      expect(result.code).toContain('unref(items).length');
+    });
+  });
+
   describe('TypeScript stripping', () => {
     it('strips non-null assertion before property access', () => {
       const result = compile(

@@ -73,7 +73,9 @@ const EventBus = struct {
         const tail = self.tail.load(.monotonic);
         const head = self.head.load(.acquire);
 
-        if (tail >= head) return null;
+        if (tail >= head) {
+            return null;
+        }
 
         const idx = tail & QUEUE_MASK;
         return &self.slots[idx];
