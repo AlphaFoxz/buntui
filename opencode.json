@@ -17,6 +17,9 @@
             "gh *": "allow",
             "git log *": "allow",
             "ls": "allow",
+            "ls *": "allow",
+            "file *": "allow",
+            "mkdir *": "allow",
             "rg *": "allow",
             "yt-dlp *": "allow",
             "zig *": "allow"
