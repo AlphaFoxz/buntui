@@ -1,14 +1,5 @@
 <template>
-    <Box
-        x="20%"
-        y="30%"
-        width="60%"
-        :height="9"
-        borderStyle="rounded"
-        direction="vertical"
-        :gap="1"
-        align="center"
-    >
+    <Box x="20%" y="30%" width="60%" :height="9" borderStyle="rounded" direction="vertical" :gap="1" align="center">
         <Text :value="title" styleModifier="bold" />
         <Text value="Edit src/App.vue to get started" />
         <Text :value="clock" />

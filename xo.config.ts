@@ -11,7 +11,7 @@ const expose: FlatXoConfig = [
       '**/dist/**',
       'designs/**',
       '**/scripts/**',
-      'packages/create-buntui/templates/**',
+      // 'packages/create-buntui/templates/**',
       'packages/github-pages/**',
       'xo.config.ts'
     ],
@@ -100,6 +100,17 @@ const expose: FlatXoConfig = [
       'require-unicode-regexp': 'off',
       'import-x/no-unassigned-import': 'off',
       'import-x/order': 'off',
+    },
+  },
+  {
+    files: ['packages/create-buntui/templates/**/*.ts'],
+    rules: {
+      'unicorn/no-await-expression-member': 'off',
+      '@typescript-eslint/no-unsafe-type-assertion': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-assignmen': 'off',
     },
   },
 ];

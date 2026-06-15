@@ -4,7 +4,7 @@
     "version": "0.1.0-alpha.5",
     "type": "module",
     "exports": {
-        "./dist/main.js": {
+        ".": {
             "types": "./dist/main.d.ts",
             "default": "./dist/main.js"
         }

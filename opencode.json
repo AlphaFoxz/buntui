@@ -22,7 +22,9 @@
             "mkdir *": "allow",
             "rg *": "allow",
             "yt-dlp *": "allow",
-            "zig *": "allow"
+            "zig *": "allow",
+            "Select-String *": "allow",
+            "Select-Object *": "allow"
         }
     }
 }

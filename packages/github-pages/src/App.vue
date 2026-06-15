@@ -3,13 +3,13 @@ import type { Terminal } from '@xterm/xterm'
 import type { FitAddon } from '@xterm/addon-fit'
 import { ref, onMounted, onUnmounted } from 'vue'
 
-type TuiAppInstance = ReturnType<(typeof import('@buntui/core'))['createApp']>
+type WebApp = Awaited<ReturnType<(typeof import('@buntui/playground-wasm'))['createWebApp']>>
 
 const termRef = ref<HTMLDivElement | null>(null)
 
 let term: Terminal | undefined
 let fitAddon: FitAddon | undefined
-let app: TuiAppInstance | undefined
+let app: WebApp | undefined
 
 function handleResize() {
     fitAddon?.fit()
@@ -19,13 +19,11 @@ onMounted(async () => {
     const [
         { Terminal: XTerm },
         { FitAddon: FitAddonCtor },
-        { createApp, HtmlBackend, WasmModule, animationFrameScheduler },
-        { App: TuiApp },
+        { createWebApp },
     ] = await Promise.all([
         import('@xterm/xterm'),
         import('@xterm/addon-fit'),
-        import('@buntui/core'),
-        import('@buntui/playground-wasm/dist/main.js'),
+        import('@buntui/playground-wasm'),
     ])
 
     term = new XTerm({
@@ -38,28 +36,9 @@ onMounted(async () => {
     fitAddon.fit()
     window.addEventListener('resize', handleResize)
 
-    const wasm = new WasmModule()
-    const wasmUrl = `${import.meta.env.BASE_URL}buntui.wasm`
-    await wasm.load(fetch(wasmUrl))
-
-    const backend = new HtmlBackend({
-        terminal: term,
-        wasmModule: wasm,
-        isTextInputFocused: () => {
-            const w = app?.focusedWidget
-            return w !== null && w !== undefined && 'getSelection' in w
-        },
+    app = await createWebApp(term, {
+        wasmUrl: `${import.meta.env.BASE_URL}buntui.wasm`,
     })
-    app = createApp({
-        backend,
-        logLevel: 'info',
-        tickRate: 60,
-        renderRate: 30,
-        scheduler: animationFrameScheduler,
-    })
-
-    app.createScene(TuiApp, { visible: true })
-    app.start()
 })
 
 onUnmounted(() => {

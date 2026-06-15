@@ -1,13 +1,8 @@
 import '@xterm/xterm/css/xterm.css';
 import {Terminal} from '@xterm/xterm';
 import {FitAddon} from '@xterm/addon-fit';
-import {
-  createApp,
-  HtmlBackend,
-  WasmModule,
-  animationFrameScheduler,
-  type TuiSFCModule,
-} from '@buntui/core';
+import {type TuiSFCModule} from '@buntui/core';
+import {createWebApp} from './web-api';
 
 declare const BUNTUI_APP_NAME: string;
 
@@ -32,27 +27,4 @@ window.addEventListener('resize', () => {
   fitAddon.fit();
 });
 
-const wasm = new WasmModule();
-await wasm.load(fetch('/buntui.wasm'));
-
-let app: ReturnType<typeof createApp> | undefined; // eslint-disable-line prefer-const
-
-const backend = new HtmlBackend({
-  terminal: term,
-  wasmModule: wasm,
-  isTextInputFocused() {
-    const w = app?.focusedWidget;
-    return w !== null && w !== undefined && 'getSelection' in w;
-  },
-});
-
-app = createApp({
-  backend,
-  logLevel: 'debug',
-  tickRate: 60,
-  renderRate: 30,
-  scheduler: animationFrameScheduler,
-});
-
-app.createScene(App, {visible: true});
-app.start();
+await createWebApp(term, App, {wasmUrl: '/buntui.wasm', logLevel: 'debug'});
