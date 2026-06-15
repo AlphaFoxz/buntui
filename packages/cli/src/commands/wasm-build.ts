@@ -5,42 +5,18 @@ import {binaryPath} from '@buntui/native-wasm32-wasi';
 import {listApps, getDistDir, getCwd} from '../lib/app-resolver.ts';
 import {createVuePlugin} from '../lib/vue-plugin.ts';
 
+function readTemplate(name: string): string {
+  return fs.readFileSync(path.join(import.meta.dir, 'templates', name), 'utf8');
+}
+
 function generateEntryContent(entryPath: string, webRuntimePath: string | undefined): string {
   if (!webRuntimePath) {
     return `export {default as App} from ${JSON.stringify(entryPath)};\n`;
   }
 
-  return [
-    `import App from ${JSON.stringify(entryPath)};`,
-    `import {createWebApp as createWebAppImpl, type WebAppOptions} from ${JSON.stringify(webRuntimePath)};`,
-    'import type {TerminalLike} from \'@buntui/core\';',
-    '',
-    'export {App};',
-    'export async function createWebApp(terminal: TerminalLike, options: WebAppOptions) {',
-    '  return createWebAppImpl(terminal, App, options);',
-    '}',
-    '',
-  ].join('\n');
-}
-
-function generateDtsContent(hasWebRuntime: boolean): string {
-  if (!hasWebRuntime) {
-    return 'import type {TuiSFCModule} from \'@buntui/core\';\n\ndeclare const App: TuiSFCModule;\nexport {App};\n';
-  }
-
-  return [
-    'import type {TerminalLike, TuiApp, TuiSFCModule} from \'@buntui/core\';',
-    '',
-    'export interface WebAppOptions {',
-    '  wasmUrl: string;',
-    '  logLevel?: \'debug\' | \'info\' | \'warn\' | \'error\';',
-    '}',
-    '',
-    'declare const App: TuiSFCModule;',
-    'declare function createWebApp(terminal: TerminalLike, options: WebAppOptions): Promise<TuiApp>;',
-    'export {App, createWebApp};',
-    '',
-  ].join('\n');
+  return readTemplate('wasm-entry.ts')
+    .replaceAll('\'__APP_PATH__\'', JSON.stringify(entryPath))
+    .replaceAll('\'__WEB_API_PATH__\'', JSON.stringify(webRuntimePath));
 }
 
 async function buildApp(appName: string, distDir: string, cwd: string): Promise<void> {
@@ -87,9 +63,17 @@ async function buildApp(appName: string, distDir: string, cwd: string): Promise<
 
 function generateDts(appName: string, distDir: string, cwd: string): void {
   const webApiPath = path.join(cwd, 'src', 'web-api.ts');
-  const hasWebRuntime = fs.existsSync(webApiPath);
-  const dtsContent = generateDtsContent(hasWebRuntime);
-  fs.writeFileSync(path.join(distDir, `${appName}.d.ts`), dtsContent);
+
+  if (!fs.existsSync(webApiPath)) {
+    const fallback = 'import type {TuiSFCModule} from \'@buntui/core\';\n\ndeclare const App: TuiSFCModule;\nexport {App};\n';
+    fs.writeFileSync(path.join(distDir, `${appName}.d.ts`), fallback);
+    return;
+  }
+
+  const relativePath = path.relative(distDir, webApiPath).replaceAll('\\', '/').replace(/\.ts$/, '');
+  const content = readTemplate('wasm-entry.d.ts')
+    .replaceAll('\'__WEB_API_DTS_PATH__\'', JSON.stringify(relativePath));
+  fs.writeFileSync(path.join(distDir, `${appName}.d.ts`), content);
 }
 
 export async function wasmBuildCommand(): Promise<void> {

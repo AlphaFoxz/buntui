@@ -36,8 +36,8 @@ export async function createWebApp(
   ref.app = createApp({
     backend,
     logLevel: options.logLevel ?? 'info',
-    tickRate: 60,
-    renderRate: 30,
+    tickRate: 30,
+    renderRate: 24,
     scheduler: animationFrameScheduler,
   });
 
@@ -46,3 +46,14 @@ export async function createWebApp(
 
   return ref.app;
 }
+
+export const RECOMMENDED_FONTS = [
+  'Fira Code',
+  'Cascadia Code',
+  'SF Mono',
+  'Menlo',
+  'Consolas',
+  'Liberation Mono',
+  'Courier New',
+  'monospace',
+] as const;

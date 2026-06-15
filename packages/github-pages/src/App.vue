@@ -16,18 +16,14 @@ function handleResize() {
 }
 
 onMounted(async () => {
-    const [
-        { Terminal: XTerm },
-        { FitAddon: FitAddonCtor },
-        { createWebApp },
-    ] = await Promise.all([
+    const [{ Terminal: XTerm }, { FitAddon: FitAddonCtor }, { createWebApp, RECOMMENDED_FONTS }] = await Promise.all([
         import('@xterm/xterm'),
         import('@xterm/addon-fit'),
         import('@buntui/playground-wasm'),
     ])
 
     term = new XTerm({
-        fontFamily: 'Cascadia Code, SF Mono, Menlo, Consolas, Liberation Mono, Courier New, monospace',
+        fontFamily: RECOMMENDED_FONTS.join(', '),
         cursorBlink: true,
     })
     fitAddon = new FitAddonCtor()

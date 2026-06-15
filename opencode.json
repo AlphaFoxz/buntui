@@ -11,7 +11,9 @@
     "permission": {
         "bash": {
             "*": "ask",
+            "echo *": "ask",
             "bun *": "allow",
+            "bun -e *": "allow",
             "bunx *": "allow",
             "ffmpeg *": "allow",
             "gh *": "allow",
@@ -24,7 +26,8 @@
             "yt-dlp *": "allow",
             "zig *": "allow",
             "Select-String *": "allow",
-            "Select-Object *": "allow"
+            "Select-Object *": "allow",
+            "New-Item *": "allow"
         }
     }
 }

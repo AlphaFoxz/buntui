@@ -6,8 +6,8 @@ export const DEFAULT_APP_OPTIONS = {
   logLevel: 'debug' as const,
   clearLog: true,
   debugMode: true,
-  tickRate: 60,
-  renderRate: 48,
+  tickRate: 30,
+  renderRate: 24,
 };
 
 export const DEFAULT_COMPILE_OPTIONS: CompileOptions = {

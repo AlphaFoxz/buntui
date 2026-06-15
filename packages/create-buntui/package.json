@@ -1,6 +1,6 @@
 {
     "name": "create-buntui",
-    "version": "0.1.0-alpha.5",
+    "version": "0.1.0-alpha.6",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/AlphaFoxz/buntui.git",
@@ -20,7 +20,7 @@
     "dependencies": {
         "@buntui/cli": "workspace:*",
         "@buntui/core": "workspace:*",
-        "@vue/reactivity": "^3.5.35"
+        "@vue/reactivity": "^3.5.38"
     },
     "devDependencies": {
         "@types/bun": "1.3.14"

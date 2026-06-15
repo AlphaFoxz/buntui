@@ -4,7 +4,7 @@ export default defineConfig({
   app: {
     logLevel: 'info',
     clearLog: true,
-    tickRate: 120,
-    renderRate: 60,
+    tickRate: 30,
+    renderRate: 24,
   },
 });

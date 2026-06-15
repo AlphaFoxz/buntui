@@ -36,8 +36,8 @@ export async function createWebApp(
   ref.app = createApp({
     backend,
     logLevel: options.logLevel ?? 'info',
-    tickRate: 60,
-    renderRate: 30,
+    tickRate: 30,
+    renderRate: 24,
     scheduler: animationFrameScheduler,
   });
 

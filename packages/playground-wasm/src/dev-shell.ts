@@ -2,7 +2,7 @@ import '@xterm/xterm/css/xterm.css';
 import {Terminal} from '@xterm/xterm';
 import {FitAddon} from '@xterm/addon-fit';
 import {type TuiSFCModule} from '@buntui/core';
-import {createWebApp} from './web-api';
+import {createWebApp, RECOMMENDED_FONTS} from './web-api';
 
 declare const BUNTUI_APP_NAME: string;
 
@@ -14,7 +14,7 @@ const App: TuiSFCModule = (await import(`./apps/${appName}/App.vue`)).default;
 const termElement: HTMLElement = document.querySelector('#terminal')!;
 
 const term = new Terminal({
-  fontFamily: 'Cascadia Code, Fira Code, SF Mono, Menlo, Consolas, Liberation Mono, Courier New, monospace',
+  fontFamily: RECOMMENDED_FONTS.join(', '),
   cursorBlink: true,
 });
 

@@ -1,6 +1,6 @@
 {
     "name": "@buntui/compiler",
-    "version": "0.1.0-alpha.5",
+    "version": "0.1.0-alpha.6",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/AlphaFoxz/buntui.git",
@@ -27,10 +27,10 @@
         "build": "tsc --project ./tsconfig.json"
     },
     "dependencies": {
-        "@vue/compiler-core": "^3.5.35",
-        "@vue/compiler-sfc": "^3.5.35",
-        "@vue/reactivity": "^3.5.35",
-        "@vue/shared": "^3.5.35",
+        "@vue/compiler-core": "^3.5.38",
+        "@vue/compiler-sfc": "^3.5.38",
+        "@vue/reactivity": "^3.5.38",
+        "@vue/shared": "^3.5.38",
         "sucrase": "^3.35.1"
     },
     "devDependencies": {

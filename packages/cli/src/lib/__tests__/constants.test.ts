@@ -10,8 +10,8 @@ it('DEFAULT_APP_OPTIONS has expected defaults', () => {
     logLevel: 'debug',
     clearLog: true,
     debugMode: true,
-    tickRate: 60,
-    renderRate: 48,
+    tickRate: 30,
+    renderRate: 24,
   });
 });
 

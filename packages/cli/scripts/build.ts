@@ -76,6 +76,16 @@ if (!result.success) {
 
 fs.copyFileSync(path.join(rootDir, 'package.json'), path.join(distDir, 'package.json'));
 
+const templatesSrc = path.join(rootDir, 'templates');
+if (fs.existsSync(templatesSrc)) {
+    const templatesDest = path.join(distDir, 'templates');
+    fs.mkdirSync(templatesDest, {recursive: true});
+    for (const file of fs.readdirSync(templatesSrc)) {
+        fs.copyFileSync(path.join(templatesSrc, file), path.join(templatesDest, file));
+        console.log(`  templates/${file} (copied)`);
+    }
+}
+
 for (const output of result.outputs) {
     const name = path.basename(output.path);
     console.log(`  ${name} (${(output.size / 1024).toFixed(1)} KB)`);

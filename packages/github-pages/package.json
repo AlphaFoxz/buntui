@@ -1,6 +1,6 @@
 {
     "name": "github-pages",
-    "version": "0.1.0-alpha.5",
+    "version": "0.1.0-alpha.6",
     "private": true,
     "type": "module",
     "scripts": {
@@ -17,7 +17,7 @@
         "@buntui/playground-wasm": "workspace:*",
         "@xterm/addon-fit": "^0.11.0",
         "@xterm/xterm": "^6.0.0",
-        "vue": "^3.5.35",
+        "vue": "^3.5.38",
         "vue-router": "^5.1.0"
     },
     "devDependencies": {
@@ -32,7 +32,7 @@
         "npm-run-all2": "^8.0.4",
         "typescript": "~6.0.3",
         "vite": "^8.0.16",
-        "vitest": "^4.1.8",
+        "vitest": "^4.1.9",
         "vue-tsc": "^3.3.3"
     },
     "engines": {

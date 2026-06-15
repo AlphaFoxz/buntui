@@ -6,8 +6,8 @@ const config = defineConfig({
     clearLog: true,
     debugMode: true,
     quitOnQ: true,
-    tickRate: 60,
-    renderRate: 48,
+    tickRate: 30,
+    renderRate: 24,
   },
 });
 

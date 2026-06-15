@@ -11,6 +11,7 @@ const expose: FlatXoConfig = [
       '**/dist/**',
       'designs/**',
       '**/scripts/**',
+      'packages/cli/templates/**',
       // 'packages/create-buntui/templates/**',
       'packages/github-pages/**',
       'xo.config.ts'
@@ -110,7 +111,7 @@ const expose: FlatXoConfig = [
       '@typescript-eslint/no-unsafe-member-access': 'off',
       '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
-      '@typescript-eslint/no-unsafe-assignmen': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
     },
   },
 ];
