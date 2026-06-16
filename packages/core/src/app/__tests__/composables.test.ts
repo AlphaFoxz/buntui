@@ -1,7 +1,22 @@
 import {it, expect, describe} from 'bun:test';
-import {onTick, onMounted, onUnmounted, useTemplateRef} from '../composables';
+import {onTick, onMounted, onUnmounted, useTemplateRef, useApp} from '../composables';
 import {runSetup, getCurrentScene} from '../scene-context';
 import {TuiScene} from '../../extern/app/TuiScene';
+import {createApp, type TuiSFCModule} from '../index';
+import type {TuiBackend, TuiBackendEventHandler} from '../TuiBackend';
+import type {LogLevel} from '../../extern/app/types';
+import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {TuiContextLike} from '../../extern/app/TuiContext';
+
+class MockBackend implements TuiBackend {
+  setupLogger(_logFileDir: string, _logName: string, _logLevel: LogLevel, _clearLog: boolean): void {}
+  startApp(): void {}
+  stopApp(): void {}
+  detectTermSize(_context: TuiContextLike): void {}
+  renderDrawList(_context: TuiContextLike, _buffer: DrawListBuffer): void {}
+  startEvents(_handler: TuiBackendEventHandler): void {}
+  stopEvents(): void {}
+}
 
 describe('onTick', () => {
   it('registers tick handler on scene', () => {
@@ -131,5 +146,29 @@ describe('useTemplateRef', () => {
       r.value = {kind: 'widget'};
       expect(r.value!.kind).toBe('widget');
     });
+  });
+});
+
+describe('useApp', () => {
+  it('throws when called outside setup', () => {
+    expect(() => useApp()).toThrow('useApp() must be called during scene setup()');
+  });
+
+  it('returns an object with dispose, stop, and scene during setup', () => {
+    const app = createApp({backend: new MockBackend()});
+    let captured: ReturnType<typeof useApp> | undefined;
+    let setupScene: TuiScene | undefined;
+    const module: TuiSFCModule = {
+      setup(scene) {
+        setupScene = scene;
+        captured = useApp();
+      },
+    };
+    app.createScene(module);
+    expect(captured).toBeDefined();
+    expect(typeof captured!.dispose).toBe('function');
+    expect(typeof captured!.stop).toBe('function');
+    expect(captured!.scene).toBe(setupScene);
+    captured!.dispose();
   });
 });

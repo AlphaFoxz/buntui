@@ -1,6 +1,8 @@
 import {it, expect, describe} from 'bun:test';
 import {SwitchWidget} from '../SwitchWidget';
 import type {KeyboardEvent} from '../../../events/types';
+import type {DrawListBuffer} from '../../../draw_list/DrawListBuffer';
+import {parseColor} from '../../../utils/color';
 
 function key(options: Partial<KeyboardEvent> & {key: string}): KeyboardEvent {
   return {
@@ -227,5 +229,163 @@ describe('unmounted', () => {
     sw.focus();
     sw.unmounted();
     expect(blurred).toBe(true);
+  });
+});
+
+describe('intrinsicSize', () => {
+  it('returns the current rect dimensions', () => {
+    const sw = createSwitch({width: 20, height: 3});
+    expect(sw.intrinsicSize()).toEqual({width: 20, height: 3});
+  });
+
+  it('reflects updateRect changes', () => {
+    const sw = createSwitch({width: 12, height: 1});
+    sw.updateRect({width: 30, height: 2});
+    expect(sw.intrinsicSize()).toEqual({width: 30, height: 2});
+  });
+});
+
+type Captured = {
+  rects: Array<{x: number; y: number; width: number; height: number; bgRgba: number}>;
+  texts: Array<{x: number; y: number; text: string; fgRgba: number; bgRgba: number}>;
+  borders: Array<{x: number; y: number; width: number; height: number; colorRgba: number; style: number}>;
+  pushClips: number;
+  popClips: number;
+};
+
+function capture(): {buf: DrawListBuffer; captured: Captured} {
+  const captured: Captured = {rects: [], texts: [], borders: [], pushClips: 0, popClips: 0};
+  const buf = {
+    drawRect: (opts: {x: number; y: number; width: number; height: number; bgRgba: number}) => {
+      captured.rects.push(opts);
+    },
+    drawText: (opts: {x: number; y: number; text: string; fgRgba: number; bgRgba: number}) => {
+      captured.texts.push(opts);
+    },
+    drawBorder: (opts: {x: number; y: number; width: number; height: number; colorRgba: number; style: number}) => {
+      captured.borders.push(opts);
+    },
+    pushClip: () => {
+      captured.pushClips++;
+    },
+    popClip: () => {
+      captured.popClips++;
+    },
+    drawFill: () => {},
+    drawLine: () => {},
+    drawChar: () => {},
+    drawShadow: () => {},
+    setBackground: () => {},
+    setSynchronizedUpdate: () => {},
+    hideCursor: () => {},
+    showCursor: () => {},
+    setCursorMode: () => {},
+    setTitle: () => {},
+    setEntityId: () => {},
+  } as unknown as DrawListBuffer;
+  return {buf, captured};
+}
+
+describe('emitDrawCommands', () => {
+  it('emits nothing when width is zero', () => {
+    const sw = createSwitch({width: 0});
+    const {buf, captured} = capture();
+    sw.emitDrawCommands(buf);
+    expect(captured.rects).toHaveLength(0);
+    expect(captured.pushClips).toBe(0);
+  });
+
+  it('emits nothing when height is zero', () => {
+    const sw = createSwitch({height: 0});
+    const {buf, captured} = capture();
+    sw.emitDrawCommands(buf);
+    expect(captured.rects).toHaveLength(0);
+  });
+
+  it('pushes and pops a clip in a pair', () => {
+    const sw = createSwitch();
+    const {buf, captured} = capture();
+    sw.emitDrawCommands(buf);
+    expect(captured.pushClips).toBe(1);
+    expect(captured.popClips).toBe(1);
+  });
+
+  it('emits the toggle glyphs (✗ | ✓) without a label', () => {
+    const sw = createSwitch();
+    const {buf, captured} = capture();
+    sw.emitDrawCommands(buf);
+    expect(captured.rects).toHaveLength(1);
+    expect(captured.texts.map(t => t.text).join('')).toBe('✗|✓');
+  });
+
+  it('emits a fourth text command when a label is present', () => {
+    const sw = createSwitch({label: 'Dark mode', width: 20});
+    const {buf, captured} = capture();
+    sw.emitDrawCommands(buf);
+    expect(captured.texts).toHaveLength(4);
+    expect(captured.texts[3]!.text).toBe('Dark mode');
+  });
+
+  it('omits the label text when there is no room for it', () => {
+    const sw = createSwitch({label: 'Too long', width: 4});
+    const {buf, captured} = capture();
+    sw.emitDrawCommands(buf);
+    expect(captured.texts).toHaveLength(3);
+  });
+
+  it('omits the focus border when not focused', () => {
+    const sw = createSwitch();
+    const {buf, captured} = capture();
+    sw.emitDrawCommands(buf);
+    expect(captured.borders).toHaveLength(0);
+  });
+
+  it('omits the focus border when focused but borderStyle is none', () => {
+    const sw = createSwitch();
+    sw.updateThemeColors({borderStyleFocused: 'none'});
+    sw.focus();
+    const {buf, captured} = capture();
+    sw.emitDrawCommands(buf);
+    expect(captured.borders).toHaveLength(0);
+  });
+
+  it('emits the focus border with the themed color when focused', () => {
+    const sw = createSwitch();
+    sw.updateThemeColors({borderStyleFocused: 'solid', colorBorderFocused: '#aabbcc'});
+    sw.focus();
+    const {buf, captured} = capture();
+    sw.emitDrawCommands(buf);
+    expect(captured.borders).toHaveLength(1);
+    expect(captured.borders[0]!.colorRgba).toBe(parseColor('#aabbcc'));
+    expect(captured.borders[0]!.style).toBe(1);
+  });
+
+  it('omits the focus border when disabled even if focused', () => {
+    const sw = createSwitch();
+    sw.updateThemeColors({borderStyleFocused: 'solid'});
+    sw.focus();
+    sw.setDisabled(true);
+    const {buf, captured} = capture();
+    sw.emitDrawCommands(buf);
+    expect(captured.borders).toHaveLength(0);
+  });
+});
+
+describe('updateThemeColors', () => {
+  it('updates the normal background color rendered in the default state', () => {
+    const sw = createSwitch();
+    sw.updateThemeColors({colorBgNormal: '#ff0000'});
+    const {buf, captured} = capture();
+    sw.emitDrawCommands(buf);
+    expect(captured.rects[0]!.bgRgba).toBe(parseColor('#ff0000'));
+  });
+
+  it('updates only the focused border color when only that key is provided', () => {
+    const sw = createSwitch();
+    sw.updateThemeColors({colorBorderFocused: '#123456', borderStyleFocused: 'solid'});
+    sw.focus();
+    const {buf, captured} = capture();
+    sw.emitDrawCommands(buf);
+    expect(captured.borders[0]!.colorRgba).toBe(parseColor('#123456'));
   });
 });

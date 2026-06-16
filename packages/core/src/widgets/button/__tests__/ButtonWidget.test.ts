@@ -1,6 +1,8 @@
 import {it, expect, describe} from 'bun:test';
 import {ButtonWidget} from '../ButtonWidget';
 import type {KeyboardEvent, MouseEvent} from '../../../events/types';
+import type {DrawListBuffer} from '../../../draw_list/DrawListBuffer';
+import {parseColor} from '../../../utils/color';
 
 function key(options: Partial<KeyboardEvent> & {key: string}): KeyboardEvent {
   return {
@@ -248,5 +250,176 @@ describe('unmounted', () => {
     button.focus();
     button.unmounted();
     expect(blurred).toBe(true);
+  });
+});
+
+describe('intrinsicSize', () => {
+  it('returns the current rect dimensions', () => {
+    const button = createButton({width: 17, height: 5});
+    const size = button.intrinsicSize();
+    expect(size).toEqual({width: 17, height: 5});
+  });
+
+  it('reflects updateRect changes', () => {
+    const button = createButton({width: 10, height: 3});
+    button.updateRect({width: 42, height: 7});
+    expect(button.intrinsicSize()).toEqual({width: 42, height: 7});
+  });
+});
+
+type Captured = {
+  rects: Array<{x: number; y: number; width: number; height: number; bgRgba: number}>;
+  texts: Array<{x: number; y: number; text: string; fgRgba: number; bgRgba: number}>;
+  borders: Array<{x: number; y: number; width: number; height: number; colorRgba: number; style: number}>;
+  pushClips: number;
+  popClips: number;
+};
+
+function capture(): {buf: DrawListBuffer; captured: Captured} {
+  const captured: Captured = {rects: [], texts: [], borders: [], pushClips: 0, popClips: 0};
+  const buf = {
+    drawRect: (opts: {x: number; y: number; width: number; height: number; bgRgba: number}) => {
+      captured.rects.push(opts);
+    },
+    drawText: (opts: {x: number; y: number; text: string; fgRgba: number; bgRgba: number}) => {
+      captured.texts.push(opts);
+    },
+    drawBorder: (opts: {x: number; y: number; width: number; height: number; colorRgba: number; style: number}) => {
+      captured.borders.push(opts);
+    },
+    pushClip: () => {
+      captured.pushClips++;
+    },
+    popClip: () => {
+      captured.popClips++;
+    },
+    drawFill: () => {},
+    drawLine: () => {},
+    drawChar: () => {},
+    drawShadow: () => {},
+    setBackground: () => {},
+    setSynchronizedUpdate: () => {},
+    hideCursor: () => {},
+    showCursor: () => {},
+    setCursorMode: () => {},
+    setTitle: () => {},
+    setEntityId: () => {},
+  } as unknown as DrawListBuffer;
+  return {buf, captured};
+}
+
+describe('emitDrawCommands', () => {
+  it('emits nothing when width or height is zero', () => {
+    const button = createButton({width: 0, height: 3});
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.rects).toHaveLength(0);
+    expect(captured.pushClips).toBe(0);
+  });
+
+  it('emits nothing when height is zero', () => {
+    const button = createButton({width: 10, height: 0});
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.rects).toHaveLength(0);
+  });
+
+  it('always pushes and pops a clip in a pair', () => {
+    const button = createButton();
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.pushClips).toBe(1);
+    expect(captured.popClips).toBe(1);
+  });
+
+  it('emits exactly one background rect', () => {
+    const button = createButton({value: 'Hi'});
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.rects).toHaveLength(1);
+    expect(captured.rects[0]!.x).toBe(0);
+  });
+
+  it('emits a text command when value is non-empty', () => {
+    const button = createButton({value: 'OK'});
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.texts).toHaveLength(1);
+    expect(captured.texts[0]!.text).toBe('OK');
+  });
+
+  it('omits the text command when value is empty', () => {
+    const button = createButton({value: ''});
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.texts).toHaveLength(0);
+  });
+
+  it('omits the border when borderStyle is none (0)', () => {
+    const button = createButton();
+    button.updateNormalStyle({borderStyleNormal: 'none'});
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.borders).toHaveLength(0);
+  });
+
+  it('emits a border when borderStyle is set', () => {
+    const button = createButton();
+    button.updateNormalStyle({borderStyleNormal: 'solid'});
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.borders).toHaveLength(1);
+    expect(captured.borders[0]!.style).toBe(1);
+  });
+
+  it('renders with the updated normal-state background and foreground', () => {
+    const button = createButton({value: 'X'});
+    button.updateNormalStyle({colorBgNormal: '#ff0000', colorFgNormal: '#00ff00'});
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.rects[0]!.bgRgba).toBe(parseColor('#ff0000'));
+    expect(captured.texts[0]!.fgRgba).toBe(parseColor('#00ff00'));
+  });
+});
+
+describe('updateNormalStyle', () => {
+  it('updates normal border color rendered in the default state', () => {
+    const button = createButton();
+    button.updateNormalStyle({colorBorderNormal: '#0000ff', borderStyleNormal: 'solid'});
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.borders[0]!.colorRgba).toBe(parseColor('#0000ff'));
+  });
+
+  it('ignores undefined option fields', () => {
+    const button = createButton();
+    button.updateNormalStyle({borderStyleNormal: 'solid'});
+    button.updateNormalStyle({colorFgNormal: undefined});
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.borders).toHaveLength(1);
+  });
+});
+
+describe('updateHoveredStyle', () => {
+  it('updates hovered-state background rendered while hovered', () => {
+    const button = createButton({value: 'X'});
+    button.updateHoveredStyle({colorBgHovered: '#112233', borderStyleHovered: 'none'});
+    button.dispatch('mouseover', mouse({x: 1, y: 1}));
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.rects[0]!.bgRgba).toBe(parseColor('#112233'));
+  });
+});
+
+describe('updatePressedStyle', () => {
+  it('updates pressed-state background rendered while pressed', () => {
+    const button = createButton({value: 'X'});
+    button.updatePressedStyle({colorBgPressed: '#445566', borderStylePressed: 'none'});
+    button.dispatch('mouseover', mouse({x: 1, y: 1}));
+    button.dispatch('mousedown', mouse({x: 1, y: 1}));
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.rects[0]!.bgRgba).toBe(parseColor('#445566'));
   });
 });

@@ -13,7 +13,6 @@
             "*": "ask",
             "echo *": "ask",
             "bun *": "allow",
-            "bun -e *": "allow",
             "bunx *": "allow",
             "ffmpeg *": "allow",
             "gh *": "allow",
