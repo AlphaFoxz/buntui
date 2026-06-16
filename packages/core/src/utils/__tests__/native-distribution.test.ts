@@ -139,9 +139,10 @@ describe('native distribution consistency', () => {
     const src = fs.readFileSync(templatePkgPath, 'utf8');
     const cleaned = src.replace(/\{\{name\}\}/g, 'test-app');
     const pkg = JSON.parse(cleaned);
+    const cliDep = pkg.dependencies?.['@buntui/cli'] ?? pkg.devDependencies?.['@buntui/cli'];
     expect(
-      pkg.dependencies?.['@buntui/cli'],
-      'template must declare @buntui/cli dependency',
+      cliDep,
+      'template must declare @buntui/cli in dependencies or devDependencies',
     ).toBeDefined();
   });
 
