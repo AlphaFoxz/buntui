@@ -4,7 +4,7 @@ import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import type {MouseEvent} from '../../events/types';
 import {isFocusable, type Focusable} from '../../widgets/Focusable';
 import {type TuiWidgetEntity} from '../../widgets/TuiWidgetEntity';
-import {getTheme, onThemeChange} from '../../theme/provider';
+import {getTheme, onThemeChange} from '../../theme/store';
 import type {Entity} from '../types';
 import {OverlayManager} from '../../overlay/OverlayManager';
 import {type TuiSceneOptions} from './types';

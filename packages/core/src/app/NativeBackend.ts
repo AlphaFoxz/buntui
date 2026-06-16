@@ -44,11 +44,18 @@ function createFfiSymbols() {
 }
 
 type FfiSymbols = ReturnType<typeof createFfiSymbols>;
-let cachedSymbols: FfiSymbols | undefined;
 
-function loadLib(): FfiSymbols {
-  cachedSymbols ??= createFfiSymbols();
-  return cachedSymbols;
+function useSymbols() {
+  let cachedSymbols: FfiSymbols | undefined;
+  return () => {
+    cachedSymbols ??= createFfiSymbols();
+    return cachedSymbols;
+  };
+}
+
+function useLib() {
+  const excutable = useSymbols();
+  return excutable();
 }
 
 export class NativeBackend implements TuiBackend {
@@ -57,30 +64,30 @@ export class NativeBackend implements TuiBackend {
   setupLogger(logFileDir: string, backendLogName: string, logLevel: LogLevel, clearLog: boolean): void {
     const logLevelValue = logLevelToNumber(logLevel);
 
-    loadLib().setupLogger(toCstring(logFileDir), toCstring(backendLogName), logLevelValue, clearLog ? 1 : 0);
+    useLib().setupLogger(toCstring(logFileDir), toCstring(backendLogName), logLevelValue, clearLog ? 1 : 0);
   }
 
   startApp(): void {
-    loadLib().startApp();
+    useLib().startApp();
   }
 
   stopApp(): void {
-    loadLib().stopApp();
+    useLib().stopApp();
   }
 
   detectTermSize(context: TuiContextLike): void {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    loadLib().detectTermSize((context as unknown as CStruct).ptr as BunPointer);
+    useLib().detectTermSize((context as unknown as CStruct).ptr as BunPointer);
   }
 
   renderDrawList(context: TuiContextLike, drawListBuffer: DrawListBuffer): void {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
-    loadLib().renderDrawList((context as unknown as CStruct).ptr, drawListBuffer.ptr, drawListBuffer.byteLength);
+    useLib().renderDrawList((context as unknown as CStruct).ptr, drawListBuffer.ptr, drawListBuffer.byteLength);
   }
 
   startEvents(handler: TuiBackendEventHandler): void {
     this.#eventRunning = true;
-    const lib = loadLib();
+    const lib = useLib();
 
     const consume = () => {
       if (!this.#eventRunning) {

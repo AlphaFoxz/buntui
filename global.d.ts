@@ -1,7 +1,7 @@
 export {};
 
 declare global {
-  function isNever(...args: never[]): void;
+  function assertNever(...args: never[]): never;
 
   type U8 = number & {};
   type U16 = number & {};

@@ -8,8 +8,8 @@ import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
-import {resolveThemedOverrides} from '../../theme/themed-color';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
+import {resolveThemedOverrides} from '../../theme/color-ref';
 import type {TableColumn, TableRow, TableWidgetOptions} from './types';
 
 type TableColors = {
@@ -19,6 +19,8 @@ type TableColors = {
   colorHeaderFg: number;
   colorHeaderBg: number;
 };
+
+type TableExtraColors = {headerFg: number; headerBg: number; selectionBg: number; selectionFg: number; scrollbar: number; scrollbarTrack: number};
 
 const TABLE_TOKEN_MAP = {
   colorFgNormal: 'text',
@@ -68,12 +70,7 @@ export class TableWidget extends InteractiveWidget {
 
   readonly #colors: ColorScheme<TableColors>;
   #borderStyle: number;
-  #colorHeaderFg: number;
-  #colorHeaderBg: number;
-  #colorSelectionBg: number;
-  #colorSelectionFg: number;
-  #colorScrollbar: number;
-  #colorScrollbarTrack: number;
+  readonly #extraColors: TableExtraColors;
 
   #columns: ResolvedColumn[] = [];
   #rows: TableRow[] = [];
@@ -90,36 +87,37 @@ export class TableWidget extends InteractiveWidget {
     this.#height = rect.height;
     this.#colors = {
       normal: {
-        fg: parseColor(resolved.colorFgNormal!),
-        bg: parseColor(resolved.colorBgNormal!),
-        colorBorder: parseColor(resolved.colorBorder!),
-        colorHeaderFg: parseColor(resolved.colorHeaderFg!),
-        colorHeaderBg: parseColor(resolved.colorHeaderBg!),
+        fg: parseColor(resolved.colorFgNormal),
+        bg: parseColor(resolved.colorBgNormal),
+        colorBorder: parseColor(resolved.colorBorder),
+        colorHeaderFg: parseColor(resolved.colorHeaderFg),
+        colorHeaderBg: parseColor(resolved.colorHeaderBg),
       },
       focused: {
-        fg: parseColor(resolved.colorFgFocused!),
-        bg: parseColor(resolved.colorBgFocused!),
-        colorBorder: parseColor(resolved.colorBorder!),
-        colorHeaderFg: parseColor(resolved.colorHeaderFg!),
-        colorHeaderBg: parseColor(resolved.colorHeaderBg!),
+        fg: parseColor(resolved.colorFgFocused),
+        bg: parseColor(resolved.colorBgFocused),
+        colorBorder: parseColor(resolved.colorBorder),
+        colorHeaderFg: parseColor(resolved.colorHeaderFg),
+        colorHeaderBg: parseColor(resolved.colorHeaderBg),
       },
       disabled: {
-        fg: parseColor(resolved.colorFgDisabled!),
-        bg: parseColor(resolved.colorBgDisabled!),
-        colorBorder: parseColor(resolved.colorBorder!),
-        colorHeaderFg: parseColor(resolved.colorHeaderFg!),
-        colorHeaderBg: parseColor(resolved.colorHeaderBg!),
+        fg: parseColor(resolved.colorFgDisabled),
+        bg: parseColor(resolved.colorBgDisabled),
+        colorBorder: parseColor(resolved.colorBorder),
+        colorHeaderFg: parseColor(resolved.colorHeaderFg),
+        colorHeaderBg: parseColor(resolved.colorHeaderBg),
       },
     };
     this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
-    this.#colorHeaderFg = parseColor(resolved.colorHeaderFg!);
-    this.#colorHeaderBg = parseColor(resolved.colorHeaderBg!);
-    this.#colorSelectionBg = parseColor(resolved.colorSelectionBg!);
-    this.#colorSelectionFg = parseColor(resolved.colorSelectionFg!);
+    this.#extraColors = {
+      headerFg: parseColor(resolved.colorHeaderFg),
+      headerBg: parseColor(resolved.colorHeaderBg),
+      selectionBg: parseColor(resolved.colorSelectionBg),
+      selectionFg: parseColor(resolved.colorSelectionFg),
+      scrollbar: parseColor(resolved.colorScrollbar),
+      scrollbarTrack: parseColor(resolved.colorScrollbarTrack),
+    };
     this.setDisabled(resolved.disabled ?? false);
-
-    this.#colorScrollbar = parseColor(resolved.colorScrollbar!);
-    this.#colorScrollbarTrack = parseColor(resolved.colorScrollbarTrack!);
 
     if (resolved.columns) {
       this.#resolveColumns(resolved.columns);
@@ -223,27 +221,27 @@ export class TableWidget extends InteractiveWidget {
     }
 
     if (resolved.colorHeaderFg !== undefined) {
-      this.#colorHeaderFg = parseColor(resolved.colorHeaderFg);
+      this.#extraColors.headerFg = parseColor(resolved.colorHeaderFg);
     }
 
     if (resolved.colorHeaderBg !== undefined) {
-      this.#colorHeaderBg = parseColor(resolved.colorHeaderBg);
+      this.#extraColors.headerBg = parseColor(resolved.colorHeaderBg);
     }
 
     if (resolved.colorSelectionBg !== undefined) {
-      this.#colorSelectionBg = parseColor(resolved.colorSelectionBg);
+      this.#extraColors.selectionBg = parseColor(resolved.colorSelectionBg);
     }
 
     if (resolved.colorSelectionFg !== undefined) {
-      this.#colorSelectionFg = parseColor(resolved.colorSelectionFg);
+      this.#extraColors.selectionFg = parseColor(resolved.colorSelectionFg);
     }
 
     if (resolved.colorScrollbar !== undefined) {
-      this.#colorScrollbar = parseColor(resolved.colorScrollbar);
+      this.#extraColors.scrollbar = parseColor(resolved.colorScrollbar);
     }
 
     if (resolved.colorScrollbarTrack !== undefined) {
-      this.#colorScrollbarTrack = parseColor(resolved.colorScrollbarTrack);
+      this.#extraColors.scrollbarTrack = parseColor(resolved.colorScrollbarTrack);
     }
   }
 
@@ -462,8 +460,8 @@ export class TableWidget extends InteractiveWidget {
         x: drawX,
         y,
         text,
-        fgRgba: this.#colorHeaderFg,
-        bgRgba: this.#colorHeaderBg,
+        fgRgba: this.#extraColors.headerFg,
+        bgRgba: this.#extraColors.headerBg,
       });
       drawX += col.width;
     }
@@ -508,8 +506,8 @@ export class TableWidget extends InteractiveWidget {
           x: drawX,
           y: screenY,
           text: cellText,
-          fgRgba: isSelected ? this.#colorSelectionFg : colors.fg,
-          bgRgba: isSelected ? this.#colorSelectionBg : 0x00_00_00_00,
+          fgRgba: isSelected ? this.#extraColors.selectionFg : colors.fg,
+          bgRgba: isSelected ? this.#extraColors.selectionBg : 0x00_00_00_00,
         });
         drawX += col.width;
       }
@@ -564,7 +562,7 @@ export class TableWidget extends InteractiveWidget {
         x,
         y: y + row,
         char: isThumb ? 0x25_88 : 0x25_02,
-        fgRgba: isThumb ? this.#colorScrollbar : this.#colorScrollbarTrack,
+        fgRgba: isThumb ? this.#extraColors.scrollbar : this.#extraColors.scrollbarTrack,
         bgRgba: 0x00_00_00_00,
       });
     }

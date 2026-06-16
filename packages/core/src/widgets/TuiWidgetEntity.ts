@@ -1,5 +1,5 @@
 import {extractPercentSpec, isPercent} from '../utils/percent';
-import {isThemedColorRef, resolveThemedColor} from '../theme/themed-color';
+import {isThemedColorRef, resolveThemedColor} from '../theme/color-ref';
 import type {TuiThemeColors} from '../theme/types';
 import {parseColor} from '../utils/color';
 import type {DrawListBuffer} from '../draw_list/DrawListBuffer';

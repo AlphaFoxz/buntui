@@ -3,8 +3,8 @@ import type {KeyboardEvent} from '../../events/types';
 import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
-import {resolveThemedOverrides} from '../../theme/themed-color';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
+import {resolveThemedOverrides} from '../../theme/color-ref';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import type {ProgressWidgetOptions} from './types';
 
@@ -41,7 +41,6 @@ export class ProgressWidget extends InteractiveWidget {
   #max: number;
   #animOffset = 0;
   #animDirection = 1;
-  #lastTimestamp = 0;
 
   readonly #colors: ColorScheme<ProgressColors>;
 
@@ -98,7 +97,6 @@ export class ProgressWidget extends InteractiveWidget {
       this.#value = undefined;
       this.#animOffset = 0;
       this.#animDirection = 1;
-      this.#lastTimestamp = 0;
     } else {
       this.#value = this.#clamp(value);
     }
@@ -111,16 +109,12 @@ export class ProgressWidget extends InteractiveWidget {
     }
   }
 
-  override update(_dt: number): void {
+  override update(dt: number): void {
     if (this.#value !== undefined || this.disabled) {
       return;
     }
 
-    const now = Date.now();
-    const delta = this.#lastTimestamp === 0 ? 0 : (now - this.#lastTimestamp);
-    this.#lastTimestamp = now;
-
-    this.#animOffset += this.#animDirection * ProgressWidget.#ANIM_SPEED * delta / 1000;
+    this.#animOffset += this.#animDirection * ProgressWidget.#ANIM_SPEED * dt / 1000;
     if (this.#animOffset >= 1) {
       this.#animOffset = 1;
       this.#animDirection = -1;

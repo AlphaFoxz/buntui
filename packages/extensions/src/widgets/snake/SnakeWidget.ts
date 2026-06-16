@@ -3,7 +3,7 @@ import {
   type TuiWidgetRect,
   type KeyboardEvent,
   rgbToRgba,
-  widgets,
+  InteractiveWidget,
 } from '@buntui/core';
 import {DEFAULT_SNAKE_COLOR_SCHEME, DEFAULT_SNAKE_OPTIONS} from './defaults';
 import type {
@@ -23,7 +23,7 @@ const OPPOSITE: Record<SnakeDirection, SnakeDirection> = {
   right: 'left',
 };
 
-export class SnakeWidget extends widgets.InteractiveWidget {
+export class SnakeWidget extends InteractiveWidget {
   #x: number;
   #y: number;
   #width: number;
@@ -386,6 +386,10 @@ export class SnakeWidget extends widgets.InteractiveWidget {
       case 'right': {
         newX++;
         break;
+      }
+
+      default: {
+        assertNever(this.#direction);
       }
     }
 

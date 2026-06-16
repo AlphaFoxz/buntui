@@ -1,4 +1,4 @@
-import {type TuiThemedColorRef, isThemedColorRef, resolveThemedColor} from '../theme/themed-color';
+import {type TuiThemedColorRef, isThemedColorRef, resolveThemedColor} from '../theme/color-ref';
 import {colorToNumber} from './color-parser';
 
 type TuiNamedColor

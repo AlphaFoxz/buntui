@@ -36,6 +36,10 @@ export function logLevelToNumber(level: LogLevel): number {
     case 'error': {
       return LOG_LEVEL_ERROR;
     }
+
+    default: {
+      assertNever(level);
+    }
   }
 }
 

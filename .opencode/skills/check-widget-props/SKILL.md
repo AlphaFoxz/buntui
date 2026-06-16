@@ -43,7 +43,7 @@ Each widget gets a `*_PROP_HANDLERS` constant composed from relevant fragments p
 
 **TEXT_PROP_HANDLERS**: `PH_RECT`, `PH_COLOR`, `PH_STYLE`, `PH_DRAGGABLE`, `PH_VISIBLE` + `value→updateValue`, `scrollSpeed→setScrollSpeed`, `scrollPauseMs→setScrollPauseMs`
 
-**INPUT_PROP_HANDLERS**: `PH_RECT`, `PH_COLOR`, `PH_BORDER_STYLE_ONLY`, `PH_DISABLED`, `PH_VISIBLE` + `value→updateValue`, `max→setMax`, `maxLength→setMaxLength`, `placeholder→setPlaceholder`, `label→setLabel`, `readonly→setReadonly`
+**INPUT_PROP_HANDLERS**: `PH_RECT`, `PH_COLOR`, `PH_BORDER_STYLE_ONLY`, `PH_DISABLED`, `PH_VISIBLE` + `value→updateValue`, `min→setMin`, `max→setMax`, `step→setStep`, `maxLength→setMaxLength`, `placeholder→setPlaceholder`, `label→setLabel`, `readonly→setReadonly`
 
 **BUTTON_PROP_HANDLERS**: `PH_RECT`, `PH_DISABLED`, `PH_VISIBLE` + `value→updateValue`, plus 12 per-state style entries: `colorFgNormal→updateNormalStyle`, `colorBgNormal→updateNormalStyle`, `colorBorderNormal→updateNormalStyle`, `borderStyleNormal→updateNormalStyle`, `colorFgHovered→updateHoveredStyle`, `colorBgHovered→updateHoveredStyle`, `colorBorderHovered→updateHoveredStyle`, `borderStyleHovered→updateHoveredStyle`, `colorFgPressed→updatePressedStyle`, `colorBgPressed→updatePressedStyle`, `colorBorderPressed→updatePressedStyle`, `borderStylePressed→updatePressedStyle`
 
@@ -58,6 +58,12 @@ Each widget gets a `*_PROP_HANDLERS` constant composed from relevant fragments p
 **SCROLL_BOX_PROP_HANDLERS**: `PH_RECT`, `PH_COLOR`, `PH_BORDER_FULL`, `PH_SHADOW`, `PH_PADDING`, `PH_DISABLED`, `PH_VISIBLE` + `gap→setGap`, `alwaysShowScrollbar→setAlwaysShowScrollbar`, `colorScrollbar→setColorScrollbar`, `colorScrollbarTrack→setColorScrollbarTrack`
 
 **PROGRESS_PROP_HANDLERS**: `PH_RECT`, `PH_DISABLED`, `PH_VISIBLE` + `value→updateValue`, `max→setMax`
+
+**TEXTAREA_PROP_HANDLERS**: `PH_RECT`, `PH_COLOR`, `PH_BORDER_STYLE_ONLY`, `PH_DISABLED`, `PH_VISIBLE` + `value→updateValue`, `maxLength→setMaxLength`, `placeholder→setPlaceholder`, `label→setLabel`, `readonly→setReadonly`
+
+**TABLE_PROP_HANDLERS**: `PH_RECT`, `PH_COLOR`, `PH_BORDER_STYLE_ONLY`, `PH_DISABLED`, `PH_VISIBLE` + `columns→setColumns`, `rows→setRows`
+
+**SELECT_PROP_HANDLERS**: Inlined rect fields (`x→updateRect`, `y→updateRect`, `width→updateRect` — note: no `height`), `borderStyle→updateBorder`, `PH_DISABLED`, `PH_VISIBLE` + `value→updateValue`, `options→setOptions`, `placeholder→setPlaceholder`, `label→setLabel`. Note: Select does not spread `PH_RECT`, `PH_COLOR`, or `PH_BORDER_STYLE_ONLY` — it inlines fields individually.
 
 ### Codegen Boolean Flags
 
@@ -101,19 +107,19 @@ If a new widget class exists in `packages/core/src/widgets/` but has no entry in
 | `setPercentSpec` | TuiWidgetEntity | All widgets |
 | `setDraggable` | TuiWidgetEntity | All widgets |
 | `setVisible` | TuiWidgetEntity | All widgets |
-| `setDisabled` | InteractiveWidget | Button, Input, Checkbox, Switch, RadioGroup, SelectButton, ScrollBox, Progress |
+| `setDisabled` | InteractiveWidget | Button, Input, Checkbox, Switch, RadioGroup, SelectButton, ScrollBox, Progress, Table, Textarea, Select (all 11 InteractiveWidget subclasses) |
 | `setTabIndex` | InteractiveWidget | Same as setDisabled |
 
 ### Per-Widget Methods
 
 | Method | Widget | Notes |
 |---|---|---|
-| `updateColor` | BoxWidget, TextWidget, InputWidget, ScrollBoxWidget | InputWidget is newer addition |
-| `updateBorder` | BoxWidget, InputWidget, ScrollBoxWidget | InputWidget is newer addition |
+| `updateColor` | BoxWidget, TextWidget, InputWidget, ScrollBoxWidget, TextareaWidget, TableWidget | |
+| `updateBorder` | BoxWidget, InputWidget, ScrollBoxWidget, TextareaWidget, TableWidget, SelectWidget | |
 | `updateShadow` | BoxWidget, ScrollBoxWidget | |
 | `updatePadding` | BoxWidget, ScrollBoxWidget | |
 | `updateStyle` | BoxWidget, TextWidget | |
-| `updateValue` | TextWidget, ButtonWidget, InputWidget, ProgressWidget, SelectButtonWidget, RadioGroupWidget | |
+| `updateValue` | TextWidget, ButtonWidget, InputWidget, ProgressWidget, SelectButtonWidget, RadioGroupWidget, TextareaWidget, SelectWidget | |
 | `updateNormalStyle` | ButtonWidget | Per-state style |
 | `updateHoveredStyle` | ButtonWidget | Per-state style |
 | `updatePressedStyle` | ButtonWidget | Per-state style |
@@ -122,15 +128,19 @@ If a new widget class exists in `packages/core/src/widgets/` but has no entry in
 | `setAlign` | BoxWidget | |
 | `setScrollSpeed` | TextWidget | |
 | `setScrollPauseMs` | TextWidget | |
+| `setMin` | InputWidget | |
 | `setMax` | InputWidget, ProgressWidget | |
-| `setMaxLength` | InputWidget | |
-| `setPlaceholder` | InputWidget | |
-| `setReadonly` | InputWidget | |
-| `setLabel` | InputWidget, CheckboxWidget, SwitchWidget | |
-| `setSelectionRange` | InputWidget | Takes two params (exception to single-value convention) |
+| `setStep` | InputWidget | |
+| `setMaxLength` | InputWidget, TextareaWidget | |
+| `setPlaceholder` | InputWidget, TextareaWidget, SelectWidget | |
+| `setReadonly` | InputWidget, TextareaWidget | |
+| `setLabel` | InputWidget, CheckboxWidget, SwitchWidget, TextareaWidget, SelectWidget | |
+| `setSelectionRange` | InputWidget, TextareaWidget | Takes two params (exception to single-value convention) |
 | `setChecked` | CheckboxWidget, SwitchWidget | |
 | `setIndeterminate` | CheckboxWidget | |
-| `setOptions` | SelectButtonWidget, RadioGroupWidget | Also handles `tabs` prop |
+| `setOptions` | SelectButtonWidget, RadioGroupWidget, SelectWidget, TableWidget | Also handles `tabs` prop on SelectButton/RadioGroup. TableWidget signature differs: `setOptions({columns?, rows?})` |
+| `setColumns` | TableWidget | |
+| `setRows` | TableWidget | |
 | `setAlwaysShowScrollbar` | ScrollBoxWidget | |
 | `setColorScrollbar` | ScrollBoxWidget | |
 | `setColorScrollbarTrack` | ScrollBoxWidget | |
@@ -160,8 +170,15 @@ setGap(gap: number): void {
 
 Run this check via:
 ```bash
-bun run --cwd ./packages/core test -- packages/core/src/widgets/**/__tests__/*.test.ts
-bun run --cwd ./packages/compiler test -- packages/compiler/src/__tests__/*.test.ts
+bun run test:ts
 ```
+
+Or target specific test suites from the repository root:
+```bash
+bun test packages/core/src/widgets
+bun test packages/compiler/src/__tests__
+```
+
+Note: Per-package `bun run --cwd ./packages/core test` also works (runs `bun test` in that directory), but path filters must be relative to the package directory (e.g. `src/widgets`), not the repo root.
 
 Consider adding a dedicated test file `packages/compiler/src/__tests__/widget-props-consistency.test.ts` that programmatically verifies the mappings.

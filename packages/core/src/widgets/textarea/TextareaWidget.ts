@@ -8,12 +8,13 @@ import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
-import {resolveThemedOverrides} from '../../theme/themed-color';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
+import {resolveThemedOverrides} from '../../theme/color-ref';
 import {getClipboard} from '../../clipboard';
 import type {TextareaWidgetOptions} from './types';
 
 type TextareaColors = {fg: number; bg: number; colorBorder: number};
+type TextareaExtraColors = {placeholder: number; selectionBg: number; selectionFg: number; scrollbar: number; scrollbarTrack: number};
 
 function charIndexAtColumn(text: string, column: number): number {
   let width = 0;
@@ -109,13 +110,9 @@ export class TextareaWidget extends InteractiveWidget {
   #borderStyle: number;
   #maxLength: number;
   #placeholder: string;
-  #colorPlaceholder: number;
-  #colorSelectionBg: number;
-  #colorSelectionFg: number;
+  readonly #extraColors: TextareaExtraColors;
   #label: string;
   #isReadonly: boolean;
-  #colorScrollbar: number;
-  #colorScrollbarTrack: number;
 
   #value: string;
   #logicalLines: string[] = [];
@@ -142,34 +139,35 @@ export class TextareaWidget extends InteractiveWidget {
     this.#height = rect.height;
     this.#colors = {
       normal: {
-        fg: parseColor(resolved.colorFgNormal!),
-        bg: parseColor(resolved.colorBgNormal!),
-        colorBorder: parseColor(resolved.colorBorderUnfocused!),
+        fg: parseColor(resolved.colorFgNormal),
+        bg: parseColor(resolved.colorBgNormal),
+        colorBorder: parseColor(resolved.colorBorderUnfocused),
       },
       focused: {
-        fg: parseColor(resolved.colorFgFocused!),
-        bg: parseColor(resolved.colorBgFocused!),
-        colorBorder: parseColor(resolved.colorBorderFocused!),
+        fg: parseColor(resolved.colorFgFocused),
+        bg: parseColor(resolved.colorBgFocused),
+        colorBorder: parseColor(resolved.colorBorderFocused),
       },
       disabled: {
-        fg: parseColor(resolved.colorFgDisabled!),
-        bg: parseColor(resolved.colorBgDisabled!),
-        colorBorder: parseColor(resolved.colorBorderDisabled!),
+        fg: parseColor(resolved.colorFgDisabled),
+        bg: parseColor(resolved.colorBgDisabled),
+        colorBorder: parseColor(resolved.colorBorderDisabled),
       },
     };
     this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
     this.#maxLength = resolved.maxLength ?? 0;
     this.#placeholder = resolved.placeholder ?? '';
-    this.#colorPlaceholder = parseColor(resolved.colorPlaceholder!);
-    this.#colorSelectionBg = parseColor(resolved.colorSelectionBg!);
-    this.#colorSelectionFg = parseColor(resolved.colorSelectionFg!);
+    this.#extraColors = {
+      placeholder: parseColor(resolved.colorPlaceholder),
+      selectionBg: parseColor(resolved.colorSelectionBg),
+      selectionFg: parseColor(resolved.colorSelectionFg),
+      scrollbar: parseColor(resolved.colorScrollbar),
+      scrollbarTrack: parseColor(resolved.colorScrollbarTrack),
+    };
     this.#label = resolved.label ?? '';
     this.#isReadonly = resolved.readonly ?? false;
     this.#value = resolved.value ?? '';
     this.setDisabled(resolved.disabled ?? false);
-
-    this.#colorScrollbar = parseColor(resolved.colorScrollbar!);
-    this.#colorScrollbarTrack = parseColor(resolved.colorScrollbarTrack!);
 
     this.#rebuildLines();
     this.#cursorLine = Math.max(0, this.#logicalLines.length - 1);
@@ -494,23 +492,23 @@ export class TextareaWidget extends InteractiveWidget {
     }
 
     if (resolved.colorPlaceholder !== undefined) {
-      this.#colorPlaceholder = parseColor(resolved.colorPlaceholder);
+      this.#extraColors.placeholder = parseColor(resolved.colorPlaceholder);
     }
 
     if (resolved.colorSelectionBg !== undefined) {
-      this.#colorSelectionBg = parseColor(resolved.colorSelectionBg);
+      this.#extraColors.selectionBg = parseColor(resolved.colorSelectionBg);
     }
 
     if (resolved.colorSelectionFg !== undefined) {
-      this.#colorSelectionFg = parseColor(resolved.colorSelectionFg);
+      this.#extraColors.selectionFg = parseColor(resolved.colorSelectionFg);
     }
 
     if (resolved.colorScrollbar !== undefined) {
-      this.#colorScrollbar = parseColor(resolved.colorScrollbar);
+      this.#extraColors.scrollbar = parseColor(resolved.colorScrollbar);
     }
 
     if (resolved.colorScrollbarTrack !== undefined) {
-      this.#colorScrollbarTrack = parseColor(resolved.colorScrollbarTrack);
+      this.#extraColors.scrollbarTrack = parseColor(resolved.colorScrollbarTrack);
     }
   }
 
@@ -548,7 +546,7 @@ export class TextareaWidget extends InteractiveWidget {
           x: viewport.x,
           y: viewport.y + i,
           text: truncateToWidth(line, viewport.width),
-          fgRgba: this.#colorPlaceholder,
+          fgRgba: this.#extraColors.placeholder,
           bgRgba: 0x00_00_00_00,
         });
       }
@@ -1411,8 +1409,8 @@ export class TextareaWidget extends InteractiveWidget {
           x: drawX,
           y: screenY,
           text: seg2,
-          fgRgba: this.#colorSelectionFg,
-          bgRgba: this.#colorSelectionBg,
+          fgRgba: this.#extraColors.selectionFg,
+          bgRgba: this.#extraColors.selectionBg,
         });
         drawX += stringDisplayWidth(seg2);
       }
@@ -1459,7 +1457,7 @@ export class TextareaWidget extends InteractiveWidget {
         x: scrollbarX,
         y: viewport.y + row,
         char: isThumb ? 0x25_88 : 0x25_02,
-        fgRgba: isThumb ? this.#colorScrollbar : this.#colorScrollbarTrack,
+        fgRgba: isThumb ? this.#extraColors.scrollbar : this.#extraColors.scrollbarTrack,
         bgRgba: 0x00_00_00_00,
       });
     }

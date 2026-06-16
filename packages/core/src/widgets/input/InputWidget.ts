@@ -8,12 +8,13 @@ import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
-import {resolveThemedOverrides} from '../../theme/themed-color';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
+import {resolveThemedOverrides} from '../../theme/color-ref';
 import {getClipboard} from '../../clipboard';
 import type {InputWidgetOptions} from './types';
 
 type InputColors = {fg: number; bg: number; colorBorder: number};
+type InputExtraColors = {placeholder: number; selectionBg: number; selectionFg: number};
 
 function charIndexAtColumn(text: string, column: number): number {
   let width = 0;
@@ -95,9 +96,7 @@ export class InputWidget extends InteractiveWidget {
   #borderStyle: number;
   #maxLength: number;
   #placeholder: string;
-  #colorPlaceholder: number;
-  #colorSelectionBg: number;
-  #colorSelectionFg: number;
+  readonly #extraColors: InputExtraColors;
   #label: string;
   #isReadonly: boolean;
 
@@ -128,27 +127,29 @@ export class InputWidget extends InteractiveWidget {
     this.#height = rect.height;
     this.#colors = {
       normal: {
-        fg: parseColor(resolved.colorFgNormal!),
-        bg: parseColor(resolved.colorBgNormal!),
-        colorBorder: parseColor(resolved.colorBorderUnfocused!),
+        fg: parseColor(resolved.colorFgNormal),
+        bg: parseColor(resolved.colorBgNormal),
+        colorBorder: parseColor(resolved.colorBorderUnfocused),
       },
       focused: {
-        fg: parseColor(resolved.colorFgFocused!),
-        bg: parseColor(resolved.colorBgFocused!),
-        colorBorder: parseColor(resolved.colorBorderFocused!),
+        fg: parseColor(resolved.colorFgFocused),
+        bg: parseColor(resolved.colorBgFocused),
+        colorBorder: parseColor(resolved.colorBorderFocused),
       },
       disabled: {
-        fg: parseColor(resolved.colorFgDisabled!),
-        bg: parseColor(resolved.colorBgDisabled!),
-        colorBorder: parseColor(resolved.colorBorderDisabled!),
+        fg: parseColor(resolved.colorFgDisabled),
+        bg: parseColor(resolved.colorBgDisabled),
+        colorBorder: parseColor(resolved.colorBorderDisabled),
       },
     };
     this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
     this.#maxLength = resolved.maxLength ?? 0;
     this.#placeholder = resolved.placeholder ?? '';
-    this.#colorPlaceholder = parseColor(resolved.colorPlaceholder!);
-    this.#colorSelectionBg = parseColor(resolved.colorSelectionBg!);
-    this.#colorSelectionFg = parseColor(resolved.colorSelectionFg!);
+    this.#extraColors = {
+      placeholder: parseColor(resolved.colorPlaceholder),
+      selectionBg: parseColor(resolved.colorSelectionBg),
+      selectionFg: parseColor(resolved.colorSelectionFg),
+    };
     this.#label = resolved.label ?? '';
     this.#isReadonly = resolved.readonly ?? false;
     this.#password = (resolved.type ?? 'text') === 'password';
@@ -494,15 +495,15 @@ export class InputWidget extends InteractiveWidget {
     }
 
     if (resolved.colorPlaceholder !== undefined) {
-      this.#colorPlaceholder = parseColor(resolved.colorPlaceholder);
+      this.#extraColors.placeholder = parseColor(resolved.colorPlaceholder);
     }
 
     if (resolved.colorSelectionBg !== undefined) {
-      this.#colorSelectionBg = parseColor(resolved.colorSelectionBg);
+      this.#extraColors.selectionBg = parseColor(resolved.colorSelectionBg);
     }
 
     if (resolved.colorSelectionFg !== undefined) {
-      this.#colorSelectionFg = parseColor(resolved.colorSelectionFg);
+      this.#extraColors.selectionFg = parseColor(resolved.colorSelectionFg);
     }
   }
 
@@ -572,8 +573,8 @@ export class InputWidget extends InteractiveWidget {
             x: drawX,
             y: textY,
             text: clipped2,
-            fgRgba: this.#colorSelectionFg,
-            bgRgba: this.#colorSelectionBg,
+            fgRgba: this.#extraColors.selectionFg,
+            bgRgba: this.#extraColors.selectionBg,
           });
           drawX += stringDisplayWidth(clipped2);
         }
@@ -598,7 +599,7 @@ export class InputWidget extends InteractiveWidget {
         x: textX,
         y: textY,
         text: this.#placeholder.slice(0, visibleWidth),
-        fgRgba: this.#colorPlaceholder,
+        fgRgba: this.#extraColors.placeholder,
         bgRgba: 0x00_00_00_00,
       });
     }

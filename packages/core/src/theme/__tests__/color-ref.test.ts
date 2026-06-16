@@ -1,7 +1,7 @@
 import {it, expect, describe} from 'bun:test';
-import {colorThemed, isThemedColorRef, resolveThemedColor, resolveThemedColorFromTheme, resolveThemedOverrides} from '../themed-color';
-import {getTheme, setTheme} from '../provider';
-import {tokyoNightMoon, tokyoNightStorm} from '../themes';
+import {colorThemed, isThemedColorRef, resolveThemedColor, resolveThemedColorFromTheme, resolveThemedOverrides} from '../color-ref';
+import {getTheme, setTheme} from '../store';
+import {tokyoNightMoon, tokyoNightStorm} from '../presets';
 import {parseColor} from '../../utils/color';
 
 describe('colorThemed', () => {

@@ -1,8 +1,8 @@
 import {describe, it, expect} from 'bun:test';
-import {getTheme, setTheme, onThemeChange} from '../provider';
-import {defineTheme, tokyoNightMoon} from '../themes';
+import {getTheme, setTheme, onThemeChange} from '../store';
+import {defineTheme, tokyoNightMoon} from '../presets';
 
-describe('provider', () => {
+describe('store', () => {
   it('returns the default theme', () => {
     const theme = getTheme();
     expect(theme.name).toBe('tokyo-night-moon');

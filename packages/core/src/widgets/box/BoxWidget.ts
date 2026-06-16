@@ -1,9 +1,9 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {BorderSides} from '../../draw_list/types';
 import {parseColor, type TuiColor} from '../../utils/color';
-import {getTheme} from '../../theme/provider';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
-import {resolveThemedOverrides} from '../../theme/themed-color';
+import {getTheme} from '../../theme/store';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
+import {resolveThemedOverrides} from '../../theme/color-ref';
 import {
   TuiLayoutAlignment as LayoutAlignmentEnum,
   resolveBorderStyle,
@@ -56,92 +56,32 @@ export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & 
  */
 type Border = {borderTop: boolean; borderRight: boolean; borderBottom: boolean; borderLeft: boolean};
 
+function fillBorder(v: boolean): Border {
+  return {
+    borderTop: v, borderRight: v, borderBottom: v, borderLeft: v,
+  };
+}
+
 function expandBorderShorthand(value: BorderShorthand): Border {
   if (typeof value === 'boolean') {
-    return {
-      borderTop: value,
-      borderRight: value,
-      borderBottom: value,
-      borderLeft: value,
-    };
+    return fillBorder(value);
   }
 
   if (typeof value === 'number') {
-    const v = value !== 0;
-    return {
-      borderTop: v,
-      borderRight: v,
-      borderBottom: v,
-      borderLeft: v,
-    };
+    return fillBorder(value !== 0);
   }
 
-  if (value === 'true' || value === '1') {
-    return {
-      borderTop: true,
-      borderRight: true,
-      borderBottom: true,
-      borderLeft: true,
-    };
-  }
-
-  if (value === 'false' || value === '0' || value === '') {
-    return {
-      borderTop: false,
-      borderRight: false,
-      borderBottom: false,
-      borderLeft: false,
-    };
+  if (value === '' || value === 'false') {
+    return fillBorder(false);
   }
 
   const parts = value.split(/\s+/v);
-  let top: boolean;
-  let right: boolean;
-  let bottom: boolean;
-  let left: boolean;
-
-  switch (parts.length) {
-    case 1: {
-      const isVertical = parts[0] !== '0';
-      top = isVertical;
-      right = isVertical;
-      bottom = isVertical;
-      left = isVertical;
-      break;
-    }
-
-    case 2: {
-      const isVertical = parts[0]! !== '0';
-      const isHorizontal = parts[1]! !== '0';
-      top = isVertical;
-      bottom = isVertical;
-      right = isHorizontal;
-      left = isHorizontal;
-      break;
-    }
-
-    case 3: {
-      top = parts[0]! !== '0';
-      right = parts[1]! !== '0';
-      bottom = parts[2]! !== '0';
-      left = right;
-      break;
-    }
-
-    default: {
-      top = parts[0]! !== '0';
-      right = parts[1]! !== '0';
-      bottom = parts[2]! !== '0';
-      left = parts[3]! !== '0';
-      break;
-    }
-  }
-
+  const first = parts[0]!;
   return {
-    borderTop: top,
-    borderRight: right,
-    borderBottom: bottom,
-    borderLeft: left,
+    borderTop: first !== '0',
+    borderRight: (parts[1] ?? first) !== '0',
+    borderBottom: (parts[2] ?? first) !== '0',
+    borderLeft: (parts[3] ?? parts[1] ?? first) !== '0',
   };
 }
 
@@ -496,6 +436,10 @@ export class BoxWidget extends TuiWidgetEntity {
         crossPos = 0;
         crossExtent = crossSize;
         break;
+      }
+
+      default: {
+        assertNever(this.#align);
       }
     }
 

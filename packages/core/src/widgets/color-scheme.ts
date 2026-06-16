@@ -1,5 +1,5 @@
 import {parseColor} from '../utils/color';
-import {resolveBorderStyle, type TuiBorderStyleName} from './types';
+import {resolveBorderStyle} from './types';
 
 export type ColorScheme<T> = {
   normal: T;

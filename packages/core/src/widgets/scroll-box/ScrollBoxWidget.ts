@@ -1,9 +1,9 @@
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
 import {parseColor} from '../../utils/color';
-import {getTheme} from '../../theme/provider';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
-import {resolveThemedOverrides} from '../../theme/themed-color';
+import {getTheme} from '../../theme/store';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
+import {resolveThemedOverrides} from '../../theme/color-ref';
 import type {TuiWidgetRect, TuiWidgetSize} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import type {TuiWidgetEntity} from '../TuiWidgetEntity';
@@ -16,6 +16,8 @@ import {
 } from '../scrollbar-helper';
 import type {ScrollBoxWidgetOptions} from './types';
 
+type ScrollBoxExtraColors = {scrollbar: number; scrollbarTrack: number};
+
 export class ScrollBoxWidget extends InteractiveWidget {
   readonly #rect: TuiWidgetRect;
   #scrollOffsetY = 0;
@@ -26,8 +28,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
   #gap: number;
   readonly #scrollSpeed: number;
   #alwaysShowScrollbar: boolean;
-  #colorScrollbar: number;
-  #colorScrollbarTrack: number;
+  readonly #extraColors: ScrollBoxExtraColors;
 
   #dragScrolling = false;
   #dragStartY = 0;
@@ -67,8 +68,10 @@ export class ScrollBoxWidget extends InteractiveWidget {
     this.#scrollSpeed = options.scrollSpeed ?? 3;
     this.#alwaysShowScrollbar = options.alwaysShowScrollbar ?? false;
     const theme = getTheme();
-    this.#colorScrollbar = parseColor(options.colorScrollbar ?? theme.colors.scrollbar);
-    this.#colorScrollbarTrack = parseColor(options.colorScrollbarTrack ?? theme.colors.scrollbarTrack);
+    this.#extraColors = {
+      scrollbar: parseColor(options.colorScrollbar ?? theme.colors.scrollbar),
+      scrollbarTrack: parseColor(options.colorScrollbarTrack ?? theme.colors.scrollbarTrack),
+    };
 
     this.on('wheel', data => {
       const before = this.#scrollOffsetY;
@@ -109,6 +112,10 @@ export class ScrollBoxWidget extends InteractiveWidget {
           this.#dragStartOffset = this.#scrollOffsetY;
           this.stopPropagation();
           break;
+        }
+
+        default: {
+          assertNever(result);
         }
       }
     });
@@ -321,11 +328,11 @@ export class ScrollBoxWidget extends InteractiveWidget {
   }
 
   setColorScrollbar(value: number): void {
-    this.#colorScrollbar = this._resolveColorValue(value, 'colorScrollbar');
+    this.#extraColors.scrollbar = this._resolveColorValue(value, 'colorScrollbar');
   }
 
   setColorScrollbarTrack(value: number): void {
-    this.#colorScrollbarTrack = this._resolveColorValue(value, 'colorScrollbarTrack');
+    this.#extraColors.scrollbarTrack = this._resolveColorValue(value, 'colorScrollbarTrack');
   }
 
   // -- Child management --
@@ -470,7 +477,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
     const geometry = computeScrollbarGeometry(viewport.height, contentHeight, this.#scrollOffsetY);
     const scrollbarX = this.#rect.x + this.#rect.width - 1;
     renderScrollbar({
-      buffer, x: scrollbarX, trackY: viewport.y, trackHeight: viewport.height, geometry, thumbColor: this.#colorScrollbar, trackColor: this.#colorScrollbarTrack,
+      buffer, x: scrollbarX, trackY: viewport.y, trackHeight: viewport.height, geometry, thumbColor: this.#extraColors.scrollbar, trackColor: this.#extraColors.scrollbarTrack,
     });
   }
 

@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'bun:test';
-import {setTheme} from '../provider';
-import {defineTheme, tokyoNightMoon} from '../themes';
+import {setTheme} from '../store';
+import {defineTheme, tokyoNightMoon} from '../presets';
 import {createBox} from '../../widgets/box/BoxWidget';
 import {createTextWidget} from '../../widgets/text/TextWidget';
 

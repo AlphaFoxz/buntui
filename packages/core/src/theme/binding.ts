@@ -1,7 +1,7 @@
 import type {TuiWidgetEntity} from '../widgets/TuiWidgetEntity';
 import type {TuiTheme, TuiThemeBorderStyle, TuiThemeColors} from './types';
-import {getTheme, onThemeChange} from './provider';
-import {isThemedColorRef, resolveThemedColorFromTheme, type TuiThemedColorRef} from './themed-color';
+import {getTheme, onThemeChange} from './store';
+import {isThemedColorRef, resolveThemedColorFromTheme, type TuiThemedColorRef} from './color-ref';
 
 export type ThemeToken = keyof TuiThemeColors | `border.${keyof TuiThemeBorderStyle}`;
 

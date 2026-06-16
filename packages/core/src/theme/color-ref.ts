@@ -2,7 +2,7 @@
 import {colorToNumber} from '../utils/color-parser';
 import {rgbToOklch, oklchToRgb} from '../utils/oklch';
 import type {TuiTheme, TuiThemeColors} from './types';
-import {getTheme} from './provider';
+import {getTheme} from './store';
 
 export type TuiThemedColorRef = {
   readonly __themed: true;

@@ -41,6 +41,8 @@ Sync `.opencode/rules/*.md` documentation with the current state of the source c
 
 ## Rules file inventory
 
+> This table is a point-in-time snapshot — always discover files dynamically via step 1 for the authoritative list.
+
 | File                    | Key topics                                                                                                        |
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | `zig-coding.md`         | Naming, error handling, FFI export pattern, global state, Win32 API, logging, imports                             |

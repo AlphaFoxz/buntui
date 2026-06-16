@@ -6,7 +6,7 @@ import type {Disposable} from '../extern/types';
 import {LOGGER} from '../common/logger';
 import {EVENT_BUS} from '../events';
 import TuiScene from '../extern/app/TuiScene';
-import {setTheme as setGlobalTheme} from '../theme/provider';
+import {setTheme as setGlobalTheme} from '../theme/store';
 import type {TuiTheme} from '../theme/types';
 import {getNodeProcess, createBackend, getDefaultLogDir} from '../platform';
 import {FocusManager} from './FocusManager';
@@ -266,6 +266,10 @@ function flushConsole() {
       case 'log': {
         originalConsoleLog(message);
         break;
+      }
+
+      default: {
+        assertNever(level);
       }
     }
   }

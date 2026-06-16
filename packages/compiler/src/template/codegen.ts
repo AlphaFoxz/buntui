@@ -171,9 +171,9 @@ function generateNode(node: TuiRenderNode, index: number, parentVarName?: string
       return generateList(node, index, parentVarName);
     }
 
-    // Default: {
-    //   return undefined;
-    // }
+    default: {
+      assertNever(node);
+    }
   }
 }
 

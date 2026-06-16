@@ -13,12 +13,7 @@
         :paddingLeft="1"
     >
         <Text value="Choose a framework:" />
-        <Select
-            :width="46"
-            :options="frameworks"
-            placeholder="Select a framework..."
-            @change="handleChange"
-        />
+        <Select :width="46" :options="frameworks" placeholder="Select a framework..." @change="handleChange" />
     </Box>
 
     <Text :x="1" :y="13" :value="selected" />
@@ -28,14 +23,14 @@
 import { ref } from '@vue/reactivity'
 
 const frameworks = ref([
-    {value: 'bun', label: 'Bun'},
-    {value: 'node', label: 'Node.js'},
-    {value: 'deno', label: 'Deno'},
+    { value: 'bun', label: 'Bun' },
+    { value: 'node', label: 'Node.js' },
+    { value: 'deno', label: 'Deno' },
 ])
 
 const selected = ref('Select an option above')
 
-function handleChange(event: TuiChangeEventData) {
+function handleChange(event: TuiSelectChangeEvent) {
     selected.value = `Selected: ${String(event.value)}`
 }
 </script>

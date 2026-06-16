@@ -1,9 +1,9 @@
 import {stringDisplayWidth, truncateToWidth, charDisplayWidth} from '../../utils/string-width';
 import {parseColor, type TuiColor} from '../../utils/color';
 import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
-import {getTheme} from '../../theme/provider';
-import {bindThemeToWidget} from '../../theme/resolve';
-import {resolveThemedOverrides} from '../../theme/themed-color';
+import {getTheme} from '../../theme/store';
+import {bindThemeToWidget} from '../../theme/binding';
+import {resolveThemedOverrides} from '../../theme/color-ref';
 import {
   type TuiSizeValue,
   type TuiWidgetColor,

@@ -79,12 +79,18 @@ const expose: FlatXoConfig = [
       '@typescript-eslint/class-literal-property-style': 'off',
       'import-x/extensions': 'off',
       'no-useless-call': 'off',
-      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-unused-vars': ['warn', {argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_'}],
       '@typescript-eslint/no-unused-private-class-members': 'warn',
       'unicorn/require-module-specifiers': 'off',
       'complexity': ['error', {max: 35}],
       'max-params': ['error', {max: 6}],
       "@typescript-eslint/no-unsafe-function-type": "off",
+      "@typescript-eslint/switch-exhaustiveness-check": [
+        'error',
+        {
+          "requireDefaultForNonUnion": true
+        }
+      ],
     },
   },
   {

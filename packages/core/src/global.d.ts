@@ -1,6 +1,12 @@
 import type {DefineComponent} from 'vue';
-import type {TuiThemedColorRef} from './theme/themed-color';
+import type {TuiThemedColorRef} from './theme/color-ref';
 import type {TuiColorString} from './utils/color';
+import type {
+  TuiBorderStyleName,
+  TuiLayoutDirectionName,
+  TuiLayoutAlignmentName,
+  TuiFontStyleName,
+} from './widgets/types';
 
 declare global {
   type TuiSizeValue = number | `${number}%`;
@@ -36,11 +42,11 @@ declare global {
   type TuiTableRowSelectEvent = {index: number; row: Record<string, unknown>};
   type TuiTableRowActivateEvent = {index: number; row: Record<string, unknown>};
 
-  type TuiBorderStyle = 'none' | 'solid' | 'double' | 'rounded' | 'bold' | 'dashed' | 'dotted' | 'outsetbold' | 'outsetdouble';
-  type TuiLayoutDirection = 'horizontal' | 'vertical';
-  type TuiLayoutAlignment = 'start' | 'center' | 'end' | 'stretch';
+  type TuiBorderStyle = TuiBorderStyleName;
+  type TuiLayoutDirection = TuiLayoutDirectionName;
+  type TuiLayoutAlignment = TuiLayoutAlignmentName;
   type TuiBorderSides = boolean | 'true' | 'false' | `${number}` | `${number} ${number}` | `${number} ${number} ${number}` | `${number} ${number} ${number} ${number}`;
-  type TuiFontStyle = 'bold' | 'dim' | 'italic' | 'underline' | 'slowblink' | 'rapidblink' | 'reverse' | 'hidden' | 'crossedout' | 'fraktur' | 'overline';
+  type TuiFontStyle = TuiFontStyleName;
 
   type TuiBoxProps = {
     x?: TuiSizeValue;
@@ -297,7 +303,7 @@ declare global {
   };
 
   type TuiScrollBoxEmits = TuiInteractiveEmits & {
-    scroll: (data: {scrollOffsetY: number; maxScrollY: number}) => void;
+    scroll: (data: TuiScrollEvent) => void;
   };
 
   type TuiCheckboxEmits = TuiInteractiveEmits & {
@@ -333,8 +339,8 @@ declare global {
   };
 
   type TuiTableEmits = TuiInteractiveEmits & {
-    rowSelect: (data: {index: number; row: Record<string, unknown>}) => void;
-    rowActivate: (data: {index: number; row: Record<string, unknown>}) => void;
+    rowSelect: (data: TuiTableRowSelectEvent) => void;
+    rowActivate: (data: TuiTableRowActivateEvent) => void;
   };
 
   type TuiSelectEmits = TuiInteractiveEmits & {

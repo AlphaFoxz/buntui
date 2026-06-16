@@ -2,7 +2,7 @@ import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import {TUI_CONTEXT_INSTANCE} from '../../extern/app/TuiContext';
 import type {OverlayManager} from '../../overlay/OverlayManager';
 import type {OverlayHandle} from '../../overlay/types';
-import {parseColor, type TuiColor} from '../../utils/color';
+import {parseColor} from '../../utils/color';
 import type {TuiWidgetRect} from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import type {ModalWidgetOptions} from './types';
@@ -61,10 +61,7 @@ export class ModalWidget extends TuiWidgetEntity {
     };
   }
 
-  override containsPoint(
-    _x: number,
-    _y: number,
-  ): boolean {
+  override containsPoint(_x: number, _y: number): boolean {
     return this.#open;
   }
 

@@ -30,6 +30,10 @@ export function resolvePosition(
     case 'corner': {
       return resolveCorner(strategy, widgetRect, termCols, termRows);
     }
+
+    default: {
+      assertNever(strategy);
+    }
   }
 }
 
@@ -96,6 +100,10 @@ function resolveAnchor(
       y = anchorRect.y;
       break;
     }
+
+    default: {
+      assertNever(placement_);
+    }
   }
 
   return {
@@ -140,6 +148,10 @@ function resolveCorner(
     case 'bottom-right': {
       return {x: Math.max(0, termCols - w - margin), y: Math.max(0, termRows - h - margin)};
     }
+
+    default: {
+      assertNever(strategy.corner);
+    }
   }
 }
 
@@ -153,7 +165,7 @@ type FlipPlacementOptions = {
   termRows: number;
 };
 
-function flipPlacement(options: FlipPlacementOptions): 'top' | 'bottom' | 'left' | 'right' {
+function flipPlacement(options: FlipPlacementOptions): FlipPlacementOptions['placement'] {
   const {placement, anchorRect, widgetWidth: w, widgetHeight: h, offset, termCols, termRows} = options;
   switch (placement) {
     case 'bottom': {
@@ -194,6 +206,10 @@ function flipPlacement(options: FlipPlacementOptions): 'top' | 'bottom' | 'left'
       }
 
       break;
+    }
+
+    default: {
+      assertNever(placement);
     }
   }
 

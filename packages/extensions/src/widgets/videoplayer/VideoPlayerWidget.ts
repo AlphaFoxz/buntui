@@ -2,13 +2,13 @@ import {
   type DrawListBuffer,
   type KeyboardEvent,
   type TuiWidgetRect,
-  widgets,
+  InteractiveWidget,
 } from '@buntui/core';
 import {encodeBrailleFrame, isVideoFile} from './braille';
 import {DEFAULT_VIDEOPLAYER_COLOR_SCHEME, DEFAULT_VIDEOPLAYER_OPTIONS} from './defaults';
 import type {VideoPlayerColorScheme, VideoPlayerState, VideoPlayerWidgetOptions} from './types';
 
-export class VideoPlayerWidget extends widgets.InteractiveWidget {
+export class VideoPlayerWidget extends InteractiveWidget {
   #x: number;
   #y: number;
   #width: number;
@@ -160,6 +160,10 @@ export class VideoPlayerWidget extends widgets.InteractiveWidget {
         case 'loading':
         case 'error': {
           break;
+        }
+
+        default: {
+          assertNever(this.#playerState);
         }
       }
     } else if (key === 'r' || key === 'R') {

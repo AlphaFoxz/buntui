@@ -1,5 +1,5 @@
 import type {TuiTheme} from './types';
-import {tokyoNightMoon} from './themes';
+import {tokyoNightMoon} from './presets';
 
 export type ThemeChangeListener = (theme: TuiTheme) => void;
 

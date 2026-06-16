@@ -5,7 +5,7 @@ description: Validate create-buntui scaffolding templates, imports, widget usage
 
 # check-create-buntui
 
-Audit `packages/create-buntui/` for consistency with `@buntui/core`, `@buntui/extensions`, and `@buntui/compiler`.
+Audit `packages/create-buntui/` for consistency with `@buntui/core`, `@buntui/extensions`, `@buntui/compiler`, and `@buntui/cli`.
 
 ## When to Use
 
@@ -13,6 +13,22 @@ Audit `packages/create-buntui/` for consistency with `@buntui/core`, `@buntui/ex
 - Before releasing/publishing `create-buntui`
 - When the user asks to check create-buntui for drift or broken templates
 - As a follow-up to `check-widget-props` when CLI templates may be affected
+
+## Architecture Overview
+
+The create-buntui package has two roles:
+
+1. **CLI tool** (`src/apps/main/`) — An interactive TUI (built with buntui itself) that scaffolds new projects. Entry: `src/apps/main/main.ts`, UI: `src/apps/main/App.vue`. Built output is `dist/main.js` (referenced by `bin`).
+2. **Template library** (`templates/`) — Four project templates copied by the scaffold engine. Each template is a self-contained buntui app.
+
+Templates do **not** contain manual `build.ts`/`dev.ts` scripts. They use `buntui.config.ts` + `@buntui/cli` commands (`buntui dev`, `buntui build`, `buntui wasm dev`, `buntui wasm build`).
+
+| Template | Target | Scripts | Config | Has `buntui.config.ts` |
+|---|---|---|---|---|
+| `basic` | Native terminal | `buntui dev` / `buntui build` | `buntui.config.ts` | Yes |
+| `sfc` | Native terminal | `buntui dev` / `buntui build` | `buntui.config.ts` | Yes |
+| `full` | Native terminal | `buntui dev` / `buntui build` | `buntui.config.ts` | Yes |
+| `wasm` | Browser (WASM) | `buntui wasm dev` / `buntui wasm build` | `index.html` + `src/dev-shell.ts` + `src/web-api.ts` | No |
 
 ## Checklist
 
@@ -25,9 +41,9 @@ Execute ALL checks below. For each check, read the relevant source files, compar
 **Steps**:
 1. Read `packages/compiler/src/runtime-helpers.ts` to get the current `CORE_REGISTRY` tag list.
 2. Grep all `.vue` files under `packages/create-buntui/templates/` for PascalCase HTML tags (`<[A-Z][a-zA-Z]+`).
-3. Extract unique tag names and verify each one is a key in `CORE_REGISTRY`.
-4. Report any tags that are NOT in the registry (unknown/broken tags).
-5. Also check `packages/create-buntui/src/CreateUI.vue` — the CLI's own TUI uses core widgets too.
+3. Extract unique tag names and verify each one is either a key in `CORE_REGISTRY` or a `.vue` component import (tags matching a `<script setup>` import from a `.vue` file are child components, not widgets).
+4. Report any tags that are NOT in the registry and NOT a `.vue` component import (unknown/broken tags).
+5. Also check `packages/create-buntui/src/apps/main/App.vue` — the CLI's own TUI uses core widgets too.
 
 **Expected core tags** (13 total): `Box`, `Text`, `Input`, `Button`, `Checkbox`, `RadioGroup`, `SelectButton`, `Switch`, `ScrollBox`, `Progress`, `Textarea`, `Table`, `Select`.
 
@@ -38,11 +54,13 @@ Execute ALL checks below. For each check, read the relevant source files, compar
 **Steps**:
 1. Read `packages/extensions/src/registry.ts` for `EXTENSION_REGISTRY`.
 2. Read `packages/extensions/package.json` for the `exports` map.
-3. Grep template `.vue` files for imports from `@buntui/extensions`.
+3. Grep template `.vue` and `.ts` files for imports from `@buntui/extensions`.
 4. Verify each import path is a valid sub-path export.
 5. If `hmr-error-overlay` is imported, verify it uses `mountHmrErrorOverlay` (not a widget creator).
 
 **Known extension sub-paths**: `matrix`, `framerate`, `snake`, `videoplayer`, `logger`, `hmr-error-overlay`.
+
+Note: As of current architecture, no template imports from `@buntui/extensions` directly — the CLI handles HMR error overlay internally during `buntui dev`. Templates may still list `@buntui/extensions` in dependencies so users can add extension widgets.
 
 ### 3. Template API Imports vs Core Exports
 
@@ -53,97 +71,106 @@ Execute ALL checks below. For each check, read the relevant source files, compar
 2. Grep all `.ts` and `.vue` files under `packages/create-buntui/templates/` for `from '@buntui/core'` imports.
 3. For each named import, verify it is exported from `packages/core/src/index.ts`.
 4. Pay special attention to:
-   - `createApp` — main entry point
-   - `onTick`, `onMounted`, `onUnmounted` — lifecycle composables
-   - `ref`, `computed`, `effect` — reactivity (from `@vue/reactivity` via core re-exports)
-   - `defineTheme`, theme names — theme system
-   - `useTemplateRef` — template refs
+   - `createApp` — main entry point (used in wasm `web-api.ts`)
+   - `onTick` — lifecycle composable (used in basic/sfc/wasm App.vue)
+   - `useApp`, `LOGGER` — used in the CLI's own App.vue
+   - `HtmlBackend`, `WasmModule`, `animationFrameScheduler`, `TuiSFCModule`, `TerminalLike` — used in wasm `web-api.ts`
+5. Note: `ref`, `computed`, `effect` are imported from `@vue/reactivity` directly (NOT re-exported from `@buntui/core`). Templates correctly use `from '@vue/reactivity'`.
 
 ### 4. Template API Imports vs Compiler Exports
 
 **What to check**: Every import from `@buntui/compiler` in template files must resolve to an actual export.
 
 **Steps**:
-1. Read `packages/compiler/src/index.ts` (or the main entry) for the public API.
+1. Read `packages/compiler/src/index.ts` for the public API.
 2. Grep template files for `from '@buntui/compiler'` imports.
-3. Verify each named import exists. Common imports to check:
-   - `compile`, `CORE_REGISTRY`
-   - `createDevServer`, `DevServerOptions`
-   - Vue plugin / preload helper
+3. Verify each named import exists. Exports: `compile`, `CompileOptions`, `CompileResult`, `parse`, `SFCParseOptions`, `transform`, `TransformOptions`, `generate`, `CodegenOptions`, `CodegenResult`, `createDevServer`, `DevServerOptions`, `CORE_REGISTRY`, `TuiComponentRegistry`, `PropHandler`, `SFCDescriptor`.
+4. Note: Templates typically don't import from `@buntui/compiler` directly — the `@buntui/cli` handles compilation internally. The wasm template lists `@buntui/compiler` in devDependencies for the CLI's wasm build command.
 
 ### 5. Template Dependencies Completeness
 
-**What to check**: Each template's `package.json` must list all packages that the template's code actually imports.
+**What to check**: Each template's `package.json` must list all packages that the template's code actually imports, and packages must be in the correct section (dependencies vs devDependencies).
 
 **Steps**:
-1. For each template (`basic`, `sfc`, `full`), read `templates/<name>/package.json`.
-2. Grep all source files in that template for package imports (`from '@buntui/...'`, `from 'vue'`, etc.).
+1. There are four templates: `basic`, `sfc`, `full`, `wasm`. Read each `templates/<name>/package.json`.
+2. Grep all source files in that template for package imports (`from '@buntui/...'`, `from '@vue/...'`, `from '@xterm/...'`, etc.).
 3. Cross-reference: every imported external package must appear in either `dependencies` or `devDependencies`.
-4. Specific rules:
-   - `basic` template should NOT include `@buntui/extensions` (it doesn't use it).
-   - `sfc` and `full` templates MUST include `@buntui/extensions` (they import from `hmr-error-overlay`).
-   - `@buntui/native` is required in all templates (for `getBinaryPath` in build scripts).
-   - `@vue/reactivity` version should match the version used across the monorepo.
-   - `vue` and `vue-tsc` should be in devDependencies, not dependencies.
+4. Placement rules:
+   - `@buntui/core`, `@vue/reactivity` — `dependencies` (runtime).
+   - `@buntui/cli` — `devDependencies` (build-time only; provides `buntui dev`/`buntui build` commands and `defineConfig`).
+   - `vue`, `vue-tsc` — `devDependencies` (type-checking only).
+   - `@buntui/native` — `dependencies` for `basic`/`sfc`/`full` (native terminal target). NOT needed for `wasm` (browser target uses WASM, no native binary).
+   - `@buntui/extensions` — `dependencies` for `sfc`/`full`/`wasm` (enables users to add extension widgets; not strictly imported by template code but expected by the CLI for HMR overlay). Should NOT be in `basic`.
+   - `wasm`-specific: `@xterm/xterm`, `@xterm/addon-fit` in `dependencies`; `vite`, `@buntui/compiler` in `devDependencies`.
+5. Version consistency: `@vue/reactivity`, `vue`, `vue-tsc`, `@types/bun` versions should be aligned with the monorepo (check `packages/playground/package.json` and root `package.json` for reference).
 
-### 6. Template Build Scripts Validity
+### 6. Template Config and Build Commands Validity
 
-**What to check**: Template `scripts/build.ts` files must use current build conventions.
-
-**Steps**:
-1. Read each template's `scripts/build.ts`.
-2. Read the playground's build setup (`packages/playground/scripts/build.ts` or equivalent) for reference.
-3. Verify:
-   - Uses `@buntui/compiler` `compile()` function correctly.
-   - Uses `@buntui/native` `getBinaryPath()` correctly.
-   - Build output paths are consistent.
-   - No deprecated APIs are used.
-
-### 7. Template dev.ts Validity
-
-**What to check**: Template `src/dev.ts` files must use current dev server API.
+**What to check**: Templates must use current `@buntui/cli` command conventions and config setup.
 
 **Steps**:
-1. Read each template's `src/dev.ts`.
-2. Read `packages/playground/src/dev.ts` as reference.
-3. Verify:
-   - `createDevServer` usage matches current API signature.
-   - HMR error overlay setup is correct for `sfc` and `full` templates.
-   - `--preload` / plugin setup matches current compiler API.
+1. For `basic`, `sfc`, `full` templates:
+   - Verify `buntui.config.ts` exists and imports `defineConfig` from `@buntui/cli`.
+   - Verify `package.json` scripts use `"dev": "buntui dev"` and `"build": "buntui build"`.
+2. For `wasm` template:
+   - Verify `package.json` scripts use `"dev": "buntui wasm dev"` and `"build": "buntui wasm build"`.
+   - Verify `index.html` exists with a `<div id="terminal">` and module script pointing to `/src/dev-shell.ts`.
+   - Verify `src/dev-shell.ts` exists and uses the xterm.js + `createWebApp` pattern.
+   - Verify `src/web-api.ts` exists and imports `createApp`, `HtmlBackend`, `WasmModule`, `animationFrameScheduler` from `@buntui/core`.
+3. Verify `defineConfig` is exported from `@buntui/cli` (check `packages/cli/src/config.ts`).
+
+Note: The playground (`packages/playground/`) uses the same `buntui.config.ts` + CLI pattern — use it as a reference if available.
+
+### 7. Event Type Correctness in Demos
+
+**What to check**: Event handler parameter types in demo `.vue` files must use global ambient types (from `core/src/global.d.ts`) without import, OR named exports from `@buntui/core` with an explicit import.
+
+**Steps**:
+1. Read `packages/core/src/global.d.ts` to identify global event types. These are usable without import:
+   - `TuiCheckboxChangeEvent`, `TuiSwitchChangeEvent`, `TuiInputEvent`, `TuiSubmitEvent`, `TuiClipboardEvent`, `TuiUndoEvent`, `TuiRedoEvent`, `TuiScrollEvent`, `TuiRadioGroupChangeEvent`, `TuiSelectChangeEvent`, `TuiSelectButtonChangeEvent`, `TuiTableRowSelectEvent`, `TuiTableRowActivateEvent`.
+2. Identify non-global event types that ARE named exports from `@buntui/core` but NOT in `global.d.ts`. These MUST be imported:
+   - `TuiWidgetEventData`, `TuiInputEventData`, `TuiSubmitEventData`, `TuiClipboardEventData`, `TuiUndoEventData`, `TuiRedoEventData`, `TuiScrollEventData`, `TuiChangeEventData`.
+3. Grep all demo `.vue` files (especially under `templates/full/src/apps/main/components/`) for event type annotations in function parameters.
+4. For each type reference, verify:
+   - If it's a global type → no import needed, OK.
+   - If it's a named core export but NOT global → must have `import type {X} from '@buntui/core'`, otherwise FAIL.
+   - If it doesn't exist anywhere → FAIL (unknown type).
+5. Common mistake: using `TuiChangeEventData` (non-global union, must be imported, and `.value` access fails on its `{checked: boolean}` arm) instead of the correct global type like `TuiSelectChangeEvent`.
 
 ### 8. Missing Widget Demos
 
 **What to check**: The `full` template should demo all core widgets. Report any gaps.
 
 **Steps**:
-1. Get the full `CORE_REGISTRY` tag list from `runtime-helpers.ts`.
-2. List all component files in `templates/full/src/components/`.
-3. Identify core widgets that are in the registry but have NO demo component.
-4. Current demos: Box, Button, Input, Text, Progress, Checkbox, Switch, Radio.
-5. Likely missing: `ScrollBox`, `Textarea`, `Table`, `Select`, `SelectButton` (used in App.vue navigation but not as a standalone demo).
+1. Get the full `CORE_REGISTRY` tag list from `runtime-helpers.ts` (13 tags).
+2. List all component files in `templates/full/src/apps/main/components/`.
+3. Identify core widgets that are in the registry but have NO demo component. A widget counts as "demoed" if it has a dedicated component file OR is the primary widget in one (e.g., `RadioDemo.vue` demos `RadioGroup`).
+4. Current demos (12 files): `BoxDemo`, `ButtonDemo`, `CheckboxDemo`, `InputDemo`, `ProgressDemo`, `RadioDemo` (RadioGroup), `ScrollBoxDemo`, `SelectDemo`, `SwitchDemo`, `TableDemo`, `TextareaDemo`, `TextDemo`.
+5. `SelectButton` is used in `App.vue` for tab navigation but has no standalone demo.
 
-Report as a WARNING (not FAIL) since it's acceptable to not demo every widget.
+Report as a WARNING (not FAIL) since it is acceptable to not demo every widget.
 
 ### 9. Scaffold Version Resolution
 
-**What to check**: `scaffold.ts` must correctly resolve the version for template variable substitution.
+**What to check**: `scaffold.ts` must correctly resolve placeholders for template variable substitution.
 
 **Steps**:
 1. Read `packages/create-buntui/src/scaffold.ts`.
-2. Verify `{{version}}` placeholder resolution strategy.
-3. If it hardcodes `'latest'`, note that this means users always get the latest published version (acceptable for alpha, but worth flagging for stable releases).
-4. Verify `{{name}}` placeholder is used consistently across all template files.
+2. Verify `{{version}}` resolution: it should read the real version from create-buntui's own `package.json` (via `readPackageVersion`), with `'latest'` as fallback.
+3. Verify `{{name}}` resolution: it should be set to the user-supplied project name.
+4. Verify both placeholders are used consistently across all template files (grep `{{name}}` and `{{version}}` under `templates/`). Expected locations: `package.json` (name + version), `README.md` (name), `App.vue` title strings (name), `index.html` title (wasm only).
 
 ### 10. CLI Itself Uses Current API
 
-**What to check**: `CreateUI.vue` and `src/index.ts` must use current core APIs.
+**What to check**: The CLI's own TUI (`src/apps/main/App.vue` and `src/apps/main/main.ts`) must use current core APIs.
 
 **Steps**:
-1. Read `packages/create-buntui/src/CreateUI.vue`.
+1. Read `packages/create-buntui/src/apps/main/App.vue`.
 2. Verify all widget tags used are in `CORE_REGISTRY`.
-3. Verify all imports from `@buntui/core` are valid exports.
-4. Read `packages/create-buntui/src/index.ts`.
-5. Verify `createApp` import and usage pattern is current.
+3. Verify all imports from `@buntui/core` are valid exports (e.g., `useApp`, `LOGGER`).
+4. Verify `ref`, `computed` are imported from `@vue/reactivity` (not from `@buntui/core`).
+5. Read `packages/create-buntui/src/apps/main/main.ts`.
+6. Verify `createApp` import from `@buntui/core` and usage pattern: `createApp(...)` → `app.createScene(App, ...)` → `app.start()`.
 
 ### 11. Package.json Consistency
 
@@ -153,9 +180,11 @@ Report as a WARNING (not FAIL) since it's acceptable to not demo every widget.
 1. Read `packages/create-buntui/package.json`.
 2. Verify:
    - `dependencies` includes `@buntui/core` as `workspace:*`.
-   - `devDependencies` includes `@buntui/compiler` and `@buntui/native` as `workspace:*`.
-   - `bin` field points to the built output.
+   - `dependencies` includes `@buntui/cli` as `workspace:*` (wraps compiler/native/extensions — no need to list them directly).
+   - `dependencies` includes `@vue/reactivity`.
+   - `bin` field points to the built output (`./dist/main.js`).
    - `files` field includes `dist/` and `templates/`.
+   - `scripts` use `buntui dev` / `buntui build` (the CLI builds itself).
 
 ## Output Format
 
@@ -171,13 +200,12 @@ After running all checks, produce a structured report:
 
 ### FAIL
 - [ ] Check 5: Template dependencies completeness
-  - `full` template missing `@buntui/extensions` in dependencies
+  - `basic` template has `@buntui/cli` in dependencies (should be devDependencies)
   ...
 
 ### WARNING
 - [~] Check 8: Missing widget demos
-  - `ScrollBox` has no demo in `full` template
-  - `Table` has no demo in `full` template
+  - `SelectButton` has no standalone demo in `full` template
   ...
 
 ### SUMMARY
@@ -188,13 +216,18 @@ X passed, Y failed, Z warnings
 
 | Purpose | Path |
 |---|---|
-| CLI entry | `packages/create-buntui/src/index.ts` |
-| CLI TUI | `packages/create-buntui/src/CreateUI.vue` |
+| CLI entry | `packages/create-buntui/src/apps/main/main.ts` |
+| CLI TUI | `packages/create-buntui/src/apps/main/App.vue` |
 | Scaffold engine | `packages/create-buntui/src/scaffold.ts` |
+| Version reader | `packages/create-buntui/src/utils.ts` |
 | Validation | `packages/create-buntui/src/validate.ts` |
+| CLI args | `packages/create-buntui/src/cli-args.ts` |
 | Templates root | `packages/create-buntui/templates/` |
 | Core registry | `packages/compiler/src/runtime-helpers.ts` |
 | Extension registry | `packages/extensions/src/registry.ts` |
 | Core exports | `packages/core/src/index.ts` |
+| Core global types | `packages/core/src/global.d.ts` |
 | Extensions exports map | `packages/extensions/package.json` |
 | Compiler exports | `packages/compiler/src/index.ts` |
+| CLI exports (defineConfig) | `packages/cli/src/config.ts` |
+| Native exports (getBinaryPath) | `packages/native/src/index.ts` |

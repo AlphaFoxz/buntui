@@ -20,8 +20,12 @@ export function onUnmounted(callback: () => void): void {
   trackInScope(callback);
 }
 
-export function useTemplateRef<T = unknown>(_: string): {value: T | null} {
-  return {value: null};
+export function useTemplateRef<T = unknown, Keys extends string = string>(_key: Keys): {value: T | null} {
+  const ref = {value: null as T | null};
+  trackInScope(() => {
+    ref.value = null;
+  });
+  return ref;
 }
 
 export function useApp(): {

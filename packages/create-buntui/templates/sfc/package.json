@@ -10,12 +10,12 @@
         "@buntui/core": "{{version}}",
         "@buntui/native": "{{version}}",
         "@buntui/extensions": "{{version}}",
-        "@vue/reactivity": "^3.5.34"
+        "@vue/reactivity": "^3.5.38"
     },
     "devDependencies": {
         "@buntui/cli": "{{version}}",
-        "@types/bun": "latest",
-        "vue": "^3.5.34",
-        "vue-tsc": "^3.2.8"
+        "@types/bun": "1.3.14",
+        "vue": "^3.5.38",
+        "vue-tsc": "^3.3.3"
     }
 }

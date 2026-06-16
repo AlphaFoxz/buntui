@@ -4,11 +4,12 @@ import type {TuiWidgetRect} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/resolve';
-import {resolveThemedOverrides} from '../../theme/themed-color';
+import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
+import {resolveThemedOverrides} from '../../theme/color-ref';
 import type {SelectButtonWidgetOptions} from './types';
 
 type SelectButtonColors = {fg: number; bg: number};
+type SelectButtonExtraColors = {separator: number};
 
 const SELECT_BUTTON_TOKEN_MAP = {
   colorFgNormal: 'textMuted',
@@ -43,7 +44,7 @@ export class SelectButtonWidget extends InteractiveWidget {
   #hoveredIndex = -1;
 
   readonly #colors: ColorScheme<SelectButtonColors>;
-  #colorSeparator: number;
+  readonly #extraColors: SelectButtonExtraColors;
 
   constructor(options: SelectButtonWidgetOptions = {}) {
     super();
@@ -76,7 +77,9 @@ export class SelectButtonWidget extends InteractiveWidget {
         bg: parseColor(resolved.colorBgDisabled),
       },
     };
-    this.#colorSeparator = parseColor(resolved.colorFgSeparator);
+    this.#extraColors = {
+      separator: parseColor(resolved.colorFgSeparator),
+    };
 
     this.on('mousedown', mouseData => {
       const index = this.#hitTestOption(mouseData.x);
@@ -202,7 +205,7 @@ export class SelectButtonWidget extends InteractiveWidget {
   updateThemeColors(resolved: Record<string, unknown>): void {
     applyColorSchemeUpdates(this.#colors, resolved);
     if (resolved.colorFgSeparator !== undefined) {
-      this.#colorSeparator = parseColor(resolved.colorFgSeparator);
+      this.#extraColors.separator = parseColor(resolved.colorFgSeparator);
     }
   }
 
@@ -261,7 +264,7 @@ export class SelectButtonWidget extends InteractiveWidget {
 
       if (i < layout.length - 1) {
         const sepX = itemX + itemW;
-        const sepFg = this.disabled ? baseColors.fg : this.#colorSeparator;
+        const sepFg = this.disabled ? baseColors.fg : this.#extraColors.separator;
         buffer.drawText({
           x: sepX,
           y,
