@@ -8,6 +8,8 @@ const expose: FlatXoConfig = [
     ignores: [
       '**/*.test.ts',
       '**/*.vue',
+      '**/*.md',
+      '**/*.html',
       '**/dist/**',
       'designs/**',
       '**/scripts/**',
