@@ -11,22 +11,24 @@
     "permission": {
         "bash": {
             "*": "ask",
-            "echo *": "ask",
             "bun *": "allow",
             "bunx *": "allow",
+            "echo *": "ask",
+            "cat *": "ask",
+            "dir *": "ask",
             "ffmpeg *": "allow",
+            "file *": "allow",
             "gh *": "allow",
             "git log *": "allow",
             "ls": "allow",
             "ls *": "allow",
-            "file *": "allow",
             "mkdir *": "allow",
             "rg *": "allow",
             "yt-dlp *": "allow",
             "zig *": "allow",
+            "New-Item *": "allow",
             "Select-String *": "allow",
-            "Select-Object *": "allow",
-            "New-Item *": "allow"
+            "Select-Object *": "allow"
         }
     }
 }
