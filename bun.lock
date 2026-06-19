@@ -8,7 +8,7 @@
         "@types/bun": "1.3.14",
         "eslint-config-xo-typescript": "^11.0.0",
         "vue-tsc": "^3.3.5",
-        "xo": "^3.0.1",
+        "xo": "^3.0.2",
       },
       "peerDependencies": {
         "typescript": "=5.9.3",
@@ -1368,7 +1368,7 @@
 
     "xmlchars": ["xmlchars@2.2.0", "https://registry.npmmirror.com/xmlchars/-/xmlchars-2.2.0.tgz", {}, "sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw=="],
 
-    "xo": ["xo@3.0.1", "https://registry.npmmirror.com/xo/-/xo-3.0.1.tgz", { "dependencies": { "@sindresorhus/tsconfig": "^8.1.0", "arrify": "^3.0.0", "cosmiconfig": "^9.0.2", "define-lazy-prop": "^3.0.0", "eslint": "^10.5.0", "eslint-config-xo": "^0.53.1", "eslint-formatter-pretty": "^7.1.0", "find-cache-directory": "^6.0.0", "get-stdin": "^10.0.0", "get-tsconfig": "^4.14.0", "globby": "^16.2.0", "jiti": "^2.7.0", "meow": "^14.1.0", "micromatch": "^4.0.8", "open-editor": "^6.0.0", "path-exists": "^5.0.0", "prettier": "^3.8.4", "type-fest": "^5.7.0", "typescript": "^6.0.3" }, "bin": { "xo": "dist/cli.js" } }, "sha512-khj+FZ0QPPdcjI5BWgFWUpjQTlSNFlEUEgWeyWQbOd2ivaHnCRED1kEVXasnoWZ0BfS37u9kCD1/nY17UInfCg=="],
+    "xo": ["xo@3.0.2", "https://registry.npmmirror.com/xo/-/xo-3.0.2.tgz", { "dependencies": { "@sindresorhus/tsconfig": "^8.1.0", "arrify": "^3.0.0", "cosmiconfig": "^9.0.2", "define-lazy-prop": "^3.0.0", "eslint": "^10.5.0", "eslint-config-xo": "^0.53.1", "eslint-formatter-pretty": "^7.1.0", "find-cache-directory": "^6.0.0", "get-stdin": "^10.0.0", "get-tsconfig": "^4.14.0", "globby": "^16.2.0", "jiti": "^2.7.0", "meow": "^14.1.0", "micromatch": "^4.0.8", "open-editor": "^6.0.0", "path-exists": "^5.0.0", "prettier": "^3.8.4", "type-fest": "^5.7.0", "typescript": "^6.0.3" }, "bin": { "xo": "dist/cli.js" } }, "sha512-J+fE46NFf0Wtpg8ewKvg4kGLvhXAL3+WuGD1aNSTMGNYF8luF4McvRWZDo9HDRmVTNCEVnPYJn1y/iXMV4PN0w=="],
 
     "yaml": ["yaml@2.9.0", "https://registry.npmmirror.com/yaml/-/yaml-2.9.0.tgz", { "bin": { "yaml": "bin.mjs" } }, "sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA=="],
 
