@@ -148,11 +148,11 @@ const CSS_COLORS: Record<string, number> = {
   yellowgreen: 0x9A_CD_32,
 };
 
-const RE_RGB = /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/vi;
-const RE_RGBA = /^rgba\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*([01]?\.?\d*)\s*\)$/vi;
-const RE_HEX3 = /^#([\da-f])([\da-f])([\da-f])$/vi;
-const RE_HEX6 = /^#([\da-f]{6})$/vi;
-const RE_HEX8 = /^#([\da-f]{6})([\da-f]{2})$/vi;
+const REG_RGB = /^rgb\(\s*(?<r>\d{1,3})\s*,\s*(?<g>\d{1,3})\s*,\s*(?<b>\d{1,3})\s*\)$/iv;
+const REG_RGBA = /^rgba\(\s*(?<r>\d{1,3})\s*,\s*(?<g>\d{1,3})\s*,\s*(?<b>\d{1,3})\s*,\s*(?<alpha>[01]?\.?\d+)\s*\)$/iv;
+const REG_HEX3 = /^#(?<r>[\da-f])(?<g>[\da-f])(?<b>[\da-f])$/iv;
+const REG_HEX6 = /^#(?<rgb>[\da-f]{6})$/iv;
+const REG_HEX8 = /^#(?<rgb>[\da-f]{6})(?<alpha>[\da-f]{2})$/iv;
 
 function parseRgbChannels(r: string, g: string, b: string): number | undefined {
   const rv = Number.parseInt(r, 10);
@@ -169,23 +169,23 @@ function normalizeToHex(color: string): number | undefined {
   const s = color.trim();
 
   if (s.startsWith('#')) {
-    const m8 = RE_HEX8.exec(s);
-    if (m8?.[1] && m8[2]) {
-      const rgb = Number.parseInt(m8[1], 16);
-      const a = Number.parseInt(m8[2], 16);
+    const m8 = REG_HEX8.exec(s);
+    if (m8?.groups) {
+      const rgb = Number.parseInt(m8.groups.rgb!, 16);
+      const a = Number.parseInt(m8.groups.alpha!, 16);
       return (rgb << 8) | a;
     }
 
-    const m6 = RE_HEX6.exec(s);
-    if (m6?.[1]) {
-      return (Number.parseInt(m6[1], 16) << 8) | 0xFF;
+    const m6 = REG_HEX6.exec(s);
+    if (m6?.groups) {
+      return (Number.parseInt(m6.groups.rgb!, 16) << 8) | 0xFF;
     }
 
-    const m3 = RE_HEX3.exec(s);
-    if (m3?.[1] && m3[2] && m3[3]) {
-      const r = Number.parseInt(m3[1], 16);
-      const g = Number.parseInt(m3[2], 16);
-      const b = Number.parseInt(m3[3], 16);
+    const m3 = REG_HEX3.exec(s);
+    if (m3?.groups) {
+      const r = Number.parseInt(m3.groups.r!, 16);
+      const g = Number.parseInt(m3.groups.g!, 16);
+      const b = Number.parseInt(m3.groups.b!, 16);
       // eslint-disable-next-line @stylistic/no-mixed-operators
       const rgb = ((r << 4 | r) << 16) | ((g << 4 | g) << 8) | (b << 4 | b);
       return (rgb << 8) | 0xFF;
@@ -194,21 +194,21 @@ function normalizeToHex(color: string): number | undefined {
     return undefined;
   }
 
-  const mRgba = RE_RGBA.exec(s);
-  if (mRgba) {
-    const rgb = parseRgbChannels(mRgba[1]!, mRgba[2]!, mRgba[3]!);
+  const mRgba = REG_RGBA.exec(s);
+  if (mRgba?.groups) {
+    const rgb = parseRgbChannels(mRgba.groups.r!, mRgba.groups.g!, mRgba.groups.b!);
     if (rgb === undefined) {
       return undefined;
     }
 
-    const aFloat = Number.parseFloat(mRgba[4]!);
+    const aFloat = Number.parseFloat(mRgba.groups.alpha!);
     const a = Math.round(aFloat * 255);
     return (rgb << 8) | a;
   }
 
-  const mRgb = RE_RGB.exec(s);
-  if (mRgb) {
-    const rgb = parseRgbChannels(mRgb[1]!, mRgb[2]!, mRgb[3]!);
+  const mRgb = REG_RGB.exec(s);
+  if (mRgb?.groups) {
+    const rgb = parseRgbChannels(mRgb.groups.r!, mRgb.groups.g!, mRgb.groups.b!);
     if (rgb === undefined) {
       return undefined;
     }

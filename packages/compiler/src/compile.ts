@@ -179,7 +179,7 @@ function analyzeImportsFromAst(
     return {componentMap, widgetImportMap};
   }
 
-  for (const [, info] of Object.entries(compiled.imports)) {
+  for (const info of Object.values(compiled.imports)) {
     if (info.isType) {
       continue;
     }
@@ -234,12 +234,10 @@ function assembleOutput(
   const transformed = sucraseTransform(tsCode, {
     transforms: ['typescript'],
     keepUnusedImports: true,
-    ...(sourceMap
-      ? {
-        filePath: filename,
-        sourceMapOptions: {compiledFilename: filename.replace(/\.vue$/v, '.js')},
-      }
-      : {}),
+    ...((sourceMap ?? false) && {
+      filePath: filename,
+      sourceMapOptions: {compiledFilename: filename.replace(/\.vue$/v, '.js')},
+    }),
   });
 
   let adjustedSourceMap = transformed.sourceMap;
@@ -264,15 +262,15 @@ function assembleOutput(
     imports: allImports,
     templateAst,
     descriptor,
-    ...(adjustedSourceMap ? {sourceMap: adjustedSourceMap} : {}),
+    ...(adjustedSourceMap && {sourceMap: adjustedSourceMap}),
   };
 }
 
 export {type SFCDescriptor} from '@vue/compiler-sfc';
 
 function parseImportName(raw: string): {original: string; local: string} {
-  const parts = raw.split(/\s+as\s+/v);
-  return {original: parts[0]!.trim(), local: parts.length > 1 ? parts[1]!.trim() : parts[0]!.trim()};
+  const parts = raw.split(/\bas\b/v);
+  return {original: parts[0]!.trim(), local: (parts[1] ?? parts[0])!.trim()};
 }
 
 function rewriteImport(
@@ -280,17 +278,17 @@ function rewriteImport(
   ctx: RewriteContext,
 ): string[] {
   // eslint-disable-next-line require-unicode-regexp
-  const match = /^(\s*import\s*{)([^}]+)(}\s*from\s*)['"]([^'"]+)['"]\s*;?\s*$/.exec(line);
-  if (!match) {
+  const match = /^(?<indent>\s*)import\s*\{(?<names>[^}]+)\}\s*from\s*["'](?<source>[^"']+)["']\s*(?:;\s*)?$/u.exec(line);
+  if (!match?.groups) {
     return [line];
   }
 
-  const [, prefix, names, suffix, sourceModule = ''] = match;
-  const nameList = (names ?? '').split(',').map(n => n.trim()).filter(Boolean);
+  const {indent = '', names = '', source: sourceModule = ''} = match.groups;
+  const nameList = names.split(',').map(n => n.trim()).filter(Boolean);
   const parsedNames = nameList.map(n => parseImportName(n));
 
-  const needsModuleRewrite = sourceModule in ctx.moduleRewrites;
-  const needsSymbolSplit = parsedNames.some(n => n.original in ctx.symbolRedirects);
+  const needsModuleRewrite = Object.hasOwn(ctx.moduleRewrites, sourceModule);
+  const needsSymbolSplit = parsedNames.some(n => Object.hasOwn(ctx.symbolRedirects, n.original));
   if (!needsModuleRewrite && !needsSymbolSplit) {
     return [line];
   }
@@ -312,8 +310,8 @@ function rewriteImport(
   for (const [target, groupNames] of groups) {
     const resolvedTarget = target === sourceModule
       ? (ctx.moduleRewrites[sourceModule] ?? sourceModule)
-      : target.replace('@buntui/core', ctx.coreModuleId);
-    lines.push(`${prefix!} ${groupNames.join(', ')} ${suffix!}'${resolvedTarget}';`);
+      : target.replace('@buntui/core', () => ctx.coreModuleId);
+    lines.push(`${indent}import { ${groupNames.join(', ')} } from '${resolvedTarget}';`);
   }
 
   return lines.length > 0 ? lines : [line];

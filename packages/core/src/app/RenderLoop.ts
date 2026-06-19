@@ -1,4 +1,4 @@
-import {DrawListBuffer} from '../draw_list/DrawListBuffer';
+import {DrawListBuffer} from '../draw-list/DrawListBuffer';
 import type {TuiContextLike} from '../extern/app/TuiContext';
 import type {TuiScene} from '../extern/app/TuiScene';
 import {LOGGER} from '../common/logger';
@@ -55,20 +55,20 @@ export class RenderLoop {
 
       try {
         const scene = this.#getScene();
-        if (scene?.visible) {
+        if (scene?.visible ?? false) {
           const now = performance.now();
           const dt = now - this.#lastTime;
           this.#lastTime = now;
 
           this.#accumulator += dt;
           while (this.#accumulator >= this.#tickInterval) {
-            scene.update(this.#tickInterval);
+            scene!.update(this.#tickInterval);
             this.#accumulator -= this.#tickInterval;
           }
 
           if (now - this.#lastRenderTime >= this.#renderInterval) {
             this.#drawList.reset();
-            scene.emitDrawCommands(this.#drawList);
+            scene!.emitDrawCommands(this.#drawList);
             this.#drawList.finish();
             this.#backend.renderDrawList(this.#context, this.#drawList);
             this.#lastRenderTime = now;

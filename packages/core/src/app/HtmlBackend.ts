@@ -1,4 +1,4 @@
-import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../draw-list/DrawListBuffer';
 import type {TuiContextLike} from '../extern/app/TuiContext';
 import type {LogLevel} from '../extern/app/types';
 import {setPasteBuffer} from '../clipboard';
@@ -151,14 +151,15 @@ export class HtmlBackend implements TuiBackend {
 
     const keyDisposable = this.#terminal.onKey((keyEvent: TerminalKeyEvent) => {
       const key = keyEvent.domEvent?.key ?? keyEvent.key;
-      if (this.#terminal.onData && keyEvent.domEvent?.ctrlKey && key === 'v') {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+      if (this.#terminal.onData && ((keyEvent.domEvent?.ctrlKey) ?? false) && key === 'v') {
         void ((navigator as unknown as {clipboard: {readText(): Promise<string>}}).clipboard.readText().then((text: string) => {
-          if (text.length > 0) {
-            setPasteBuffer(text);
-            handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeCtrlV()));
-            this.#lastKeyTime = Date.now();
+          if (text.length === 0) {
+            return;
           }
+
+          setPasteBuffer(text);
+          handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeCtrlV()));
+          this.#lastKeyTime = Date.now();
         }) /* c8 ignore next */
           .catch(() => {
           // Clipboard API may reject if permission denied
@@ -189,7 +190,7 @@ export class HtmlBackend implements TuiBackend {
   }
 
   stopEvents(): void {
-    this.#terminal.write('\u001B[?1003l\u001B[?1006l');
+    this.#terminal.write('\u{1B}[?1003l\u{1B}[?1006l');
     for (const disposable of this.#eventDisposables) {
       disposable.dispose();
     }
@@ -219,7 +220,7 @@ export class HtmlBackend implements TuiBackend {
       return undefined;
     }
 
-    const ESC = '\u001B';
+    const ESC = '\u{1B}';
 
     return this.#terminal.onData((data: string) => {
       if (data.length === 0) {
@@ -237,10 +238,10 @@ export class HtmlBackend implements TuiBackend {
         return;
       }
 
-      const char = data[0]!;
+      const char = data.at(0)!;
       if (char === '\r' || char === '\n') {
         handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeKeyboardEvent('Enter')));
-      } else if (char === '\u007F' || char === '\u0008') {
+      } else if (char === '\u{7F}' || char === '\u{8}') {
         handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeKeyboardEvent('Backspace')));
       } else if (char >= ' ') {
         handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeKeyboardEvent(char)));
@@ -251,14 +252,14 @@ export class HtmlBackend implements TuiBackend {
   }
 
   #startMouseTracking(handler: TuiBackendEventHandler): {dispose(): void} | undefined {
-    if (this.#terminal.onMouse ?? !this.#terminal.onData) {
+    if (this.#terminal.onMouse !== undefined || this.#terminal.onData === undefined) {
       return undefined;
     }
 
-    this.#terminal.write('\u001B[?1003h\u001B[?1006h');
+    this.#terminal.write('\u{1B}[?1003h\u{1B}[?1006h');
 
-    // eslint-disable-next-line no-control-regex
-    const sgrRegex = /\u001B\[<(\d+);(\d+);(\d+)([Mm])/gv;
+    // eslint-disable-next-line no-control-regex, regexp/no-control-character
+    const sgrRegex = /\u{1B}\[<\d+;\d+;\d+m/giv;
 
     return this.#terminal.onData((data: string) => {
       sgrRegex.lastIndex = 0;
@@ -445,7 +446,7 @@ export class HtmlBackend implements TuiBackend {
           buttons: 0,
           action: 'mouseup',
         })));
-        if (this.#isTextInputFocused?.()) {
+        if ((this.#isTextInputFocused?.()) ?? false) {
           this.#terminal.focus?.();
         } else {
           this.#terminal.blur?.();
@@ -581,7 +582,7 @@ function dispatchKeyboardFromData(data: string, dedupTime: number, handler: TuiB
   for (const char of data) {
     if (char === '\r' || char === '\n') {
       handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeKeyboardEvent('Enter')));
-    } else if (char === '\u007F' || char === '\u0008') {
+    } else if (char === '\u{7F}' || char === '\u{8}') {
       handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeKeyboardEvent('Backspace')));
     } else if (char >= ' ') {
       handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeKeyboardEvent(char)));

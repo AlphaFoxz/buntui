@@ -1,12 +1,11 @@
-/* eslint-disable unicorn/prefer-module */
-/* eslint-disable @typescript-eslint/no-require-imports */
-/* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
+/* eslint-disable @typescript-eslint/no-require-imports, unicorn/prefer-module -- Bun FFI native platform module uses CommonJS require for conditional loading */
 import type {TuiBackend} from '../app/TuiBackend';
 import type {LogSink} from '../common/logger';
 import {setPtr} from './pointer';
 
 const {ptr: bunPtr} = require('bun:ffi') as {ptr: (buffer: ArrayBuffer | ArrayBufferView) => number};
 
+// eslint-disable-next-line unicorn/no-top-level-side-effects -- platform bootstrap: must register FFI ptr function before any extern call
 setPtr(bunPtr);
 
 type NodeProcess = typeof globalThis.process;

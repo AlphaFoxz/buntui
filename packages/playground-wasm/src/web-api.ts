@@ -2,7 +2,9 @@ import {
   createApp,
   HtmlBackend,
   WasmModule,
-  animationFrameScheduler, type TerminalLike, type TuiSFCModule,
+  animationFrameScheduler,
+  type TerminalLike,
+  type TuiSFCModule,
 } from '@buntui/core';
 
 type TuiApp = ReturnType<typeof createApp>;

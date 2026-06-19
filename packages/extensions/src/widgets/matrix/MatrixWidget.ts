@@ -1,11 +1,16 @@
 import {
-  type DrawListBuffer, type TuiWidgetRect, TuiWidgetEntity,
+  type DrawListBuffer,
+  type TuiWidgetRect,
+  TuiWidgetEntity,
 } from '@buntui/core';
 import {buildTrailGradient} from '../../utils/color';
 import {MATRIX_CHARSET} from './charset';
 import {DEFAULT_MATRIX_COLOR_SCHEME, DEFAULT_MATRIX_OPTIONS} from './defaults';
 import {
-  type MatrixColumnState, type MatrixColumnConfig, createColumn, tickColumn,
+  type MatrixColumnState,
+  type MatrixColumnConfig,
+  createColumn,
+  tickColumn,
 } from './matrix-column';
 import type {MatrixWidgetOptions} from './types';
 
@@ -105,9 +110,7 @@ export class MatrixWidget extends TuiWidgetEntity {
       }
 
       const cx = absX + col;
-      const {headY} = column;
-      const {trailLength} = column;
-      const {chars} = column;
+      const {headY, trailLength, chars} = column;
 
       for (let t = 0; t < trailLength; t++) {
         const cy = absY + headY - t;

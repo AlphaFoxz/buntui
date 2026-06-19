@@ -1,6 +1,6 @@
 /**
- * Runtime helper function names used in generated code.
- * These are imported from the `core` package at runtime.
+ Runtime helper function names used in generated code.
+ These are imported from the `core` package at runtime.
  */
 export const RUNTIME_HELPERS = {
   // Widget creation

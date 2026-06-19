@@ -7,7 +7,11 @@ import {
 } from '@buntui/core';
 import {DEFAULT_SNAKE_COLOR_SCHEME, DEFAULT_SNAKE_OPTIONS} from './defaults';
 import type {
-  SnakeColorScheme, SnakeDirection, SnakeGameState, SnakePoint, SnakeWidgetOptions,
+  SnakeColorScheme,
+  SnakeDirection,
+  SnakeGameState,
+  SnakePoint,
+  SnakeWidgetOptions,
 } from './types';
 
 const CHAR_HEAD = 0x00_40; // '@'

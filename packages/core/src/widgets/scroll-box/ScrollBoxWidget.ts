@@ -1,4 +1,4 @@
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
 import {parseColor} from '../../utils/color';
 import {getTheme} from '../../theme/store';
@@ -12,7 +12,8 @@ import {
   computeScrollbarGeometry,
   renderScrollbar,
   scrollbarHitTest,
-  computeThumbDragOffset, type ScrollbarHitTest,
+  computeThumbDragOffset,
+  type ScrollbarHitTest,
 } from '../scrollbar-helper';
 import type {ScrollBoxWidgetOptions} from './types';
 
@@ -150,11 +151,13 @@ export class ScrollBoxWidget extends InteractiveWidget {
     });
 
     this.on('mouseup', () => {
-      if (this.#dragScrolling || this.#thumbDragging) {
-        this.#dragScrolling = false;
-        this.#thumbDragging = false;
-        this.stopPropagation();
+      if (!(this.#dragScrolling || this.#thumbDragging)) {
+        return;
       }
+
+      this.#dragScrolling = false;
+      this.#thumbDragging = false;
+      this.stopPropagation();
     });
   }
 

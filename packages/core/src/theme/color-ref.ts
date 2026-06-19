@@ -1,4 +1,3 @@
-/* eslint-disable @stylistic/no-mixed-operators */
 import {colorToNumber} from '../utils/color-parser';
 import {rgbToOklch, oklchToRgb} from '../utils/oklch';
 import type {TuiTheme, TuiThemeColors} from './types';
@@ -76,7 +75,7 @@ function applyThemedTransforms(baseRgba: number, options: TuiThemedColorOptions)
     const oklch = rgbToOklch(r / 255, g / 255, b / 255);
     const l = Math.max(0, Math.min(1, oklch.l + (options.lightnessOffset ?? 0)));
     const c = Math.max(0, oklch.c + (options.chromaOffset ?? 0));
-    const h = ((oklch.h + (options.hueOffset ?? 0)) % 360 + 360) % 360;
+    const h = (((oklch.h + (options.hueOffset ?? 0)) % 360) + 360) % 360;
     const rgb = oklchToRgb(l, c, h);
     finalR = rgb.r;
     finalG = rgb.g;
@@ -123,11 +122,9 @@ export function resolveThemedOverrides<T extends Record<string, unknown>>(
 
     const value = options[key];
     if (isThemedColorRef(value)) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
       result[key] = resolveThemedColor(value, token as keyof TuiThemeColors);
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
   return result as T;
 }

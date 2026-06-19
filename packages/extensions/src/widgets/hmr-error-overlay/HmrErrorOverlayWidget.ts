@@ -42,8 +42,8 @@ export function mountHmrErrorOverlay(scene: Mountable, error: Error): HmrErrorOv
 }
 
 function writeToClipboard(text: string): void {
-  const encoded = btoa(new TextEncoder().encode(text).reduce((s, b) => s + String.fromCodePoint(b), ''));
-  const sequence = `\u001B]52;c;${encoded}\u0007`;
+  const encoded = new TextEncoder().encode(text).toBase64();
+  const sequence = `\u{1B}]52;c;${encoded}\u{7}`;
   process.stdout.write(sequence);
 }
 
@@ -87,10 +87,12 @@ class HmrErrorOverlayWidget extends TuiWidgetEntity {
     });
 
     this.on('click', data => {
-      if (this.#isButtonRow(data.y)) {
-        writeToClipboard(this.#clipboardText);
-        this.#copiedFrames = FEEDBACK_FRAMES;
+      if (!this.#isButtonRow(data.y)) {
+        return;
       }
+
+      writeToClipboard(this.#clipboardText);
+      this.#copiedFrames = FEEDBACK_FRAMES;
     });
   }
 
@@ -187,7 +189,7 @@ function truncate(text: string, maxLength: number): string {
     return text;
   }
 
-  return `${text.slice(0, maxLength - 1)}\u2026`;
+  return `${text.slice(0, maxLength - 1)}\u{2026}`;
 }
 
 function wrapText(text: string, maxLength: number): string[] {

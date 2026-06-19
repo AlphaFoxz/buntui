@@ -8,7 +8,7 @@
         "@types/bun": "1.3.14",
         "eslint-config-xo-typescript": "^11.0.0",
         "vue-tsc": "^3.3.5",
-        "xo": "^3.0.0",
+        "xo": "^3.0.1",
       },
       "peerDependencies": {
         "typescript": "=5.9.3",
@@ -590,7 +590,7 @@
 
     "balanced-match": ["balanced-match@4.0.4", "https://registry.npmmirror.com/balanced-match/-/balanced-match-4.0.4.tgz", {}, "sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA=="],
 
-    "baseline-browser-mapping": ["baseline-browser-mapping@2.10.37", "https://registry.npmmirror.com/baseline-browser-mapping/-/baseline-browser-mapping-2.10.37.tgz", { "bin": { "baseline-browser-mapping": "dist/cli.cjs" } }, "sha512-girxaJ7WZssDOFhzCGZTDKoTa1gk6A1TbflaYTpykLJ4UU9Fz9kx1aREM8JCuoVHbL8X8T/mJg7w2oYSq72Oig=="],
+    "baseline-browser-mapping": ["baseline-browser-mapping@2.10.38", "https://registry.npmmirror.com/baseline-browser-mapping/-/baseline-browser-mapping-2.10.38.tgz", { "bin": { "baseline-browser-mapping": "dist/cli.cjs" } }, "sha512-31/02mVB4yuQU6adKk5SlY6m+mxDwUq5KZkyYgnLrrKl7TEm1+3PyDtDBz2kOv/wxZz41GHsvV1A/u6RmiyBvw=="],
 
     "bidi-js": ["bidi-js@1.0.3", "https://registry.npmmirror.com/bidi-js/-/bidi-js-1.0.3.tgz", { "dependencies": { "require-from-string": "^2.0.2" } }, "sha512-RKshQI1R3YQ+n9YJz2QQ147P66ELpa1FQEg20Dk8oW9t2KgLbpDLLp9aGZ7y8WHSshDknG0bknqGw5/tyCs5tw=="],
 
@@ -732,7 +732,7 @@
 
     "eslint-plugin-import-x": ["eslint-plugin-import-x@4.16.2", "https://registry.npmmirror.com/eslint-plugin-import-x/-/eslint-plugin-import-x-4.16.2.tgz", { "dependencies": { "@package-json/types": "^0.0.12", "@typescript-eslint/types": "^8.56.0", "comment-parser": "^1.4.1", "debug": "^4.4.1", "eslint-import-context": "^0.1.9", "is-glob": "^4.0.3", "minimatch": "^9.0.3 || ^10.1.2", "semver": "^7.7.2", "stable-hash-x": "^0.2.0", "unrs-resolver": "^1.9.2" }, "peerDependencies": { "@typescript-eslint/utils": "^8.56.0", "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0", "eslint-import-resolver-node": "*" }, "optionalPeers": ["@typescript-eslint/utils", "eslint-import-resolver-node"] }, "sha512-rM9K8UBHcWKpzQzStn1YRN2T5NvdeIfSVoKu/lKF41znQXHAUcBbYXe5wd6GNjZjTrP7viQ49n1D83x/2gYgIw=="],
 
-    "eslint-plugin-jsdoc": ["eslint-plugin-jsdoc@63.0.5", "https://registry.npmmirror.com/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-63.0.5.tgz", { "dependencies": { "@es-joy/jsdoccomment": "~0.87.0", "@es-joy/resolve.exports": "1.2.0", "are-docs-informative": "^0.0.2", "comment-parser": "1.4.7", "debug": "^4.4.3", "escape-string-regexp": "^4.0.0", "espree": "^11.2.0", "esquery": "^1.7.0", "html-entities": "^2.6.0", "object-deep-merge": "^2.0.1", "parse-imports-exports": "^0.2.4", "semver": "^7.8.2", "spdx-expression-parse": "^4.0.0", "to-valid-identifier": "^1.0.0" }, "peerDependencies": { "eslint": "^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0" } }, "sha512-AzI9bgKhV9li049/mIblX0c41DeWMMfH9qNsRasc+fAxwURRKChIp03Pk57M7UTf+Y6hifTJ89kQyCOoOLtEDw=="],
+    "eslint-plugin-jsdoc": ["eslint-plugin-jsdoc@63.0.6", "https://registry.npmmirror.com/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-63.0.6.tgz", { "dependencies": { "@es-joy/jsdoccomment": "~0.87.0", "@es-joy/resolve.exports": "1.2.0", "are-docs-informative": "^0.0.2", "comment-parser": "1.4.7", "debug": "^4.4.3", "escape-string-regexp": "^4.0.0", "espree": "^11.2.0", "esquery": "^1.7.0", "html-entities": "^2.6.0", "object-deep-merge": "^2.0.1", "parse-imports-exports": "^0.2.4", "semver": "^7.8.2", "spdx-expression-parse": "^4.0.0", "to-valid-identifier": "^1.0.0" }, "peerDependencies": { "eslint": "^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0" } }, "sha512-qXMUdwQf+igjSLe/DZqyY1baVR0+snEJ3l/+2odJjeoAG43PrcpA0tSaLw2dC1iHvfKzo1YnZLGvgxrvAViyfQ=="],
 
     "eslint-plugin-n": ["eslint-plugin-n@18.1.0", "https://registry.npmmirror.com/eslint-plugin-n/-/eslint-plugin-n-18.1.0.tgz", { "dependencies": { "@eslint-community/eslint-utils": "^4.5.0", "enhanced-resolve": "^5.17.1", "eslint-plugin-es-x": "^7.8.0", "get-tsconfig": "^4.8.1", "globals": "^15.11.0", "globrex": "^0.1.2", "ignore": "^5.3.2", "semver": "^7.6.3" }, "peerDependencies": { "eslint": ">=8.57.1", "ts-declaration-location": "^1.0.6", "typescript": ">=5.0.0" }, "optionalPeers": ["ts-declaration-location", "typescript"] }, "sha512-hkUm9EtnFV2h2fE16jNVUfCVUqvPzI7fGLsFdun5lFt/pbmf2kCgDx6ymi9rx+NCUSggBmurJCZOfG20JBs/kg=="],
 
@@ -1082,7 +1082,7 @@
 
     "natural-compare": ["natural-compare@1.4.0", "https://registry.npmmirror.com/natural-compare/-/natural-compare-1.4.0.tgz", {}, "sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw=="],
 
-    "node-releases": ["node-releases@2.0.47", "https://registry.npmmirror.com/node-releases/-/node-releases-2.0.47.tgz", {}, "sha512-Uzmd6LXpouKo8EUK68IjH4+E01w/hXyV3R3g/geCJo+rXLNfh1xucB+LOzYEOQPSiUK3h/xZf0cQGcSsmyL2Og=="],
+    "node-releases": ["node-releases@2.0.48", "https://registry.npmmirror.com/node-releases/-/node-releases-2.0.48.tgz", {}, "sha512-1uz8041X6LoI6ZSdZacM9lVY28vuzDlSKitnpbSNK0RfKoIJkX29NBPVEFXhnuSuEOA9Ww0xnPJ+ILWbGAv8DA=="],
 
     "nopt": ["nopt@7.2.1", "https://registry.npmmirror.com/nopt/-/nopt-7.2.1.tgz", { "dependencies": { "abbrev": "^2.0.0" }, "bin": { "nopt": "bin/nopt.js" } }, "sha512-taM24ViiimT/XntxbPyJQzCG+p4EKOpgD3mxFwW38mGjVUrfERQOeY4EDHjdnptttfHuHQXFx+lTP08Q+mLa/w=="],
 
@@ -1368,7 +1368,7 @@
 
     "xmlchars": ["xmlchars@2.2.0", "https://registry.npmmirror.com/xmlchars/-/xmlchars-2.2.0.tgz", {}, "sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw=="],
 
-    "xo": ["xo@3.0.0", "https://registry.npmmirror.com/xo/-/xo-3.0.0.tgz", { "dependencies": { "@sindresorhus/tsconfig": "^8.1.0", "arrify": "^3.0.0", "cosmiconfig": "^9.0.2", "define-lazy-prop": "^3.0.0", "eslint": "^10.5.0", "eslint-config-xo": "^0.53.1", "eslint-formatter-pretty": "^7.1.0", "find-cache-directory": "^6.0.0", "get-stdin": "^10.0.0", "get-tsconfig": "^4.14.0", "globby": "^16.2.0", "jiti": "^2.7.0", "meow": "^14.1.0", "micromatch": "^4.0.8", "open-editor": "^6.0.0", "path-exists": "^5.0.0", "prettier": "^3.8.4", "type-fest": "^5.7.0", "typescript": "^6.0.3" }, "bin": { "xo": "dist/cli.js" } }, "sha512-8rjd54dDRznsdx4BLiLthvuAfeaYSHY3LnDefYHLHDnCKm4Wr6LXjyxO0lFIFcEoOhbjWIRxRFYQbRKfxE+60g=="],
+    "xo": ["xo@3.0.1", "https://registry.npmmirror.com/xo/-/xo-3.0.1.tgz", { "dependencies": { "@sindresorhus/tsconfig": "^8.1.0", "arrify": "^3.0.0", "cosmiconfig": "^9.0.2", "define-lazy-prop": "^3.0.0", "eslint": "^10.5.0", "eslint-config-xo": "^0.53.1", "eslint-formatter-pretty": "^7.1.0", "find-cache-directory": "^6.0.0", "get-stdin": "^10.0.0", "get-tsconfig": "^4.14.0", "globby": "^16.2.0", "jiti": "^2.7.0", "meow": "^14.1.0", "micromatch": "^4.0.8", "open-editor": "^6.0.0", "path-exists": "^5.0.0", "prettier": "^3.8.4", "type-fest": "^5.7.0", "typescript": "^6.0.3" }, "bin": { "xo": "dist/cli.js" } }, "sha512-khj+FZ0QPPdcjI5BWgFWUpjQTlSNFlEUEgWeyWQbOd2ivaHnCRED1kEVXasnoWZ0BfS37u9kCD1/nY17UInfCg=="],
 
     "yaml": ["yaml@2.9.0", "https://registry.npmmirror.com/yaml/-/yaml-2.9.0.tgz", { "bin": { "yaml": "bin.mjs" } }, "sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA=="],
 

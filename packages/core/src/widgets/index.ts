@@ -14,8 +14,8 @@ export {createRadioGroupWidget, RadioGroupWidget} from './radio/RadioGroupWidget
 export type {RadioGroupWidgetOptions} from './radio/types';
 export {createSelectButtonWidget, SelectButtonWidget} from './select-button/SelectButtonWidget';
 export type {SelectButtonWidgetOptions} from './select-button/types';
-export {createSwitchWidget, SwitchWidget} from './switch_/SwitchWidget';
-export type {SwitchWidgetOptions} from './switch_/types';
+export {createSwitchWidget, SwitchWidget} from './switch/SwitchWidget';
+export type {SwitchWidgetOptions} from './switch/types';
 export {createScrollBoxWidget, ScrollBoxWidget} from './scroll-box/ScrollBoxWidget';
 export type {ScrollBoxWidgetOptions} from './scroll-box/types';
 export {createProgressWidget, ProgressWidget} from './progress/ProgressWidget';

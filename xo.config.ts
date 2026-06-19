@@ -1,4 +1,4 @@
-import {type FlatXoConfig} from 'xo';
+import type {FlatXoConfig} from 'xo';
 
 /**
  * @see {@link 'file://./node_modules/eslint-config-xo-typescript/index.js'}
@@ -11,16 +11,17 @@ const expose: FlatXoConfig = [
       '**/*.md',
       '**/*.html',
       '**/dist/**',
-      'designs/**',
       '**/scripts/**',
+      'designs/**',
       'packages/cli/templates/**',
       // 'packages/create-buntui/templates/**',
       'packages/github-pages/**',
-      'xo.config.ts'
+      'xo.config.ts',
     ],
   },
   {
     rules: {
+      // ===== Project conventions =====
       'no-restricted-globals': [
         'error',
         {
@@ -29,7 +30,8 @@ const expose: FlatXoConfig = [
         },
       ],
       '@typescript-eslint/no-restricted-types': [
-        'error', {
+        'error',
+        {
           types: {
             object: {
               message: 'The `object` type is hard to use. Use `Record<string, unknown>` instead. See: https://github.com/typescript-eslint/typescript-eslint/pull/848',
@@ -41,9 +43,7 @@ const expose: FlatXoConfig = [
             // },
             Buffer: {
               message: 'Use Uint8Array instead. See: https://sindresorhus.com/blog/goodbye-nodejs-buffer',
-              suggest: [
-                'Uint8Array',
-              ],
+              suggest: ['Uint8Array'],
             },
             '[]': 'Don\'t use the empty array type `[]`. It only allows empty arrays. Use `SomeType[]` instead.',
             '[[]]': 'Don\'t use `[[]]`. It only allows an array with a single element which is an empty array. Use `SomeType[][]` instead.',
@@ -53,6 +53,9 @@ const expose: FlatXoConfig = [
           },
         },
       ],
+
+      // ===== @typescript-eslint =====
+      '@typescript-eslint/class-literal-property-style': 'off',
       '@typescript-eslint/naming-convention': [
         'error',
         {
@@ -62,37 +65,79 @@ const expose: FlatXoConfig = [
           trailingUnderscore: 'allow',
         },
       ],
-      'unicorn/filename-case': [
+      '@typescript-eslint/no-redeclare': 'off',
+      '@typescript-eslint/no-unsafe-function-type': 'off',
+      '@typescript-eslint/no-unused-private-class-members': 'warn',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_'},
+      ],
+      '@typescript-eslint/strict-boolean-expressions': [
         'error',
         {
-          cases: {
-            kebabCase: true,
-            camelCase: true,
-            pascalCase: true,
-          },
+          allowString: true,
+          allowNumber: true,
+          allowNullableObject: true,
+          allowNullableString: true,
+          allowNullableNumber: true,
+          allowNullableEnum: true,
+          allowNullableBoolean: false,
+          allowAny: false,
         },
       ],
+      '@typescript-eslint/switch-exhaustiveness-check': [
+        'error',
+        {requireDefaultForNonUnion: true},
+      ],
+
+      // ===== @stylistic =====
       '@stylistic/indent': ['error', 2],
       '@stylistic/indent-binary-ops': ['error', 2],
-      '@typescript-eslint/no-redeclare': 'off',
-      'unicorn/text-encoding-identifier-case': 'off',
-      'no-bitwise': 'off',
-      'unicorn/prefer-math-trunc': 'off',
-      '@typescript-eslint/class-literal-property-style': 'off',
-      'import-x/extensions': 'off',
-      'no-useless-call': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn', {argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_'}],
-      '@typescript-eslint/no-unused-private-class-members': 'warn',
-      'unicorn/require-module-specifiers': 'off',
-      'complexity': ['error', {max: 35}],
-      'max-params': ['error', {max: 6}],
-      "@typescript-eslint/no-unsafe-function-type": "off",
-      "@typescript-eslint/switch-exhaustiveness-check": [
+
+      // ===== unicorn =====
+      'unicorn/consistent-class-member-order': [
         'error',
         {
-          "requireDefaultForNonUnion": true
-        }
+          order: [
+            'static-field',
+            'static-block',
+            'static-method',
+            'public-field',
+            'private-field',
+            'constructor',
+            'public-method',
+            'private-method',
+          ],
+        },
       ],
+      'unicorn/filename-case': [
+        'error',
+        {cases: {kebabCase: true, camelCase: true, pascalCase: true}},
+      ],
+      'unicorn/no-break-in-nested-loop': 'off',
+      'unicorn/prefer-math-trunc': 'off',
+      'unicorn/prefer-number-coercion': 'off',
+      'unicorn/require-module-specifiers': 'off',
+      'unicorn/text-encoding-identifier-case': 'off',
+
+      // ===== import-x =====
+      'import-x/extensions': 'off',
+
+      // ===== ESLint core =====
+      'complexity': ['error', {max: 35}],
+      'max-params': ['error', {max: 6}],
+      'no-bitwise': 'off',
+      'no-useless-call': 'off',
+    },
+  },
+  {
+    files: ['packages/cli/src/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-type-assertion': 'off',
+      'import-x/no-unassigned-import': 'off',
+      'import-x/order': 'off',
+      'require-unicode-regexp': 'off',
+      'unicorn/no-process-exit': 'off',
     },
   },
   {
@@ -102,24 +147,14 @@ const expose: FlatXoConfig = [
     },
   },
   {
-    files: ['packages/cli/src/**/*.ts'],
-    rules: {
-      'unicorn/no-process-exit': 'off',
-      '@typescript-eslint/no-unsafe-type-assertion': 'off',
-      'require-unicode-regexp': 'off',
-      'import-x/no-unassigned-import': 'off',
-      'import-x/order': 'off',
-    },
-  },
-  {
     files: ['packages/create-buntui/templates/**/*.ts'],
     rules: {
-      'unicorn/no-await-expression-member': 'off',
-      '@typescript-eslint/no-unsafe-type-assertion': 'off',
-      '@typescript-eslint/no-unsafe-member-access': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-type-assertion': 'off',
+      'unicorn/no-await-expression-member': 'off',
     },
   },
 ];

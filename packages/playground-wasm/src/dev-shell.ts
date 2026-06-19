@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, unicorn/no-await-expression-member -- dynamic import of Vue SFC app at top level */
 import '@xterm/xterm/css/xterm.css';
 import {Terminal} from '@xterm/xterm';
 import {FitAddon} from '@xterm/addon-fit';
@@ -7,9 +8,7 @@ import {createWebApp, RECOMMENDED_FONTS} from './web-api';
 declare const BUNTUI_APP_NAME: string;
 
 const appName: string = BUNTUI_APP_NAME;
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, unicorn/no-await-expression-member */
 const App: TuiSFCModule = (await import(`./apps/${appName}/App.vue`)).default;
-/* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, unicorn/no-await-expression-member */
 
 const termElement: HTMLElement = document.querySelector('#terminal')!;
 

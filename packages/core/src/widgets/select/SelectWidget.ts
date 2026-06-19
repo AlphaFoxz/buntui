@@ -1,8 +1,11 @@
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
-import {BorderSides} from '../../draw_list/types';
+import {BorderSides} from '../../draw-list/types';
 import {
-  resolveBorderStyle, type TuiBorderStyleName, type TuiWidgetRect, type TuiWidgetSize,
+  resolveBorderStyle,
+  type TuiBorderStyleName,
+  type TuiWidgetRect,
+  type TuiWidgetSize,
 } from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
@@ -15,7 +18,8 @@ import {
   computeScrollbarGeometry,
   renderScrollbar,
   scrollbarHitTest,
-  computeThumbDragOffset, type ScrollbarHitTest,
+  computeThumbDragOffset,
+  type ScrollbarHitTest,
 } from '../scrollbar-helper';
 import type {SelectOption, SelectWidgetOptions} from './types';
 
@@ -524,8 +528,8 @@ export class SelectWidget extends InteractiveWidget {
       });
 
       if (this.#label.length > 0) {
-        const maxLabelWidth = width - 2;
-        const clippedLabel = truncateToWidth(this.#label, maxLabelWidth);
+        const maxBorderLabelWidth = width - 2;
+        const clippedLabel = truncateToWidth(this.#label, maxBorderLabelWidth);
         buffer.drawText({
           x: x + 1,
           y,
@@ -559,10 +563,10 @@ export class SelectWidget extends InteractiveWidget {
       const isHovered = i === this.#hoveredIndex;
       const isFocused = i === this.#focusedIndex;
 
-      let colors: {fg: number; bg: number} = this.#dropdownColors.item;
-      if (isSelected) {
-        colors = this.#dropdownColors.itemSelected;
-      }
+      let colors: {fg: number; bg: number} =
+        isSelected
+          ? this.#dropdownColors.itemSelected
+          : this.#dropdownColors.item;
 
       if (isHovered || isFocused) {
         colors = this.#dropdownColors.itemHovered;

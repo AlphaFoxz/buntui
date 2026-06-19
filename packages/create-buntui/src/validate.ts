@@ -27,8 +27,7 @@ const WINDOWS_RESERVED = new Set([
   'lpt9',
 ]);
 
-// eslint-disable-next-line require-unicode-regexp
-const VALID_NPM_NAME = /^(@[a-z\d][-a-z\d]*\/)?[a-z\d][-a-z\d_]*$/;
+const VALID_NPM_NAME = /^(?:@[\da-z][\d\-a-z]*\/)?[\da-z][\d\-_a-z]*$/v;
 
 export function validateProjectName(name: string, targetDir: string): string | undefined {
   const trimmed = name.trim();

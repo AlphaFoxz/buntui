@@ -1,8 +1,8 @@
 import {it, expect, describe} from 'bun:test';
 import {BoxWidget, createBox} from '../BoxWidget';
 import {TextWidget} from '../../text/TextWidget';
-import {DrawListBuffer} from '../../../draw_list/DrawListBuffer';
-import {DrawCmd} from '../../../draw_list/types';
+import {DrawListBuffer} from '../../../draw-list/DrawListBuffer';
+import {DrawCmd} from '../../../draw-list/types';
 
 function createBoxWith(options?: {x?: number; y?: number; width?: number; height?: number; borderStyle?: string; border?: boolean; direction?: string; gap?: number; align?: string; draggable?: boolean}) {
   return new BoxWidget({

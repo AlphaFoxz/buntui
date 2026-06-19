@@ -72,10 +72,12 @@ export class FocusManager {
   }
 
   blurWidget(): void {
-    if (this.#focusedWidget) {
-      this.#focusedWidget.blur();
-      this.#focusedWidget = undefined;
+    if (!this.#focusedWidget) {
+      return;
     }
+
+    this.#focusedWidget.blur();
+    this.#focusedWidget = undefined;
   }
 
   get focusedWidget() {

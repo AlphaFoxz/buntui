@@ -2,7 +2,10 @@ import process from 'node:process';
 import path from 'node:path';
 import fs from 'node:fs';
 import {
-  listApps, getDistDir, getPublicDir, getCwd,
+  listApps,
+  getDistDir,
+  getPublicDir,
+  getCwd,
 } from '../lib/app-resolver.ts';
 import {createVuePlugin} from '../lib/vue-plugin.ts';
 import {copyNativeBinary} from '../lib/native-binary.ts';
@@ -15,14 +18,14 @@ function rewriteImports(content: string, originalPath: string, fileMap: Map<stri
     }
 
     const rel = path.relative(originalDir, otherPath).replaceAll('\\', '/');
-    const escaped = rel.replaceAll(/[.*+?^${}()|[\]\\]/gu, String.raw`\$&`);
+    const escaped = rel.replaceAll(/[$()*+.?[\\\]^{|}]/gu, String.raw`\$&`);
     content = content.replaceAll(
       new RegExp(String.raw`from\s*(["'])${escaped}\1`, 'gu'),
-      `from $1./${otherName}$1`,
+      (_, quote) => `from ${quote}./${otherName}${quote}`,
     );
     content = content.replaceAll(
       new RegExp(String.raw`import\s*\(\s*(["'])${escaped}\1\s*\)`, 'gu'),
-      `import("./${otherName}")`,
+      () => `import("./${otherName}")`,
     );
   }
 
@@ -89,9 +92,9 @@ export async function buildCommand(): Promise<void> {
 
     for (const output of result.outputs) {
       const relative = path.relative(distDir, output.path).replaceAll('\\', '/');
-      const appMatch = /^(.+?)[\\/][^.]+\.js$/u.exec(relative);
-      if (appMatch) {
-        fileMap.set(output.path, `${appMatch[1]!}.js`);
+      const appMatch = /^(?<name>[^/\\]+)[/\\][^.]+\.js$/u.exec(relative);
+      if (appMatch?.groups) {
+        fileMap.set(output.path, `${appMatch?.groups.name ?? ''}.js`);
       } else if (relative.endsWith('.js')) {
         fileMap.set(output.path, chunkIndex === 0 ? '__common.js' : `__common-${chunkIndex}.js`);
         chunkIndex++;
@@ -111,7 +114,7 @@ export async function buildCommand(): Promise<void> {
       }
     }
 
-    const staleChunks = [...fileMap.keys()].filter(p => !path.relative(distDir, p).replaceAll('\\', '/').includes('/'));
+    const staleChunks = fileMap.keys().filter(p => !path.relative(distDir, p).replaceAll('\\', '/').includes('/'));
     for (const p of staleChunks) {
       const newName = fileMap.get(p)!;
       if (path.basename(p) !== newName && fs.existsSync(p)) {
@@ -125,7 +128,7 @@ export async function buildCommand(): Promise<void> {
   } else {
     for (const output of result.outputs) {
       const relative = path.relative(distDir, output.path).replaceAll('\\', '/');
-      keepFiles.add(relative.split('/')[0]!);
+      keepFiles.add(relative.split('/', 1)[0]!);
       console.log(`  ${relative} (${(output.size / 1024).toFixed(1)} KB)`);
     }
   }

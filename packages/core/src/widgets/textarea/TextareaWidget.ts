@@ -1,8 +1,11 @@
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {type KeyboardEvent, type MouseEvent} from '../../events/types';
-import {BorderSides, resolveCursorMode, type CursorModeName} from '../../draw_list/types';
+import {BorderSides, resolveCursorMode, type CursorModeName} from '../../draw-list/types';
 import {
-  resolveBorderStyle, type TuiBorderStyleName, type TuiWidgetRect, type TuiWidgetSize,
+  resolveBorderStyle,
+  type TuiBorderStyleName,
+  type TuiWidgetRect,
+  type TuiWidgetSize,
 } from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
@@ -274,10 +277,12 @@ export class TextareaWidget extends InteractiveWidget {
     });
 
     this.on('mouseup', () => {
-      if (this.#isSelecting) {
-        this.#isSelecting = false;
-        this.stopPropagation();
+      if (!this.#isSelecting) {
+        return;
       }
+
+      this.#isSelecting = false;
+      this.stopPropagation();
     });
 
     this.on('wheel', data => {
@@ -857,19 +862,21 @@ export class TextareaWidget extends InteractiveWidget {
   }
 
   #handleCharInput(char: string): void {
-    if (this.#maxLength === 0 || this.#value.length < this.#maxLength || this.#getSelectionRange() !== undefined) {
-      this.#pushUndo();
-      this.#deleteSelection();
-      if (this.#maxLength === 0 || this.#value.length < this.#maxLength) {
-        const offset = this.#positionToOffset({line: this.#cursorLine, col: this.#cursorCol});
-        this.#value = this.#value.slice(0, offset) + char + this.#value.slice(offset);
-        this.#rebuildLines();
-        this.#cursorCol++;
-      }
-
-      this.#clampScrollOffset();
-      this.dispatch('input', {value: this.#value});
+    if (!(this.#maxLength === 0 || this.#value.length < this.#maxLength || this.#getSelectionRange() !== undefined)) {
+      return;
     }
+
+    this.#pushUndo();
+    this.#deleteSelection();
+    if (this.#maxLength === 0 || this.#value.length < this.#maxLength) {
+      const offset = this.#positionToOffset({line: this.#cursorLine, col: this.#cursorCol});
+      this.#value = this.#value.slice(0, offset) + char + this.#value.slice(offset);
+      this.#rebuildLines();
+      this.#cursorCol++;
+    }
+
+    this.#clampScrollOffset();
+    this.dispatch('input', {value: this.#value});
   }
 
   #handleEnter(): void {
@@ -889,7 +896,7 @@ export class TextareaWidget extends InteractiveWidget {
     this.#pushUndo();
     this.#deleteSelection();
     const offset = this.#positionToOffset({line: this.#cursorLine, col: this.#cursorCol});
-    const tab = '    ';
+    const tab = ' '.repeat(4);
     this.#value = this.#value.slice(0, offset) + tab + this.#value.slice(offset);
     this.#rebuildLines();
     this.#cursorCol += tab.length;
@@ -1185,12 +1192,14 @@ export class TextareaWidget extends InteractiveWidget {
   }
 
   #handleSelectAll(event: KeyboardEvent): void {
-    if (event.ctrlKey && !event.altKey && !event.metaKey && this.#value.length > 0) {
-      this.#selectionAnchor = {line: 0, col: 0};
-      this.#cursorLine = this.#logicalLines.length - 1;
-      this.#cursorCol = this.#logicalLines[this.#cursorLine]!.length;
-      this.#clampScrollOffset();
+    if (!(event.ctrlKey && !event.altKey && !event.metaKey && this.#value.length > 0)) {
+      return;
     }
+
+    this.#selectionAnchor = {line: 0, col: 0};
+    this.#cursorLine = this.#logicalLines.length - 1;
+    this.#cursorCol = this.#logicalLines[this.#cursorLine]!.length;
+    this.#clampScrollOffset();
   }
 
   #handleCtrlKey(key: string, event: KeyboardEvent): boolean {
@@ -1366,31 +1375,31 @@ export class TextareaWidget extends InteractiveWidget {
         break;
       }
 
-      const vl = this.#visualLines[visualIndex]!;
+      const vLine = this.#visualLines[visualIndex]!;
       const screenY = viewport.y + i;
-      const lineStartOffset = this.#logicalLineStartOffset(vl.logicalLine);
-      const lineEndOffset = lineStartOffset + this.#logicalLines[vl.logicalLine]!.length;
-      const vlStartOffset = lineStartOffset + vl.startCol;
-      const vlEndOffset = vlStartOffset + vl.charCount;
+      const lineStartOffset = this.#logicalLineStartOffset(vLine.logicalLine);
+      const lineEndOffset = lineStartOffset + this.#logicalLines[vLine.logicalLine]!.length;
 
       if (range === undefined || lineEndOffset <= range.start || lineStartOffset >= range.end) {
         buffer.drawText({
           x: viewport.x,
           y: screenY,
-          text: vl.text,
+          text: vLine.text,
           fgRgba: fgColor,
           bgRgba: 0x00_00_00_00,
         });
         continue;
       }
 
-      const segStart = Math.max(range.start, vlStartOffset);
-      const segEnd = Math.min(range.end, vlEndOffset);
+      const vLineStartOffset = lineStartOffset + vLine.startCol;
+      const vLineEndOffset = vLineStartOffset + vLine.charCount;
+      const segStart = Math.max(range.start, vLineStartOffset);
+      const segEnd = Math.min(range.end, vLineEndOffset);
       let drawX = viewport.x;
 
-      if (segStart > vlStartOffset) {
-        const prefixChars = segStart - vlStartOffset;
-        const seg1 = vl.text.slice(0, prefixChars);
+      if (segStart > vLineStartOffset) {
+        const prefixChars = segStart - vLineStartOffset;
+        const seg1 = vLine.text.slice(0, prefixChars);
         buffer.drawText({
           x: drawX,
           y: screenY,
@@ -1402,9 +1411,9 @@ export class TextareaWidget extends InteractiveWidget {
       }
 
       if (segEnd > segStart) {
-        const selStartChars = segStart - vlStartOffset;
-        const selEndChars = segEnd - vlStartOffset;
-        const seg2 = vl.text.slice(selStartChars, selEndChars);
+        const selStartChars = segStart - vLineStartOffset;
+        const selEndChars = segEnd - vLineStartOffset;
+        const seg2 = vLine.text.slice(selStartChars, selEndChars);
         buffer.drawText({
           x: drawX,
           y: screenY,
@@ -1415,11 +1424,11 @@ export class TextareaWidget extends InteractiveWidget {
         drawX += stringDisplayWidth(seg2);
       }
 
-      if (segEnd < vlEndOffset) {
-        const suffixStartChars = segEnd - vlStartOffset;
+      if (segEnd < vLineEndOffset) {
+        const suffixStartChars = segEnd - vLineStartOffset;
         const remainingWidth = viewport.width - (drawX - viewport.x);
         if (remainingWidth > 0) {
-          const seg3 = truncateToWidth(vl.text.slice(suffixStartChars), remainingWidth);
+          const seg3 = truncateToWidth(vLine.text.slice(suffixStartChars), remainingWidth);
           buffer.drawText({
             x: drawX,
             y: screenY,

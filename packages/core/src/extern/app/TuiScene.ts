@@ -1,6 +1,6 @@
 import {genId} from '../../utils/genId';
 import {parseColor, type TuiColor} from '../../utils/color';
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import type {MouseEvent} from '../../events/types';
 import {isFocusable, type Focusable} from '../../widgets/Focusable';
 import {type TuiWidgetEntity} from '../../widgets/TuiWidgetEntity';
@@ -70,7 +70,7 @@ export class TuiScene implements Entity {
   setBgRgb(r: number, g: number, b: number): void;
   setBgRgb(rgbColor: {r: number; g: number; b: number}): void;
   setBgRgb(
-    color: {r: number; g: number; b: number} | string | number,
+    color: string | number | {r: number; g: number; b: number},
     g?: number,
     b?: number,
   ): void {
@@ -109,14 +109,11 @@ export class TuiScene implements Entity {
     const portalWidgets = this.#collectPortalWidgets();
     const backdropEntries = this.#overlayManager.getBackdropEntries();
 
-    type RenderItem
-      = | {kind: 'widget'; zIndex: number; widget: TuiWidgetEntity}
-        | {kind: 'backdrop'; zIndex: number; draw: (buf: DrawListBuffer) => void};
+    type RenderItem =
+      | {kind: 'widget'; zIndex: number; widget: TuiWidgetEntity}
+      | {kind: 'backdrop'; zIndex: number; draw: (buf: DrawListBuffer) => void};
 
-    const items: RenderItem[] = [];
-    for (const w of this.#widgets) {
-      items.push({kind: 'widget', zIndex: w.zIndex, widget: w});
-    }
+    const items: RenderItem[] = Array.from(this.#widgets, w => ({kind: 'widget', zIndex: w.zIndex, widget: w}));
 
     for (const pw of portalWidgets) {
       items.push({kind: 'widget', zIndex: pw.zIndex, widget: pw});

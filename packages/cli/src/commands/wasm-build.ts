@@ -15,8 +15,8 @@ function generateEntryContent(entryPath: string, webRuntimePath: string | undefi
   }
 
   return readTemplate('wasm-entry.ts')
-    .replaceAll('\'__APP_PATH__\'', JSON.stringify(entryPath))
-    .replaceAll('\'__WEB_API_PATH__\'', JSON.stringify(webRuntimePath));
+    .replaceAll('\'__APP_PATH__\'', () => JSON.stringify(entryPath))
+    .replaceAll('\'__WEB_API_PATH__\'', () => JSON.stringify(webRuntimePath));
 }
 
 async function buildApp(appName: string, distDir: string, cwd: string): Promise<void> {
@@ -72,7 +72,7 @@ function generateDts(appName: string, distDir: string, cwd: string): void {
 
   const relativePath = path.relative(distDir, webApiPath).replaceAll('\\', '/').replace(/\.ts$/, '');
   const content = readTemplate('wasm-entry.d.ts')
-    .replaceAll('\'__WEB_API_DTS_PATH__\'', JSON.stringify(relativePath));
+    .replaceAll('\'__WEB_API_DTS_PATH__\'', () => JSON.stringify(relativePath));
   fs.writeFileSync(path.join(distDir, `${appName}.d.ts`), content);
 }
 

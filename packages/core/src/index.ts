@@ -34,10 +34,10 @@ export {
   isPercent, resolvePercent, extractPercentSpec, resolveSizeValue,
 } from './utils/percent';
 
-export {DrawListBuffer} from './draw_list/DrawListBuffer';
+export {DrawListBuffer} from './draw-list/DrawListBuffer';
 export {
   BorderSides, BorderStyle, CursorMode, resolveCursorMode,
-} from './draw_list/types';
+} from './draw-list/types';
 
 export type {KeyboardEvent, MouseEvent} from './events/types';
 
@@ -80,8 +80,8 @@ export {createRadioGroupWidget, RadioGroupWidget} from './widgets/radio/RadioGro
 export type {RadioGroupWidgetOptions} from './widgets/radio/types';
 export {createSelectButtonWidget, SelectButtonWidget} from './widgets/select-button/SelectButtonWidget';
 export type {SelectButtonWidgetOptions} from './widgets/select-button/types';
-export {createSwitchWidget, SwitchWidget} from './widgets/switch_/SwitchWidget';
-export type {SwitchWidgetOptions} from './widgets/switch_/types';
+export {createSwitchWidget, SwitchWidget} from './widgets/switch/SwitchWidget';
+export type {SwitchWidgetOptions} from './widgets/switch/types';
 export {createScrollBoxWidget, ScrollBoxWidget} from './widgets/scroll-box/ScrollBoxWidget';
 export type {ScrollBoxWidgetOptions} from './widgets/scroll-box/types';
 export {createProgressWidget, ProgressWidget} from './widgets/progress/ProgressWidget';

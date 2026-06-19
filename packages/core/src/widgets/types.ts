@@ -1,36 +1,36 @@
 /**
- * @summary 32 bits = 4 bytes
+ @summary 32 bits = 4 bytes
  */
 export const TuiWidgetComponentFlag = {
   /**
-   * @see TuiWidgetRect
+   @see TuiWidgetRect
    */
   Rect: 0x00_01,
   /**
-   * @see TuiWidgetColor
+   @see TuiWidgetColor
    */
   Color: 0x00_02,
   /**
-   * @see TuiWidgetStyle
+   @see TuiWidgetStyle
    */
   Style: 0x00_04,
   /**
-   * @see TuiWidgetBorder
+   @see TuiWidgetBorder
    */
   Border: 0x00_08,
   /**
-   * @see TuiWidgetShadow
+   @see TuiWidgetShadow
    */
   Shadow: 0x00_10,
   /**
-   * @see TuiWidgetText
+   @see TuiWidgetText
    */
   Text: 0x00_20,
 } as const;
 export type TuiWidgetComponentFlag = Enum<typeof TuiWidgetComponentFlag>;
 
-/*
- * @summary 64 bits = 8 bytes
+/**
+ @summary 64 bits = 8 bytes
  */
 export type TuiWidgetRect = {
   x: I16;
@@ -39,16 +39,16 @@ export type TuiWidgetRect = {
   height: U16;
 };
 
-/*
- * @summary 64 bits = 8 bytes
+/**
+ @summary 64 bits = 8 bytes
  */
 export type TuiWidgetColor = {
   colorFg: U32;
   colorBg: U32;
 };
 
-/*
- * @summary 32 bits = 4 bytes
+/**
+ @summary 32 bits = 4 bytes
  */
 export type TuiWidgetStyle = {
   styleZIndex: I16;
@@ -91,11 +91,11 @@ export function resolveFontStyle(value: TuiFontStyleInput | undefined): U16 {
     return result;
   }
 
-  return TuiFontStyleBit[value] ?? 0;
+  return TuiFontStyleBit[value ?? 'bold'];
 }
 
-/*
- * @summary 96 bits = 12 bytes
+/**
+ @summary 96 bits = 12 bytes
  */
 export type TuiWidgetBorder = {
   colorBorder: U32;
@@ -107,34 +107,34 @@ export type TuiWidgetBorder = {
 };
 
 /**
- * @example
- *   Solid      Double
- * ┌───┬───┐  ╔═══╦═══╗  ╒═╤═╕  ╓─╥─╖
- * │   │   │  ║   ║   ║  ╞═╪═╡  ╟─╫─╢
- * ├───┼───┤  ╠═══╬═══╣  ╘═╧═╛  ╙─╨─╜
- * │   │   │  ║   ║   ║
- * └───┴───┘  ╚═══╩═══╝
- *  Rounded     Bold
- * ╭───┬───╮  ┏━━━┳━━━┓  ┎─┰─┒  ┍━┯━┑
- * │   │   │  ┃   ┃   ┃  ┠─╂─┨  ┝━┿━┥
- * ├───┼───┤  ┣━━━╋━━━┫  ┖─┸─┚  ┕━┷━┙
- * │   │   │  ┃   ┃   ┃
- * ╰───┴───╯  ┗━━━┻━━━┛
- *  Dashed     Dotted
- * ┌╴╴╴┬╴╴╴┐  ┌╌╌╌┬╌╌╌┐  ┌───┬─⊟⊞☒  ┌───┬─⊖⊕⊗
- * ┆   ┆   ┆  ┊   ┊   ┊  │   │   │  │   │   │
- * ┆╴╴╴┼╴╴╴┆  ┊╌╌╌┼╌╌╌┊  ├───┼───┤  ├───┼───┤
- * ┆   ┆   ┆  ┊   ┊   ┊  │   │   │  │   │   │
- * └╴╴╶┴╶╶╶┘  └╌╌╌┴╌╌╌┘  └───┴───¤  └───┴───⤡
- *  Outset-    Outset-
- *  Bold       Double
- * ┌───┬───┒  ┌───┬───╖  ┏━━━┯━━━┑  ╔═══╤═══╕
- * │   │   ┃  │   │   ║  ┃   │   │  ║   │   │
- * ├───┼───┨  ├───┼───╢  ┠───┼───┤  ╟───┼───┤
- * │   │   ┃  │   │   ║  ┃   │   │  ║   │   │
- * ┕━━━┷━━━┛  ╘═══╧═══╝  ┖───┴───┘  ╙───┴───┘
+ @example
+ Solid      Double
+ ┌───┬───┐  ╔═══╦═══╗  ╒═╤═╕  ╓─╥─╖
+ │   │   │  ║   ║   ║  ╞═╪═╡  ╟─╫─╢
+ ├───┼───┤  ╠═══╬═══╣  ╘═╧═╛  ╙─╨─╜
+ │   │   │  ║   ║   ║
+ └───┴───┘  ╚═══╩═══╝
+ Rounded     Bold
+ ╭───┬───╮  ┏━━━┳━━━┓  ┎─┰─┒  ┍━┯━┑
+ │   │   │  ┃   ┃   ┃  ┠─╂─┨  ┝━┿━┥
+ ├───┼───┤  ┣━━━╋━━━┫  ┖─┸─┚  ┕━┷━┙
+ │   │   │  ┃   ┃   ┃
+ ╰───┴───╯  ┗━━━┻━━━┛
+ Dashed     Dotted
+ ┌╴╴╴┬╴╴╴┐  ┌╌╌╌┬╌╌╌┐  ┌───┬─⊟⊞☒  ┌───┬─⊖⊕⊗
+ ┆   ┆   ┆  ┊   ┊   ┊  │   │   │  │   │   │
+ ┆╴╴╴┼╴╴╴┆  ┊╌╌╌┼╌╌╌┊  ├───┼───┤  ├───┼───┤
+ ┆   ┆   ┆  ┊   ┊   ┊  │   │   │  │   │   │
+ └╴╴╶┴╶╶╶┘  └╌╌╌┴╌╌╌┘  └───┴───¤  └───┴───⤡
+ Outset-    Outset-
+ Bold       Double
+ ┌───┬───┒  ┌───┬───╖  ┏━━━┯━━━┑  ╔═══╤═══╕
+ │   │   ┃  │   │   ║  ┃   │   │  ║   │   │
+ ├───┼───┨  ├───┼───╢  ┠───┼───┤  ╟───┼───┤
+ │   │   ┃  │   │   ║  ┃   │   │  ║   │   │
+ ┕━━━┷━━━┛  ╘═══╧═══╝  ┖───┴───┘  ╙───┴───┘
  */
-export type {BorderStyle} from '../draw_list/types';
+export type {BorderStyle} from '../draw-list/types';
 
 export type TuiBorderStyleName = 'none' | 'solid' | 'double' | 'rounded' | 'bold' | 'dashed' | 'dotted' | 'outsetbold' | 'outsetdouble';
 
@@ -152,7 +152,6 @@ const BORDER_STYLE_MAP: Record<TuiBorderStyleName, U8> = {
 
 export function resolveBorderStyle(value: unknown): U8 {
   if (typeof value === 'string') {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     return BORDER_STYLE_MAP[value as TuiBorderStyleName] ?? 0;
   }
 
@@ -164,37 +163,37 @@ export function resolveBorderStyle(value: unknown): U8 {
 }
 
 /**
- * @summary 96 bits = 12 bytes
- * @example
- * ┌────┬────┐
- * │    │    │█
- * ├────┼────┤█
- * │    │    │█
- * └────┴────┘█
- *  ███████████
+ @summary 96 bits = 12 bytes
+ @example following shape:
+ ┌────┬────┐
+ │    │    │█
+ ├────┼────┤█
+ │    │    │█
+ └────┴────┘█
+ ███████████
  */
 export type TuiWidgetShadow = {
   shadowOffsetX: U16;
   shadowOffsetY: U16;
   colorShadow: U32;
   /**
-     * @description
-     * - true:  The shadow will be drawn over the others with character "█".
-     * - false: The shadow will be drawn over the others, but no character will be covered.
-     *   It means the affected cell looks "getting darkened".
+     @description
+     - true:  The shadow will be drawn over the others with character "█".
+     - false: The shadow will be drawn over the others, but no character will be covered.
+     It means the affected cell looks "getting darkened".
      */
   shadowCovered: BOOL;
 };
 
 /**
- * @summary 64 bits = 8 bytes
+ @summary 64 bits = 8 bytes
  */
 export type TuiWidgetText = {
   value: string;
 };
 
 /**
- * A 2D size used for intrinsic size reporting by widgets.
+ A 2D size used for intrinsic size reporting by widgets.
  */
 export type TuiWidgetSize = {
   width: U16;
@@ -202,7 +201,7 @@ export type TuiWidgetSize = {
 };
 
 /**
- * Four-sided padding for layout containers.
+ Four-sided padding for layout containers.
  */
 export type TuiWidgetPadding = {
   paddingTop: U16;

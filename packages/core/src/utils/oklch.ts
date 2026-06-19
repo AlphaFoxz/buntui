@@ -1,4 +1,4 @@
-/* eslint-disable @stylistic/no-mixed-operators */
+/* eslint-disable @stylistic/no-mixed-operators -- OKLCH color math extensively mixes arithmetic operators */
 type OklchColor = {
   l: number;
   c: number;
@@ -12,39 +12,43 @@ type RgbLinear = {
 };
 
 const M_LMS: ReadonlyArray<readonly number[]> = [
-  [0.412_221_470_8, 0.536_332_536_3, 0.051_445_992_9],
-  [0.211_903_498_2, 0.680_699_545_1, 0.107_396_956_6],
-  [0.088_302_461_9, 0.281_718_837_6, 0.629_978_700_5],
+  [0.4122214708, 0.5363325363, 0.0514459929],
+  [0.2119034982, 0.6806995451, 0.1073969566],
+  [0.0883024619, 0.2817188376, 0.6299787005],
 ];
 
 const M_OKLAB: ReadonlyArray<readonly number[]> = [
-  [0.210_454_255_3, 0.793_617_785, -0.004_072_046_8],
-  [1.977_998_495_1, -2.428_592_205, 0.450_593_709_9],
-  [0.025_904_037_1, 0.782_771_766_2, -0.808_675_766],
+  [0.2104542553, 0.793617785, -0.0040720468],
+  [1.9779984951, -2.428592205, 0.4505937099],
+  [0.0259040371, 0.7827717662, -0.808675766],
 ];
 
 const M_OKLAB_INV: ReadonlyArray<readonly number[]> = [
-  [1, 0.396_337_777_4, 0.215_803_757_3],
-  [1, -0.105_561_345_8, -0.063_854_172_8],
-  [1, -0.089_484_177_5, -1.291_485_548],
+  [1, 0.3963377774, 0.2158037573],
+  [1, -0.1055613458, -0.0638541728],
+  [1, -0.0894841775, -1.291485548],
 ];
 
 const M_LMS_INV: ReadonlyArray<readonly number[]> = [
-  [4.076_741_662_1, -3.307_711_591_3, 0.230_969_929_2],
-  [-1.268_438_004_6, 2.609_757_401_1, -0.341_319_396_5],
-  [-0.004_196_086_3, -0.703_418_614_7, 1.707_614_701],
+  [4.0767416621, -3.3077115913, 0.2309699292],
+  [-1.2684380046, 2.6097574011, -0.3413193965],
+  [-0.0041960863, -0.7034186147, 1.707614701],
 ];
 
 function srgbToLinear(c: number): number {
-  return c <= 0.040_45 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 }
 
 function linearToSrgb(c: number): number {
-  return c <= 0.003_130_8 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
+  return c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
 }
 
 function cuberoot(x: number): number {
   return x < 0 ? -((-x) ** (1 / 3)) : x ** (1 / 3);
+}
+
+function clamp01(x: number): number {
+  return Math.max(0, Math.min(1, x));
 }
 
 function mul3(m: ReadonlyArray<readonly number[]>, a: number, b: number, c: number): [number, number, number] {
@@ -110,9 +114,9 @@ function clipGamut(l: number, c: number, h: number): RgbLinear {
 
   const rgb = oklchToRgbLinear(l, lo, h);
   return {
-    r: Math.max(0, Math.min(1, rgb.r)),
-    g: Math.max(0, Math.min(1, rgb.g)),
-    b: Math.max(0, Math.min(1, rgb.b)),
+    r: clamp01(rgb.r),
+    g: clamp01(rgb.g),
+    b: clamp01(rgb.b),
   };
 }
 
@@ -120,9 +124,9 @@ export function oklchToRgb(l: number, c: number, h: number): {r: number; g: numb
   const rgb = oklchToRgbLinear(l, c, h);
   if (isInGamut(rgb.r, rgb.g, rgb.b)) {
     return {
-      r: Math.round(linearToSrgb(Math.max(0, Math.min(1, rgb.r))) * 255),
-      g: Math.round(linearToSrgb(Math.max(0, Math.min(1, rgb.g))) * 255),
-      b: Math.round(linearToSrgb(Math.max(0, Math.min(1, rgb.b))) * 255),
+      r: Math.round(linearToSrgb(clamp01(rgb.r)) * 255),
+      g: Math.round(linearToSrgb(clamp01(rgb.g)) * 255),
+      b: Math.round(linearToSrgb(clamp01(rgb.b)) * 255),
     };
   }
 

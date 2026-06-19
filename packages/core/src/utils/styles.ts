@@ -5,7 +5,7 @@ export function rgbToRgba(r: number, g: number, b: number): number;
 export function rgbToRgba(rgb: {r: number; g: number; b: number}): number;
 export function rgbToRgba(color: number | string | {r: number; g: number; b: number}): number;
 export function rgbToRgba(
-  color: {r: number; g: number; b: number} | string | number,
+  color: string | number | {r: number; g: number; b: number},
   g?: number,
   b?: number,
 ): number {

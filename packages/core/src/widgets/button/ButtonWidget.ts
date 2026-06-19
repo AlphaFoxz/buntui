@@ -1,8 +1,11 @@
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
-import {BorderSides} from '../../draw_list/types';
+import {BorderSides} from '../../draw-list/types';
 import {
-  resolveBorderStyle, type TuiBorderStyleName, type TuiWidgetRect, type TuiWidgetSize,
+  resolveBorderStyle,
+  type TuiBorderStyleName,
+  type TuiWidgetRect,
+  type TuiWidgetSize,
 } from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor, type TuiColor} from '../../utils/color';

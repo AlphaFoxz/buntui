@@ -79,7 +79,7 @@ export function applyColorSchemeUpdates(
   }
 }
 
-export function resolveColorState<T>(
+export function resolveColorState<T extends Record<string, unknown>>(
   scheme: ColorScheme<T>,
   state: {disabled: boolean; pressed?: boolean; selected?: boolean; hovered?: boolean; focused?: boolean; active?: boolean},
 ): T {
@@ -87,23 +87,23 @@ export function resolveColorState<T>(
     return scheme.disabled;
   }
 
-  if (state.pressed && scheme.pressed) {
+  if (state.pressed! && scheme.pressed) {
     return scheme.pressed;
   }
 
-  if (state.selected && scheme.selected) {
+  if (state.selected! && scheme.selected) {
     return scheme.selected;
   }
 
-  if (state.hovered && scheme.hovered) {
+  if (state.hovered! && scheme.hovered) {
     return scheme.hovered;
   }
 
-  if (state.focused && scheme.focused) {
+  if (state.focused! && scheme.focused) {
     return scheme.focused;
   }
 
-  if (state.active && scheme.active) {
+  if (state.active! && scheme.active) {
     return scheme.active;
   }
 

@@ -1,8 +1,8 @@
 import {withAlpha} from '@buntui/core';
 
 /**
- * Interpolate between two RGBA colors by factor t (0.0 = from, 1.0 = to).
- * Both inputs must be 0xAARRGGBB.
+ Interpolate between two RGBA colors by factor t (0.0 = from, 1.0 = to).
+ Both inputs must be 0xAARRGGBB.
  */
 export function lerpRgba(from: number, to: number, t: number): number {
   const clampT = Math.max(0, Math.min(1, t));
@@ -22,8 +22,8 @@ export function lerpRgba(from: number, to: number, t: number): number {
 }
 
 /**
- * Build a lookup table of `steps` RGBA colors fading from lead to trail.
- * Index 0 is the brightest (lead), index steps-1 is the dimmest (near-bg).
+ Build a lookup table of `steps` RGBA colors fading from lead to trail.
+ Index 0 is the brightest (lead), index steps-1 is the dimmest (near-bg).
  */
 export function buildTrailGradient(leadRgba: number, trailRgba: number, steps: number): number[] {
   const table: number[] = [];

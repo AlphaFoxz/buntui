@@ -2,7 +2,7 @@ import {extractPercentSpec, isPercent} from '../utils/percent';
 import {isThemedColorRef, resolveThemedColor} from '../theme/color-ref';
 import type {TuiThemeColors} from '../theme/types';
 import {parseColor} from '../utils/color';
-import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../draw-list/DrawListBuffer';
 import type {Mountable} from '../extern/types';
 import type {KeyboardEvent, MouseEvent, WheelEvent} from '../events/types';
 import type {
@@ -135,8 +135,8 @@ export abstract class TuiWidgetEntity implements Mountable {
   }
 
   /**
-   * Walk up the ancestor chain and return the nearest widget matching the predicate.
-   * Checks self first, then parent, then grandparent, etc.
+   Walk up the ancestor chain and return the nearest widget matching the predicate.
+   Checks self first, then parent, then grandparent, etc.
    */
   closest(predicate: (widget: TuiWidgetEntity) => boolean): TuiWidgetEntity | undefined {
     if (predicate(this)) {
@@ -254,9 +254,9 @@ export abstract class TuiWidgetEntity implements Mountable {
   }
 
   /**
-   * Report the widget's natural/content size without external constraints.
-   * Return undefined if the widget has no intrinsic size (e.g. Box without explicit dimensions).
-   * Used by layout containers (Stack, future Flex/Scroll) to compute child positions.
+   Report the widget's natural/content size without external constraints.
+   Return undefined if the widget has no intrinsic size (e.g. Box without explicit dimensions).
+   Used by layout containers (Stack, future Flex/Scroll) to compute child positions.
    */
   intrinsicSize(): TuiWidgetSize | undefined {
     return undefined;
@@ -276,7 +276,6 @@ export abstract class TuiWidgetEntity implements Mountable {
     if (isThemedColorRef(value)) {
       const token = this.#themedTokenMap?.[key];
       if (token) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
         return resolveThemedColor(value, token as keyof TuiThemeColors);
       }
     }
@@ -309,8 +308,8 @@ export abstract class TuiWidgetEntity implements Mountable {
   }
 
   /**
-   * Propagate a position delta to all children.
-   * Called by subclasses in their updateRect when position changes.
+   Propagate a position delta to all children.
+   Called by subclasses in their updateRect when position changes.
    */
   protected propagatePositionDelta(dx: number, dy: number): void {
     if (dx === 0 && dy === 0) {
@@ -326,7 +325,7 @@ export abstract class TuiWidgetEntity implements Mountable {
   }
 
   /**
-   * Render all children. Call at the end of emitDrawCommands in container widgets.
+   Render all children. Call at the end of emitDrawCommands in container widgets.
    */
   protected renderChildren(buf: DrawListBuffer): void {
     for (const child of this.#children) {

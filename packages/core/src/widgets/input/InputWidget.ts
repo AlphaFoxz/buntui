@@ -1,8 +1,11 @@
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {type KeyboardEvent, type MouseEvent} from '../../events/types';
-import {BorderSides, resolveCursorMode, type CursorModeName} from '../../draw_list/types';
+import {BorderSides, resolveCursorMode, type CursorModeName} from '../../draw-list/types';
 import {
-  resolveBorderStyle, type TuiBorderStyleName, type TuiWidgetRect, type TuiWidgetSize,
+  resolveBorderStyle,
+  type TuiBorderStyleName,
+  type TuiWidgetRect,
+  type TuiWidgetSize,
 } from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
@@ -239,7 +242,6 @@ export class InputWidget extends InteractiveWidget {
 
       const mouse0 = mouseData.x;
       const textX = this.#x + 1;
-      const textEndX = this.#isNumber ? this.#x + this.#width - 3 : this.#x + this.#width - 1;
 
       if (mouse0 < textX && this.#scrollOffset > 0) {
         this.#scrollOffset--;
@@ -247,6 +249,8 @@ export class InputWidget extends InteractiveWidget {
         this.stopPropagation();
         return;
       }
+
+      const textEndX = this.#isNumber ? this.#x + this.#width - 3 : this.#x + this.#width - 1;
 
       if (mouse0 >= textEndX && this.#cursorPos < this.#value.length) {
         this.#cursorPos++;
@@ -265,10 +269,12 @@ export class InputWidget extends InteractiveWidget {
     });
 
     this.on('mouseup', () => {
-      if (this.#isSelecting) {
-        this.#isSelecting = false;
-        this.stopPropagation();
+      if (!this.#isSelecting) {
+        return;
       }
+
+      this.#isSelecting = false;
+      this.stopPropagation();
     });
 
     this.on('wheel', data => {
@@ -630,7 +636,6 @@ export class InputWidget extends InteractiveWidget {
 
     if (this.#isNumber) {
       const btnX = this.#x + this.#width - 2;
-      const textY = this.#y + 1;
       buffer.drawChar({
         x: btnX,
         y: textY,
@@ -712,7 +717,7 @@ export class InputWidget extends InteractiveWidget {
       return text;
     }
 
-    return '\u2022'.repeat([...text].length);
+    return '\u{2022}'.repeat([...text].length);
   }
 
   #displaySlice(start: number, end?: number): string {
@@ -809,17 +814,19 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #handleCharInput(key: string): void {
-    if (this.#maxLength === 0 || this.#value.length < this.#maxLength || this.#getSelectionRange() !== undefined) {
-      this.#pushUndo();
-      this.#deleteSelection();
-      if (this.#maxLength === 0 || this.#value.length < this.#maxLength) {
-        this.#value = this.#value.slice(0, this.#cursorPos) + key + this.#value.slice(this.#cursorPos);
-        this.#cursorPos++;
-      }
-
-      this.#clampScrollOffset();
-      this.dispatch('input', {value: this.#value});
+    if (!(this.#maxLength === 0 || this.#value.length < this.#maxLength || this.#getSelectionRange() !== undefined)) {
+      return;
     }
+
+    this.#pushUndo();
+    this.#deleteSelection();
+    if (this.#maxLength === 0 || this.#value.length < this.#maxLength) {
+      this.#value = this.#value.slice(0, this.#cursorPos) + key + this.#value.slice(this.#cursorPos);
+      this.#cursorPos++;
+    }
+
+    this.#clampScrollOffset();
+    this.dispatch('input', {value: this.#value});
   }
 
   #handleWordBackspace(): void {
@@ -977,11 +984,13 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #handleSelectAll(event: KeyboardEvent): void {
-    if (event.ctrlKey && !event.altKey && !event.metaKey && this.#value.length > 0) {
-      this.#selectionAnchor = 0;
-      this.#cursorPos = this.#value.length;
-      this.#clampScrollOffset();
+    if (!(event.ctrlKey && !event.altKey && !event.metaKey && this.#value.length > 0)) {
+      return;
     }
+
+    this.#selectionAnchor = 0;
+    this.#cursorPos = this.#value.length;
+    this.#clampScrollOffset();
   }
 
   #handleCtrlKey(key: string, event: KeyboardEvent): boolean {

@@ -1,6 +1,6 @@
 import {stringDisplayWidth, truncateToWidth, charDisplayWidth} from '../../utils/string-width';
 import {parseColor, type TuiColor} from '../../utils/color';
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {getTheme} from '../../theme/store';
 import {bindThemeToWidget} from '../../theme/binding';
 import {resolveThemedOverrides} from '../../theme/color-ref';

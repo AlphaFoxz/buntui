@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-type-assertion */
 export type Scheduler = {
   schedule(fn: () => void): unknown;
   cancel(handle: unknown): void;

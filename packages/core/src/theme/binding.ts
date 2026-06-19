@@ -25,10 +25,9 @@ export function resolveWidgetColors<M extends Record<string, ThemeToken>>(tokenM
   const result: Record<string, unknown> = {};
 
   for (const [key, token] of Object.entries(tokenMap)) {
-    result[key] = resolveToken(theme, String(token));
+    result[key] = resolveToken(theme, token);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
   return result as ResolveTokens<M>;
 }
 
@@ -42,7 +41,6 @@ function resolveToken(theme: TuiTheme, token: string): unknown {
     return undefined;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
   return theme.colors[token as keyof TuiThemeColors];
 }
 
@@ -73,10 +71,10 @@ export function bindThemeToWidget<M extends Record<string, ThemeToken>>(
     for (const [key, token] of Object.entries(tracked)) {
       const ref = themedRefs[key];
       if (ref === undefined) {
-        resolved[key] = resolveToken(theme, String(token));
+        resolved[key] = resolveToken(theme, token);
       } else {
-        const tokenString = String(token);
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
+        const tokenString = token;
+
         resolved[key] = tokenString.startsWith('border.') ? resolveToken(theme, tokenString) : resolveThemedColorFromTheme(theme, ref, tokenString as keyof TuiThemeColors);
       }
     }

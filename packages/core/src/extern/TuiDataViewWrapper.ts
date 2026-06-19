@@ -10,7 +10,8 @@ export class TuiDataViewWrapper {
     byteOffset?: number,
     byteLength?: number,
   ) {
-    this.#inner = new globalThis.DataView(buffer, byteOffset, byteLength);
+    // eslint-disable-next-line no-restricted-globals
+    this.#inner = new DataView(buffer, byteOffset, byteLength);
   }
 
   get byteLength() {

@@ -34,24 +34,16 @@ const REQUIRED_BORDER_KEYS: ReadonlyArray<keyof TuiThemeBorderStyle> = [
 ];
 
 export function defineTheme(theme: TuiTheme): TuiTheme {
-  if (!theme.name || typeof theme.name !== 'string') {
+  if (!theme.name) {
     throw new TypeError('defineTheme: theme.name must be a non-empty string');
   }
 
-  if (!theme.colors || typeof theme.colors !== 'object') {
-    throw new TypeError('defineTheme: theme.colors must be an object');
-  }
-
-  const missingColors = REQUIRED_COLOR_KEYS.filter(key => !(key in theme.colors));
+  const missingColors = REQUIRED_COLOR_KEYS.filter(key => !Object.hasOwn(theme.colors, key));
   if (missingColors.length > 0) {
     throw new TypeError(`defineTheme: missing color keys: ${missingColors.join(', ')}`);
   }
 
-  if (!theme.borderStyle || typeof theme.borderStyle !== 'object') {
-    throw new TypeError('defineTheme: theme.borderStyle must be an object');
-  }
-
-  const missingBorders = REQUIRED_BORDER_KEYS.filter(key => !(key in theme.borderStyle));
+  const missingBorders = REQUIRED_BORDER_KEYS.filter(key => !Object.hasOwn(theme.borderStyle, key));
   if (missingBorders.length > 0) {
     throw new TypeError(`defineTheme: missing borderStyle keys: ${missingBorders.join(', ')}`);
   }

@@ -2,8 +2,17 @@ import {type TuiBackend, type TuiBackendEventHandler} from '../app/TuiBackend';
 import {type TuiEventType, type InferEvent, type TuiEvent} from './types';
 
 class EventBusImpl {
-  readonly #handlers: Record<number, Array<(data: any) => void>> = {};
+  readonly #handlers: Record<number, Array<(data: any) => void> | undefined> = {};
   #backend: TuiBackend | undefined;
+
+  readonly #handleEvent: TuiBackendEventHandler = (eventType: number, event: TuiEvent) => {
+    const handlers = this.#handlers[eventType];
+    if (handlers) {
+      for (const handler of handlers) {
+        handler(event);
+      }
+    }
+  };
 
   on<T extends TuiEventType>(eventType: T, handler: (data: InferEvent<T>) => void) {
     this.#handlers[eventType] ||= [];
@@ -36,15 +45,6 @@ class EventBusImpl {
     this.#backend?.stopEvents();
     this.#backend = undefined;
   }
-
-  readonly #handleEvent: TuiBackendEventHandler = (eventType: number, event: TuiEvent) => {
-    const handlers = this.#handlers[eventType];
-    if (handlers) {
-      for (const handler of handlers) {
-        handler(event);
-      }
-    }
-  };
 }
 
 export const EVENT_BUS = new EventBusImpl();

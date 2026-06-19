@@ -1,7 +1,7 @@
 /**
- * Braille dot bit positions within a 2x4 cell grid.
- * Each entry: [dx, dy, bitIndex]
- * Maps pixel positions to the Unicode braille dot encoding.
+ Braille dot bit positions within a 2x4 cell grid.
+ Each entry: [dx, dy, bitIndex]
+ Maps pixel positions to the Unicode braille dot encoding.
  */
 export const BRAILLE_DOTS: ReadonlyArray<readonly [number, number, number]> = [
   [0, 0, 0],
@@ -39,14 +39,13 @@ export function isVideoFile(path: string): boolean {
 }
 
 /**
- * Encode a raw grayscale frame into braille dot patterns.
- * Each 2x4 pixel block becomes one braille cell byte.
- *
- * @param pixels - Raw grayscale pixel data (width * height bytes)
- * @param cols   - Number of braille columns (width / 2)
- * @param rows   - Number of braille rows (height / 4)
- * @param threshold - Brightness threshold (0-255). Pixels darker -> dots
- * @param invert - If true, bright pixels become dots instead
+ Encode a raw grayscale frame into braille dot patterns.
+ Each 2x4 pixel block becomes one braille cell byte.
+ @param pixels - Raw grayscale pixel data (width * height bytes)
+ @param cols - Number of braille columns (width / 2)
+ @param rows - Number of braille rows (height / 4)
+ @param threshold - Brightness threshold (0-255). Pixels darker -> dots
+ @param invert - If true, bright pixels become dots instead
  */
 export function encodeBrailleFrame(
   pixels: Uint8Array,

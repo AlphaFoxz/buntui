@@ -1,6 +1,6 @@
 import type {TuiPercent, TuiSizeValue, TuiWidgetPercentSpec} from '../widgets/types';
 
-const PERCENT_REGEX = /^\d+(\.\d+)?%$/v;
+const PERCENT_REGEX = /^\d+(?:\.\d+)?%$/v;
 
 export function isPercent(value: unknown): value is TuiPercent {
   return typeof value === 'string' && PERCENT_REGEX.test(value);

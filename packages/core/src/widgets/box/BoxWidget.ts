@@ -1,5 +1,5 @@
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
-import {BorderSides} from '../../draw_list/types';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
+import {BorderSides} from '../../draw-list/types';
 import {parseColor, type TuiColor} from '../../utils/color';
 import {getTheme} from '../../theme/store';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
@@ -51,8 +51,8 @@ export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & 
   };
 
 /**
- * Expand a border shorthand value into individual side booleans.
- * Accepts: boolean, number, or CSS-like string ("true", "1", "1 0", "1 0 1 0", etc.)
+ Expand a border shorthand value into individual side booleans.
+ Accepts: boolean, number, or CSS-like string ("true", "1", "1 0", "1 0 1 0", etc.)
  */
 type Border = {borderTop: boolean; borderRight: boolean; borderBottom: boolean; borderLeft: boolean};
 
@@ -141,7 +141,7 @@ export class BoxWidget extends TuiWidgetEntity {
     this.#gap = options.gap ?? 0;
     this.#align = resolveLayoutAlignment(options.align ?? 'stretch');
 
-    if (options.draggable) {
+    if (options.draggable ?? false) {
       this.setDraggable(true);
     }
   }

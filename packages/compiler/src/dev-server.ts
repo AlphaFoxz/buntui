@@ -27,12 +27,12 @@ export type DevServerOptions = {
   debounceMs?: number;
 };
 
-export const VUE_IMPORT_RE = /import\s+\w+\s+from\s+['"]([^'"]+\.vue)['"]/gv;
+export const VUE_IMPORT_RE = /import\s+\w+\s+from\s+["'](?<vuePath>[^"']+\.vue)["']/gv;
 
 let temporaryCounter = 0;
 
 /**
- * Recursively discover all .vue files in the import chain starting from `entryPath`.
+ Recursively discover all .vue files in the import chain starting from `entryPath`.
  */
 export function discoverVueFiles(entryPath: string): string[] {
   const visited = new Set<string>();
@@ -52,7 +52,12 @@ export function discoverVueFiles(entryPath: string): string[] {
       const source = readFileSync(current, 'utf-8');
       const dir = path.dirname(current);
       for (const match of source.matchAll(VUE_IMPORT_RE)) {
-        const resolved = path.resolve(dir, match[1]!);
+        const vuePath = match.groups?.vuePath;
+        if (!vuePath) {
+          continue;
+        }
+
+        const resolved = path.resolve(dir, vuePath);
         if (!visited.has(resolved)) {
           queue.push(resolved);
         }
@@ -66,7 +71,7 @@ export function discoverVueFiles(entryPath: string): string[] {
 }
 
 /**
- * Find the original .vue import path string used in compiled code for a given resolved path.
+ Find the original .vue import path string used in compiled code for a given resolved path.
  */
 export function findVueImportPath(compiledCode: string, resolvedPath: string, baseDir: string): string | undefined {
   for (const match of compiledCode.matchAll(VUE_IMPORT_RE)) {
@@ -83,11 +88,11 @@ export function findVueImportPath(compiledCode: string, resolvedPath: string, ba
 export function replaceImportPath(code: string, original: string, replacement: string): string {
   const normalized = replacement.replaceAll('\\', '/');
   return code
-    .replaceAll(`'${original}'`, `'${normalized}'`)
-    .replaceAll(`"${original}"`, `"${normalized}"`);
+    .replaceAll(`'${original}'`, () => `'${normalized}'`)
+    .replaceAll(`"${original}"`, () => `"${normalized}"`);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function, @stylistic/curly-newline -- cleanup callback
+// eslint-disable-next-line @typescript-eslint/no-empty-function -- cleanup callback
 const ignoreCleanupError = (): void => {};
 
 export function cleanupStaleTemporaryFiles(dir: string): void {
@@ -136,8 +141,8 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
   let needsFullReload = false;
 
   /**
-   * Full reload: compile all files, write all temp files.
-   * Used on first load, root file change, or import graph change.
+   Full reload: compile all files, write all temp files.
+   Used on first load, root file change, or import graph change.
    */
   async function fullReload() {
     const allVueFiles = discoverVueFiles(file);
@@ -192,8 +197,8 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
   }
 
   /**
-   * Incremental reload: only recompile the changed child file.
-   * Write a new temp file for it; unchanged children keep their temp files (Bun cache hit).
+   Incremental reload: only recompile the changed child file.
+   Write a new temp file for it; unchanged children keep their temp files (Bun cache hit).
    */
   async function incrementalReload(changedFile: string) {
     // Recompile only the changed child
@@ -238,8 +243,8 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
   }
 
   /**
-   * Generate root temp file with all .vue imports replaced by child temp paths,
-   * then import it and call onReload.
+   Generate root temp file with all .vue imports replaced by child temp paths,
+   then import it and call onReload.
    */
   async function writeAndImportRoot() {
     let rootCode = compiledCache.get(file)!.code;
@@ -253,13 +258,11 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
     const temporaryFile = path.join(temporaryDir, `_hmr_${temporaryCounter++}.ts`);
     await Bun.write(temporaryFile, rootCode);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- dynamic import of compiled output
       const mod = (await import(temporaryFile)) as Record<string, unknown>;
       if (typeof mod.setup !== 'function') {
         throw new TypeError('Compiled module has no setup() export');
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- narrowed by typeof check above
       onReload(mod.setup as (scene: unknown) => void);
     } catch (error) {
       const enriched = await probeChildErrors(error, file, compiledCache, childTemporaryMap, temporaryDir, baseDir);
@@ -387,7 +390,6 @@ function extractPosition(error: unknown): PositionData | undefined {
 
   const pos = (error).position;
   if (typeof pos === 'object' && pos !== null) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     const p = pos as Record<string, unknown>;
     if (typeof p.line === 'number' && typeof p.lineText === 'string') {
       return {line: p.line, lineText: p.lineText};
@@ -397,7 +399,7 @@ function extractPosition(error: unknown): PositionData | undefined {
   return extractFromStack(error);
 }
 
-const stackLineRe = /at .+ \((.+):(\d+):\d+\)|at (.+):(\d+):\d+/v;
+const stackLineRe = /at .+ \(.+:(?<line>\d+):\d+\)|at .+:(?<line>\d+):\d+/v;
 
 function extractFromStack(error: unknown): PositionData | undefined {
   if (!(error instanceof Error) || !error.stack) {
@@ -406,8 +408,8 @@ function extractFromStack(error: unknown): PositionData | undefined {
 
   for (const line of error.stack.split('\n')) {
     const match = stackLineRe.exec(line);
-    if (match) {
-      const lineNumber = Number(match[1] === undefined ? match[4] : match[2]);
+    if (match?.groups) {
+      const lineNumber = Number(match.groups.line);
       if (Number.isFinite(lineNumber)) {
         return {line: lineNumber};
       }
@@ -532,10 +534,9 @@ function enrichWithVueLocation(probeError: unknown, vueFile: string, genCode: st
   const pos = extractPosition(probeError);
   const message = probeError instanceof Error
     ? probeError.message
-    : (typeof probeError === 'object' && probeError !== null && 'message' in probeError
-
-      ? String((probeError).message)
-      : String(probeError));
+    : String(typeof probeError === 'object' && probeError !== null && 'message' in probeError
+      ? probeError.message
+      : probeError);
 
   try {
     const vueSource = readFileSync(vueFile, 'utf-8');

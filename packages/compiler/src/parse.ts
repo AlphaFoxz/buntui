@@ -6,7 +6,6 @@ export type SFCParseOptions = {
 };
 
 function formatParseError(error: unknown, filename: string): string {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
   const {message, loc} = error as {message?: string; loc?: {start?: {line: number; column: number}}};
   if (loc?.start) {
     return `${filename}:${loc.start.line}:${loc.start.column} - ${message ?? ''}`;

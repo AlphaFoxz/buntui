@@ -1,4 +1,4 @@
-import '@buntui/compiler/vue-plugin';
+import {buntuiVuePlugin} from '@buntui/compiler/vue-plugin';
 import path from 'node:path';
 import fs from 'node:fs';
 import {createDevServer, type DevServerOptions} from '@buntui/compiler';
@@ -14,6 +14,7 @@ type AppModule = {
 };
 
 export async function devCommand(appName?: string): Promise<void> {
+  await Bun.plugin(buntuiVuePlugin());
   const cwd = getCwd();
   const app = resolveApp(appName);
   const devDir = getDevDir();

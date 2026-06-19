@@ -8,7 +8,7 @@ const platformKey = `${process.platform}-${process.arch}`;
 
 function tryPlatformPackage(): string | undefined {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports,unicorn/prefer-module,@typescript-eslint/no-unsafe-type-assertion
+    // eslint-disable-next-line @typescript-eslint/no-require-imports,unicorn/prefer-module
     const pkg = require(`@buntui/native-${platformKey}`) as {binaryPath: string};
     if (fs.existsSync(pkg.binaryPath)) {
       return pkg.binaryPath;

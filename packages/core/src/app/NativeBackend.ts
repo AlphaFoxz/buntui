@@ -1,16 +1,23 @@
 import {
-  dlopen, FFIType, toArrayBuffer, type Pointer as BunPointer,
+  dlopen,
+  FFIType,
+  toArrayBuffer,
+  type Pointer as BunPointer,
 } from 'bun:ffi';
 import {resolveNativeLibPath} from '../utils/ffi-native';
 import {toCstring} from '../utils/ffi';
-import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../draw-list/DrawListBuffer';
 import type {CStruct} from '../extern/types';
 import type {TuiContextLike} from '../extern/app/TuiContext';
 import type {LogLevel} from '../extern/app/types';
 import TuiDataViewWrapper from '../extern/TuiDataViewWrapper';
 import {LOGGER, logLevelToNumber} from '../common/logger';
 import {
-  TuiEventType, KeyboardEvent, MouseEvent, WheelEvent, TermResizeEvent,
+  TuiEventType,
+  KeyboardEvent,
+  MouseEvent,
+  WheelEvent,
+  TermResizeEvent,
   type TuiEvent,
 } from '../events/types';
 import {nextTick} from '../platform/next-tick';
@@ -76,12 +83,10 @@ export class NativeBackend implements TuiBackend {
   }
 
   detectTermSize(context: TuiContextLike): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     useLib().detectTermSize((context as unknown as CStruct).ptr as BunPointer);
   }
 
   renderDrawList(context: TuiContextLike, drawListBuffer: DrawListBuffer): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     useLib().renderDrawList((context as unknown as CStruct).ptr, drawListBuffer.ptr, drawListBuffer.byteLength);
   }
 

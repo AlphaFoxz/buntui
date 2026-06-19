@@ -1,4 +1,4 @@
-import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../draw-list/DrawListBuffer';
 import {TUI_CONTEXT_INSTANCE} from '../extern/app/TuiContext';
 import type {TuiWidgetEntity} from '../widgets/TuiWidgetEntity';
 import type {Focusable} from '../widgets/Focusable';
@@ -56,7 +56,7 @@ export class OverlayManager {
       this.#applyPosition(widget, entry.options.positionStrategy);
     }
 
-    if (entry.options.trapFocus && this.#focusManager) {
+    if ((entry.options.trapFocus ?? false) && this.#focusManager) {
       entry.savedFocus = this.#focusManager.focusedWidget;
       this.#focusManager.pushFocusScope(widget);
     }
@@ -85,7 +85,7 @@ export class OverlayManager {
   getBackdropEntries(): Array<{zIndex: number; draw: (buf: DrawListBuffer) => void}> {
     const result: Array<{zIndex: number; draw: (buf: DrawListBuffer) => void}> = [];
     for (const entry of this.#stack) {
-      if (entry.options.backdrop && entry.widget.visible) {
+      if ((entry.options.backdrop ?? false) && entry.widget.visible) {
         const bgRgba = entry.options.backdropRgba ?? this.#backdropRgba;
         result.push({
           zIndex: entry.zIndex,
@@ -114,9 +114,9 @@ export class OverlayManager {
     entry.widget.setPortal(entry.previousPortal);
     entry.widget.setZIndex(entry.previousZIndex);
 
-    if (entry.options.trapFocus && this.#focusManager) {
+    if ((entry.options.trapFocus ?? false) && this.#focusManager) {
       this.#focusManager.popFocusScope();
-      if (entry.savedFocus?.acceptsFocus) {
+      if ((entry.savedFocus?.acceptsFocus ?? false) && entry.savedFocus) {
         this.#focusManager.focusWidget(entry.savedFocus);
       }
     }

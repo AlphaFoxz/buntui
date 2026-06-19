@@ -131,9 +131,7 @@ export class WasmModule {
     const importObject = createWasiImports();
     const result = await WebAssembly.instantiateStreaming(response, importObject);
     const instance = 'instance' in result ? result.instance : result;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     this.#exports = instance.exports as unknown as WasmExports;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     this.#memory = instance.exports.memory as WebAssembly.Memory;
     linkedMemory = this.#memory;
   }
@@ -143,9 +141,7 @@ export class WasmModule {
     const mod = new WebAssembly.Module(raw);
     const importObject = createWasiImports();
     const instance = new WebAssembly.Instance(mod, importObject);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     this.#exports = instance.exports as unknown as WasmExports;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
     this.#memory = instance.exports.memory as WebAssembly.Memory;
     linkedMemory = this.#memory;
   }

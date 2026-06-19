@@ -155,7 +155,7 @@ export function adjustSourceMapLines(
     version: 3,
     file: sourceMap.file,
     sources: sourceMap.sources,
-    ...(vueSource === undefined ? {} : {sourcesContent: [vueSource]}),
+    ...(vueSource !== undefined && {sourcesContent: [vueSource]}),
     names: sourceMap.names,
     mappings: adjustedLines.join(';'),
   };

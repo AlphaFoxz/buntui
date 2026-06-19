@@ -1,4 +1,4 @@
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {TUI_CONTEXT_INSTANCE} from '../../extern/app/TuiContext';
 import type {OverlayManager} from '../../overlay/OverlayManager';
 import type {OverlayHandle} from '../../overlay/types';
@@ -37,7 +37,7 @@ export class ModalWidget extends TuiWidgetEntity {
     this.#contentWidth = options.width ?? 40;
     this.#contentHeight = options.height ?? 10;
     this.#backdropRgba = options.backdropRgba
-      ?? (options.backdropColor ? parseColor(options.backdropColor) : DEFAULT_BACKDROP_RGBA);
+      ?? (options.backdropColor === undefined ? DEFAULT_BACKDROP_RGBA : parseColor(options.backdropColor));
     this.#closeOnBackdrop = options.closeOnBackdrop ?? true;
     this.#closeOnEscape = options.closeOnEscape ?? true;
   }

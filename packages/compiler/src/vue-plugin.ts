@@ -19,6 +19,4 @@ function buntuiVuePlugin(): BunPlugin {
   };
 }
 
-void Bun.plugin(buntuiVuePlugin());
-
 export {buntuiVuePlugin};

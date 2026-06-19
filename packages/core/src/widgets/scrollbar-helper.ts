@@ -1,4 +1,4 @@
-import type {DrawListBuffer} from '../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../draw-list/DrawListBuffer';
 
 export type ScrollbarGeometry = {
   thumbSize: number;
@@ -15,11 +15,11 @@ export type ScrollbarHitTest = {
   thumbSize: number;
 };
 
-export type ScrollbarHitResult
-  = | {type: 'thumb'}
-    | {type: 'track-above'}
-    | {type: 'track-below'}
-    | {type: 'none'};
+export type ScrollbarHitResult =
+  | {type: 'thumb'}
+  | {type: 'track-above'}
+  | {type: 'track-below'}
+  | {type: 'none'};
 
 export function computeScrollbarGeometry(
   viewportSize: number,

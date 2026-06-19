@@ -419,8 +419,8 @@ declare global {
   };
 
   type _Empty = Record<string, never>;
-  type TuiComponent<P, E extends Record<string, ((...args: any[]) => any) | null>>
-    = DefineComponent<P & {ref?: string}, _Empty, _Empty, _Empty, _Empty, _Empty, _Empty, E>;
+  type TuiComponent<P, E extends Record<string, ((...args: any[]) => any) | null>> =
+    DefineComponent<P & {ref?: string}, _Empty, _Empty, _Empty, _Empty, _Empty, _Empty, E>;
 }
 
 declare module 'vue' {

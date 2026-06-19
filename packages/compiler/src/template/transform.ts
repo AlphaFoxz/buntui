@@ -1,4 +1,4 @@
-/* eslint-disable max-depth */
+/* eslint-disable max-depth -- AST transform logic inherently requires deep nesting */
 import {
   type RootNode,
   type TemplateChildNode,
@@ -40,7 +40,7 @@ type TransformContext = {
 };
 
 /**
- * Transform a Vue template AST root into a TUI render tree.
+ Transform a Vue template AST root into a TUI render tree.
  */
 export function transform(root: RootNode, options?: TransformOptions): TuiRenderRoot {
   const ctx: TransformContext = {
@@ -241,9 +241,9 @@ function transformStaticProp(attr: AttributeNode): TuiStaticProp[] {
   return [{type: 'TuiStaticProp', name, value}];
 }
 
-type DirectiveResult
-  = | {type: 'event'; binding: TuiEventBinding}
-    | {type: 'dynamic'; binding: TuiDynamicProp};
+type DirectiveResult =
+  | {type: 'event'; binding: TuiEventBinding}
+  | {type: 'dynamic'; binding: TuiDynamicProp};
 
 function resolveArgContent(dir: DirectiveNode): string {
   if (!dir.arg) {
@@ -270,8 +270,8 @@ function resolveExpContent(dir: DirectiveNode): string {
 }
 
 /**
- * Per-tag v-model configuration: which prop to bind and which event to listen to.
- * Tags not listed here fall back to {prop: 'value', event: 'input', payloadKey: 'value'}.
+ Per-tag v-model configuration: which prop to bind and which event to listen to.
+ Tags not listed here fall back to {prop: 'value', event: 'input', payloadKey: 'value'}.
  */
 const V_MODEL_TAG_CONFIG: Record<string, {prop: string; event: string; payloadKey: string}> = {
   Checkbox: {prop: 'checked', event: 'change', payloadKey: 'checked'},
@@ -284,7 +284,7 @@ const V_MODEL_TAG_CONFIG: Record<string, {prop: string; event: string; payloadKe
 const V_MODEL_DEFAULT_CONFIG = {prop: 'value', event: 'input', payloadKey: 'value'} as const;
 
 /**
- * Apply a known v-model modifier transform to an expression string.
+ Apply a known v-model modifier transform to an expression string.
  */
 function applyModifier(mod: string, raw: string): string {
   if (mod === 'trim') {
@@ -300,7 +300,7 @@ function applyModifier(mod: string, raw: string): string {
 
 function isValidModelExpression(expr: string): boolean {
   let i = 0;
-  if (i >= expr.length || !/[a-zA-Z_$]/v.test(expr[i]!)) {
+  if (i >= expr.length || !/[$A-Z_a-z]/v.test(expr[i]!)) {
     return false;
   }
 
@@ -311,7 +311,7 @@ function isValidModelExpression(expr: string): boolean {
   while (i < expr.length) {
     if (expr[i] === '.') {
       i++;
-      if (i >= expr.length || !/[a-zA-Z_$]/v.test(expr[i]!)) {
+      if (i >= expr.length || !/[$A-Z_a-z]/v.test(expr[i]!)) {
         return false;
       }
 
@@ -374,7 +374,7 @@ function isValidModelExpression(expr: string): boolean {
 }
 
 function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string): DirectiveResult[] | undefined {
-  if (dir.name === 'if' || dir.name === 'else-if' || dir.name === 'else' || dir.name === 'for') {
+  if (['if', 'else-if', 'else', 'for'].includes(dir.name)) {
     return undefined;
   }
 
@@ -428,8 +428,8 @@ function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string)
       }
     }
 
-    const isSimpleIdentifier = /^[a-zA-Z_$][\w$]*$/v.test(expression);
-    const refIndexMatch = /^[a-zA-Z_$][\w$]*(\[)/v.exec(expression);
+    const isSimpleIdentifier = /^[$A-Z_a-z][\w$]*$/v.test(expression);
+    const refIndexMatch = /^[$A-Z_a-z][\w$]*\[/v.exec(expression);
     let assignment: string;
     if (isSimpleIdentifier) {
       assignment = `${expression}.value = ${valueExpr}`;
@@ -592,19 +592,20 @@ function processConditionalChain(
 }
 
 /**
- * Parse v-for expression like "item in items" or "(item, index) in items".
+ Parse v-for expression like "item in items" or "(item, index) in items".
  */
 function parseForExpression(exp: string): {itemVar: string; indexVar?: string; listExpression: string} {
-  const match = /^\s*(?:\(\s*(\w+)\s*,\s*(\w+)\s*\)|(\w+))\s+in\s+(.+)$/sv.exec(exp);
-  if (!match) {
+  const match = /^\s*(?:\(\s*(?<item>\w+)\s*,\s*(?<index>\w+)\s*\)|(?<simpleItem>\w+))\s+in\s+(?<list>\S.*)$/sv.exec(exp);
+  if (!match?.groups) {
     throw new Error(`Invalid v-for expression: "${exp}"`);
   }
 
-  if (match[1] && match[2]) {
-    return {itemVar: match[1], indexVar: match[2], listExpression: match[4]!.trim()};
+  const {item, index, simpleItem, list} = match.groups;
+  if (item !== undefined && index !== undefined) {
+    return {itemVar: item, indexVar: index, listExpression: list!.trim()};
   }
 
-  return {itemVar: match[3]!, listExpression: match[4]!.trim()};
+  return {itemVar: simpleItem!, listExpression: list!.trim()};
 }
 
 function processFragment(
@@ -710,5 +711,5 @@ function processListBlock(
 }
 
 function camelize(value: string): string {
-  return value.replaceAll(/-([a-z])/gv, (_, c: string) => c.toUpperCase());
+  return value.replaceAll(/-(?<letter>[a-z])/gv, (_, letter: string) => letter.toUpperCase());
 }

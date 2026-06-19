@@ -12,7 +12,7 @@ export function setDllPath(p: string) {
 }
 
 export function resolveNativeLibPath(): string {
-  if (dllPath) {
+  if (dllPath !== undefined) {
     return dllPath;
   }
 
@@ -69,6 +69,5 @@ export function assertPtr(p: Pointer | null): Pointer {
 }
 
 export function cToString(p: Pointer, length: number): string {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
   return new CString(p as BunPointer, 0, length).toString();
 }

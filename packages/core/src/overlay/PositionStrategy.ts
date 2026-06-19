@@ -1,10 +1,10 @@
 import type {TuiWidgetEntity} from '../widgets/TuiWidgetEntity';
 
-export type PositionStrategy
-  = | {type: 'absolute'; x: number; y: number}
-    | {type: 'anchor'; anchor: TuiWidgetEntity; placement: 'top' | 'bottom' | 'left' | 'right'; offset?: number; edgeClamp?: boolean}
-    | {type: 'center'}
-    | {type: 'corner'; corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'; margin?: number};
+export type PositionStrategy =
+  | {type: 'absolute'; x: number; y: number}
+  | {type: 'anchor'; anchor: TuiWidgetEntity; placement: 'top' | 'bottom' | 'left' | 'right'; offset?: number; edgeClamp?: boolean}
+  | {type: 'center'}
+  | {type: 'corner'; corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'; margin?: number};
 
 export type ResolvedPosition = {x: number; y: number};
 
@@ -61,7 +61,7 @@ function resolveAnchor(
 
   let placement_ = placement;
   const effectiveOffset = offset;
-  if (strategy.edgeClamp) {
+  if (strategy.edgeClamp ?? false) {
     placement_ = flipPlacement({
       placement,
       anchorRect,

@@ -43,7 +43,7 @@ function emitPropEffect(varName: string, handler: PropHandler, expression: strin
 export type CodegenOptions = {
   /** Module ID for the core package import */
   coreModuleId?: string;
-  /** Module ID for @vue/reactivity import */
+  /** Module ID for \@vue/reactivity import */
   reactivityModuleId?: string;
   /** Script body lines to embed inside setup() */
   scriptBody?: string[];
@@ -59,9 +59,9 @@ export type CodegenResult = {
 };
 
 /**
- * Generate TypeScript source code from a TUI render tree.
- * Produces an exportable `setup(scene)` function that creates widgets
- * and mounts them to the scene.
+ Generate TypeScript source code from a TUI render tree.
+ Produces an exportable `setup(scene)` function that creates widgets
+ and mounts them to the scene.
  */
 export function generate(root: TuiRenderRoot, options?: CodegenOptions): CodegenResult {
   const core = options?.coreModuleId ?? '@buntui/core';
@@ -120,8 +120,8 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
     childStartIndices.push(widgetIndex);
     const generated = generateNode(child, widgetIndex);
     if (generated) {
-      const isDeclarative = child.type === 'TuiWidgetCall' && !child.isComponent;
-      (isDeclarative ? declarativeLines : deferredLines).push(...generated.lines.map(l => `  ${l}`));
+      const isDeclarative = child.type === 'TuiWidgetCall' && child.isComponent !== true;
+      (isDeclarative ? declarativeLines : deferredLines).push(...generated.lines.map(line => `  ${line}`));
       widgetIndex = generated.nextIndex;
     }
   }
@@ -133,7 +133,7 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
   const mountedWidgetVars: string[] = [];
   for (let childIndex = 0; childIndex < root.children.length; childIndex++) {
     const child = root.children[childIndex]!;
-    if (child.type === 'TuiWidgetCall' && !child.isComponent) {
+    if (child.type === 'TuiWidgetCall' && child.isComponent !== true) {
       const varName = getWidgetVarName(child, childStartIndices[childIndex]!);
       lines.push(`  __target.mount(${varName});`);
       mountedWidgetVars.push(varName);
@@ -181,7 +181,7 @@ function generateWidgetCall(node: TuiWidgetCall, index: number, parentVarName?: 
   const showProp = node.dynamicProps.find(p => p.name === 'visible');
 
   // Component call with v-show: track mounted widgets via a proxy mount target
-  if (node.isComponent && showProp) {
+  if ((node.isComponent ?? false) && showProp) {
     const varName = getWidgetVarName(node, index);
     const mountCall = parentVarName ? `${parentVarName}.addChild(w)` : '__target.mount(w)';
     const unmountCall = parentVarName ? `${parentVarName}.removeChild(w)` : '__target.unmount(w)';
@@ -197,7 +197,7 @@ function generateWidgetCall(node: TuiWidgetCall, index: number, parentVarName?: 
   }
 
   // Component call: ImportName.setup(scene[, mountTarget])
-  if (node.isComponent) {
+  if (node.isComponent ?? false) {
     if (parentVarName) {
       return {
         lines: [`${node.creator}.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } });`],
@@ -260,7 +260,7 @@ function generateWidgetCall(node: TuiWidgetCall, index: number, parentVarName?: 
   // Generate children and add them to the parent widget
   let nextIndex = index + 1;
   for (const child of node.children) {
-    if (child.type === 'TuiWidgetCall' && child.isComponent) {
+    if (child.type === 'TuiWidgetCall' && (child.isComponent ?? false)) {
       const result = generateNode(child, nextIndex, varName);
       if (result) {
         lines.push(...result.lines);
@@ -275,10 +275,8 @@ function generateWidgetCall(node: TuiWidgetCall, index: number, parentVarName?: 
       }
     } else if (child.type === 'TuiListBlock') {
       const result = generateList(child, nextIndex, varName);
-      if (result) {
-        lines.push(...result.lines);
-        nextIndex = result.nextIndex;
-      }
+      lines.push(...result.lines);
+      nextIndex = result.nextIndex;
     } else {
       const result = generateNode(child, nextIndex, varName);
       if (result) {
@@ -330,7 +328,7 @@ type WidgetInfo = {
 type WidgetTree = {
   root: WidgetInfo;
   descendants: WidgetInfo[];
-  addChildLines: string[];
+  childMountLines: string[];
 };
 
 function collectWidgetTree(
@@ -339,7 +337,7 @@ function collectWidgetTree(
   parentVarName?: string,
 ): {tree: WidgetTree; nextIndex: number} {
   const varName = getWidgetVarName(node, startIndex);
-  const addChildLines: string[] = [];
+  const childMountLines: string[] = [];
   const descendants: WidgetInfo[] = [];
   let nextIndex = startIndex + 1;
 
@@ -348,7 +346,7 @@ function collectWidgetTree(
 
   for (const child of node.children) {
     if (child.type === 'TuiWidgetCall') {
-      if (child.isComponent) {
+      if (child.isComponent ?? false) {
         const childResult = collectWidgetTree(child, nextIndex, childParent);
         descendants.push(childResult.tree.root, ...childResult.tree.descendants);
         nextIndex = childResult.nextIndex;
@@ -358,7 +356,7 @@ function collectWidgetTree(
         nextIndex = childResult.nextIndex;
       } else {
         const childResult = collectWidgetTree(child, nextIndex, varName);
-        addChildLines.push(`${varName}.addChild(${childResult.tree.root.varName});`, ...childResult.tree.addChildLines);
+        childMountLines.push(`${varName}.addChild(${childResult.tree.root.varName});`, ...childResult.tree.childMountLines);
         descendants.push(childResult.tree.root, ...childResult.tree.descendants);
         nextIndex = childResult.nextIndex;
       }
@@ -375,7 +373,7 @@ function collectWidgetTree(
         isComponent: isComponentNode,
       },
       descendants,
-      addChildLines,
+      childMountLines,
     },
     nextIndex,
   };
@@ -422,8 +420,8 @@ function buildMountTreeLines(tree: WidgetTree, parentVarName?: string): string[]
     lines.push(`      ${d.varName} = ${d.createLine};`);
   }
 
-  for (const addLine of tree.addChildLines) {
-    lines.push(`      ${addLine}`);
+  for (const childMountLine of tree.childMountLines) {
+    lines.push(`      ${childMountLine}`);
   }
 
   for (const eventLine of tree.root.eventLines) {
@@ -538,7 +536,7 @@ function generateConditional(block: TuiConditionalBlock, index: number, parentVa
 }
 
 function buildWidgetCreation(node: TuiWidgetCall, parentVarName?: string): string {
-  if (node.isComponent) {
+  if (node.isComponent ?? false) {
     if (parentVarName) {
       return `__runSetup(__scene, () => ${node.creator}.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } }))`;
     }
@@ -566,7 +564,7 @@ function buildWidgetCreation(node: TuiWidgetCall, parentVarName?: string): strin
 }
 
 function buildGuardedUpdateEffects(node: TuiWidgetCall, varName: string): string[] {
-  if (node.isComponent) {
+  if (node.isComponent ?? false) {
     return [];
   }
 
@@ -582,14 +580,11 @@ function buildGuardedUpdateEffects(node: TuiWidgetCall, varName: string): string
 }
 
 function buildEventLines(node: TuiWidgetCall, varName: string): string[] {
-  if (node.isComponent) {
+  if (node.isComponent ?? false) {
     return [];
   }
 
-  const result: string[] = [];
-  for (const eventBinding of node.events) {
-    result.push(`${varName}.on('${eventBinding.event}', ${buildEventHandler(eventBinding)});`);
-  }
+  const result: string[] = Array.from(node.events, eventBinding => `${varName}.on('${eventBinding.event}', ${buildEventHandler(eventBinding)});`);
 
   return result;
 }
@@ -627,7 +622,7 @@ function generateStaticList(node: TuiListBlock, index: number, parentVar?: strin
 
   let nextIndex = index;
   for (const child of node.body) {
-    if (child.type === 'TuiWidgetCall' && !child.isComponent && parentVar) {
+    if (child.type === 'TuiWidgetCall' && child.isComponent !== true && parentVar) {
       const childVarName = getWidgetVarName(child, nextIndex);
       const result = generateNode(child, nextIndex);
       if (result) {
@@ -687,9 +682,9 @@ function generateKeyedList(node: TuiListBlock, index: number, parentVar?: string
 
   let nextIndex = index;
   for (const child of node.body) {
-    if (child.type === 'TuiWidgetCall' && !child.isComponent) {
+    if (child.type === 'TuiWidgetCall' && child.isComponent !== true) {
       nextIndex = generateKeyedBodyWidget(child, nextIndex, mapVar, keyExpr, parentVar, lines);
-    } else if (child.type === 'TuiWidgetCall' && child.isComponent) {
+    } else if (child.type === 'TuiWidgetCall' && (child.isComponent ?? false)) {
       const result = generateNode(child, nextIndex, parentVar);
       if (result) {
         for (const l of result.lines) {
@@ -700,22 +695,18 @@ function generateKeyedList(node: TuiListBlock, index: number, parentVar?: string
       }
     } else if (child.type === 'TuiConditionalBlock') {
       const result = generateConditional(child, nextIndex, parentVar);
-      if (result) {
-        for (const l of result.lines) {
-          lines.push(`    ${l}`);
-        }
-
-        nextIndex = result.nextIndex;
+      for (const line of result.lines) {
+        lines.push(`    ${line}`);
       }
+
+      nextIndex = result.nextIndex;
     } else if (child.type === 'TuiListBlock') {
       const result = generateList(child, nextIndex, parentVar);
-      if (result) {
-        for (const l of result.lines) {
-          lines.push(`    ${l}`);
-        }
-
-        nextIndex = result.nextIndex;
+      for (const line of result.lines) {
+        lines.push(`    ${line}`);
       }
+
+      nextIndex = result.nextIndex;
     }
   }
 
@@ -755,7 +746,7 @@ function generateKeyedBodyWidget(
 
   let nextIndex = index + 1;
   for (const subChild of node.children) {
-    if (subChild.type === 'TuiWidgetCall' && !subChild.isComponent) {
+    if (subChild.type === 'TuiWidgetCall' && subChild.isComponent !== true) {
       const subVar = getWidgetVarName(subChild, nextIndex);
       lines.push(`      const ${subVar} = ${buildWidgetCreation(subChild)};`);
       for (const eventBinding of subChild.events) {
@@ -795,11 +786,8 @@ function hasDynamicBindings(root: TuiRenderRoot): boolean {
       }
 
       if (node.alternate) {
-        if (Array.isArray(node.alternate)) {
-          return node.alternate.some(n => checkNode(n));
-        }
-
-        return checkNode(node.alternate);
+        const alternates = Array.isArray(node.alternate) ? node.alternate : [node.alternate];
+        return alternates.some(n => checkNode(n));
       }
 
       return false;
@@ -831,11 +819,8 @@ function hasComponentCalls(root: TuiRenderRoot): boolean {
       }
 
       if (node.alternate) {
-        if (Array.isArray(node.alternate)) {
-          return node.alternate.some(n => checkNode(n));
-        }
-
-        return checkNode(node.alternate);
+        const alternates = Array.isArray(node.alternate) ? node.alternate : [node.alternate];
+        return alternates.some(n => checkNode(n));
       }
 
       return false;

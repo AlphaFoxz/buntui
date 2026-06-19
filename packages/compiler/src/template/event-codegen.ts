@@ -41,7 +41,7 @@ const KEY_MODIFIER_MAP: Record<string, string> = {
 
 const SYSTEM_MODIFIERS = new Set(['ctrl', 'shift', 'alt', 'meta']);
 
-const IDENTIFIER_RE = /^[a-zA-Z_$][\w$]*$/v;
+const IDENTIFIER_RE = /^[$A-Z_a-z][\w$]*$/v;
 
 function isBareIdentifier(expr: string): boolean {
   return IDENTIFIER_RE.test(expr.trim());
@@ -63,10 +63,12 @@ export function buildEventHandler(eventBinding: TuiEventBinding): string {
   const prefixLines: string[] = [];
 
   for (const mod of eventBinding.modifiers) {
+    if (mod === 'prevent') {
+      continue;
+    }
+
     if (mod === 'stop') {
       prefixLines.push('$event.stopPropagation();');
-    } else if (mod === 'prevent') {
-      continue;
     } else if (SYSTEM_MODIFIERS.has(mod)) {
       guards.push(`$event.${mod}Key`);
     } else if (KEY_MODIFIER_MAP[mod] === undefined) {

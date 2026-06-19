@@ -35,7 +35,7 @@ function copyRecursive(srcDir: string, outDir: string, variables: Record<string,
       const content = fs.readFileSync(srcPath, 'utf-8');
       let rendered = content;
       for (const [key, value] of Object.entries(variables)) {
-        rendered = rendered.replaceAll(`{{${key}}}`, value);
+        rendered = rendered.replaceAll(`{{${key}}}`, () => value);
       }
 
       fs.writeFileSync(outPath, rendered, 'utf-8');

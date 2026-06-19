@@ -1,4 +1,3 @@
-#!/usr/bin/env bun
 import {TuiEventType} from '../events/types';
 import {TUI_CONTEXT_INSTANCE} from '../extern/app/TuiContext';
 import {type LogLevel, type TuiAppOptions, type TuiSceneOptions} from '../extern/app/types';
@@ -81,7 +80,7 @@ export class TuiApp implements Disposable {
       if (this.#quitOnQ && (data.key === 'q' || data.key === 'Q')) {
         setTimeout(() => {
           this.stop();
-        });
+        }, 0);
       }
     });
 
@@ -187,7 +186,7 @@ export class TuiApp implements Disposable {
   }
 
   switchScene(scene: TuiScene) {
-    if (!this.#scenes.some(s => s.id === scene.id)) {
+    if (this.#scenes.every(s => s.id !== scene.id)) {
       return;
     }
 
@@ -311,7 +310,7 @@ function onUnexpectedExit(error: unknown) {
   setTimeout(() => {
     appInstance?.dispose();
     getNodeProcess()?.exit(1);
-  });
+  }, 0);
 }
 
 {

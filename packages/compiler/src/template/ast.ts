@@ -2,8 +2,8 @@ import type {SourceLocation} from '@vue/compiler-core';
 import type {PropHandler} from '../runtime-helpers';
 
 /**
- * TUI widget creation call in the generated render function.
- * e.g. `createBox({ text: 'Hello', x: 10 })`
+ TUI widget creation call in the generated render function.
+ e.g. `createBox({ text: 'Hello', x: 10 })`
  */
 export type TuiWidgetCall = {
   readonly type: 'TuiWidgetCall';
@@ -30,8 +30,8 @@ export type TuiWidgetCall = {
 };
 
 /**
- * A static prop known at compile time.
- * e.g. `x={10}` or `text="Hello"`
+ A static prop known at compile time.
+ e.g. `x={10}` or `text="Hello"`
  */
 export type TuiStaticProp = {
   readonly type: 'TuiStaticProp';
@@ -40,8 +40,8 @@ export type TuiStaticProp = {
 };
 
 /**
- * A dynamic prop bound to a JS expression.
- * e.g. `:text="message"` or `v-bind:x="pos.x"`
+ A dynamic prop bound to a JS expression.
+ e.g. `:text="message"` or `v-bind:x="pos.x"`
  */
 export type TuiDynamicProp = {
   readonly type: 'TuiDynamicProp';
@@ -51,8 +51,8 @@ export type TuiDynamicProp = {
 };
 
 /**
- * An event handler binding.
- * e.g. `@key="handleKey"` or `@click="onClick"`
+ An event handler binding.
+ e.g. `@key="handleKey"` or `@click="onClick"`
  */
 export type TuiEventBinding = {
   readonly type: 'TuiEventBinding';
@@ -63,8 +63,8 @@ export type TuiEventBinding = {
 };
 
 /**
- * A reactive effect that updates a widget prop when dependencies change.
- * e.g. `effect(() => { text0.updateText(count.value) })`
+ A reactive effect that updates a widget prop when dependencies change.
+ e.g. `effect(() => { text0.updateText(count.value) })`
  */
 export type TuiReactiveEffect = {
   readonly type: 'TuiReactiveEffect';
@@ -74,7 +74,7 @@ export type TuiReactiveEffect = {
 };
 
 /**
- * A conditional render block (v-if / v-else-if / v-else).
+ A conditional render block (v-if / v-else-if / v-else).
  */
 export type TuiConditionalBlock = {
   readonly type: 'TuiConditionalBlock';
@@ -87,7 +87,7 @@ export type TuiConditionalBlock = {
 };
 
 /**
- * A list render block (v-for).
+ A list render block (v-for).
  */
 export type TuiListBlock = {
   readonly type: 'TuiListBlock';
@@ -103,15 +103,15 @@ export type TuiListBlock = {
 };
 
 /**
- * Union of all TUI render AST nodes.
+ Union of all TUI render AST nodes.
  */
-export type TuiRenderNode
-  = | TuiWidgetCall
-    | TuiConditionalBlock
-    | TuiListBlock;
+export type TuiRenderNode =
+  | TuiWidgetCall
+  | TuiConditionalBlock
+  | TuiListBlock;
 
 /**
- * The root of a compiled TUI render tree.
+ The root of a compiled TUI render tree.
  */
 export type TuiRenderRoot = {
   readonly type: 'TuiRenderRoot';

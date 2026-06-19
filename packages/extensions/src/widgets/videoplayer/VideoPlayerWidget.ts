@@ -39,10 +39,6 @@ export class VideoPlayerWidget extends InteractiveWidget {
   #ffmpegProcess: ReturnType<typeof Bun.spawn> | undefined;
   #loading = false;
 
-  get #frameOffsetMs(): number {
-    return (this.#currentFrame / this.#fps) * 1000;
-  }
-
   constructor(options: VideoPlayerWidgetOptions = {}) {
     super();
     const resolved = {...DEFAULT_VIDEOPLAYER_OPTIONS, ...options};
@@ -80,10 +76,6 @@ export class VideoPlayerWidget extends InteractiveWidget {
     } else if (!resolved.src) {
       this.#playerState = 'error';
     }
-  }
-
-  override mounted(): void {
-    super.mounted();
   }
 
   override unmounted(): void {
@@ -298,6 +290,10 @@ export class VideoPlayerWidget extends InteractiveWidget {
     buffer.popClip();
   }
 
+  get #frameOffsetMs(): number {
+    return (this.#currentFrame / this.#fps) * 1000;
+  }
+
   #drawOverlay(
     buffer: DrawListBuffer,
     absX: number,
@@ -476,27 +472,31 @@ export class VideoPlayerWidget extends InteractiveWidget {
   }
 
   #killFfmpeg(): void {
-    if (this.#ffmpegProcess) {
-      try {
-        this.#ffmpegProcess.kill();
-      } catch {
-        // Process may have already exited
-      }
-
-      this.#ffmpegProcess = undefined;
+    if (!this.#ffmpegProcess) {
+      return;
     }
+
+    try {
+      this.#ffmpegProcess.kill();
+    } catch {
+      // Process may have already exited
+    }
+
+    this.#ffmpegProcess = undefined;
   }
 
   #cleanupTempAudio(): void {
-    if (this.#audioTempFile) {
-      try {
-        void Bun.file(this.#audioTempFile).unlink();
-      } catch {
-        // File may already be gone
-      }
-
-      this.#audioTempFile = undefined;
+    if (!this.#audioTempFile) {
+      return;
     }
+
+    try {
+      void Bun.file(this.#audioTempFile).unlink();
+    } catch {
+      // File may already be gone
+    }
+
+    this.#audioTempFile = undefined;
   }
 
   #startAudio(offsetMs: number): void {
@@ -525,15 +525,17 @@ export class VideoPlayerWidget extends InteractiveWidget {
   }
 
   #stopAudio(): void {
-    if (this.#audioProcess) {
-      try {
-        this.#audioProcess.kill();
-      } catch {
-        // Process may have already exited
-      }
-
-      this.#audioProcess = undefined;
+    if (!this.#audioProcess) {
+      return;
     }
+
+    try {
+      this.#audioProcess.kill();
+    } catch {
+      // Process may have already exited
+    }
+
+    this.#audioProcess = undefined;
   }
 }
 

@@ -1,8 +1,11 @@
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
-import {BorderSides} from '../../draw_list/types';
+import {BorderSides} from '../../draw-list/types';
 import {
-  resolveBorderStyle, type TuiBorderStyleName, type TuiWidgetRect, type TuiWidgetSize,
+  resolveBorderStyle,
+  type TuiBorderStyleName,
+  type TuiWidgetRect,
+  type TuiWidgetSize,
 } from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
@@ -499,7 +502,6 @@ export class TableWidget extends InteractiveWidget {
 
         const cellWidth = Math.min(col.width, x + width - drawX);
         const rawValue = row[col.key];
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion
         const cellValue = typeof rawValue === 'string' ? rawValue : (rawValue as number | boolean | undefined)?.toString() ?? '';
         const cellText = this.#alignText(truncateToWidth(cellValue, cellWidth - 1), cellWidth - 1, col.align);
         buffer.drawText({

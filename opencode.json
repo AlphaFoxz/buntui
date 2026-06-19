@@ -29,11 +29,26 @@
             "rg *": "allow",
             "yt-dlp *": "allow",
             "zig *": "allow",
+            "ConvertFrom-Json *": "allow",
+            "ConvertTo-Json *": "allow",
+            "ForEach-Object *": "allow",
+            "Format-Table *": "allow",
             "Get-ChildItem *": "allow",
             "Get-Content *": "allow",
+            "Get-FileHash *": "allow",
+            "Get-Item *": "allow",
             "New-Item *": "allow",
+            "Out-File *": "allow",
+            "Out-Null *": "allow",
+            "Out-String *": "allow",
+            "Pop-Location *": "allow",
             "Select-String *": "allow",
-            "Select-Object *": "allow"
+            "Select-Object *": "allow",
+            "Set-Content *": "allow",
+            "Sort-Object *": "allow",
+            "Split-Path *": "allow",
+            "Where-Object *": "allow",
+            "Write-Host *": "allow"
         }
     }
 }

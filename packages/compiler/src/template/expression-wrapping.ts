@@ -38,7 +38,7 @@ function wrapCore(expr: string, locals: Set<string>): string {
       const parsed = parseStringLiteral(expr, i, ch);
       result += expr.slice(start, parsed.end);
       i = parsed.end;
-    } else if (/[a-zA-Z_$]/v.test(ch)) {
+    } else if (/[$A-Z_a-z]/v.test(ch)) {
       const {ident, end} = parseIdentifier(expr, i);
       if (end < expr.length && expr[end]! === '(') {
         result += ident;
@@ -188,14 +188,18 @@ function skipBraceBlockForward(expr: string, start: number): number {
   return j;
 }
 
-type ArrowParameterResult
-  = | {type: 'none'}
-    | {type: 'parens'; text: string}
-    | {type: 'ident'; name: string};
+type ArrowParameterResult =
+  | {type: 'none'}
+  | {type: 'parens'; text: string}
+  | {type: 'ident'; name: string};
+
+function isBlankString(input: string) {
+  return /^\s$/v.test(input);
+}
 
 function findArrowParameterStart(expr: string, arrowPos: number): ArrowParameterResult {
   let j = arrowPos - 1;
-  while (j >= 0 && (expr[j]! === ' ' || expr[j]! === '\t' || expr[j]! === '\n' || expr[j]! === '\r')) {
+  while (j >= 0 && isBlankString(expr[j]!)) {
     j--;
   }
 
@@ -262,7 +266,7 @@ function collectArrowParameters(expr: string): Set<string> {
 function extractParameterNames(string_: string, parameters: Set<string>): void {
   let i = 0;
   while (i < string_.length) {
-    while (i < string_.length && (string_[i]! === ' ' || string_[i]! === '\t' || string_[i]! === ',' || string_[i]! === '\n' || string_[i]! === '\r')) {
+    while (i < string_.length && (isBlankString(string_[i]!))) {
       i++;
     }
 
@@ -270,7 +274,7 @@ function extractParameterNames(string_: string, parameters: Set<string>): void {
       break;
     }
 
-    if (/[a-zA-Z_$]/v.test(string_[i]!)) {
+    if (/[$A-Z_a-z]/v.test(string_[i]!)) {
       const start = i;
       while (i < string_.length && /[\w$]/v.test(string_[i]!)) {
         i++;
