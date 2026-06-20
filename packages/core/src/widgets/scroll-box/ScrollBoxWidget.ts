@@ -11,9 +11,12 @@ import {type BoxWidget, createBox} from '../box/BoxWidget';
 import {
   computeScrollbarGeometry,
   renderScrollbar,
+  renderScrollbarHorizontal,
   scrollbarHitTest,
+  scrollbarHitTestHorizontal,
   computeThumbDragOffset,
   type ScrollbarHitTest,
+  type ScrollbarHitTestHorizontal,
 } from '../scrollbar-helper';
 import type {ScrollBoxWidgetOptions} from './types';
 
@@ -22,6 +25,7 @@ type ScrollBoxExtraColors = {scrollbar: number; scrollbarTrack: number};
 export class ScrollBoxWidget extends InteractiveWidget {
   readonly #rect: TuiWidgetRect;
   #scrollOffsetY = 0;
+  #scrollOffsetX = 0;
   #layoutDirty = true;
   readonly #layoutChildren: TuiWidgetEntity[] = [];
   readonly #innerBox: BoxWidget;
@@ -33,11 +37,17 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
   #dragScrolling = false;
   #dragStartY = 0;
-  #dragStartOffset = 0;
+  #dragStartX = 0;
+  #dragStartOffsetY = 0;
+  #dragStartOffsetX = 0;
 
   #thumbDragging = false;
   #thumbDragStartY = 0;
   #thumbDragStartOffset = 0;
+
+  #thumbDraggingX = false;
+  #thumbDragStartX = 0;
+  #thumbDragStartOffsetX = 0;
 
   constructor(options: ScrollBoxWidgetOptions) {
     super();
@@ -75,50 +85,99 @@ export class ScrollBoxWidget extends InteractiveWidget {
     };
 
     this.on('wheel', data => {
-      const before = this.#scrollOffsetY;
-      this.scrollBy(data.wheelDeltaY * this.#scrollSpeed);
-      const after = this.#scrollOffsetY;
+      const horizontal = data.shiftKey;
+      const before = horizontal ? this.#scrollOffsetX : this.#scrollOffsetY;
+      if (horizontal) {
+        this.scrollByX(data.wheelDeltaY * this.#scrollSpeed);
+      } else {
+        this.scrollBy(data.wheelDeltaY * this.#scrollSpeed);
+      }
+
+      const after = horizontal ? this.#scrollOffsetX : this.#scrollOffsetY;
       if (before !== after) {
         this.stopPropagation();
       }
     });
 
     this.on('mousedown', data => {
-      const hit = this.#scrollbarHitTest();
-      const result = hit ? scrollbarHitTest(data.x, data.y, hit) : {type: 'none'} as const;
-      switch (result.type) {
-        case 'thumb': {
-          this.#thumbDragging = true;
-          this.#thumbDragStartY = data.y;
-          this.#thumbDragStartOffset = this.#scrollOffsetY;
-          this.stopPropagation();
-          break;
-        }
+      const vHit = this.#scrollbarHitTest();
+      if (vHit) {
+        const result = scrollbarHitTest(data.x, data.y, vHit);
+        switch (result.type) {
+          case 'thumb': {
+            this.#thumbDragging = true;
+            this.#thumbDragStartY = data.y;
+            this.#thumbDragStartOffset = this.#scrollOffsetY;
+            this.stopPropagation();
+            return;
+          }
 
-        case 'track-above': {
-          this.scrollBy(-this.#computeViewport().height);
-          this.stopPropagation();
-          break;
-        }
+          case 'track-above': {
+            this.scrollBy(-this.#computeViewport().height);
+            this.stopPropagation();
+            return;
+          }
 
-        case 'track-below': {
-          this.scrollBy(this.#computeViewport().height);
-          this.stopPropagation();
-          break;
-        }
+          case 'track-below': {
+            this.scrollBy(this.#computeViewport().height);
+            this.stopPropagation();
+            return;
+          }
 
-        case 'none': {
-          this.#dragScrolling = true;
-          this.#dragStartY = data.y;
-          this.#dragStartOffset = this.#scrollOffsetY;
-          this.stopPropagation();
-          break;
-        }
+          case 'track-left':
+          case 'track-right':
+          case 'none': {
+            break;
+          }
 
-        default: {
-          assertNever(result);
+          default: {
+            assertNever(result);
+          }
         }
       }
+
+      const hHit = this.#horizontalScrollbarHitTest();
+      if (hHit) {
+        const result = scrollbarHitTestHorizontal(data.x, data.y, hHit);
+        switch (result.type) {
+          case 'thumb': {
+            this.#thumbDraggingX = true;
+            this.#thumbDragStartX = data.x;
+            this.#thumbDragStartOffsetX = this.#scrollOffsetX;
+            this.stopPropagation();
+            return;
+          }
+
+          case 'track-left': {
+            this.scrollByX(-this.#computeViewport().width);
+            this.stopPropagation();
+            return;
+          }
+
+          case 'track-right': {
+            this.scrollByX(this.#computeViewport().width);
+            this.stopPropagation();
+            return;
+          }
+
+          case 'track-above':
+          case 'track-below':
+          case 'none': {
+            break;
+          }
+
+          default: {
+            assertNever(result);
+          }
+        }
+      }
+
+      this.#dragScrolling = true;
+      this.#dragStartY = data.y;
+      this.#dragStartX = data.x;
+      this.#dragStartOffsetY = this.#scrollOffsetY;
+      this.#dragStartOffsetX = this.#scrollOffsetX;
+      this.stopPropagation();
     });
 
     this.on('mousemove', data => {
@@ -136,6 +195,20 @@ export class ScrollBoxWidget extends InteractiveWidget {
         return;
       }
 
+      if (this.#thumbDraggingX) {
+        if ((data.buttons ?? 0) === 0) {
+          this.#thumbDraggingX = false;
+          return;
+        }
+
+        const delta = data.x - this.#thumbDragStartX;
+        const viewport = this.#computeViewport();
+        const geometry = computeScrollbarGeometry(viewport.width, this.#computeContentWidth(), this.#thumbDragStartOffsetX);
+        this.scrollToX(computeThumbDragOffset(delta, this.#thumbDragStartOffsetX, geometry));
+        this.stopPropagation();
+        return;
+      }
+
       if (!this.#dragScrolling) {
         return;
       }
@@ -145,18 +218,21 @@ export class ScrollBoxWidget extends InteractiveWidget {
         return;
       }
 
-      const delta = data.y - this.#dragStartY;
-      this.scrollTo(this.#dragStartOffset - delta);
+      const deltaY = data.y - this.#dragStartY;
+      const deltaX = data.x - this.#dragStartX;
+      this.scrollTo(this.#dragStartOffsetY - deltaY);
+      this.scrollToX(this.#dragStartOffsetX - deltaX);
       this.stopPropagation();
     });
 
     this.on('mouseup', () => {
-      if (!(this.#dragScrolling || this.#thumbDragging)) {
+      if (!(this.#dragScrolling || this.#thumbDragging || this.#thumbDraggingX)) {
         return;
       }
 
       this.#dragScrolling = false;
       this.#thumbDragging = false;
+      this.#thumbDraggingX = false;
       this.stopPropagation();
     });
   }
@@ -175,6 +251,14 @@ export class ScrollBoxWidget extends InteractiveWidget {
     return this.#maxScrollOffset();
   }
 
+  get scrollOffsetX(): number {
+    return this.#scrollOffsetX;
+  }
+
+  get maxScrollX(): number {
+    return this.#maxScrollOffsetX();
+  }
+
   override handleActiveKey(event: KeyboardEvent): void {
     const key = event.key!;
     const viewport = this.#computeViewport();
@@ -187,6 +271,16 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
       case 'ArrowDown': {
         this.scrollBy(1);
+        break;
+      }
+
+      case 'ArrowLeft': {
+        this.scrollByX(-1);
+        break;
+      }
+
+      case 'ArrowRight': {
+        this.scrollByX(1);
         break;
       }
 
@@ -223,7 +317,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
     if (clamped !== this.#scrollOffsetY) {
       this.#scrollOffsetY = clamped;
       this.#layoutDirty = true;
-      this.dispatch('scroll', {scrollOffsetY: clamped, maxScrollY: this.#maxScrollOffset()});
+      this.#dispatchScroll();
     }
   }
 
@@ -237,6 +331,27 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
   scrollBy(delta: number): void {
     this.scrollTo(this.#scrollOffsetY + delta);
+  }
+
+  scrollToX(offset: number): void {
+    const clamped = Math.max(0, Math.min(offset, this.#maxScrollOffsetX()));
+    if (clamped !== this.#scrollOffsetX) {
+      this.#scrollOffsetX = clamped;
+      this.#layoutDirty = true;
+      this.#dispatchScroll();
+    }
+  }
+
+  scrollToLeft(): void {
+    this.scrollToX(0);
+  }
+
+  scrollToRight(): void {
+    this.scrollToX(this.#maxScrollOffsetX());
+  }
+
+  scrollByX(delta: number): void {
+    this.scrollToX(this.#scrollOffsetX + delta);
   }
 
   scrollIntoView(child: TuiWidgetEntity): void {
@@ -398,10 +513,20 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
     buffer.popClip();
     this.#renderScrollbar(buffer);
+    this.#renderHorizontalScrollbar(buffer);
     buffer.popClip();
   }
 
   // -- Internal helpers --
+
+  #dispatchScroll(): void {
+    this.dispatch('scroll', {
+      scrollOffsetY: this.#scrollOffsetY,
+      maxScrollY: this.#maxScrollOffset(),
+      scrollOffsetX: this.#scrollOffsetX,
+      maxScrollX: this.#maxScrollOffsetX(),
+    });
+  }
 
   #computeViewport(): TuiWidgetRect & {width: number; height: number} {
     const {x, y, width, height} = this.#rect;
@@ -432,9 +557,28 @@ export class ScrollBoxWidget extends InteractiveWidget {
     return total;
   }
 
+  #computeContentWidth(): number {
+    const viewport = this.#computeViewport();
+    let max = viewport.width;
+    for (const child of this.#layoutChildren) {
+      const intrinsic = child.intrinsicSize();
+      const w = intrinsic?.width ?? child.rect.width;
+      if (w > max) {
+        max = w;
+      }
+    }
+
+    return max;
+  }
+
   #maxScrollOffset(): number {
     const viewport = this.#computeViewport();
     return Math.max(0, this.#computeContentHeight() - viewport.height);
+  }
+
+  #maxScrollOffsetX(): number {
+    const viewport = this.#computeViewport();
+    return Math.max(0, this.#computeContentWidth() - viewport.width);
   }
 
   #computeLayout(): void {
@@ -445,17 +589,19 @@ export class ScrollBoxWidget extends InteractiveWidget {
     }
 
     const viewport = this.#computeViewport();
+    const contentWidth = this.#computeContentWidth();
     let cumulativeY = 0;
 
     for (const child of children) {
       const intrinsic = child.intrinsicSize();
       const childHeight = intrinsic?.height ?? child.rect.height;
       const childY = viewport.y + cumulativeY - this.#scrollOffsetY;
+      const childX = viewport.x - this.#scrollOffsetX;
 
       child.updateRect({
-        x: viewport.x,
+        x: childX,
         y: childY,
-        width: viewport.width,
+        width: contentWidth,
         height: childHeight,
       });
 
@@ -484,6 +630,25 @@ export class ScrollBoxWidget extends InteractiveWidget {
     });
   }
 
+  #renderHorizontalScrollbar(buffer: DrawListBuffer): void {
+    const maxScroll = this.#maxScrollOffsetX();
+    if (maxScroll === 0 && !this.#alwaysShowScrollbar) {
+      return;
+    }
+
+    const viewport = this.#computeViewport();
+    const contentWidth = this.#computeContentWidth();
+    if (contentWidth <= 0) {
+      return;
+    }
+
+    const geometry = computeScrollbarGeometry(viewport.width, contentWidth, this.#scrollOffsetX);
+    const scrollbarY = this.#rect.y + this.#rect.height - 1;
+    renderScrollbarHorizontal({
+      buffer, y: scrollbarY, trackX: viewport.x, trackWidth: viewport.width, geometry, thumbColor: this.#extraColors.scrollbar, trackColor: this.#extraColors.scrollbarTrack,
+    });
+  }
+
   #scrollbarHitTest(): ScrollbarHitTest | undefined {
     const maxScroll = this.#maxScrollOffset();
     if (maxScroll === 0 && !this.#alwaysShowScrollbar) {
@@ -503,6 +668,29 @@ export class ScrollBoxWidget extends InteractiveWidget {
       trackY: viewport.y,
       trackHeight: viewport.height,
       thumbY: viewport.y + geometry.thumbOffset,
+      thumbSize: geometry.thumbSize,
+    };
+  }
+
+  #horizontalScrollbarHitTest(): ScrollbarHitTestHorizontal | undefined {
+    const maxScroll = this.#maxScrollOffsetX();
+    if (maxScroll === 0 && !this.#alwaysShowScrollbar) {
+      return undefined;
+    }
+
+    const viewport = this.#computeViewport();
+    const contentWidth = this.#computeContentWidth();
+    if (contentWidth <= 0) {
+      return undefined;
+    }
+
+    const geometry = computeScrollbarGeometry(viewport.width, contentWidth, this.#scrollOffsetX);
+    const scrollbarY = this.#rect.y + this.#rect.height - 1;
+    return {
+      y: scrollbarY,
+      trackX: viewport.x,
+      trackWidth: viewport.width,
+      thumbX: viewport.x + geometry.thumbOffset,
       thumbSize: geometry.thumbSize,
     };
   }

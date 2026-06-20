@@ -15,10 +15,20 @@ export type ScrollbarHitTest = {
   thumbSize: number;
 };
 
+export type ScrollbarHitTestHorizontal = {
+  y: number;
+  trackX: number;
+  trackWidth: number;
+  thumbX: number;
+  thumbSize: number;
+};
+
 export type ScrollbarHitResult =
   | {type: 'thumb'}
   | {type: 'track-above'}
   | {type: 'track-below'}
+  | {type: 'track-left'}
+  | {type: 'track-right'}
   | {type: 'none'};
 
 export function computeScrollbarGeometry(
@@ -63,6 +73,31 @@ export function renderScrollbar(options: RenderScrollbarOptions): void {
   }
 }
 
+export type RenderScrollbarHorizontalOptions = {
+  buffer: DrawListBuffer;
+  y: number;
+  trackX: number;
+  trackWidth: number;
+  geometry: ScrollbarGeometry;
+  thumbColor: number;
+  trackColor: number;
+};
+
+export function renderScrollbarHorizontal(options: RenderScrollbarHorizontalOptions): void {
+  const {buffer, y, trackX, trackWidth, geometry, thumbColor, trackColor} = options;
+  const {thumbSize, thumbOffset} = geometry;
+  for (let col = 0; col < trackWidth; col++) {
+    const isThumb = col >= thumbOffset && col < thumbOffset + thumbSize;
+    buffer.drawChar({
+      x: trackX + col,
+      y,
+      char: isThumb ? 0x25_80 : 0x25_00,
+      fgRgba: isThumb ? thumbColor : trackColor,
+      bgRgba: 0x00_00_00_00,
+    });
+  }
+}
+
 export function scrollbarHitTest(
   mouseX: number,
   mouseY: number,
@@ -85,6 +120,30 @@ export function scrollbarHitTest(
   }
 
   return {type: 'track-below'};
+}
+
+export function scrollbarHitTestHorizontal(
+  mouseX: number,
+  mouseY: number,
+  hit: ScrollbarHitTestHorizontal,
+): ScrollbarHitResult {
+  if (mouseY !== hit.y) {
+    return {type: 'none'};
+  }
+
+  if (mouseX < hit.trackX || mouseX >= hit.trackX + hit.trackWidth) {
+    return {type: 'none'};
+  }
+
+  if (mouseX >= hit.thumbX && mouseX < hit.thumbX + hit.thumbSize) {
+    return {type: 'thumb'};
+  }
+
+  if (mouseX < hit.thumbX) {
+    return {type: 'track-left'};
+  }
+
+  return {type: 'track-right'};
 }
 
 export function computeThumbDragOffset(

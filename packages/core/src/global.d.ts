@@ -35,7 +35,7 @@ declare global {
   type TuiClipboardEvent = {text: string};
   type TuiUndoEvent = {value: string};
   type TuiRedoEvent = {value: string};
-  type TuiScrollEvent = {scrollOffsetY: number; maxScrollY: number};
+  type TuiScrollEvent = {scrollOffsetY: number; maxScrollY: number; scrollOffsetX: number; maxScrollX: number};
   type TuiRadioGroupChangeEvent = {value: number; label: string};
   type TuiSelectChangeEvent = {value: string; label: string};
   type TuiSelectButtonChangeEvent = {value: unknown; label: string};

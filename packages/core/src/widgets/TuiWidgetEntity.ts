@@ -17,7 +17,7 @@ export type TuiSubmitEventData = {value: string};
 export type TuiClipboardEventData = {text: string};
 export type TuiUndoEventData = {value: string};
 export type TuiRedoEventData = {value: string};
-export type TuiScrollEventData = {scrollOffsetY: number; maxScrollY: number};
+export type TuiScrollEventData = {scrollOffsetY: number; maxScrollY: number; scrollOffsetX: number; maxScrollX: number};
 export type TuiChangeEventData = {checked: boolean} | {value: number; label: string} | {value: string; label: string};
 
 export type TuiWidgetEventData = {

@@ -57,6 +57,35 @@
             />
         </template>
     </ScrollBox>
+
+    <Text :x="1" :y="23" value="▶ Horizontal Scroll (wide content)" />
+
+    <ScrollBox
+        :x="1"
+        :y="24"
+        width="45%"
+        :height="4"
+        borderStyle="rounded"
+        @scroll="handleScrollX"
+    >
+        <template>
+            <Text
+                :x="1"
+                :y="25"
+                :value="wideLine"
+            />
+            <Text
+                :x="1"
+                :y="26"
+                :value="`${'─'.repeat(60)} ← ${wideLine.length} chars wide`"
+            />
+        </template>
+    </ScrollBox>
+
+    <Box x="50%" :y="24" width="45%" :height="4" borderStyle="rounded" :direction="'vertical'" :gap="0">
+        <Text :value="`OffsetX: ${scrollOffsetX} / ${maxScrollX}`" />
+        <Text value="Shift+wheel ←→  Arrow keys ←→" />
+    </Box>
 </template>
 
 <script setup lang="ts">
@@ -77,5 +106,14 @@ const highlightIndex = ref(3)
 
 function handleScroll2(event: TuiScrollEvent) {
     void event
+}
+
+const scrollOffsetX = ref(0)
+const maxScrollX = ref(0)
+const wideLine = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.'
+
+function handleScrollX(event: TuiScrollEvent) {
+    scrollOffsetX.value = event.scrollOffsetX
+    maxScrollX.value = event.maxScrollX
 }
 </script>

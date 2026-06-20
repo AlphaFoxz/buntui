@@ -2,6 +2,8 @@ import {it, expect, describe} from 'bun:test';
 import {createScrollBoxWidget} from '../ScrollBoxWidget';
 import {ScrollBoxWidget} from '../ScrollBoxWidget';
 import {createBox} from '../../box/BoxWidget';
+import {createTextWidget} from '../../text/TextWidget';
+import {DrawListBuffer} from '../../../draw-list/DrawListBuffer';
 import type {KeyboardEvent, MouseEvent} from '../../../events/types';
 
 function key(options: Partial<KeyboardEvent> & {key: string}): KeyboardEvent {
@@ -546,5 +548,346 @@ describe('scrollbar thumb drag', () => {
     sb.dispatch('mousedown', mouse({x: 19, y: 1, button: 0}));
     sb.dispatch('mousemove', mouse({x: 19, y: 6, buttons: 1}));
     expect(sb.scrollOffsetY).toBe(0);
+  });
+});
+
+describe('horizontal scroll', () => {
+  // Geometry: ScrollBox width=20, height=10, borders all on.
+  // Viewport: x=1, y=1, width=18, height=8.
+  // Vertical scrollbar (when visible): col 19, rows 1-8.
+  // Horizontal scrollbar (when visible): row 9, cols 1-18.
+  function createWideScrollBox(options?: {
+    width?: number;
+    height?: number;
+    childCount?: number;
+    childWidth?: number;
+    gap?: number;
+    alwaysShowScrollbar?: boolean;
+  }): ScrollBoxWidget {
+    const sb = new ScrollBoxWidget({
+      x: 0,
+      y: 0,
+      width: options?.width ?? 20,
+      height: options?.height ?? 10,
+      borderStyle: 'solid',
+      borderTop: true,
+      borderRight: true,
+      borderBottom: true,
+      borderLeft: true,
+      gap: options?.gap ?? 0,
+      scrollSpeed: 3,
+      alwaysShowScrollbar: options?.alwaysShowScrollbar ?? false,
+    });
+    const count = options?.childCount ?? 1;
+    const childWidth = options?.childWidth ?? 30;
+    for (let i = 0; i < count; i++) {
+      sb.addChild(createTextWidget('x'.repeat(childWidth)));
+    }
+
+    return sb;
+  }
+
+  describe('accessors', () => {
+    it('initializes scrollOffsetX at 0', () => {
+      const sb = createWideScrollBox();
+      expect(sb.scrollOffsetX).toBe(0);
+    });
+
+    it('computes maxScrollX from widest child', () => {
+      // childWidth=30, viewport width=18 → contentWidth=30, maxScrollX=12
+      const sb = createWideScrollBox({childWidth: 30});
+      expect(sb.maxScrollX).toBe(12);
+    });
+
+    it('maxScrollX is 0 when content fits viewport', () => {
+      // childWidth=10, viewport width=18 → contentWidth=18, maxScrollX=0
+      const sb = createWideScrollBox({childWidth: 10});
+      expect(sb.maxScrollX).toBe(0);
+    });
+
+    it('maxScrollX uses the widest of multiple children', () => {
+      const sb = createScrollBox({width: 20, height: 10});
+      sb.addChild(createTextWidget('x'.repeat(20))); // intrinsic width 20
+      sb.addChild(createTextWidget('x'.repeat(40))); // intrinsic width 40
+      // viewport width = 18, contentWidth = max(18, 20, 40) = 40, maxScrollX = 22
+      expect(sb.maxScrollX).toBe(22);
+    });
+  });
+
+  describe('scrollToX / scrollByX', () => {
+    it('scrollToX clamps to valid range', () => {
+      const sb = createWideScrollBox({childWidth: 30}); // maxScrollX = 12
+      sb.scrollToX(100);
+      expect(sb.scrollOffsetX).toBe(12);
+      sb.scrollToX(-5);
+      expect(sb.scrollOffsetX).toBe(0);
+    });
+
+    it('scrollByX adds delta and clamps', () => {
+      const sb = createWideScrollBox({childWidth: 30}); // maxScrollX = 12
+      sb.scrollByX(5);
+      expect(sb.scrollOffsetX).toBe(5);
+      sb.scrollByX(-3);
+      expect(sb.scrollOffsetX).toBe(2);
+      sb.scrollByX(-100);
+      expect(sb.scrollOffsetX).toBe(0);
+    });
+
+    it('scrollToLeft / scrollToRight', () => {
+      const sb = createWideScrollBox({childWidth: 30}); // maxScrollX = 12
+      sb.scrollToRight();
+      expect(sb.scrollOffsetX).toBe(12);
+      expect(sb.scrollOffsetX).toBe(sb.maxScrollX);
+      sb.scrollToLeft();
+      expect(sb.scrollOffsetX).toBe(0);
+    });
+  });
+
+  describe('scroll event', () => {
+    it('dispatches scroll event with X payload on scrollToX', () => {
+      const sb = createWideScrollBox({childWidth: 30});
+      const events: Array<{scrollOffsetX: number; maxScrollX: number; scrollOffsetY: number; maxScrollY: number}> = [];
+      sb.on('scroll', data => events.push(data as typeof events[number]));
+      sb.scrollToX(5);
+      expect(events).toHaveLength(1);
+      expect(events[0]!.scrollOffsetX).toBe(5);
+      expect(events[0]!.maxScrollX).toBe(sb.maxScrollX);
+      // Y payload preserved
+      expect(events[0]!.scrollOffsetY).toBe(0);
+      expect(events[0]!.maxScrollY).toBe(sb.maxScrollY);
+    });
+
+    it('does not dispatch when X offset does not change', () => {
+      const sb = createWideScrollBox({childWidth: 30});
+      const events: unknown[] = [];
+      sb.on('scroll', data => events.push(data));
+      sb.scrollToX(0);
+      expect(events).toHaveLength(0);
+    });
+
+    it('preserves Y payload on Y-axis scroll', () => {
+      // Both axes scrollable: many wide children. Text intrinsic height=1, need >8 for Y scroll.
+      const sb = createWideScrollBox({childCount: 10, childWidth: 30});
+      const events: Array<{scrollOffsetX: number; maxScrollX: number; scrollOffsetY: number; maxScrollY: number}> = [];
+      sb.on('scroll', data => events.push(data as typeof events[number]));
+      sb.scrollTo(2);
+      expect(events).toHaveLength(1);
+      expect(events[0]!.scrollOffsetY).toBe(2);
+      expect(events[0]!.scrollOffsetX).toBe(0);
+      expect(events[0]!.maxScrollX).toBe(sb.maxScrollX);
+    });
+  });
+
+  describe('layout', () => {
+    it('respects intrinsic width when wider than viewport', () => {
+      const sb = createScrollBox({width: 20, height: 10}); // viewport width=18
+      const wide = createTextWidget('x'.repeat(30)); // intrinsic width=30
+      sb.addChild(wide);
+      const buf = new DrawListBuffer();
+      sb.emitDrawCommands(buf);
+      // Layout forces children to contentWidth=30, x=viewport.x=1
+      expect(wide.rect.width).toBe(30);
+      expect(wide.rect.x).toBe(1);
+    });
+
+    it('fills viewport width when content fits', () => {
+      const sb = createScrollBox({width: 20, height: 10}); // viewport width=18
+      const narrow = createTextWidget('short'); // intrinsic width=5
+      sb.addChild(narrow);
+      const buf = new DrawListBuffer();
+      sb.emitDrawCommands(buf);
+      // Content not wider than viewport → child stretched to viewport width=18
+      expect(narrow.rect.width).toBe(18);
+    });
+
+    it('applies scrollOffsetX to children x position', () => {
+      const sb = createScrollBox({width: 20, height: 10}); // viewport x=1, width=18
+      const wide = createTextWidget('x'.repeat(30));
+      sb.addChild(wide);
+      sb.scrollToX(5);
+      const buf = new DrawListBuffer();
+      sb.emitDrawCommands(buf);
+      // child x = viewport.x - scrollOffsetX = 1 - 5 = -4
+      expect(wide.rect.x).toBe(-4);
+    });
+  });
+
+  describe('wheel', () => {
+    it('default wheel scrolls Y (unchanged behavior)', () => {
+      // Need vertical scrollability: 10 children of intrinsic height 1 → contentHeight=10, maxScrollY=2
+      const sb = createWideScrollBox({childCount: 10, childWidth: 30});
+      sb.dispatch('wheel', {wheelDeltaY: 1, x: 5, y: 5, button: 0, buttons: 0, isRelease: false, shiftKey: false, ctrlKey: false, altKey: false, metaKey: false});
+      // wheelDeltaY * scrollSpeed = 1 * 3 = 3, clamped to maxScrollY=2
+      expect(sb.scrollOffsetY).toBe(2);
+      expect(sb.scrollOffsetX).toBe(0);
+    });
+
+    it('Shift+wheel scrolls X', () => {
+      const sb = createWideScrollBox({childWidth: 30});
+      sb.dispatch('wheel', {wheelDeltaY: 1, x: 5, y: 5, button: 0, buttons: 0, isRelease: false, shiftKey: true, ctrlKey: false, altKey: false, metaKey: false});
+      expect(sb.scrollOffsetX).toBe(3); // wheelDeltaY * scrollSpeed = 1 * 3
+      expect(sb.scrollOffsetY).toBe(0);
+    });
+
+    it('Shift+wheel negative delta scrolls left', () => {
+      const sb = createWideScrollBox({childWidth: 30});
+      sb.scrollToX(10);
+      sb.dispatch('wheel', {wheelDeltaY: -1, x: 5, y: 5, button: 0, buttons: 0, isRelease: false, shiftKey: true, ctrlKey: false, altKey: false, metaKey: false});
+      expect(sb.scrollOffsetX).toBe(7); // 10 - 3
+    });
+  });
+
+  describe('keyboard', () => {
+    it('ArrowRight scrolls by 1', () => {
+      const sb = createWideScrollBox({childWidth: 30});
+      sb.handleKey(key({key: 'ArrowRight'}));
+      expect(sb.scrollOffsetX).toBe(1);
+    });
+
+    it('ArrowLeft scrolls back by 1', () => {
+      const sb = createWideScrollBox({childWidth: 30});
+      sb.handleKey(key({key: 'ArrowRight'}));
+      sb.handleKey(key({key: 'ArrowRight'}));
+      sb.handleKey(key({key: 'ArrowLeft'}));
+      expect(sb.scrollOffsetX).toBe(1);
+    });
+
+    it('ArrowLeft clamps at 0', () => {
+      const sb = createWideScrollBox({childWidth: 30});
+      sb.handleKey(key({key: 'ArrowLeft'}));
+      expect(sb.scrollOffsetX).toBe(0);
+    });
+
+    it('ArrowRight clamps at maxScrollX', () => {
+      const sb = createWideScrollBox({childWidth: 30}); // maxScrollX = 12
+      for (let i = 0; i < 20; i++) {
+        sb.handleKey(key({key: 'ArrowRight'}));
+      }
+
+      expect(sb.scrollOffsetX).toBe(12);
+    });
+
+    it('ArrowLeft/Right do not affect Y offset', () => {
+      const sb = createWideScrollBox({childCount: 5, childWidth: 30});
+      sb.handleKey(key({key: 'ArrowRight'}));
+      expect(sb.scrollOffsetY).toBe(0);
+    });
+  });
+
+  describe('horizontal scrollbar thumb drag', () => {
+    // Geometry: childWidth=30, viewport width=18 → maxScrollX=12
+    // trackWidth=18, thumbRatio=18/30=0.6, thumbSize=round(0.6*18)=11
+    // scrollableRange=18-11=7, maxScroll=12
+    // Horizontal scrollbar: row 9, cols 1-18
+    function createHorizontalScrollable(): ScrollBoxWidget {
+      return createWideScrollBox({childWidth: 30});
+    }
+
+    it('dragging thumb right scrolls proportionally', () => {
+      const sb = createHorizontalScrollable();
+      // mousedown on thumb at col 1 (thumbOffset=0 initially)
+      sb.dispatch('mousedown', mouse({x: 1, y: 9, button: 0}));
+      // mousemove to col 8 → delta=7, scrollableRange=7, maxScroll=12 → scrollToX(round(7/7*12))=12
+      sb.dispatch('mousemove', mouse({x: 8, y: 9, buttons: 1}));
+      expect(sb.scrollOffsetX).toBe(12);
+    });
+
+    it('dragging thumb partially scrolls partially', () => {
+      const sb = createHorizontalScrollable();
+      sb.dispatch('mousedown', mouse({x: 1, y: 9, button: 0}));
+      // delta=3 → scrollToX(round(3/7*12))=round(5.14)=5
+      sb.dispatch('mousemove', mouse({x: 4, y: 9, buttons: 1}));
+      expect(sb.scrollOffsetX).toBe(5);
+    });
+
+    it('mouseup stops horizontal thumb dragging', () => {
+      const sb = createHorizontalScrollable();
+      sb.dispatch('mousedown', mouse({x: 1, y: 9, button: 0}));
+      sb.dispatch('mouseup', mouse({x: 1, y: 9, button: 0, isRelease: true}));
+      sb.dispatch('mousemove', mouse({x: 8, y: 9, buttons: 1}));
+      expect(sb.scrollOffsetX).toBe(0);
+    });
+
+    it('mousemove without buttons stops horizontal thumb dragging', () => {
+      const sb = createHorizontalScrollable();
+      sb.dispatch('mousedown', mouse({x: 1, y: 9, button: 0}));
+      sb.dispatch('mousemove', mouse({x: 8, y: 9, buttons: 0}));
+      expect(sb.scrollOffsetX).toBe(0);
+    });
+
+    it('clicking track left of thumb scrolls page left', () => {
+      const sb = createHorizontalScrollable();
+      sb.scrollToX(10);
+      sb.dispatch('mousedown', mouse({x: 1, y: 9, button: 0}));
+      // track-left → scrollByX(-viewport.width) = -18, clamped to 0
+      expect(sb.scrollOffsetX).toBe(0);
+    });
+
+    it('clicking track right of thumb scrolls page right', () => {
+      const sb = createHorizontalScrollable();
+      // Initial thumb at col 1 (offset 0), click on col 15 (in track-right zone)
+      // track-right → scrollByX(18), clamped to 12
+      sb.dispatch('mousedown', mouse({x: 15, y: 9, button: 0}));
+      expect(sb.scrollOffsetX).toBe(12);
+    });
+
+    it('clicking on content area does not trigger horizontal thumb drag', () => {
+      const sb = createHorizontalScrollable();
+      sb.scrollToX(5);
+      // Click on content area (row 5, not on row 9 horizontal scrollbar)
+      sb.dispatch('mousedown', mouse({x: 5, y: 5, button: 0}));
+      sb.dispatch('mousemove', mouse({x: 10, y: 5, buttons: 1}));
+      // Content drag engages both axes: X delta=5 → scrollOffsetX = max(0, 5-5)=0
+      expect(sb.scrollOffsetX).toBe(0);
+    });
+
+    it('horizontal thumb drag does not scroll when content fits viewport', () => {
+      const sb = createWideScrollBox({childWidth: 10}); // maxScrollX=0
+      sb.dispatch('mousedown', mouse({x: 1, y: 9, button: 0}));
+      sb.dispatch('mousemove', mouse({x: 8, y: 9, buttons: 1}));
+      expect(sb.scrollOffsetX).toBe(0);
+    });
+
+    it('horizontal thumb drag clamps to valid range', () => {
+      const sb = createHorizontalScrollable();
+      sb.dispatch('mousedown', mouse({x: 1, y: 9, button: 0}));
+      sb.dispatch('mousemove', mouse({x: 100, y: 9, buttons: 1}));
+      expect(sb.scrollOffsetX).toBe(sb.maxScrollX);
+    });
+  });
+
+  describe('content drag with X axis', () => {
+    it('dragging right decreases scrollOffsetX (natural scroll)', () => {
+      const sb = createWideScrollBox({childWidth: 30}); // maxScrollX=12
+      sb.scrollToX(8);
+      sb.dispatch('mousedown', mouse({x: 5, y: 5, button: 0}));
+      // drag right by 3 → scrollToX(8 - 3) = 5
+      sb.dispatch('mousemove', mouse({x: 8, y: 5, buttons: 1}));
+      expect(sb.scrollOffsetX).toBe(5);
+    });
+
+    it('dragging left increases scrollOffsetX (natural scroll)', () => {
+      const sb = createWideScrollBox({childWidth: 30});
+      sb.scrollToX(5);
+      sb.dispatch('mousedown', mouse({x: 8, y: 5, button: 0}));
+      // drag left by 3 → scrollToX(5 - (-3)) = 8
+      sb.dispatch('mousemove', mouse({x: 5, y: 5, buttons: 1}));
+      expect(sb.scrollOffsetX).toBe(8);
+    });
+  });
+
+  describe('both axes', () => {
+    it('content drag pans both X and Y simultaneously', () => {
+      // 10 children of width 30 → both axes scrollable. contentHeight=10, maxScrollY=2; contentWidth=30, maxScrollX=12.
+      const sb = createWideScrollBox({childCount: 10, childWidth: 30});
+      sb.scrollTo(2);
+      sb.scrollToX(5);
+      sb.dispatch('mousedown', mouse({x: 5, y: 5, button: 0}));
+      // drag right by 2 (X delta), down by 3 (Y delta)
+      sb.dispatch('mousemove', mouse({x: 7, y: 8, buttons: 1}));
+      // scrollOffsetY = 2 - 3 = -1 → clamped to 0; scrollOffsetX = 5 - 2 = 3
+      expect(sb.scrollOffsetY).toBe(0);
+      expect(sb.scrollOffsetX).toBe(3);
+    });
   });
 });
