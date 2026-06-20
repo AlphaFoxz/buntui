@@ -57,7 +57,28 @@ export function resolveNativeLibPath(): string {
     return dllPath;
   }
 
-  throw new Error(`Cannot find native library: ${binaryName}. Set BUNTUI_DLL env or ensure the binary is in the search path.`);
+  const platformKey = `${process.platform}-${process.arch}`;
+  const hint = nativePath === ''
+    ? `The platform binary package '@buntui/native-${platformKey}' is not installed — this usually means bunx/npx skipped optionalDependencies.`
+    : `None of the searched locations contained ${binaryName}.`;
+  const tried = [
+    envPath ? `BUNTUI_DLL=${envPath}` : '(BUNTUI_DLL env not set)',
+    nativePath || `@buntui/native-${platformKey} (not installed)`,
+    mainDir,
+    srcDir,
+    workspaceBin,
+    workspaceLib,
+  ];
+
+  throw new Error([
+    `[@buntui/core] Could not locate the native rendering library '${binaryName}' for ${platformKey}.`,
+    hint,
+    'How to fix:',
+    `  - install the binary for your platform:  bun add @buntui/native-${platformKey}`,
+    `  - or point to it explicitly:             set BUNTUI_DLL=/absolute/path/to/${binaryName}`,
+    'Paths tried:',
+    ...tried.map(t => `  - ${t}`),
+  ].join('\n'));
 }
 
 export function assertPtr(p: Pointer | null): Pointer {

@@ -38,7 +38,7 @@ export class TuiApp implements Disposable {
     const frontendLogName = options?.frontendLogName ?? 'buntui-frontend.log';
     const clearLog = options?.clearLog ?? false;
     this.#backend.setupLogger(logFileDir, backendLogName, logLevel, clearLog);
-    this.#debugMode = options?.debugMode ?? false;
+    this.#debugMode = options?.debugMode ?? (logLevel === 'debug');
     this.#quitOnQ = options?.quitOnQ ?? false;
     LOGGER.init({
       logFileDir,

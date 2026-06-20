@@ -4,10 +4,12 @@ import fs from 'node:fs';
 import {binaryPath} from '@buntui/native-wasm32-wasi';
 import {resolveApp, getCwd} from '../lib/app-resolver.ts';
 import {createBuntuiVitePlugin} from '../lib/vite-plugin.ts';
+import {loadConfig} from '../lib/config.ts';
 
 export async function wasmDevCommand(appName?: string): Promise<void> {
   const cwd = getCwd();
   const app = resolveApp(appName, cwd);
+  const config = await loadConfig(cwd);
 
   const publicDir = path.join(cwd, 'public');
   const wasmDest = path.join(publicDir, 'buntui.wasm');
@@ -23,7 +25,7 @@ export async function wasmDevCommand(appName?: string): Promise<void> {
   }
 
   const vite = await import('vite');
-  const plugin = await createBuntuiVitePlugin();
+  const plugin = await createBuntuiVitePlugin({appName: app.name, appOptions: config.app ?? {}});
 
   console.log(`\n  Starting WASM dev server for "${app.name}"...\n`);
 
@@ -31,9 +33,6 @@ export async function wasmDevCommand(appName?: string): Promise<void> {
     configFile: false,
     root: cwd,
     plugins: [plugin],
-    define: {
-      BUNTUI_APP_NAME: JSON.stringify(app.name),
-    },
     server: {
       fs: {
         allow: ['..'],

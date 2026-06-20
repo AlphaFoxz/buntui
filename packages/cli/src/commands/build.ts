@@ -9,6 +9,19 @@ import {
 } from '../lib/app-resolver.ts';
 import {createVuePlugin} from '../lib/vue-plugin.ts';
 import {copyNativeBinary} from '../lib/native-binary.ts';
+import {loadConfig} from '../lib/config.ts';
+import {DEFAULT_APP_OPTIONS} from '../lib/constants.ts';
+
+function generateBootstrap(appOptions: Record<string, unknown>): string {
+  return [
+    'import {createApp} from \'@buntui/core\';',
+    'import App from \'./App.vue\';',
+    `const app = createApp(${JSON.stringify(appOptions)});`,
+    'app.createScene(App, {visible: true});',
+    'app.start();',
+    '',
+  ].join('\n');
+}
 
 function rewriteImports(content: string, originalPath: string, fileMap: Map<string, string>): string {
   const originalDir = path.dirname(originalPath);
@@ -63,7 +76,19 @@ export async function buildCommand(): Promise<void> {
 
   fs.mkdirSync(distDir, {recursive: true});
 
-  const entrypoints = apps.map(a => a.hasCustomMain ? a.mainPath : a.entryVue);
+  const config = await loadConfig(cwd);
+  const appOptions = {...DEFAULT_APP_OPTIONS, ...config.app};
+  const generatedEntries: string[] = [];
+  const entrypoints = apps.map(a => {
+    if (a.hasCustomMain) {
+      return a.mainPath;
+    }
+
+    const bootstrapPath = path.join(a.dir, '__buntui_bootstrap.ts');
+    fs.writeFileSync(bootstrapPath, generateBootstrap(appOptions));
+    generatedEntries.push(bootstrapPath);
+    return bootstrapPath;
+  });
   const vuePlugin = createVuePlugin();
 
   const result = await Bun.build({
@@ -74,6 +99,10 @@ export async function buildCommand(): Promise<void> {
     splitting: apps.length > 1,
     naming: '[dir]/[name].[ext]',
     plugins: [vuePlugin],
+  }).finally(() => {
+    for (const p of generatedEntries) {
+      fs.rmSync(p, {force: true});
+    }
   });
 
   if (!result.success) {
@@ -126,10 +155,18 @@ export async function buildCommand(): Promise<void> {
       console.log(`  ${newName} (${(fs.statSync(path.join(distDir, newName)).size / 1024).toFixed(1)} KB)`);
     }
   } else {
+    const app = apps[0]!;
     for (const output of result.outputs) {
-      const relative = path.relative(distDir, output.path).replaceAll('\\', '/');
-      keepFiles.add(relative.split('/', 1)[0]!);
-      console.log(`  ${relative} (${(output.size / 1024).toFixed(1)} KB)`);
+      const ext = path.extname(output.path);
+      const finalName = `${app.name}${ext}`;
+      const finalPath = path.join(distDir, finalName);
+      if (output.path !== finalPath) {
+        fs.renameSync(output.path, finalPath);
+      }
+
+      keepFiles.add(finalName);
+      const finalSize = fs.statSync(finalPath).size / 1024;
+      console.log(`  ${finalName} (${finalSize.toFixed(1)} KB)`);
     }
   }
 

@@ -1,9 +1,11 @@
 import {it, expect, describe} from 'bun:test';
-import {KeyboardEvent, MouseEvent, WheelEvent, TermResizeEvent} from '../../events/types';
+import {TuiEventType, KeyboardEvent, MouseEvent, WheelEvent, TermResizeEvent} from '../../events/types';
 import {
+  HtmlBackend,
   serializeKeyboardEvent,
   serializeMouseEvent,
   serializeResizeEvent,
+  type TerminalLike,
   type TerminalMouseEvent,
 } from '../HtmlBackend';
 
@@ -187,5 +189,70 @@ describe('round-trip: serialize → parse', () => {
     const event = new TermResizeEvent(buf);
     expect(event.rows).toBe(40);
     expect(event.cols).toBe(100);
+  });
+});
+
+describe('HtmlBackend — SGR mouse parsing (xterm browser path)', () => {
+  function createBackend() {
+    const dataHandlers: Array<(data: string) => void> = [];
+    const terminal = {
+      rows: 24,
+      cols: 80,
+      element: null,
+      write() {},
+      onData(handler: (data: string) => void) {
+        dataHandlers.push(handler);
+        return {dispose() {}};
+      },
+      onKey() {
+        return {dispose() {}};
+      },
+      onResize() {
+        return {dispose() {}};
+      },
+    } as unknown as TerminalLike;
+
+    const backend = new HtmlBackend({terminal, wasmModule: {} as never});
+    const received: MouseEvent[] = [];
+    backend.startEvents(((type: number, event: unknown) => {
+      if (type === TuiEventType.MouseEvent) {
+        received.push(event as MouseEvent);
+      }
+    }) as never);
+
+    return {
+      received,
+      emit(seq: string) {
+        for (const handler of dataHandlers) {
+          handler(seq);
+        }
+      },
+    };
+  }
+
+  it('parses SGR press into finite, correct coordinates', () => {
+    const {emit, received} = createBackend();
+    emit('\x1B[<0;11;6M');
+    expect(received).toHaveLength(1);
+    expect(received[0]!.x).toBe(10);
+    expect(received[0]!.y).toBe(5);
+    expect(received[0]!.isRelease).toBe(false);
+  });
+
+  it('parses SGR release with isRelease=true', () => {
+    const {emit, received} = createBackend();
+    emit('\x1B[<0;11;6m');
+    expect(received).toHaveLength(1);
+    expect(received[0]!.isRelease).toBe(true);
+    expect(received[0]!.x).toBe(10);
+  });
+
+  it('emits both press and release for a full click', () => {
+    const {emit, received} = createBackend();
+    emit('\x1B[<0;11;6M');
+    emit('\x1B[<0;11;6m');
+    expect(received).toHaveLength(2);
+    expect(received[0]!.isRelease).toBe(false);
+    expect(received[1]!.isRelease).toBe(true);
   });
 });

@@ -1,7 +1,7 @@
 <template>
     <Matrix width="100%" height="100%" />
 
-    <SelectButton :x="1" :y="2" :height="1" :options="tabOptions" v-model="currentTab" />
+    <Select :x="1" :y="0" width="30%" label="Widget" :options="tabOptions" v-model="currentTab" />
 
     <BoxDemo v-if="currentTab === 'Box'" />
     <ButtonDemo v-if="currentTab === 'Button'" />
@@ -40,20 +40,20 @@ import TableDemo from './components/TableDemo.vue'
 import SelectDemo from './components/SelectDemo.vue'
 
 const tabOptions = ref([
-    'Box',
-    'Button',
-    'Checkbox',
-    'Input',
-    'Progress',
-    'Radio',
-    'Switch',
-    'ScrollBox',
-    'ScrollIntoView',
-    'Text',
-    'Table',
-    'Select',
+    { value: 'Box', label: 'Box' },
+    { value: 'Button', label: 'Button' },
+    { value: 'Checkbox', label: 'Checkbox' },
+    { value: 'Input', label: 'Input' },
+    { value: 'Progress', label: 'Progress' },
+    { value: 'Radio', label: 'Radio' },
+    { value: 'Switch', label: 'Switch' },
+    { value: 'ScrollBox', label: 'ScrollBox' },
+    { value: 'ScrollIntoView', label: 'ScrollIntoView' },
+    { value: 'Text', label: 'Text' },
+    { value: 'Table', label: 'Table' },
+    { value: 'Select', label: 'Select' },
 ])
-const currentTab = ref(tabOptions.value[0]!)
+const currentTab = ref(tabOptions.value[0]!.value)
 
 setTimeout(() => {
     console.log('你好')

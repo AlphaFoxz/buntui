@@ -259,7 +259,7 @@ export class HtmlBackend implements TuiBackend {
     this.#terminal.write('\u{1B}[?1003h\u{1B}[?1006h');
 
     // eslint-disable-next-line no-control-regex, regexp/no-control-character
-    const sgrRegex = /\u{1B}\[<\d+;\d+;\d+m/giv;
+    const sgrRegex = /\u{1B}\[<(?<cb>\d+);(?<col>\d+);(?<row>\d+)(?<suffix>m)/giv;
 
     return this.#terminal.onData((data: string) => {
       sgrRegex.lastIndex = 0;
@@ -272,10 +272,11 @@ export class HtmlBackend implements TuiBackend {
 
         lastIdx = sgrRegex.lastIndex;
 
-        const cb = Number(match[1]!);
-        const col = Number(match[2]!) - 1;
-        const row = Number(match[3]!) - 1;
-        const isRelease = match[4] === 'm';
+        const groups = match.groups!;
+        const cb = Number(groups.cb);
+        const col = Number(groups.col) - 1;
+        const row = Number(groups.row) - 1;
+        const isRelease = groups.suffix === 'm';
 
         const button = cb & 3;
         const isMotion = (cb & 32) !== 0;
