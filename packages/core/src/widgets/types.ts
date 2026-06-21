@@ -213,14 +213,18 @@ export type TuiWidgetPadding = {
 export const TuiLayoutDirection = {
   Horizontal: 0,
   Vertical: 1,
+  HorizontalReverse: 2,
+  VerticalReverse: 3,
 } as const;
 export type TuiLayoutDirection = Enum<typeof TuiLayoutDirection>;
 
-export type TuiLayoutDirectionName = 'horizontal' | 'vertical';
+export type TuiLayoutDirectionName = 'horizontal' | 'vertical' | 'horizontal-reverse' | 'vertical-reverse';
 
 const LAYOUT_DIRECTION_MAP: Record<TuiLayoutDirectionName, TuiLayoutDirection> = {
   horizontal: 0,
   vertical: 1,
+  'horizontal-reverse': 2,
+  'vertical-reverse': 3,
 };
 
 export function resolveLayoutDirection(value: TuiLayoutDirectionName | TuiLayoutDirection): TuiLayoutDirection {
@@ -251,6 +255,35 @@ const LAYOUT_ALIGNMENT_MAP: Record<TuiLayoutAlignmentName, TuiLayoutAlignment> =
 export function resolveLayoutAlignment(value: TuiLayoutAlignmentName | TuiLayoutAlignment): TuiLayoutAlignment {
   if (typeof value === 'string') {
     return LAYOUT_ALIGNMENT_MAP[value] ?? 3;
+  }
+
+  return value;
+}
+
+export const TuiJustifyContent = {
+  Start: 0,
+  Center: 1,
+  End: 2,
+  SpaceBetween: 3,
+  SpaceAround: 4,
+  SpaceEvenly: 5,
+} as const;
+export type TuiJustifyContent = Enum<typeof TuiJustifyContent>;
+
+export type TuiJustifyContentName = 'start' | 'center' | 'end' | 'space-between' | 'space-around' | 'space-evenly';
+
+const JUSTIFY_CONTENT_MAP: Record<TuiJustifyContentName, TuiJustifyContent> = {
+  start: 0,
+  center: 1,
+  end: 2,
+  'space-between': 3,
+  'space-around': 4,
+  'space-evenly': 5,
+};
+
+export function resolveJustifyContent(value: TuiJustifyContentName | TuiJustifyContent): TuiJustifyContent {
+  if (typeof value === 'string') {
+    return JUSTIFY_CONTENT_MAP[value] ?? 0;
   }
 
   return value;

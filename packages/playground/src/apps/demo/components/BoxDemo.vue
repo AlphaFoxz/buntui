@@ -113,6 +113,42 @@
         <Text value="Row 1" />
         <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
     </Box>
+
+    <Text :x="1" :y="35" value="▶ justifyContent (main-axis distribution)" styleModifier="bold" />
+    <Box :x="1" :y="36" width="48%" :height="3" :direction="'horizontal'" :justifyContent="'start'" borderStyle="rounded">
+        <Text value="[start]" />
+    </Box>
+    <Box x="50%" :y="36" width="48%" :height="3" :direction="'horizontal'" :justifyContent="'center'" borderStyle="rounded">
+        <Text value="[center]" />
+    </Box>
+    <Box :x="1" :y="40" width="48%" :height="3" :direction="'horizontal'" :justifyContent="'end'" borderStyle="rounded">
+        <Text value="[end]" />
+    </Box>
+    <Box x="50%" :y="40" width="48%" :height="3" :direction="'horizontal'" :justifyContent="'space-between'" borderStyle="rounded">
+        <Text value="A" />
+        <Text value="B" />
+    </Box>
+
+    <Text :x="1" :y="44" value="▶ flexGrow (per-child free-space share)" styleModifier="bold" />
+    <Box :x="1" :y="45" width="48%" :height="3" :direction="'horizontal'" borderStyle="rounded">
+        <Text value="g=0" />
+        <Text value="g=1 absorbs free space" :flexGrow="1" />
+    </Box>
+    <Box x="50%" :y="45" width="48%" :height="3" :direction="'horizontal'" borderStyle="rounded">
+        <Text value="g=1" :flexGrow="1" />
+        <Text value="g=1" :flexGrow="1" />
+        <Text value="g=1" :flexGrow="1" />
+    </Box>
+
+    <Text :x="1" :y="49" value="▶ Reverse directions" styleModifier="bold" />
+    <Box :x="1" :y="50" width="48%" :height="4" :direction="'vertical-reverse'" :gap="1" borderStyle="rounded">
+        <Text :colorFg="'rgba(137,180,250,1)'" value="first (bottom)" />
+        <Text value="second (top)" />
+    </Box>
+    <Box x="50%" :y="50" width="48%" :height="4" :direction="'horizontal-reverse'" borderStyle="rounded">
+        <Text value="A" />
+        <Text :colorFg="'rgba(137,180,250,1)'" value="B (right)" />
+    </Box>
 </template>
 
 <script setup lang="ts">

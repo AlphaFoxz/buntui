@@ -6,15 +6,19 @@ import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
 import {resolveThemedOverrides} from '../../theme/color-ref';
 import {
   TuiLayoutAlignment as LayoutAlignmentEnum,
+  TuiJustifyContent as JustifyContentEnum,
   resolveBorderStyle,
   resolveLayoutDirection,
   resolveLayoutAlignment,
+  resolveJustifyContent,
   resolveFontStyle,
   type TuiLayoutAlignment,
   type TuiLayoutAlignmentName,
   type TuiBorderStyleName,
   type TuiLayoutDirection,
   type TuiLayoutDirectionName,
+  type TuiJustifyContent,
+  type TuiJustifyContentName,
   type TuiSizeValue,
   type TuiWidgetBorder,
   type TuiWidgetColor,
@@ -45,6 +49,7 @@ export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & 
     direction?: TuiLayoutDirectionName;
     gap?: U16;
     align?: TuiLayoutAlignmentName;
+    justifyContent?: TuiJustifyContentName;
     draggable?: boolean;
     styleModifier?: TuiFontStyleInput;
     styleZIndex?: I16;
@@ -110,6 +115,8 @@ export class BoxWidget extends TuiWidgetEntity {
   #direction: TuiLayoutDirection;
   #gap: U16;
   #align: TuiLayoutAlignment;
+  #justifyContent: TuiJustifyContent;
+  #layoutDirty = true;
   readonly #layoutChildren: TuiWidgetEntity[] = [];
 
   constructor(options: BoxWidgetOptions) {
@@ -140,6 +147,7 @@ export class BoxWidget extends TuiWidgetEntity {
     this.#direction = resolveLayoutDirection(options.direction ?? 'vertical');
     this.#gap = options.gap ?? 0;
     this.#align = resolveLayoutAlignment(options.align ?? 'stretch');
+    this.#justifyContent = resolveJustifyContent(options.justifyContent ?? 'start');
 
     if (options.draggable ?? false) {
       this.setDraggable(true);
@@ -181,9 +189,14 @@ export class BoxWidget extends TuiWidgetEntity {
   override updateRect(rect: Partial<TuiWidgetRect>): void {
     const oldX = this.#rect.x;
     const oldY = this.#rect.y;
+    const sizeChanged = rect.width !== undefined || rect.height !== undefined;
     Object.assign(this.#rect, rect);
     if (rect.x !== undefined || rect.y !== undefined) {
       this.propagatePositionDelta(this.#rect.x - oldX, this.#rect.y - oldY);
+    }
+
+    if (sizeChanged) {
+      this.#layoutDirty = true;
     }
   }
 
@@ -218,12 +231,14 @@ export class BoxWidget extends TuiWidgetEntity {
   }
 
   updateBorder(border: Omit<Partial<TuiWidgetBorder>, 'borderStyle'> & {border?: BorderShorthand; borderStyle?: TuiBorderStyleName}): void {
+    let dirty = false;
     if (border.colorBorder !== undefined) {
       this.#border.colorBorder = this._resolveColorValue(border.colorBorder, 'colorBorder');
     }
 
     if (border.borderStyle !== undefined) {
       this.#border.borderStyle = resolveBorderStyle(border.borderStyle);
+      dirty = true;
     }
 
     if (border.border !== undefined) {
@@ -232,22 +247,31 @@ export class BoxWidget extends TuiWidgetEntity {
       this.#border.borderRight = borderRight;
       this.#border.borderBottom = borderBottom;
       this.#border.borderLeft = borderLeft;
+      dirty = true;
     }
 
     if (border.borderTop !== undefined) {
       this.#border.borderTop = border.borderTop;
+      dirty = true;
     }
 
     if (border.borderRight !== undefined) {
       this.#border.borderRight = border.borderRight;
+      dirty = true;
     }
 
     if (border.borderBottom !== undefined) {
       this.#border.borderBottom = border.borderBottom;
+      dirty = true;
     }
 
     if (border.borderLeft !== undefined) {
       this.#border.borderLeft = border.borderLeft;
+      dirty = true;
+    }
+
+    if (dirty) {
+      this.#layoutDirty = true;
     }
   }
 
@@ -271,18 +295,27 @@ export class BoxWidget extends TuiWidgetEntity {
 
   updatePadding(padding: Partial<TuiWidgetPadding>): void {
     Object.assign(this.#padding, padding);
+    this.#layoutDirty = true;
   }
 
   setDirection(direction: TuiLayoutDirectionName): void {
     this.#direction = resolveLayoutDirection(direction);
+    this.#layoutDirty = true;
   }
 
   setGap(gap: U16): void {
     this.#gap = gap;
+    this.#layoutDirty = true;
   }
 
   setAlign(align: TuiLayoutAlignmentName): void {
     this.#align = resolveLayoutAlignment(align);
+    this.#layoutDirty = true;
+  }
+
+  setJustifyContent(justify: TuiJustifyContentName): void {
+    this.#justifyContent = resolveJustifyContent(justify);
+    this.#layoutDirty = true;
   }
 
   // -- Child management --
@@ -290,6 +323,7 @@ export class BoxWidget extends TuiWidgetEntity {
   override addChild(child: TuiWidgetEntity): void {
     super.addChild(child);
     this.#layoutChildren.push(child);
+    this.#layoutDirty = true;
   }
 
   override removeChild(child: TuiWidgetEntity): void {
@@ -299,6 +333,8 @@ export class BoxWidget extends TuiWidgetEntity {
     if (index !== -1) {
       this.#layoutChildren.splice(index, 1);
     }
+
+    this.#layoutDirty = true;
   }
 
   // -- Intrinsic size --
@@ -308,6 +344,7 @@ export class BoxWidget extends TuiWidgetEntity {
       return undefined;
     }
 
+    const isVertical = this.#direction === 1 || this.#direction === 3;
     let totalMain = 0;
     let maxCross = 0;
     for (const child of this.#layoutChildren) {
@@ -316,8 +353,8 @@ export class BoxWidget extends TuiWidgetEntity {
         return undefined;
       }
 
-      const childMain = this.#direction === 1 ? intrinsic.height : intrinsic.width;
-      const childCross = this.#direction === 1 ? intrinsic.width : intrinsic.height;
+      const childMain = isVertical ? intrinsic.height : intrinsic.width;
+      const childCross = isVertical ? intrinsic.width : intrinsic.height;
       totalMain += childMain;
       if (childCross > maxCross) {
         maxCross = childCross;
@@ -330,7 +367,7 @@ export class BoxWidget extends TuiWidgetEntity {
     const hBorder = this.#border.borderStyle === 0 ? 0 : (this.#border.borderLeft ? 1 : 0) + (this.#border.borderRight ? 1 : 0);
     const vBorder = this.#border.borderStyle === 0 ? 0 : (this.#border.borderTop ? 1 : 0) + (this.#border.borderBottom ? 1 : 0);
 
-    if (this.#direction === 1) {
+    if (isVertical) {
       return {
         width: maxCross + this.#padding.paddingLeft + this.#padding.paddingRight + hBorder,
         height: totalMain + this.#padding.paddingTop + this.#padding.paddingBottom + vBorder,
@@ -348,7 +385,10 @@ export class BoxWidget extends TuiWidgetEntity {
   // -- Rendering --
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
-    this.#computeLayout();
+    if (this.#layoutDirty) {
+      this.#computeLayout();
+      this.#layoutDirty = false;
+    }
 
     const {x, y, width, height} = this.#rect;
     const {colorBg} = this.#color;
@@ -446,9 +486,97 @@ export class BoxWidget extends TuiWidgetEntity {
     return {crossPos, crossExtent};
   }
 
-  #computeLayout(): void {
-    const direction = this.#direction;
+  /**
+   Compute main-axis start offset and extra inter-child gap based on justifyContent
+   and the remaining free space after flexGrow distribution.
+   */
+  #computeJustifyDistribution(freeSpace: number, count: number): {startOffset: number; extraGap: number} {
+    if (freeSpace <= 0 || count === 0) {
+      return {startOffset: 0, extraGap: 0};
+    }
 
+    switch (this.#justifyContent) {
+      case JustifyContentEnum.Start: {
+        return {startOffset: 0, extraGap: 0};
+      }
+
+      case JustifyContentEnum.Center: {
+        return {startOffset: Math.floor(freeSpace / 2), extraGap: 0};
+      }
+
+      case JustifyContentEnum.End: {
+        return {startOffset: freeSpace, extraGap: 0};
+      }
+
+      case JustifyContentEnum.SpaceBetween: {
+        return count > 1
+          ? {startOffset: 0, extraGap: Math.floor(freeSpace / (count - 1))}
+          : {startOffset: 0, extraGap: 0};
+      }
+
+      case JustifyContentEnum.SpaceAround: {
+        const perChild = Math.floor(freeSpace / count);
+        return {startOffset: Math.floor(perChild / 2), extraGap: perChild};
+      }
+
+      case JustifyContentEnum.SpaceEvenly: {
+        const gap = Math.floor(freeSpace / (count + 1));
+        return {startOffset: gap, extraGap: gap};
+      }
+
+      default: {
+        assertNever(this.#justifyContent);
+      }
+    }
+  }
+
+  /**
+   Distribute positive free space across children proportional to their flexGrow values.
+   Mutates `finalSizes` in place. Returns the absorbed share (so callers can recompute
+   remaining free space for justifyContent).
+   */
+  #distributeFlexGrow(
+    children: TuiWidgetEntity[],
+    baseSizes: number[],
+    finalSizes: number[],
+    freeSpace: number,
+  ): number {
+    let totalGrow = 0;
+    for (const child of children) {
+      totalGrow += child.flexGrow;
+    }
+
+    if (totalGrow <= 0) {
+      return 0;
+    }
+
+    let absorbed = 0;
+    for (const [i, child] of children.entries()) {
+      const grow = child.flexGrow;
+      if (grow > 0) {
+        const share = Math.floor((grow / totalGrow) * freeSpace);
+        finalSizes[i] = baseSizes[i]! + share;
+        absorbed += share;
+      }
+    }
+
+    // Award any integer-division remainder to the last growing child
+    const remainder = freeSpace - absorbed;
+    if (remainder > 0) {
+      for (let i = children.length - 1; i >= 0; i--) {
+        if (children[i]!.flexGrow > 0) {
+          finalSizes[i]! += remainder;
+          break;
+        }
+      }
+
+      absorbed += remainder;
+    }
+
+    return absorbed;
+  }
+
+  #computeLayout(): void {
     const children = this.#layoutChildren;
     if (children.length === 0) {
       return;
@@ -466,36 +594,77 @@ export class BoxWidget extends TuiWidgetEntity {
     const contentWidth = width - hInset;
     const contentHeight = height - vInset;
 
-    const isVertical = direction === 1;
+    const direction = this.#direction;
+    const isVertical = direction === 1 || direction === 3;
+    const isReverse = direction === 2 || direction === 3;
+    const mainSize = isVertical ? contentHeight : contentWidth;
     const crossSize = isVertical ? contentWidth : contentHeight;
     const isStretch = this.#align === LayoutAlignmentEnum.Stretch;
 
-    // Position each child
-    let mainPos = 0;
+    // Resolve percent specs first (may update child.rect sizes)
     for (const child of children) {
       if (child.hasPercentLayout) {
         child.resolveLayout(contentWidth, contentHeight);
       }
+    }
 
-      const mainExtent = this.#resolveChildExtent(child, isVertical);
+    // Measure pass: compute base main size for each child
+    const baseSizes = children.map(child => this.#resolveChildExtent(child, isVertical));
+
+    // Compute total base + gaps and free space
+    const totalGap = (children.length - 1) * this.#gap;
+    const totalBase = baseSizes.reduce((sum, s) => sum + s, 0);
+    let freeSpace = mainSize - totalBase - totalGap;
+
+    // Grow pass: distribute positive free space via flexGrow
+    const finalSizes = [...baseSizes];
+    if (freeSpace > 0) {
+      const absorbed = this.#distributeFlexGrow(children, baseSizes, finalSizes, freeSpace);
+      if (absorbed > 0) {
+        // Free space has been absorbed by flexGrow; none left for justify
+        freeSpace = 0;
+      }
+    }
+
+    // Justify pass: compute start offset and extra inter-child gap from remaining free space
+    const {startOffset, extraGap} = this.#computeJustifyDistribution(freeSpace, children.length);
+
+    // Arrange pass: compute each child's main position as if non-reverse,
+    // then mirror along the main axis if direction is reversed (CSS flexbox *-reverse semantics).
+    const positions: number[] = [];
+    let mainPos = startOffset;
+    for (let i = 0; i < children.length; i++) {
+      positions[i] = mainPos;
+      mainPos += finalSizes[i]! + this.#gap + extraGap;
+    }
+
+    if (isReverse) {
+      for (let i = 0; i < children.length; i++) {
+        positions[i] = mainSize - positions[i]! - finalSizes[i]!;
+      }
+    }
+
+    for (const [i, child_] of children.entries()) {
+      const child = child_;
+      const mainExtent = finalSizes[i]!;
+      const childMainPos = positions[i]!;
       const {crossPos, crossExtent} = this.#resolveCrossAxis(child, crossSize, isVertical);
 
       const childRect = isVertical
         ? {
           x: contentX + crossPos,
-          y: contentY + mainPos,
+          y: contentY + childMainPos,
           width: isStretch ? crossSize : crossExtent,
           height: mainExtent,
         }
         : {
-          x: contentX + mainPos,
+          x: contentX + childMainPos,
           y: contentY + crossPos,
           width: mainExtent,
           height: isStretch ? crossSize : crossExtent,
         };
 
       child.updateRect(childRect);
-      mainPos += mainExtent + this.#gap;
     }
   }
 }

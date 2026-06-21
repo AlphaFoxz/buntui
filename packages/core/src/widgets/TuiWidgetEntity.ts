@@ -61,6 +61,7 @@ export abstract class TuiWidgetEntity implements Mountable {
   #propagationStopped = false;
   readonly #cleanupFns: Array<() => void> = [];
   #themedTokenMap: Record<string, string> | undefined = undefined;
+  #flexGrow = 0;
 
   get hasPercentLayout(): boolean {
     return this.#percentSpec !== undefined;
@@ -173,6 +174,14 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   setVisible(value: boolean): void {
     this.#visible = value;
+  }
+
+  get flexGrow(): number {
+    return this.#flexGrow;
+  }
+
+  setFlexGrow(value: number): void {
+    this.#flexGrow = value;
   }
 
   addChild(child: TuiWidgetEntity): void {

@@ -4,7 +4,7 @@ import {TextWidget} from '../../text/TextWidget';
 import {DrawListBuffer} from '../../../draw-list/DrawListBuffer';
 import {DrawCmd} from '../../../draw-list/types';
 
-function createBoxWith(options?: {x?: number; y?: number; width?: number; height?: number; borderStyle?: string; border?: boolean; direction?: string; gap?: number; align?: string; draggable?: boolean}) {
+function createBoxWith(options?: {x?: number; y?: number; width?: number; height?: number; borderStyle?: string; border?: boolean; direction?: string; gap?: number; align?: string; justifyContent?: string; draggable?: boolean}) {
   return new BoxWidget({
     x: options?.x ?? 0,
     y: options?.y ?? 0,
@@ -15,6 +15,7 @@ function createBoxWith(options?: {x?: number; y?: number; width?: number; height
     direction: options?.direction as 'vertical' ?? undefined,
     gap: options?.gap as U16 ?? undefined,
     align: options?.align as 'start' ?? undefined,
+    justifyContent: options?.justifyContent as 'start' ?? undefined,
     draggable: options?.draggable,
     colorFg: 0xFF_FF_FF_FF,
     colorBg: 0x00_00_00_FF,
@@ -375,5 +376,583 @@ describe('overflow clipping', () => {
     expect(c1.rect.y).toBe(1);
     expect(c2.rect.y).toBe(3);
     expect(c3.rect.y).toBe(5);
+  });
+});
+
+describe('align cross-axis positioning (vertical layout)', () => {
+  // Geometry: box width 20, height 10, no border, no padding.
+  // Content area: x=0, y=0, width=20, height=10.
+  // TextWidget intrinsic width = stringDisplayWidth(value); intrinsic height = 1.
+  function layoutBox(align: string): {box: BoxWidget; child: TextWidget} {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align});
+    const child = createChild('ab', 5, 1); // intrinsic width = 2 (string 'ab')
+    box.addChild(child);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    return {box, child};
+  }
+
+  it('align: start places child at cross-axis position 0', () => {
+    const {child} = layoutBox('start');
+    expect(child.rect.x).toBe(0);
+    expect(child.rect.width).toBe(2); // intrinsic width preserved (not stretched)
+  });
+
+  it('align: center centers child on cross axis', () => {
+    const {child} = layoutBox('center');
+    // floor((20 - 2) / 2) = 9
+    expect(child.rect.x).toBe(9);
+    expect(child.rect.width).toBe(2);
+  });
+
+  it('align: end anchors child to far edge of cross axis', () => {
+    const {child} = layoutBox('end');
+    // 20 - 2 = 18
+    expect(child.rect.x).toBe(18);
+    expect(child.rect.width).toBe(2);
+  });
+
+  it('align: stretch (default) fills child to full cross-axis size', () => {
+    const {child} = layoutBox('stretch');
+    expect(child.rect.x).toBe(0);
+    expect(child.rect.width).toBe(20); // stretched to content width
+  });
+
+  it('default align when none specified is stretch', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical'});
+    const child = createChild('ab', 5, 1);
+    box.addChild(child);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(child.rect.width).toBe(20);
+  });
+});
+
+describe('horizontal main-axis placement', () => {
+  it('places children side-by-side on x axis', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal'});
+    const c1 = createChild('ab', 5, 1); // intrinsic width 2
+    const c2 = createChild('abcde', 10, 1); // intrinsic width 5
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+
+    expect(c1.rect.x).toBe(0);
+    expect(c2.rect.x).toBe(2); // 0 + intrinsic(2) + gap(0)
+  });
+
+  it('horizontal layout stretches children on cross axis (height)', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal'});
+    const c1 = createChild('ab', 5, 1);
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+
+    expect(c1.rect.height).toBe(10); // stretched to content height
+    expect(c1.rect.y).toBe(0);
+  });
+
+  it('horizontal layout respects align: center on vertical cross axis', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', align: 'center'});
+    const c1 = createChild('ab', 5, 1); // intrinsic height = 1
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+
+    // floor((10 - 1) / 2) = 4
+    expect(c1.rect.y).toBe(4);
+    expect(c1.rect.height).toBe(1); // not stretched
+  });
+
+  it('horizontal layout respects align: end on vertical cross axis', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', align: 'end'});
+    const c1 = createChild('ab', 5, 1);
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+
+    // 10 - 1 = 9
+    expect(c1.rect.y).toBe(9);
+  });
+});
+
+describe('gap behavior', () => {
+  it('vertical gap creates y-space between children', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', gap: 3});
+    const c1 = createChild('a', 5, 1); // intrinsic height 1
+    const c2 = createChild('b', 5, 1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+
+    expect(c1.rect.y).toBe(0);
+    expect(c2.rect.y).toBe(4); // 0 + height(1) + gap(3)
+  });
+
+  it('horizontal gap creates x-space between children', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', gap: 3});
+    const c1 = createChild('ab', 5, 1); // intrinsic width 2
+    const c2 = createChild('cd', 5, 1); // intrinsic width 2
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+
+    expect(c1.rect.x).toBe(0);
+    expect(c2.rect.x).toBe(5); // 0 + width(2) + gap(3)
+  });
+
+  it('gap is not added after the last child', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', gap: 5});
+    const c1 = createChild('a', 5, 1);
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+
+    // Single child: mainPos never advances past c1
+    expect(c1.rect.y).toBe(0);
+  });
+});
+
+describe('percent-sized children', () => {
+  it('child with width percent spec resolves against content width', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'start'});
+    const child = createBoxWith({width: 5, height: 3}); // nested Box (no intrinsic)
+    child.setPercentSpec({width: '50%'});
+    box.addChild(child);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+
+    // 50% of content width 20 = 10
+    expect(child.rect.width).toBe(10);
+  });
+
+  it('child with height percent spec resolves against content height', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'start'});
+    const child = createBoxWith({width: 5, height: 3});
+    child.setPercentSpec({height: '50%'});
+    box.addChild(child);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+
+    // 50% of content height 10 = 5
+    expect(child.rect.height).toBe(5);
+  });
+
+  it('percent child is laid out using resolved size', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', align: 'start'});
+    const c1 = createBoxWith({width: 5, height: 3});
+    c1.setPercentSpec({width: '50%'});
+    const c2 = createBoxWith({width: 5, height: 3});
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+
+    // c1 resolved to width 10 (50% of 20), c2 placed after c1
+    expect(c1.rect.x).toBe(0);
+    expect(c1.rect.width).toBe(10);
+    expect(c2.rect.x).toBe(10); // 0 + 10 + gap(0)
+  });
+});
+
+describe('layout dirty flag', () => {
+  it('setDirection triggers relayout on next emitDrawCommands', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical'});
+    const c1 = createChild('ab', 5, 1);
+    const c2 = createChild('cd', 5, 1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // Initially vertical: c1 at y=0, c2 at y=1
+    expect(c1.rect.y).toBe(0);
+    expect(c2.rect.y).toBe(1);
+
+    box.setDirection('horizontal');
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // After relayout: horizontal, c1 at x=0, c2 at x=2
+    expect(c1.rect.x).toBe(0);
+    expect(c2.rect.x).toBe(2);
+  });
+
+  it('setAlign triggers relayout on next emitDrawCommands', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'start'});
+    const child = createChild('ab', 5, 1);
+    box.addChild(child);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(child.rect.x).toBe(0); // start
+
+    box.setAlign('center');
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(child.rect.x).toBe(9); // floor((20-2)/2)
+  });
+
+  it('setGap triggers relayout on next emitDrawCommands', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', gap: 0});
+    const c1 = createChild('a', 5, 1);
+    const c2 = createChild('b', 5, 1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(c2.rect.y).toBe(1); // no gap
+
+    box.setGap(4 as U16);
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(c2.rect.y).toBe(5); // 1 + gap(4)
+  });
+
+  it('updatePadding triggers relayout on next emitDrawCommands', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical'});
+    const child = createChild('a', 5, 1);
+    box.addChild(child);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(child.rect.x).toBe(0); // no padding
+
+    box.updatePadding({paddingLeft: 3 as U16});
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(child.rect.x).toBe(3); // contentX = paddingLeft = 3
+  });
+
+  it('updateRect size change triggers relayout on next emitDrawCommands', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'stretch'});
+    const child = createChild('ab', 5, 1);
+    box.addChild(child);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(child.rect.width).toBe(20); // stretched to box width
+
+    box.updateRect({width: 30});
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(child.rect.width).toBe(30); // re-stretched to new box width
+  });
+
+  it('position-only updateRect does not trigger relayout (delta propagation only)', () => {
+    const box = createBoxWith({x: 0, y: 0, width: 20, height: 10, direction: 'vertical', align: 'stretch'});
+    const child = createChild('ab', 5, 1);
+    box.addChild(child);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // After layout: child at (0, 0), width=20
+    expect(child.rect.x).toBe(0);
+    expect(child.rect.width).toBe(20);
+
+    box.updateRect({x: 5, y: 5});
+    // No emitDrawCommands call — delta propagation should move child without relayout
+    expect(child.rect.x).toBe(5); // 0 + deltaX(5)
+    expect(child.rect.y).toBe(5); // 0 + deltaY(5)
+    expect(child.rect.width).toBe(20); // unchanged (no relayout)
+  });
+});
+
+describe('justifyContent (main-axis distribution)', () => {
+  // Geometry: vertical layout, box height 10, content height 10.
+  // 2 children, each intrinsic height 1 → total content 2, free space 8.
+  function layoutWithJustify(justify: string): {c1: TextWidget; c2: TextWidget} {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'stretch', justifyContent: justify});
+    const c1 = createChild('a', 5, 1);
+    const c2 = createChild('b', 5, 1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    return {c1, c2};
+  }
+
+  it('start (default) packs children from top', () => {
+    const {c1, c2} = layoutWithJustify('start');
+    expect(c1.rect.y).toBe(0);
+    expect(c2.rect.y).toBe(1);
+  });
+
+  it('center centers the block of children', () => {
+    const {c1, c2} = layoutWithJustify('center');
+    // freeSpace=8, startOffset = floor(8/2) = 4
+    expect(c1.rect.y).toBe(4);
+    expect(c2.rect.y).toBe(5);
+  });
+
+  it('end anchors children to bottom', () => {
+    const {c1, c2} = layoutWithJustify('end');
+    // startOffset = freeSpace = 8
+    expect(c1.rect.y).toBe(8);
+    expect(c2.rect.y).toBe(9);
+  });
+
+  it('space-between puts first at top, last at bottom, rest in middle', () => {
+    const {c1, c2} = layoutWithJustify('space-between');
+    // 2 children: startOffset=0, extraGap = floor(8 / (2-1)) = 8
+    expect(c1.rect.y).toBe(0);
+    expect(c2.rect.y).toBe(1 + 8); // 1 (c1 height) + 0 gap + 8 extraGap
+  });
+
+  it('space-around distributes equal padding around each child', () => {
+    const {c1, c2} = layoutWithJustify('space-around');
+    // perChild = floor(8/2) = 4; startOffset = floor(4/2) = 2; extraGap = 4
+    expect(c1.rect.y).toBe(2);
+    expect(c2.rect.y).toBe(2 + 1 + 4); // startOffset + c1 height + extraGap
+  });
+
+  it('space-evenly distributes equal space including edges', () => {
+    const {c1, c2} = layoutWithJustify('space-evenly');
+    // gap = floor(8/3) = 2; startOffset = 2; extraGap = 2
+    expect(c1.rect.y).toBe(2);
+    expect(c2.rect.y).toBe(2 + 1 + 2); // startOffset + c1 height + extraGap
+  });
+
+  it('justifyContent has no effect when content fills viewport', () => {
+    // 10 children of height 1 fill the 10-row viewport exactly
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', justifyContent: 'center'});
+    const children: TextWidget[] = [];
+    for (let i = 0; i < 10; i++) {
+      const c = createChild('x', 5, 1);
+      box.addChild(c);
+      children.push(c);
+    }
+
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // No free space → behaves like start
+    expect(children[0]!.rect.y).toBe(0);
+    expect(children[9]!.rect.y).toBe(9);
+  });
+
+  it('justifyContent works with horizontal layout', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', align: 'stretch', justifyContent: 'end'});
+    const c1 = createChild('ab', 5, 1); // intrinsic width 2
+    const c2 = createChild('cd', 5, 1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // totalBase=4, freeSpace=16, startOffset=16
+    expect(c1.rect.x).toBe(16);
+    expect(c2.rect.x).toBe(18);
+  });
+
+  it('setJustifyContent triggers relayout on next emitDrawCommands', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', justifyContent: 'start'});
+    const c1 = createChild('a', 5, 1);
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(c1.rect.y).toBe(0);
+
+    box.setJustifyContent('center');
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(c1.rect.y).toBe(4); // floor((10-1)/2)... wait, floor((10-1)/2) = 4 (freeSpace=9, /2=4)
+  });
+});
+
+describe('flexGrow (per-child free-space distribution)', () => {
+  it('child with flexGrow absorbs all free space', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'stretch'});
+    const c1 = createChild('a', 5, 1); // intrinsic height 1
+    c1.setFlexGrow(1);
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // freeSpace=9, totalGrow=1 → c1 absorbs 9, final height = 1 + 9 = 10
+    expect(c1.rect.height).toBe(10);
+  });
+
+  it('flexGrow distributes proportionally between multiple children', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'stretch'});
+    const c1 = createChild('a', 5, 1);
+    c1.setFlexGrow(1);
+    const c2 = createChild('b', 5, 1);
+    c2.setFlexGrow(1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // freeSpace=8, each gets 4 → c1.height=5, c2.height=5
+    expect(c1.rect.height).toBe(5);
+    expect(c2.rect.height).toBe(5);
+    expect(c2.rect.y).toBe(5);
+  });
+
+  it('flexGrow distributes by weight ratio', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'stretch'});
+    const c1 = createChild('a', 5, 1);
+    c1.setFlexGrow(3);
+    const c2 = createChild('b', 5, 1);
+    c2.setFlexGrow(1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // freeSpace=8; totalGrow=4; c1 share = floor(3/4*8)=6 → height=7; c2 share = floor(1/4*8)=2 → height=3
+    // Remainder: 8-6-2=0, no adjustment
+    expect(c1.rect.height).toBe(7);
+    expect(c2.rect.height).toBe(3);
+  });
+
+  it('children with flexGrow=0 stay at base size', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'stretch'});
+    const c1 = createChild('a', 5, 1);
+    const c2 = createChild('b', 5, 1);
+    c2.setFlexGrow(1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // freeSpace=8; only c2 grows → c1 stays at 1, c2 becomes 1+8=9
+    expect(c1.rect.height).toBe(1);
+    expect(c2.rect.height).toBe(9);
+    expect(c2.rect.y).toBe(1);
+  });
+
+  it('flexGrow on horizontal axis distributes width', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', align: 'stretch'});
+    const c1 = createChild('ab', 5, 1); // intrinsic width 2
+    c1.setFlexGrow(1);
+    const c2 = createChild('cd', 5, 1);
+    c2.setFlexGrow(1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // freeSpace = 20 - 4 = 16; each gets 8 → width=10 each
+    expect(c1.rect.width).toBe(10);
+    expect(c2.rect.width).toBe(10);
+    expect(c2.rect.x).toBe(10);
+  });
+
+  it('flexGrow absorbs free space so justifyContent has no effect', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'stretch', justifyContent: 'center'});
+    const c1 = createChild('a', 5, 1);
+    c1.setFlexGrow(1);
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // flexGrow absorbs all 9 freeSpace; center would offset by 4 but no free space remains
+    expect(c1.rect.y).toBe(0);
+    expect(c1.rect.height).toBe(10);
+  });
+
+  it('flexGrow default is 0', () => {
+    const c = createChild('x', 5, 1);
+    expect(c.flexGrow).toBe(0);
+  });
+});
+
+describe('reverse direction', () => {
+  it('vertical-reverse places first child at the bottom', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical-reverse', align: 'stretch'});
+    const c1 = createChild('a', 5, 1); // intrinsic height 1
+    const c2 = createChild('b', 5, 1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // Reverse: c1 (first) goes to bottom, c2 above it
+    expect(c1.rect.y).toBe(9);
+    expect(c2.rect.y).toBe(8);
+  });
+
+  it('horizontal-reverse places first child at the right', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal-reverse', align: 'stretch'});
+    const c1 = createChild('ab', 5, 1); // intrinsic width 2
+    const c2 = createChild('cd', 5, 1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // Reverse: c1 (first) at right, c2 to its left
+    expect(c1.rect.x).toBe(18);
+    expect(c2.rect.x).toBe(16);
+  });
+
+  it('vertical-reverse with gap stacks upward', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical-reverse', align: 'stretch', gap: 2});
+    const c1 = createChild('a', 5, 1);
+    const c2 = createChild('b', 5, 1);
+    const c3 = createChild('c', 5, 1);
+    box.addChild(c1);
+    box.addChild(c2);
+    box.addChild(c3);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // From bottom up: c1 at 9, c2 at 9-(1+2)=6, c3 at 6-(1+2)=3
+    expect(c1.rect.y).toBe(9);
+    expect(c2.rect.y).toBe(6);
+    expect(c3.rect.y).toBe(3);
+  });
+
+  it('reverse with justifyContent center still centers the block', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical-reverse', align: 'stretch', justifyContent: 'center'});
+    const c1 = createChild('a', 5, 1);
+    const c2 = createChild('b', 5, 1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // freeSpace=8, startOffset=4; c1 first in reverse → at y=4 (lowest of the reversed block)
+    // Wait: order is [c1, c2] in DOM; reversed iteration is c2, c1.
+    // mainPos starts at 4. c2 placed at y=4, then c1 at y=4+1=5.
+    expect(c2.rect.y).toBe(4);
+    expect(c1.rect.y).toBe(5);
+  });
+
+  it('reverse direction interacts correctly with flexGrow', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical-reverse', align: 'stretch'});
+    const c1 = createChild('a', 5, 1);
+    c1.setFlexGrow(1);
+    const c2 = createChild('b', 5, 1);
+    c2.setFlexGrow(1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // Each gets 4 extra → heights 5,5. Reverse: c1 at bottom (y=5..9), c2 above (y=0..4)
+    expect(c1.rect.height).toBe(5);
+    expect(c2.rect.height).toBe(5);
+    expect(c1.rect.y).toBe(5);
+    expect(c2.rect.y).toBe(0);
   });
 });

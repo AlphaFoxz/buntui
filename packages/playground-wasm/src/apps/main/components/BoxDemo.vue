@@ -10,15 +10,14 @@
 
     <Text :x="2" :y="5" value="x, y            TuiSizeValue      Position (number or '50%')" />
     <Text :x="2" :y="6" value="width, height    TuiSizeValue      Size (number or '100%')" />
-    <Text :x="2" :y="7" value="direction        'vertical'|'horizontal'  Child layout direction" />
-    <Text :x="2" :y="8" value="gap              number            Gap between children" />
-    <Text :x="2" :y="9" value="align            'start'|'center'|'end'|'stretch'  Cross-axis alignment" />
-    <Text :x="2" :y="10" value="borderStyle      'solid'|'rounded'|'double'|'bold'|'dashed'|..." />
-    <Text :x="2" :y="11" value="padding*         number            Padding (Top/Right/Bottom/Left)" />
-    <Text :x="2" :y="12" value="shadowOffsetX/Y  number            Shadow offset" />
-    <Text :x="2" :y="13" value="zIndex           number            Render order" />
-    <Text :x="2" :y="14" value="draggable        boolean           Enable drag" />
-    <Text :x="2" :y="15" value="styleModifier     FontStyle        Font style (bold, italic, underline...)" />
+    <Text :x="2" :y="7" value="direction  'vertical'|'horizontal'|'-reverse'  Layout direction" />
+    <Text :x="2" :y="8" value="gap, align, justifyContent, flexGrow   See demos below" />
+    <Text :x="2" :y="9" value="borderStyle      'solid'|'rounded'|'double'|'bold'|'dashed'|..." />
+    <Text :x="2" :y="10" value="padding*         number            Padding (Top/Right/Bottom/Left)" />
+    <Text :x="2" :y="11" value="shadowOffsetX/Y  number            Shadow offset" />
+    <Text :x="2" :y="12" value="zIndex           number            Render order" />
+    <Text :x="2" :y="13" value="draggable        boolean           Enable drag" />
+    <Text :x="2" :y="14" value="styleModifier     FontStyle        Font style (bold, italic, underline...)" />
 
     <Text :x="2" :y="17" value="▸ Border Styles" styleModifier="bold" />
     <Box :x="2" :y="18" :width="12" :height="2" borderStyle="solid">
@@ -117,6 +116,42 @@
     </Box>
     <Box :x="34" :y="39" :width="30" :height="2" borderStyle="rounded" draggable @dragend="handleDragEnd">
         <Text :value="dragLabel" />
+    </Box>
+
+    <Text :x="2" :y="42" value="▸ justifyContent (main-axis distribution)" styleModifier="bold" />
+    <Box :x="2" :y="43" width="24%" :height="3" :direction="'horizontal'" :justifyContent="'start'" borderStyle="rounded">
+        <Text value="[start]" />
+    </Box>
+    <Box x="27%" :y="43" width="24%" :height="3" :direction="'horizontal'" :justifyContent="'center'" borderStyle="rounded">
+        <Text value="[center]" />
+    </Box>
+    <Box x="52%" :y="43" width="24%" :height="3" :direction="'horizontal'" :justifyContent="'end'" borderStyle="rounded">
+        <Text value="[end]" />
+    </Box>
+    <Box x="77%" :y="43" width="21%" :height="3" :direction="'horizontal'" :justifyContent="'space-between'" borderStyle="rounded">
+        <Text value="A" />
+        <Text value="B" />
+    </Box>
+
+    <Text :x="2" :y="47" value="▸ flexGrow (per-child free-space share)" styleModifier="bold" />
+    <Box :x="2" :y="48" :width="40" :height="3" :direction="'horizontal'" borderStyle="rounded">
+        <Text value="g=0" />
+        <Text value="g=1" :flexGrow="1" />
+    </Box>
+    <Box :x="44" :y="48" :width="40" :height="3" :direction="'horizontal'" borderStyle="rounded">
+        <Text value="g=1" :flexGrow="1" />
+        <Text value="g=1" :flexGrow="1" />
+        <Text value="g=1" :flexGrow="1" />
+    </Box>
+
+    <Text :x="2" :y="52" value="▸ Reverse directions" styleModifier="bold" />
+    <Box :x="2" :y="53" width="24%" :height="3" :direction="'vertical-reverse'" borderStyle="rounded">
+        <Text value="first (bottom)" />
+        <Text value="second" />
+    </Box>
+    <Box x="27%" :y="53" width="24%" :height="3" :direction="'horizontal-reverse'" borderStyle="rounded">
+        <Text value="A" />
+        <Text value="B (right)" />
     </Box>
 </template>
 <script setup lang="ts">
