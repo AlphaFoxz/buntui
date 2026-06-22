@@ -41,6 +41,7 @@
             "Get-Item *": "allow",
             "Get-Location *": "allow",
             "Invoke-WebRequest *": "allow",
+            "Measure-Object *": "allow",
             "New-Item *": "allow",
             "Out-File *": "allow",
             "Out-Null *": "allow",

@@ -3,18 +3,20 @@
 
     <Select :x="1" :y="0" width="30%" label="Widget" :options="tabOptions" v-model="currentTab" />
 
-    <BoxDemo v-if="currentTab === 'Box'" />
-    <ButtonDemo v-if="currentTab === 'Button'" />
-    <CheckboxDemo v-if="currentTab === 'Checkbox'" />
-    <InputDemo v-if="currentTab === 'Input'" />
-    <RadioDemo v-if="currentTab === 'Radio'" />
-    <ScrollBoxDemo v-if="currentTab === 'ScrollBox'" />
-    <ScrollIntoViewDemo v-if="currentTab === 'ScrollIntoView'" />
-    <ProgressDemo v-if="currentTab === 'Progress'" />
-    <SwitchDemo v-if="currentTab === 'Switch'" />
-    <TextDemo v-show="currentTab === 'Text'" />
-    <TableDemo v-if="currentTab === 'Table'" />
-    <SelectDemo v-if="currentTab === 'Select'" />
+    <ScrollBox :x="0" :y="2" width="100%" height="90%">
+        <BoxDemo v-if="currentTab === 'Box'" />
+        <ButtonDemo v-if="currentTab === 'Button'" />
+        <CheckboxDemo v-if="currentTab === 'Checkbox'" />
+        <InputDemo v-if="currentTab === 'Input'" />
+        <RadioDemo v-if="currentTab === 'Radio'" />
+        <ScrollBoxDemo v-if="currentTab === 'ScrollBox'" />
+        <ScrollIntoViewDemo v-if="currentTab === 'ScrollIntoView'" />
+        <ProgressDemo v-if="currentTab === 'Progress'" />
+        <SwitchDemo v-if="currentTab === 'Switch'" />
+        <TextDemo v-show="currentTab === 'Text'" />
+        <TableDemo v-if="currentTab === 'Table'" />
+        <SelectDemo v-if="currentTab === 'Select'" />
+    </ScrollBox>
 
     <FrameRateWatcher x="10%" />
     <Logger />
