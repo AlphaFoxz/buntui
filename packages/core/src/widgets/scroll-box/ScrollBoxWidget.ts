@@ -46,6 +46,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
   #scrollOffsetY = 0;
   #scrollOffsetX = 0;
   #layoutDirty = true;
+  #visibleKey = '';
   readonly #layoutChildren: TuiWidgetEntity[] = [];
   readonly #innerBox: BoxWidget;
 
@@ -540,6 +541,16 @@ export class ScrollBoxWidget extends InteractiveWidget {
   // -- Rendering --
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
+    // A child toggling visibility (e.g. v-show) changes the flex layout and the
+    // scrollable extent, but setVisible() does not notify the parent. Detect a
+    // visibility change here and force a relayout so invisible children stop
+    // occupying layout space (display:none semantics).
+    const visibleKey = this.#layoutChildren.map(c => (c.visible ? '1' : '0')).join('');
+    if (visibleKey !== this.#visibleKey) {
+      this.#visibleKey = visibleKey;
+      this.#layoutDirty = true;
+    }
+
     if (this.#layoutDirty) {
       this.#computeLayout();
     }
@@ -608,8 +619,9 @@ export class ScrollBoxWidget extends InteractiveWidget {
   // -- Content extent (post-layout, flex-aware) --
 
   #computeContentHeight(): number {
+    const children = this.#layoutChildren.filter(c => c.visible);
     let total = 0;
-    for (const child of this.#layoutChildren) {
+    for (const child of children) {
       let h: number;
       if (child.hasExplicitHeight) {
         h = child.rect.height;
@@ -621,7 +633,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
       total += h;
     }
 
-    total += Math.max(0, this.#layoutChildren.length - 1) * this.#gap;
+    total += Math.max(0, children.length - 1) * this.#gap;
     return total;
   }
 
@@ -629,6 +641,10 @@ export class ScrollBoxWidget extends InteractiveWidget {
     const viewport = this.#computeViewport();
     let max = viewport.width;
     for (const child of this.#layoutChildren) {
+      if (!child.visible) {
+        continue;
+      }
+
       let w: number;
       if (child.hasExplicitWidth) {
         w = child.rect.width;
@@ -656,7 +672,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
   }
 
   #computeLayout(): void {
-    const children = this.#layoutChildren;
+    const children = this.#layoutChildren.filter(c => c.visible);
     if (children.length === 0) {
       this.#layoutDirty = false;
       return;

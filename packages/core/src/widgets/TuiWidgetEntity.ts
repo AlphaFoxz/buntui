@@ -62,6 +62,7 @@ export abstract class TuiWidgetEntity implements Mountable {
   readonly #eventHandlers = new Map<string, Set<WidgetEventHandler>>();
   readonly #children: TuiWidgetEntity[] = [];
   #percentSpec: TuiWidgetPercentSpec | undefined = undefined;
+  #explicitHeight = false;
   #propagationStopped = false;
   readonly #cleanupFns: Array<() => void> = [];
   #themedTokenMap: Record<string, string> | undefined = undefined;
@@ -87,6 +88,11 @@ export abstract class TuiWidgetEntity implements Mountable {
   /** See {@link hasExplicitWidth}, for the height axis. */
   get hasExplicitHeight(): boolean {
     return this.#percentSpec?.height !== undefined;
+  }
+
+  /** Whether a bare numeric height was passed at construction (base: soft). */
+  protected get hasNumericHeight(): boolean {
+    return this.#explicitHeight;
   }
 
   setPercentSpec(spec: TuiWidgetPercentSpec): void {
@@ -352,6 +358,13 @@ export abstract class TuiWidgetEntity implements Mountable {
     const spec = extractPercentSpec(x, y, width, height);
     if (spec) {
       this.setPercentSpec(spec);
+    }
+
+    // A bare numeric height is treated as definite (fixed), unlike width which
+    // stays soft to preserve content-widget fill. This lets layout containers
+    // (e.g. Box) honor an explicit height for cross-axis alignment (alignSelf).
+    if (height !== undefined && !isPercent(height)) {
+      this.#explicitHeight = true;
     }
 
     return {

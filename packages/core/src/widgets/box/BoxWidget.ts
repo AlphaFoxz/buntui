@@ -188,6 +188,14 @@ export class BoxWidget extends TuiWidgetEntity {
     return this.#rect;
   }
 
+  // A Box honors a bare-numeric height as definite so it keeps its fixed main
+  // size (e.g. inside a ScrollBox) instead of collapsing to content-intrinsic.
+  // This gives cross-axis alignment (alignSelf) room to work. Content widgets
+  // (Text etc.) keep the base soft behavior to preserve stretch/fill.
+  override get hasExplicitHeight(): boolean {
+    return super.hasExplicitHeight || this.hasNumericHeight;
+  }
+
   get color(): TuiWidgetColor {
     return this.#color;
   }

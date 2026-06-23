@@ -27,6 +27,7 @@
             "ls": "allow",
             "ls *": "allow",
             "mkdir *": "allow",
+            "node *": "allow",
             "rg *": "allow",
             "tail *": "allow",
             "yt-dlp *": "allow",

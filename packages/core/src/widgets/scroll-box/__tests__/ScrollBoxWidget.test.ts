@@ -1057,4 +1057,39 @@ describe('flex layout (ScrollBox)', () => {
     render(sb);
     expect(c2.rect.x).toBe(3); // horizontal: c1 at x=1, c2 at x=3
   });
+
+  it('invisible children (v-show) do not occupy layout space or content height', () => {
+    // Mirrors App.vue: a v-show sibling (TextDemo) stays mounted but hidden.
+    const sb = createScrollBox({height: 10}); // viewport height = 8
+    const a = createBox({height: 3});
+    const b = createBox({height: 3});
+    const hidden = createBox({height: 10});
+    hidden.setVisible(false);
+    sb.addChild(a);
+    sb.addChild(b);
+    sb.addChild(hidden);
+    render(sb);
+    // Only a+b are visible → content height 6, fits viewport → no scroll.
+    expect(sb.maxScrollY).toBe(0);
+    // hidden takes no slot: b sits right after a.
+    expect(b.rect.y).toBe(a.rect.y + 3);
+  });
+
+  it('relayouts and extends scroll range when a hidden child becomes visible', () => {
+    const sb = createScrollBox({height: 10}); // viewport height = 8
+    const a = createBox({height: 3});
+    const hidden = createBox({height: 10});
+    hidden.setVisible(false);
+    sb.addChild(a);
+    sb.addChild(hidden);
+    render(sb);
+    expect(sb.maxScrollY).toBe(0); // only a (3) visible, fits viewport
+
+    hidden.setVisible(true);
+    render(sb); // visibility change must trigger relayout
+    // visible content = 3 + 10 = 13, viewport 8 → maxScroll 5
+    expect(sb.maxScrollY).toBe(5);
+    // hidden (now visible) is laid out after a.
+    expect(hidden.rect.y).toBe(a.rect.y + 3);
+  });
 });
