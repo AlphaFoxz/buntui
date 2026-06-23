@@ -610,8 +610,15 @@ export class ScrollBoxWidget extends InteractiveWidget {
   #computeContentHeight(): number {
     let total = 0;
     for (const child of this.#layoutChildren) {
-      const intrinsic = child.intrinsicSize();
-      total += intrinsic?.height ?? child.rect.height;
+      let h: number;
+      if (child.hasExplicitHeight) {
+        h = child.rect.height;
+      } else {
+        const intrinsic = child.intrinsicSize();
+        h = intrinsic?.height ?? child.rect.height;
+      }
+
+      total += h;
     }
 
     total += Math.max(0, this.#layoutChildren.length - 1) * this.#gap;
@@ -622,8 +629,14 @@ export class ScrollBoxWidget extends InteractiveWidget {
     const viewport = this.#computeViewport();
     let max = viewport.width;
     for (const child of this.#layoutChildren) {
-      const intrinsic = child.intrinsicSize();
-      const w = intrinsic?.width ?? child.rect.width;
+      let w: number;
+      if (child.hasExplicitWidth) {
+        w = child.rect.width;
+      } else {
+        const intrinsic = child.intrinsicSize();
+        w = intrinsic?.width ?? child.rect.width;
+      }
+
       if (w > max) {
         max = w;
       }
@@ -655,11 +668,29 @@ export class ScrollBoxWidget extends InteractiveWidget {
     const contentWidth = viewport.width;
     const contentHeight = viewport.height;
 
+    // Re-clamp scroll offsets against the current content extent. A stale offset
+    // (e.g. after swapping child views via v-if) would otherwise push the new,
+    // shorter content off the viewport and leave it blank.
+    const maxY = this.#maxScrollOffset();
+    if (this.#scrollOffsetY > maxY) {
+      this.#scrollOffsetY = maxY;
+    }
+
+    const maxX = this.#maxScrollOffsetX();
+    if (this.#scrollOffsetX > maxX) {
+      this.#scrollOffsetX = maxX;
+    }
+
     const isVertical = this.#direction === 1 || this.#direction === 3;
     const mainSize = isVertical ? contentHeight : contentWidth;
     let crossSize = isVertical ? contentWidth : contentHeight;
 
     for (const child of children) {
+      const explicit = isVertical ? child.hasExplicitWidth : child.hasExplicitHeight;
+      if (explicit) {
+        continue;
+      }
+
       const intrinsic = child.intrinsicSize();
       const childCross = isVertical ? (intrinsic?.width ?? child.rect.width) : (intrinsic?.height ?? child.rect.height);
       if (childCross > crossSize) {

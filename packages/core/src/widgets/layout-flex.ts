@@ -47,10 +47,18 @@ export function resolveFlexBasis(child: TuiWidgetEntity, isVertical: boolean, ma
     return Math.max(0, Math.floor(pct / 100 * mainSize));
   }
 
+  if (isVertical ? child.hasExplicitHeight : child.hasExplicitWidth) {
+    return Math.max(0, isVertical ? child.rect.height : child.rect.width);
+  }
+
   return resolveChildExtent(child, isVertical);
 }
 
 function resolveChildCrossExtent(child: TuiWidgetEntity, isVertical: boolean): number {
+  if (isVertical ? child.hasExplicitWidth : child.hasExplicitHeight) {
+    return isVertical ? child.rect.width : child.rect.height;
+  }
+
   const intrinsic = child.intrinsicSize();
   return isVertical ? intrinsic?.width ?? child.rect.width : intrinsic?.height ?? child.rect.height;
 }
@@ -83,7 +91,11 @@ function resolveCrossAxis(
 
     case LayoutAlignmentEnum.Stretch: {
       crossPos = 0;
-      crossExtent = crossSize;
+      const explicit = isVertical ? child.hasExplicitWidth : child.hasExplicitHeight;
+      if (!explicit) {
+        crossExtent = crossSize;
+      }
+
       break;
     }
 

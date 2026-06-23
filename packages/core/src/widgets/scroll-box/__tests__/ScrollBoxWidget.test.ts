@@ -105,6 +105,31 @@ describe('scroll offset', () => {
     sb.scrollTo(-5);
     expect(sb.scrollOffsetY).toBe(0);
   });
+
+  it('re-clamps offset when content shrinks after swapping children', () => {
+    // viewport height = 8 (10 - 2 border rows).
+    const sb = createScrollBox({height: 10});
+    const tall = createBox({height: 20});
+    sb.addChild(tall);
+    // content height 20 → maxScroll = 12
+    sb.scrollTo(12);
+    expect(sb.scrollOffsetY).toBe(12);
+
+    // Swap to a shorter view (mirrors v-if view switching via removeChild/addChild).
+    sb.removeChild(tall);
+    const short = createBox({height: 3});
+    sb.addChild(short);
+
+    // Trigger the lazy relayout that runs at the top of emitDrawCommands.
+    const buf = new DrawListBuffer();
+    sb.emitDrawCommands(buf);
+
+    // maxScroll is now max(0, 3 - 8) = 0, so the stale offset must be pulled back
+    // to 0 instead of pushing the new content off-viewport (blank space bug).
+    expect(sb.scrollOffsetY).toBe(0);
+    // Content must remain inside the viewport rather than being culled above it.
+    expect(short.rect.y).toBeGreaterThanOrEqual(1);
+  });
 });
 
 describe('scroll event', () => {
@@ -698,6 +723,30 @@ describe('horizontal scroll', () => {
       sb.emitDrawCommands(buf);
       // Content not wider than viewport → child stretched to viewport width=18
       expect(narrow.rect.width).toBe(18);
+    });
+
+    it('respects explicit (percent) width even when content is wider than viewport', () => {
+      const sb = createScrollBox({width: 20, height: 10}); // viewport width=18
+      const box = createBox({width: '100%', height: 3}); // explicit 100% width
+      box.addChild(createTextWidget('x'.repeat(30))); // intrinsic width 30 > viewport
+      sb.addChild(box);
+      const buf = new DrawListBuffer();
+      sb.emitDrawCommands(buf);
+      // Explicit percent width is respected: fills the viewport, not the wide content
+      expect(box.hasExplicitWidth).toBe(true);
+      expect(box.rect.width).toBe(18);
+      expect(sb.maxScrollX).toBe(0);
+    });
+
+    it('auto-sized wide content still overflows (no explicit width)', () => {
+      const sb = createScrollBox({width: 20, height: 10}); // viewport width=18
+      const box = createBox({height: 3}); // no width → auto, intrinsic driven by content
+      box.addChild(createTextWidget('x'.repeat(30))); // intrinsic width 30 > viewport
+      sb.addChild(box);
+      const buf = new DrawListBuffer();
+      sb.emitDrawCommands(buf);
+      expect(box.hasExplicitWidth).toBe(false);
+      expect(sb.maxScrollX).toBeGreaterThan(0);
     });
 
     it('applies scrollOffsetX to children x position', () => {

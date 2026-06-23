@@ -28,6 +28,7 @@
             "ls *": "allow",
             "mkdir *": "allow",
             "rg *": "allow",
+            "tail *": "allow",
             "yt-dlp *": "allow",
             "zig *": "allow",
             "ConvertFrom-Json *": "allow",

@@ -45,21 +45,10 @@
         @change="handleFrameworkChange"
     />
 
-    <Text :x="1" :y="16" value="▶ Theme" />
-    <RadioGroup
-        :x="1"
-        :y="17"
-        :width="58"
-        :height="4"
-        :options="themeOptions"
-        :value="selectedTheme"
-        @change="handleThemeChange"
-    />
-
-    <Text :x="1" :y="22" value="▶ Summary" />
+    <Text :x="1" :y="16" value="▶ Summary" />
     <Box
         :x="1"
-        :y="23"
+        :y="17"
         width="95%"
         :height="3"
         borderStyle="rounded"
@@ -77,21 +66,6 @@
 
 <script setup lang="ts">
 import { ref, computed } from '@vue/reactivity'
-import { setTheme, tokyoNightMoon, tokyoNightStorm, rosePineMoon, rosePineDawn } from '@buntui/core'
-import type { TuiTheme } from '@buntui/core'
-
-const themes: Array<{name: string; theme: TuiTheme}> = [
-    { name: 'Tokyo Night Moon', theme: tokyoNightMoon },
-    { name: 'Tokyo Night Storm', theme: tokyoNightStorm },
-    { name: 'Rose Pine Moon', theme: rosePineMoon },
-    { name: 'Rose Pine Dawn', theme: rosePineDawn },
-]
-const themeOptions = themes.map(t => t.name)
-const selectedTheme = ref(0)
-function handleThemeChange(data: TuiRadioGroupChangeEvent) {
-    selectedTheme.value = data.value
-    setTheme(themes[data.value]!.theme)
-}
 
 const selectedColor = ref(-1)
 const colorName = computed(() => ['Red', 'Green', 'Blue', 'Yellow'][selectedColor.value] ?? 'None')

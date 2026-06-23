@@ -342,6 +342,21 @@ describe('PointerManager', () => {
       expect(events).toContain('dragend');
     });
 
+    it('dispatches mouseup (and no click) after a drag ends', () => {
+      ctx = createTestSetup();
+      const widget = new TrackableDraggableWidget();
+      widget.setDraggable(true);
+      ctx.mountWidget(widget);
+
+      ctx.emitMouse({button: 0, x: 5, y: 5});
+      ctx.emitMouse({buttons: 1, x: 8, y: 8});
+      ctx.emitMouse({button: 0, x: 8, y: 8, isRelease: true});
+
+      const events = widget.dispatched.map(d => d.event);
+      expect(events).toContain('mouseup');
+      expect(events).not.toContain('click');
+    });
+
     it('updates widget rect during drag', () => {
       ctx = createTestSetup();
       const widget = new TrackableDraggableWidget();

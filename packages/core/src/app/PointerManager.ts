@@ -133,23 +133,24 @@ export class PointerManager {
       }
 
       // Release
-      if (this.#isDragging) {
+      const wasDragging = this.#isDragging;
+      if (wasDragging) {
         this.#dragTarget?.dispatch('dragend', data);
         this.#isDragging = false;
         this.#dragTarget = undefined;
-        this.#pressTarget = undefined;
-        return;
       }
 
       if (this.#pressTarget) {
         this.#pressTarget.dispatch('mouseup', data);
 
-        const releaseTarget = scene.hitTest(data);
-        if (releaseTarget === this.#pressTarget) {
-          const dx = data.x - this.#pressX;
-          const dy = data.y - this.#pressY;
-          if (((dx * dx) + (dy * dy)) <= 1) {
-            this.#pressTarget.dispatch('click', data);
+        if (!wasDragging) {
+          const releaseTarget = scene.hitTest(data);
+          if (releaseTarget === this.#pressTarget) {
+            const dx = data.x - this.#pressX;
+            const dy = data.y - this.#pressY;
+            if (((dx * dx) + (dy * dy)) <= 1) {
+              this.#pressTarget.dispatch('click', data);
+            }
           }
         }
 

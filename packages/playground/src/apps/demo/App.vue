@@ -1,9 +1,18 @@
 <template>
     <Matrix width="100%" height="100%" />
 
-    <Select :x="1" :y="1" width="50%" label="Widget" :options="tabOptions" v-model="currentTab" />
+    <Select :x="0" :y="1" width="50%" label="Widget" :options="tabOptions" v-model="currentTab" />
+    <Select
+        x="50%"
+        :y="1"
+        width="50%"
+        label="Color Theme"
+        :options="themeOptions"
+        v-model="currentTheme"
+        @change="handleThemeChange"
+    />
 
-    <ScrollBox :x="0" :y="4" width="100%" height="90%">
+    <ScrollBox :x="0" :y="4" width="100%" height="90%" :colorBg="colorThemed({ alpha: 0.6 })">
         <BoxDemo v-if="currentTab === 'Box'" />
         <ButtonDemo v-if="currentTab === 'Button'" />
         <CheckboxDemo v-if="currentTab === 'Checkbox'" />
@@ -24,6 +33,15 @@
 
 <script setup lang="ts">
 import { ref } from '@vue/reactivity'
+import {
+    colorThemed,
+    setTheme,
+    tokyoNightMoon,
+    tokyoNightStorm,
+    rosePineMoon,
+    rosePineDawn,
+    highContrast,
+} from '@buntui/core'
 import Logger from '@buntui/extensions/logger'
 import Matrix from '@buntui/extensions/matrix'
 import FrameRateWatcher from '@buntui/extensions/framerate'
@@ -41,6 +59,14 @@ import TextDemo from './components/TextDemo.vue'
 import TableDemo from './components/TableDemo.vue'
 import SelectDemo from './components/SelectDemo.vue'
 
+const themes = [tokyoNightMoon, tokyoNightStorm, rosePineMoon, rosePineDawn, highContrast] as const
+const themeOptions = ref(themes.map((t) => ({ value: t.name, label: t.name })))
+const currentTheme = ref(tokyoNightMoon.name)
+function handleThemeChange(data: TuiSelectChangeEvent) {
+    const t = themes.find((t) => t.name === data.value)
+    if (t) setTheme(t)
+}
+
 const tabOptions = ref([
     { value: 'Box', label: 'Box' },
     { value: 'Button', label: 'Button' },
@@ -56,8 +82,4 @@ const tabOptions = ref([
     { value: 'Select', label: 'Select' },
 ])
 const currentTab = ref(tabOptions.value[0]!.value)
-
-setTimeout(() => {
-    console.log('你好')
-}, 1000)
 </script>

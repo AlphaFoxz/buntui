@@ -74,6 +74,21 @@ export abstract class TuiWidgetEntity implements Mountable {
     return this.#percentSpec !== undefined;
   }
 
+  /**
+  Whether the widget has a definite (percent-specified) width.
+  A definite cross size suppresses flex auto-stretch and is measured by its
+  resolved rect rather than content-intrinsic size. Bare numeric widths are
+  intentionally treated as soft (stretchable) to preserve content-widget fill.
+  */
+  get hasExplicitWidth(): boolean {
+    return this.#percentSpec?.width !== undefined;
+  }
+
+  /** See {@link hasExplicitWidth}, for the height axis. */
+  get hasExplicitHeight(): boolean {
+    return this.#percentSpec?.height !== undefined;
+  }
+
   setPercentSpec(spec: TuiWidgetPercentSpec): void {
     this.#percentSpec = spec;
   }

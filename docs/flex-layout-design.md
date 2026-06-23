@@ -40,6 +40,7 @@
 ### P3 — 推迟(TUI 价值存疑或 API 面太大)
 
 - [x] **3-1** `flexWrap: 'nowrap' | 'wrap' | 'wrap-reverse'` + `alignContent` — 离散瓦片按终端宽度自动回流换行。与 order/baseline 不同,这是嵌套 Box 无法替代的(嵌套 Box 是静态网格,不响应终端 resize)。**已完成**:greedy 断行 + 逐行独立 flex 分配 + alignContent 行间分布(6 种模式)。
+- [ ] **3-3** `align-items: baseline` — TUI 均匀行高下意义不大,可能永远不需要。
 - [x] **3-4** 提取共享 `layout-flex.ts` 模块 — 把 `BoxWidget.#computeLayout` 和 `ScrollBoxWidget.#computeLayout` 的重复逻辑合并,防止进一步漂移。**已完成**:`packages/core/src/widgets/layout-flex.ts` 导出 `computeFlexLayout()` 纯函数,Box 和 ScrollBox 均调用它;flex 算法逻辑现集中在单一模块中。
 
 > **已移除**: ~~`order: number`~~ — TUI 中直接换 children 数组顺序即可,无需视觉重排属性。~~`align-items: baseline`~~ — 等宽单元格网格中所有内容天然在同一基线上,语义无意义。
@@ -109,10 +110,10 @@ HTML 用 `flex-direction`,现有 API 是 `direction`。两个选择:
 
 ## 受影响文件
 
-| 文件 | 职责 |
-|---|---|
-| `packages/core/src/widgets/box/BoxWidget.ts` | 主实现 |
-| `packages/core/src/widgets/types.ts` | `TuiLayoutAlignment` / `TuiLayoutDirection` 类型扩展 |
-| `packages/core/src/widgets/TuiWidgetEntity.ts` | per-child 元数据(`flexGrow` / `alignSelf` 等) |
-| `packages/compiler/src/runtime-helpers.ts` | SFC PropHandler 注册 |
-| `packages/playground-wasm/src/apps/main/components/BoxDemo.vue` | 用户文档 |
+| 文件                                                            | 职责                                                 |
+| --------------------------------------------------------------- | ---------------------------------------------------- |
+| `packages/core/src/widgets/box/BoxWidget.ts`                    | 主实现                                               |
+| `packages/core/src/widgets/types.ts`                            | `TuiLayoutAlignment` / `TuiLayoutDirection` 类型扩展 |
+| `packages/core/src/widgets/TuiWidgetEntity.ts`                  | per-child 元数据(`flexGrow` / `alignSelf` 等)        |
+| `packages/compiler/src/runtime-helpers.ts`                      | SFC PropHandler 注册                                 |
+| `packages/playground-wasm/src/apps/main/components/BoxDemo.vue` | 用户文档                                             |
