@@ -11,7 +11,7 @@
     <Text :x="2" :y="5" value="x, y            TuiSizeValue      Position (number or '50%')" />
     <Text :x="2" :y="6" value="width, height    TuiSizeValue      Size (number or '100%')" />
     <Text :x="2" :y="7" value="direction  'vertical'|'horizontal'|'-reverse'  Layout direction" />
-    <Text :x="2" :y="8" value="gap, align, justifyContent, flexGrow   See demos below" />
+    <Text :x="2" :y="8" value="gap, align, justifyContent, flexGrow, flexShrink, flexBasis, alignSelf" />
     <Text :x="2" :y="9" value="borderStyle      'solid'|'rounded'|'double'|'bold'|'dashed'|..." />
     <Text :x="2" :y="10" value="padding*         number            Padding (Top/Right/Bottom/Left)" />
     <Text :x="2" :y="11" value="shadowOffsetX/Y  number            Shadow offset" />
@@ -152,6 +152,31 @@
     <Box x="27%" :y="53" width="24%" :height="3" :direction="'horizontal-reverse'" borderStyle="rounded">
         <Text value="A" />
         <Text value="B (right)" />
+    </Box>
+
+    <Text :x="2" :y="57" value="▸ flexShrink (overflow compression)" styleModifier="bold" />
+    <Box :x="2" :y="58" :width="40" :height="3" :direction="'horizontal'" :align="'start'" borderStyle="rounded">
+        <Text value="s=1" :flexBasis="24" :flexShrink="1" />
+        <Text value="s=0" :flexBasis="24" />
+    </Box>
+    <Box :x="44" :y="58" :width="40" :height="3" :direction="'horizontal'" :align="'start'" borderStyle="rounded">
+        <Text value="s=1" :flexBasis="24" :flexShrink="1" />
+        <Text value="s=1" :flexBasis="24" :flexShrink="1" />
+    </Box>
+
+    <Text :x="2" :y="62" value="▸ flexBasis (main-axis base size)" styleModifier="bold" />
+    <Box :x="2" :y="63" :width="60" :height="3" :direction="'horizontal'" :align="'start'" borderStyle="rounded">
+        <Text value="b=8" :flexBasis="8" />
+        <Text value="b=16" :flexBasis="16" />
+        <Text value="b=24" :flexBasis="24" />
+    </Box>
+
+    <Text :x="2" :y="67" value="▸ alignSelf (per-child cross-axis override)" styleModifier="bold" />
+    <Box :x="2" :y="68" :width="60" :height="5" :direction="'horizontal'" :align="'start'" borderStyle="rounded">
+        <Text value="start" />
+        <Text value="center" :alignSelf="'center'" />
+        <Text value="end" :alignSelf="'end'" />
+        <Text value="stretch" :alignSelf="'stretch'" />
     </Box>
 </template>
 <script setup lang="ts">

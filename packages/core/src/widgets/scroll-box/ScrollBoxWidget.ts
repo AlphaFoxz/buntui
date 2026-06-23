@@ -4,9 +4,28 @@ import {parseColor} from '../../utils/color';
 import {getTheme} from '../../theme/store';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
 import {resolveThemedOverrides} from '../../theme/color-ref';
-import type {TuiWidgetRect, TuiWidgetSize} from '../types';
+import {
+  type TuiWidgetRect,
+  type TuiWidgetSize,
+  type TuiLayoutDirection,
+  type TuiLayoutAlignment,
+  type TuiJustifyContent,
+  type TuiLayoutDirectionName,
+  type TuiLayoutAlignmentName,
+  type TuiJustifyContentName,
+  type TuiFlexWrap,
+  type TuiFlexWrapName,
+  type TuiAlignContent,
+  type TuiAlignContentName,
+  resolveLayoutDirection,
+  resolveLayoutAlignment,
+  resolveJustifyContent,
+  resolveFlexWrap,
+  resolveAlignContent,
+} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import type {TuiWidgetEntity} from '../TuiWidgetEntity';
+import {computeFlexLayout, resolveFlexBasis} from '../layout-flex';
 import {type BoxWidget, createBox} from '../box/BoxWidget';
 import {
   computeScrollbarGeometry,
@@ -31,6 +50,11 @@ export class ScrollBoxWidget extends InteractiveWidget {
   readonly #innerBox: BoxWidget;
 
   #gap: number;
+  #direction: TuiLayoutDirection;
+  #align: TuiLayoutAlignment;
+  #justifyContent: TuiJustifyContent;
+  #flexWrap: TuiFlexWrap;
+  #alignContent: TuiAlignContent;
   readonly #scrollSpeed: number;
   #alwaysShowScrollbar: boolean;
   readonly #extraColors: ScrollBoxExtraColors;
@@ -76,6 +100,11 @@ export class ScrollBoxWidget extends InteractiveWidget {
     });
 
     this.#gap = options.gap ?? 0;
+    this.#direction = resolveLayoutDirection(options.direction ?? 'vertical');
+    this.#align = resolveLayoutAlignment(options.align ?? 'stretch');
+    this.#justifyContent = resolveJustifyContent(options.justifyContent ?? 'start');
+    this.#flexWrap = resolveFlexWrap(options.flexWrap ?? 'nowrap');
+    this.#alignContent = resolveAlignContent(options.alignContent ?? 'start');
     this.#scrollSpeed = options.scrollSpeed ?? 3;
     this.#alwaysShowScrollbar = options.alwaysShowScrollbar ?? false;
     const theme = getTheme();
@@ -361,22 +390,27 @@ export class ScrollBoxWidget extends InteractiveWidget {
     }
 
     const viewport = this.#computeViewport();
-    let childTop = 0;
+    const isVertical = this.#direction === 1 || this.#direction === 3;
+    const mainSize = isVertical ? viewport.height : viewport.width;
+
+    let childMainPos = 0;
     for (let i = 0; i < index; i++) {
-      const c = this.#layoutChildren[i]!;
-      const intrinsic = c.intrinsicSize();
-      childTop += (intrinsic?.height ?? c.rect.height) + this.#gap;
+      childMainPos += resolveFlexBasis(this.#layoutChildren[i]!, isVertical, mainSize) + this.#gap;
     }
 
-    const c = this.#layoutChildren[index]!;
-    const intrinsic = c.intrinsicSize();
-    const childHeight = intrinsic?.height ?? c.rect.height;
-    const childBottom = childTop + childHeight;
+    const childMainExtent = resolveFlexBasis(this.#layoutChildren[index]!, isVertical, mainSize);
+    const childMainEnd = childMainPos + childMainExtent;
 
-    if (childTop < this.#scrollOffsetY) {
-      this.scrollTo(childTop);
-    } else if (childBottom > this.#scrollOffsetY + viewport.height) {
-      this.scrollTo(childBottom - viewport.height);
+    if (isVertical) {
+      if (childMainPos < this.#scrollOffsetY) {
+        this.scrollTo(childMainPos);
+      } else if (childMainEnd > this.#scrollOffsetY + viewport.height) {
+        this.scrollTo(childMainEnd - viewport.height);
+      }
+    } else if (childMainPos < this.#scrollOffsetX) {
+      this.scrollToX(childMainPos);
+    } else if (childMainEnd > this.#scrollOffsetX + viewport.width) {
+      this.scrollToX(childMainEnd - viewport.width);
     }
   }
 
@@ -438,6 +472,31 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
   setGap(gap: number): void {
     this.#gap = gap;
+    this.#layoutDirty = true;
+  }
+
+  setDirection(direction: TuiLayoutDirectionName): void {
+    this.#direction = resolveLayoutDirection(direction);
+    this.#layoutDirty = true;
+  }
+
+  setAlign(align: TuiLayoutAlignmentName): void {
+    this.#align = resolveLayoutAlignment(align);
+    this.#layoutDirty = true;
+  }
+
+  setJustifyContent(justify: TuiJustifyContentName): void {
+    this.#justifyContent = resolveJustifyContent(justify);
+    this.#layoutDirty = true;
+  }
+
+  setFlexWrap(value: TuiFlexWrapName): void {
+    this.#flexWrap = resolveFlexWrap(value);
+    this.#layoutDirty = true;
+  }
+
+  setAlignContent(value: TuiAlignContentName): void {
+    this.#alignContent = resolveAlignContent(value);
     this.#layoutDirty = true;
   }
 
@@ -546,6 +605,8 @@ export class ScrollBoxWidget extends InteractiveWidget {
     };
   }
 
+  // -- Content extent (post-layout, flex-aware) --
+
   #computeContentHeight(): number {
     let total = 0;
     for (const child of this.#layoutChildren) {
@@ -589,23 +650,58 @@ export class ScrollBoxWidget extends InteractiveWidget {
     }
 
     const viewport = this.#computeViewport();
-    const contentWidth = this.#computeContentWidth();
-    let cumulativeY = 0;
+    const contentX = viewport.x;
+    const contentY = viewport.y;
+    const contentWidth = viewport.width;
+    const contentHeight = viewport.height;
+
+    const isVertical = this.#direction === 1 || this.#direction === 3;
+    const mainSize = isVertical ? contentHeight : contentWidth;
+    let crossSize = isVertical ? contentWidth : contentHeight;
 
     for (const child of children) {
       const intrinsic = child.intrinsicSize();
-      const childHeight = intrinsic?.height ?? child.rect.height;
-      const childY = viewport.y + cumulativeY - this.#scrollOffsetY;
-      const childX = viewport.x - this.#scrollOffsetX;
+      const childCross = isVertical ? (intrinsic?.width ?? child.rect.width) : (intrinsic?.height ?? child.rect.height);
+      if (childCross > crossSize) {
+        crossSize = childCross;
+      }
+    }
 
-      child.updateRect({
-        x: childX,
-        y: childY,
-        width: contentWidth,
-        height: childHeight,
-      });
+    for (const child of children) {
+      if (child.hasPercentLayout) {
+        child.resolveLayout(contentWidth, contentHeight);
+      }
+    }
 
-      cumulativeY += childHeight + this.#gap;
+    const results = computeFlexLayout({
+      children,
+      direction: this.#direction,
+      align: this.#align,
+      justifyContent: this.#justifyContent,
+      gap: this.#gap,
+      mainSize,
+      crossSize,
+      flexWrap: this.#flexWrap,
+      alignContent: this.#alignContent,
+    });
+
+    for (const [i, child] of children.entries()) {
+      const r = results[i]!;
+      if (isVertical) {
+        child.updateRect({
+          x: contentX + r.crossPos - this.#scrollOffsetX,
+          y: contentY + r.mainPos - this.#scrollOffsetY,
+          width: r.crossExtent,
+          height: r.mainExtent,
+        });
+      } else {
+        child.updateRect({
+          x: contentX + r.mainPos - this.#scrollOffsetX,
+          y: contentY + r.crossPos - this.#scrollOffsetY,
+          width: r.mainExtent,
+          height: r.crossExtent,
+        });
+      }
     }
 
     this.#layoutDirty = false;

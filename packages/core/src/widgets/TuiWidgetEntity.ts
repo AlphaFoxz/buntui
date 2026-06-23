@@ -5,11 +5,15 @@ import {parseColor} from '../utils/color';
 import type {DrawListBuffer} from '../draw-list/DrawListBuffer';
 import type {Mountable} from '../extern/types';
 import type {KeyboardEvent, MouseEvent, WheelEvent} from '../events/types';
-import type {
-  TuiSizeValue,
-  TuiWidgetPercentSpec,
-  TuiWidgetRect,
-  TuiWidgetSize,
+import {
+  resolveLayoutAlignment,
+  type TuiFlexBasisValue,
+  type TuiLayoutAlignment,
+  type TuiLayoutAlignmentName,
+  type TuiSizeValue,
+  type TuiWidgetPercentSpec,
+  type TuiWidgetRect,
+  type TuiWidgetSize,
 } from './types';
 
 export type TuiInputEventData = {value: string};
@@ -62,6 +66,9 @@ export abstract class TuiWidgetEntity implements Mountable {
   readonly #cleanupFns: Array<() => void> = [];
   #themedTokenMap: Record<string, string> | undefined = undefined;
   #flexGrow = 0;
+  #flexShrink = 0;
+  #flexBasis: TuiFlexBasisValue | undefined = undefined;
+  #alignSelf: TuiLayoutAlignment | undefined = undefined;
 
   get hasPercentLayout(): boolean {
     return this.#percentSpec !== undefined;
@@ -182,6 +189,30 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   setFlexGrow(value: number): void {
     this.#flexGrow = value;
+  }
+
+  get flexShrink(): number {
+    return this.#flexShrink;
+  }
+
+  setFlexShrink(value: number): void {
+    this.#flexShrink = value;
+  }
+
+  get flexBasis(): TuiFlexBasisValue | undefined {
+    return this.#flexBasis;
+  }
+
+  setFlexBasis(value: TuiFlexBasisValue | undefined): void {
+    this.#flexBasis = value;
+  }
+
+  get alignSelf(): TuiLayoutAlignment | undefined {
+    return this.#alignSelf;
+  }
+
+  setAlignSelf(value: TuiLayoutAlignmentName | TuiLayoutAlignment | undefined): void {
+    this.#alignSelf = value === undefined ? undefined : resolveLayoutAlignment(value);
   }
 
   addChild(child: TuiWidgetEntity): void {

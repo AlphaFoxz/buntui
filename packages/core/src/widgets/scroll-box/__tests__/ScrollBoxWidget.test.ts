@@ -891,3 +891,121 @@ describe('horizontal scroll', () => {
     });
   });
 });
+
+// Geometry: createScrollBox default 20×10 with solid borders → viewport {x:1, y:1, w:18, h:8}
+describe('flex layout (ScrollBox)', () => {
+  function render(sb: ScrollBoxWidget) {
+    const buf = new DrawListBuffer();
+    buf.reset();
+    sb.emitDrawCommands(buf);
+  }
+
+  it('flexGrow distributes viewport free space', () => {
+    const sb = createScrollBox({height: 10}); // viewport height = 8
+    const c1 = createTextWidget('a'); // intrinsic height 1
+    const c2 = createTextWidget('b');
+    c1.setFlexGrow(1);
+    c2.setFlexGrow(1);
+    sb.addChild(c1);
+    sb.addChild(c2);
+    render(sb);
+    // mainSize=8, totalBase=2, freeSpace=6; each grows by 3 → height 4
+    expect(c1.rect.height).toBe(4);
+    expect(c2.rect.height).toBe(4);
+  });
+
+  it('flexShrink compresses overflowing children to fit viewport', () => {
+    const sb = createScrollBox({height: 10}); // viewport height = 8
+    const c1 = createBox({height: 5});
+    const c2 = createBox({height: 5});
+    c1.setFlexShrink(1);
+    c2.setFlexShrink(1);
+    sb.addChild(c1);
+    sb.addChild(c2);
+    render(sb);
+    // mainSize=8, totalBase=10, overflow=2; each shrinks by 1 → height 4
+    expect(c1.rect.height).toBe(4);
+    expect(c2.rect.height).toBe(4);
+  });
+
+  it('justifyContent centers children within viewport', () => {
+    const sb = createScrollBox({height: 10}); // viewport height = 8, y = 1
+    sb.setJustifyContent('center');
+    const c1 = createTextWidget('a'); // intrinsic height 1
+    const c2 = createTextWidget('b');
+    sb.addChild(c1);
+    sb.addChild(c2);
+    render(sb);
+    // mainSize=8, totalBase=2, freeSpace=6, startOffset=3
+    // c1 at y = viewport.y(1) + 3 = 4; c2 at y = 4 + 1 = 5
+    expect(c1.rect.y).toBe(4);
+    expect(c2.rect.y).toBe(5);
+  });
+
+  it('alignSelf overrides parent stretch for cross-axis', () => {
+    const sb = createScrollBox({width: 20, height: 10}); // viewport {x:1,y:1,w:18,h:8}
+    const c1 = createTextWidget('ab'); // intrinsic width 2
+    c1.setAlignSelf('center');
+    sb.addChild(c1);
+    render(sb);
+    // crossSize = max(18, 2) = 18; center: floor((18-2)/2) = 8
+    // c1.x = viewport.x(1) + 8 = 9; width stays 2 (not stretched)
+    expect(c1.rect.x).toBe(9);
+    expect(c1.rect.width).toBe(2);
+  });
+
+  it('flexBasis overrides intrinsic main-axis size', () => {
+    const sb = createScrollBox({height: 10}); // viewport height = 8
+    const c1 = createTextWidget('a'); // intrinsic height 1
+    c1.setFlexBasis(3);
+    sb.addChild(c1);
+    render(sb);
+    expect(c1.rect.height).toBe(3);
+  });
+
+  it('horizontal direction lays out children left-to-right', () => {
+    const sb = createScrollBox({width: 20, height: 10}); // viewport {x:1,y:1,w:18,h:8}
+    sb.setDirection('horizontal');
+    const c1 = createTextWidget('ab'); // intrinsic width 2
+    const c2 = createTextWidget('cd');
+    sb.addChild(c1);
+    sb.addChild(c2);
+    render(sb);
+    // mainSize=18, c1 at x=1+0=1, c2 at x=1+2=3
+    expect(c1.rect.x).toBe(1);
+    expect(c2.rect.x).toBe(3);
+  });
+
+  it('scroll offset is applied after flex layout', () => {
+    const sb = createScrollBox({height: 10}); // viewport height = 8, y = 1
+    const c1 = createBox({height: 3});
+    const c2 = createBox({height: 3});
+    const c3 = createBox({height: 3});
+    sb.addChild(c1);
+    sb.addChild(c2);
+    sb.addChild(c3);
+    // totalBase=9, mainSize=8 → content height 9, maxScroll = 9-8 = 1
+    sb.scrollToBottom(); // scrollOffsetY = 1
+    render(sb);
+    // c1 at mainPos=0: y = 1 + 0 - 1 = 0
+    // c2 at mainPos=3: y = 1 + 3 - 1 = 3
+    // c3 at mainPos=6: y = 1 + 6 - 1 = 6
+    expect(c1.rect.y).toBe(0);
+    expect(c2.rect.y).toBe(3);
+    expect(c3.rect.y).toBe(6);
+  });
+
+  it('setDirection triggers relayout', () => {
+    const sb = createScrollBox({width: 20, height: 10});
+    const c1 = createTextWidget('ab');
+    const c2 = createTextWidget('cd');
+    sb.addChild(c1);
+    sb.addChild(c2);
+    render(sb);
+    expect(c2.rect.y).toBe(2); // vertical: c1 at y=1, c2 at y=2
+
+    sb.setDirection('horizontal');
+    render(sb);
+    expect(c2.rect.x).toBe(3); // horizontal: c1 at x=1, c2 at x=3
+  });
+});

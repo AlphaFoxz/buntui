@@ -176,6 +176,31 @@
         <Text value="A" />
         <Text :colorFg="'rgba(137,180,250,1)'" value="B (right)" />
     </Box>
+
+    <Text :x="1" :y="57" value="▶ flexShrink (overflow compression)" styleModifier="bold" />
+    <Box :x="1" :y="58" :width="20" :height="3" :direction="'horizontal'" :align="'start'" borderStyle="rounded">
+        <Text value="s=1" :flexBasis="12" :flexShrink="1" />
+        <Text value="s=0" :flexBasis="12" />
+    </Box>
+    <Box :x="24" :y="58" :width="20" :height="3" :direction="'horizontal'" :align="'start'" borderStyle="rounded">
+        <Text value="s=1" :flexBasis="12" :flexShrink="1" />
+        <Text value="s=1" :flexBasis="12" :flexShrink="1" />
+    </Box>
+
+    <Text :x="1" :y="62" value="▶ flexBasis (main-axis base size)" styleModifier="bold" />
+    <Box :x="1" :y="63" :width="28" :height="3" :direction="'horizontal'" :align="'start'" borderStyle="rounded">
+        <Text value="b=4" :flexBasis="4" />
+        <Text value="b=8" :flexBasis="8" />
+        <Text value="b=12" :flexBasis="12" />
+    </Box>
+
+    <Text :x="1" :y="67" value="▶ alignSelf (per-child cross-axis override)" styleModifier="bold" />
+    <Box :x="1" :y="68" :width="28" :height="5" :direction="'horizontal'" :align="'start'" borderStyle="rounded">
+        <Text value="start" />
+        <Text value="center" :alignSelf="'center'" />
+        <Text value="end" :alignSelf="'end'" />
+        <Text value="stretch" :alignSelf="'stretch'" />
+    </Box>
 </template>
 
 <script setup lang="ts">

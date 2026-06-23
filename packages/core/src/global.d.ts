@@ -5,6 +5,9 @@ import type {
   TuiBorderStyleName,
   TuiLayoutDirectionName,
   TuiLayoutAlignmentName,
+  TuiJustifyContentName,
+  TuiFlexWrapName,
+  TuiAlignContentName,
   TuiFontStyleName,
 } from './widgets/types';
 
@@ -47,6 +50,17 @@ declare global {
   type TuiLayoutAlignment = TuiLayoutAlignmentName;
   type TuiBorderSides = boolean | 'true' | 'false' | `${number}` | `${number} ${number}` | `${number} ${number} ${number}` | `${number} ${number} ${number} ${number}`;
   type TuiFontStyle = TuiFontStyleName;
+  type TuiJustifyContent = TuiJustifyContentName;
+  type TuiFlexWrap = TuiFlexWrapName;
+  type TuiAlignContent = TuiAlignContentName;
+
+  type TuiFlexItemProps = {
+    flexGrow?: number;
+    flexShrink?: number;
+    flexBasis?: TuiSizeValue;
+    alignSelf?: TuiLayoutAlignment;
+    visible?: boolean;
+  };
 
   type TuiBoxProps = {
     x?: TuiSizeValue;
@@ -72,6 +86,9 @@ declare global {
     direction?: TuiLayoutDirection;
     gap?: number;
     align?: TuiLayoutAlignment;
+    justifyContent?: TuiJustifyContent;
+    flexWrap?: TuiFlexWrap;
+    alignContent?: TuiAlignContent;
     paddingTop?: number;
     paddingRight?: number;
     paddingBottom?: number;
@@ -91,6 +108,7 @@ declare global {
     overflow?: 'clip' | 'marquee';
     scrollSpeed?: number;
     scrollPauseMs?: number;
+    draggable?: boolean;
   };
 
   type TuiInputProps = {
@@ -262,7 +280,12 @@ declare global {
     paddingRight?: number;
     paddingBottom?: number;
     paddingLeft?: number;
+    direction?: TuiLayoutDirection;
     gap?: number;
+    align?: TuiLayoutAlignment;
+    justifyContent?: TuiJustifyContent;
+    flexWrap?: TuiFlexWrap;
+    alignContent?: TuiAlignContent;
     scrollSpeed?: number;
     alwaysShowScrollbar?: boolean;
     colorScrollbar?: TuiColor;
@@ -425,19 +448,19 @@ declare global {
 
 declare module 'vue' {
   export type GlobalComponents = {
-    Box: TuiComponent<TuiBoxProps, TuiBaseEmits>;
-    Text: TuiComponent<TuiTextProps, TuiBaseEmits>;
-    Input: TuiComponent<TuiInputProps, TuiInputEmits>;
-    Button: TuiComponent<TuiButtonProps, TuiInteractiveEmits>;
-    Checkbox: TuiComponent<TuiCheckboxProps, TuiCheckboxEmits>;
-    RadioGroup: TuiComponent<TuiRadioGroupProps, TuiRadioGroupEmits>;
-    SelectButton: TuiComponent<TuiSelectButtonProps, TuiSelectButtonEmits>;
-    Switch: TuiComponent<TuiSwitchProps, TuiSwitchEmits>;
-    ScrollBox: TuiComponent<TuiScrollBoxProps, TuiScrollBoxEmits>;
-    Progress: TuiComponent<TuiProgressProps, TuiBaseEmits>;
-    Textarea: TuiComponent<TuiTextareaProps, TuiTextareaEmits>;
-    Table: TuiComponent<TuiTableProps, TuiTableEmits>;
-    Select: TuiComponent<TuiSelectProps, TuiSelectEmits>;
+    Box: TuiComponent<TuiBoxProps & TuiFlexItemProps, TuiBaseEmits>;
+    Text: TuiComponent<TuiTextProps & TuiFlexItemProps, TuiBaseEmits>;
+    Input: TuiComponent<TuiInputProps & TuiFlexItemProps, TuiInputEmits>;
+    Button: TuiComponent<TuiButtonProps & TuiFlexItemProps, TuiInteractiveEmits>;
+    Checkbox: TuiComponent<TuiCheckboxProps & TuiFlexItemProps, TuiCheckboxEmits>;
+    RadioGroup: TuiComponent<TuiRadioGroupProps & TuiFlexItemProps, TuiRadioGroupEmits>;
+    SelectButton: TuiComponent<TuiSelectButtonProps & TuiFlexItemProps, TuiSelectButtonEmits>;
+    Switch: TuiComponent<TuiSwitchProps & TuiFlexItemProps, TuiSwitchEmits>;
+    ScrollBox: TuiComponent<TuiScrollBoxProps & TuiFlexItemProps, TuiScrollBoxEmits>;
+    Progress: TuiComponent<TuiProgressProps & TuiFlexItemProps, TuiBaseEmits>;
+    Textarea: TuiComponent<TuiTextareaProps & TuiFlexItemProps, TuiTextareaEmits>;
+    Table: TuiComponent<TuiTableProps & TuiFlexItemProps, TuiTableEmits>;
+    Select: TuiComponent<TuiSelectProps & TuiFlexItemProps, TuiSelectEmits>;
   };
 }
 

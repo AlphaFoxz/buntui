@@ -1,5 +1,13 @@
 import type {TuiColor} from '../../utils/color';
-import type {TuiSizeValue, TuiBorderStyleName} from '../types';
+import type {
+  TuiSizeValue,
+  TuiBorderStyleName,
+  TuiLayoutDirectionName,
+  TuiLayoutAlignmentName,
+  TuiJustifyContentName,
+  TuiFlexWrapName,
+  TuiAlignContentName,
+} from '../types';
 
 export type ScrollBoxWidgetOptions = {
   x?: TuiSizeValue;
@@ -25,8 +33,15 @@ export type ScrollBoxWidgetOptions = {
   paddingBottom?: number;
   paddingLeft?: number;
 
-  // Scroll behavior
+  // Layout
+  direction?: TuiLayoutDirectionName;
   gap?: number;
+  align?: TuiLayoutAlignmentName;
+  justifyContent?: TuiJustifyContentName;
+  flexWrap?: TuiFlexWrapName;
+  alignContent?: TuiAlignContentName;
+
+  // Scroll behavior
   scrollSpeed?: number;
   alwaysShowScrollbar?: boolean;
 

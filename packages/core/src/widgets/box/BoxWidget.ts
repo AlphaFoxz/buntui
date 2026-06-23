@@ -5,12 +5,12 @@ import {getTheme} from '../../theme/store';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
 import {resolveThemedOverrides} from '../../theme/color-ref';
 import {
-  TuiLayoutAlignment as LayoutAlignmentEnum,
-  TuiJustifyContent as JustifyContentEnum,
   resolveBorderStyle,
   resolveLayoutDirection,
   resolveLayoutAlignment,
   resolveJustifyContent,
+  resolveFlexWrap,
+  resolveAlignContent,
   resolveFontStyle,
   type TuiLayoutAlignment,
   type TuiLayoutAlignmentName,
@@ -19,6 +19,10 @@ import {
   type TuiLayoutDirectionName,
   type TuiJustifyContent,
   type TuiJustifyContentName,
+  type TuiFlexWrap,
+  type TuiFlexWrapName,
+  type TuiAlignContent,
+  type TuiAlignContentName,
   type TuiSizeValue,
   type TuiWidgetBorder,
   type TuiWidgetColor,
@@ -30,6 +34,7 @@ import {
   type TuiFontStyleInput,
 } from '../types';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
+import {computeFlexLayout} from '../layout-flex';
 
 export type BorderShorthand = boolean | string | number;
 
@@ -60,6 +65,8 @@ export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & 
     gap?: U16;
     align?: TuiLayoutAlignmentName;
     justifyContent?: TuiJustifyContentName;
+    flexWrap?: TuiFlexWrapName;
+    alignContent?: TuiAlignContentName;
     draggable?: boolean;
     styleModifier?: TuiFontStyleInput;
     styleZIndex?: I16;
@@ -133,6 +140,8 @@ export class BoxWidget extends TuiWidgetEntity {
   #gap: U16;
   #align: TuiLayoutAlignment;
   #justifyContent: TuiJustifyContent;
+  #flexWrap: TuiFlexWrap;
+  #alignContent: TuiAlignContent;
   #layoutDirty = true;
   readonly #layoutChildren: TuiWidgetEntity[] = [];
 
@@ -165,6 +174,8 @@ export class BoxWidget extends TuiWidgetEntity {
     this.#gap = options.gap ?? 0;
     this.#align = resolveLayoutAlignment(options.align ?? 'stretch');
     this.#justifyContent = resolveJustifyContent(options.justifyContent ?? 'start');
+    this.#flexWrap = resolveFlexWrap(options.flexWrap ?? 'nowrap');
+    this.#alignContent = resolveAlignContent(options.alignContent ?? 'start');
 
     if (options.draggable ?? false) {
       this.setDraggable(true);
@@ -335,6 +346,16 @@ export class BoxWidget extends TuiWidgetEntity {
     this.#layoutDirty = true;
   }
 
+  setFlexWrap(value: TuiFlexWrapName): void {
+    this.#flexWrap = resolveFlexWrap(value);
+    this.#layoutDirty = true;
+  }
+
+  setAlignContent(value: TuiAlignContentName): void {
+    this.#alignContent = resolveAlignContent(value);
+    this.#layoutDirty = true;
+  }
+
   // -- Child management --
 
   override addChild(child: TuiWidgetEntity): void {
@@ -454,145 +475,6 @@ export class BoxWidget extends TuiWidgetEntity {
 
   // -- Layout engine --
 
-  #resolveChildExtent(child: TuiWidgetEntity, isVertical: boolean): number {
-    const intrinsic = child.intrinsicSize();
-    if (isVertical) {
-      return intrinsic?.height ?? child.rect.height;
-    }
-
-    return intrinsic?.width ?? child.rect.width;
-  }
-
-  #resolveCrossAxis(
-    child: TuiWidgetEntity,
-    crossSize: number,
-    isVertical: boolean,
-  ): {crossPos: number; crossExtent: number} {
-    const intrinsic = child.intrinsicSize();
-    let crossExtent: number;
-    crossExtent = isVertical ? intrinsic?.width ?? child.rect.width : intrinsic?.height ?? child.rect.height;
-
-    let crossPos: number;
-    switch (this.#align) {
-      case LayoutAlignmentEnum.Start: {
-        crossPos = 0;
-        break;
-      }
-
-      case LayoutAlignmentEnum.Center: {
-        crossPos = Math.floor((crossSize - crossExtent) / 2);
-        break;
-      }
-
-      case LayoutAlignmentEnum.End: {
-        crossPos = crossSize - crossExtent;
-        break;
-      }
-
-      case LayoutAlignmentEnum.Stretch: {
-        crossPos = 0;
-        crossExtent = crossSize;
-        break;
-      }
-
-      default: {
-        assertNever(this.#align);
-      }
-    }
-
-    return {crossPos, crossExtent};
-  }
-
-  /**
-   Compute main-axis start offset and extra inter-child gap based on justifyContent
-   and the remaining free space after flexGrow distribution.
-   */
-  #computeJustifyDistribution(freeSpace: number, count: number): {startOffset: number; extraGap: number} {
-    if (freeSpace <= 0 || count === 0) {
-      return {startOffset: 0, extraGap: 0};
-    }
-
-    switch (this.#justifyContent) {
-      case JustifyContentEnum.Start: {
-        return {startOffset: 0, extraGap: 0};
-      }
-
-      case JustifyContentEnum.Center: {
-        return {startOffset: Math.floor(freeSpace / 2), extraGap: 0};
-      }
-
-      case JustifyContentEnum.End: {
-        return {startOffset: freeSpace, extraGap: 0};
-      }
-
-      case JustifyContentEnum.SpaceBetween: {
-        return count > 1
-          ? {startOffset: 0, extraGap: Math.floor(freeSpace / (count - 1))}
-          : {startOffset: 0, extraGap: 0};
-      }
-
-      case JustifyContentEnum.SpaceAround: {
-        const perChild = Math.floor(freeSpace / count);
-        return {startOffset: Math.floor(perChild / 2), extraGap: perChild};
-      }
-
-      case JustifyContentEnum.SpaceEvenly: {
-        const gap = Math.floor(freeSpace / (count + 1));
-        return {startOffset: gap, extraGap: gap};
-      }
-
-      default: {
-        assertNever(this.#justifyContent);
-      }
-    }
-  }
-
-  /**
-   Distribute positive free space across children proportional to their flexGrow values.
-   Mutates `finalSizes` in place. Returns the absorbed share (so callers can recompute
-   remaining free space for justifyContent).
-   */
-  #distributeFlexGrow(
-    children: TuiWidgetEntity[],
-    baseSizes: number[],
-    finalSizes: number[],
-    freeSpace: number,
-  ): number {
-    let totalGrow = 0;
-    for (const child of children) {
-      totalGrow += child.flexGrow;
-    }
-
-    if (totalGrow <= 0) {
-      return 0;
-    }
-
-    let absorbed = 0;
-    for (const [i, child] of children.entries()) {
-      const grow = child.flexGrow;
-      if (grow > 0) {
-        const share = Math.floor((grow / totalGrow) * freeSpace);
-        finalSizes[i] = baseSizes[i]! + share;
-        absorbed += share;
-      }
-    }
-
-    // Award any integer-division remainder to the last growing child
-    const remainder = freeSpace - absorbed;
-    if (remainder > 0) {
-      for (let i = children.length - 1; i >= 0; i--) {
-        if (children[i]!.flexGrow > 0) {
-          finalSizes[i]! += remainder;
-          break;
-        }
-      }
-
-      absorbed += remainder;
-    }
-
-    return absorbed;
-  }
-
   #computeLayout(): void {
     const children = this.#layoutChildren;
     if (children.length === 0) {
@@ -611,77 +493,37 @@ export class BoxWidget extends TuiWidgetEntity {
     const contentWidth = width - hInset;
     const contentHeight = height - vInset;
 
-    const direction = this.#direction;
-    const isVertical = direction === 1 || direction === 3;
-    const isReverse = direction === 2 || direction === 3;
+    const isVertical = this.#direction === 1 || this.#direction === 3;
     const mainSize = isVertical ? contentHeight : contentWidth;
     const crossSize = isVertical ? contentWidth : contentHeight;
-    const isStretch = this.#align === LayoutAlignmentEnum.Stretch;
 
-    // Resolve percent specs first (may update child.rect sizes)
     for (const child of children) {
       if (child.hasPercentLayout) {
         child.resolveLayout(contentWidth, contentHeight);
       }
     }
 
-    // Measure pass: compute base main size for each child
-    const baseSizes = children.map(child => this.#resolveChildExtent(child, isVertical));
+    const results = computeFlexLayout({
+      children,
+      direction: this.#direction,
+      align: this.#align,
+      justifyContent: this.#justifyContent,
+      gap: this.#gap,
+      mainSize,
+      crossSize,
+      flexWrap: this.#flexWrap,
+      alignContent: this.#alignContent,
+    });
 
-    // Compute total base + gaps and free space
-    const totalGap = (children.length - 1) * this.#gap;
-    const totalBase = baseSizes.reduce((sum, s) => sum + s, 0);
-    let freeSpace = mainSize - totalBase - totalGap;
-
-    // Grow pass: distribute positive free space via flexGrow
-    const finalSizes = [...baseSizes];
-    if (freeSpace > 0) {
-      const absorbed = this.#distributeFlexGrow(children, baseSizes, finalSizes, freeSpace);
-      if (absorbed > 0) {
-        // Free space has been absorbed by flexGrow; none left for justify
-        freeSpace = 0;
-      }
-    }
-
-    // Justify pass: compute start offset and extra inter-child gap from remaining free space
-    const {startOffset, extraGap} = this.#computeJustifyDistribution(freeSpace, children.length);
-
-    // Arrange pass: compute each child's main position as if non-reverse,
-    // then mirror along the main axis if direction is reversed (CSS flexbox *-reverse semantics).
-    const positions: number[] = [];
-    let mainPos = startOffset;
-    for (let i = 0; i < children.length; i++) {
-      positions[i] = mainPos;
-      mainPos += finalSizes[i]! + this.#gap + extraGap;
-    }
-
-    if (isReverse) {
-      for (let i = 0; i < children.length; i++) {
-        positions[i] = mainSize - positions[i]! - finalSizes[i]!;
-      }
-    }
-
-    for (const [i, child_] of children.entries()) {
-      const child = child_;
-      const mainExtent = finalSizes[i]!;
-      const childMainPos = positions[i]!;
-      const {crossPos, crossExtent} = this.#resolveCrossAxis(child, crossSize, isVertical);
-
-      const childRect = isVertical
+    for (const [i, child] of children.entries()) {
+      const r = results[i]!;
+      child.updateRect(isVertical
         ? {
-          x: contentX + crossPos,
-          y: contentY + childMainPos,
-          width: isStretch ? crossSize : crossExtent,
-          height: mainExtent,
+          x: contentX + r.crossPos, y: contentY + r.mainPos, width: r.crossExtent, height: r.mainExtent,
         }
         : {
-          x: contentX + childMainPos,
-          y: contentY + crossPos,
-          width: mainExtent,
-          height: isStretch ? crossSize : crossExtent,
-        };
-
-      child.updateRect(childRect);
+          x: contentX + r.mainPos, y: contentY + r.crossPos, width: r.mainExtent, height: r.crossExtent,
+        });
     }
   }
 }

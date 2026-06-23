@@ -33,16 +33,16 @@
 
 ### P2 — 应当特性(中等复杂度)
 
-- [ ] **2-1** `flexShrink: number`(per-child)— 优雅的溢出压缩而非裁剪。
-- [ ] **2-2** `flexBasis: number | '${number}%'`(per-child)— 主轴起始尺寸提示。
-- [ ] **2-3** `alignSelf: 'start' | 'center' | 'end' | 'stretch'`(per-child)— 单个子组件覆盖父级 `align`。
+- [x] **2-1** `flexShrink: number`(per-child)— 优雅的溢出压缩而非裁剪。
+- [x] **2-2** `flexBasis: number | '${number}%'`(per-child)— 主轴起始尺寸提示。
+- [x] **2-3** `alignSelf: 'start' | 'center' | 'end' | 'stretch'`(per-child)— 单个子组件覆盖父级 `align`。
 
 ### P3 — 推迟(TUI 价值存疑或 API 面太大)
 
-- [ ] **3-1** `flexWrap: 'nowrap' | 'wrap' | 'wrap-reverse'` + `alignContent` — TUI 中无文本回流,但离散瓦片包裹有用。具体用例出现时再开 follow-up。
-- [ ] **3-2** `order: number`(per-child)— 视觉重排而不动 DOM 顺序。需求低。
-- [ ] **3-3** `align-items: baseline` — TUI 均匀行高下意义不大,可能永远不需要。
-- [ ] **3-4** 提取共享 `layout-flex.ts` 模块 — 把 `BoxWidget.#computeLayout` 和 `ScrollBoxWidget.#computeLayout` 的重复逻辑合并,防止进一步漂移。出 flex v1 范围,值得 follow-up。
+- [x] **3-1** `flexWrap: 'nowrap' | 'wrap' | 'wrap-reverse'` + `alignContent` — 离散瓦片按终端宽度自动回流换行。与 order/baseline 不同,这是嵌套 Box 无法替代的(嵌套 Box 是静态网格,不响应终端 resize)。**已完成**:greedy 断行 + 逐行独立 flex 分配 + alignContent 行间分布(6 种模式)。
+- [x] **3-4** 提取共享 `layout-flex.ts` 模块 — 把 `BoxWidget.#computeLayout` 和 `ScrollBoxWidget.#computeLayout` 的重复逻辑合并,防止进一步漂移。**已完成**:`packages/core/src/widgets/layout-flex.ts` 导出 `computeFlexLayout()` 纯函数,Box 和 ScrollBox 均调用它;flex 算法逻辑现集中在单一模块中。
+
+> **已移除**: ~~`order: number`~~ — TUI 中直接换 children 数组顺序即可,无需视觉重排属性。~~`align-items: baseline`~~ — 等宽单元格网格中所有内容天然在同一基线上,语义无意义。
 
 ## 设计考量
 

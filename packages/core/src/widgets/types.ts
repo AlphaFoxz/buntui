@@ -291,9 +291,65 @@ export function resolveJustifyContent(value: TuiJustifyContentName | TuiJustifyC
 
 export type TuiPercent = `${number}%`;
 export type TuiSizeValue = U16 | TuiPercent;
+
+/**
+ Main-axis base size hint for flex children (`flex-basis`).
+ A number is an absolute size; a percent string resolves against the container's main content size.
+ */
+export type TuiFlexBasisValue = number | TuiPercent;
 export type TuiWidgetPercentSpec = {
   x?: TuiPercent;
   y?: TuiPercent;
   width?: TuiPercent;
   height?: TuiPercent;
 };
+
+export const TuiFlexWrap = {
+  Nowrap: 0,
+  Wrap: 1,
+  WrapReverse: 2,
+} as const;
+export type TuiFlexWrap = Enum<typeof TuiFlexWrap>;
+export type TuiFlexWrapName = 'nowrap' | 'wrap' | 'wrap-reverse';
+
+const FLEX_WRAP_MAP: Record<TuiFlexWrapName, TuiFlexWrap> = {
+  nowrap: 0,
+  wrap: 1,
+  'wrap-reverse': 2,
+};
+
+export function resolveFlexWrap(value: TuiFlexWrapName | TuiFlexWrap): TuiFlexWrap {
+  if (typeof value === 'string') {
+    return FLEX_WRAP_MAP[value] ?? 0;
+  }
+
+  return value;
+}
+
+export const TuiAlignContent = {
+  Start: 0,
+  Center: 1,
+  End: 2,
+  SpaceBetween: 3,
+  SpaceAround: 4,
+  SpaceEvenly: 5,
+} as const;
+export type TuiAlignContent = Enum<typeof TuiAlignContent>;
+export type TuiAlignContentName = 'start' | 'center' | 'end' | 'space-between' | 'space-around' | 'space-evenly';
+
+const ALIGN_CONTENT_MAP: Record<TuiAlignContentName, TuiAlignContent> = {
+  start: 0,
+  center: 1,
+  end: 2,
+  'space-between': 3,
+  'space-around': 4,
+  'space-evenly': 5,
+};
+
+export function resolveAlignContent(value: TuiAlignContentName | TuiAlignContent): TuiAlignContent {
+  if (typeof value === 'string') {
+    return ALIGN_CONTENT_MAP[value] ?? 0;
+  }
+
+  return value;
+}

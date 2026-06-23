@@ -4,7 +4,7 @@ import {TextWidget} from '../../text/TextWidget';
 import {DrawListBuffer} from '../../../draw-list/DrawListBuffer';
 import {DrawCmd} from '../../../draw-list/types';
 
-function createBoxWith(options?: {x?: number; y?: number; width?: number; height?: number; borderStyle?: string; border?: boolean; direction?: string; gap?: number; align?: string; justifyContent?: string; draggable?: boolean}) {
+function createBoxWith(options?: {x?: number; y?: number; width?: number; height?: number; borderStyle?: string; border?: boolean; direction?: string; gap?: number; align?: string; justifyContent?: string; flexWrap?: string; alignContent?: string; draggable?: boolean}) {
   return new BoxWidget({
     x: options?.x ?? 0,
     y: options?.y ?? 0,
@@ -16,6 +16,8 @@ function createBoxWith(options?: {x?: number; y?: number; width?: number; height
     gap: options?.gap as U16 ?? undefined,
     align: options?.align as 'start' ?? undefined,
     justifyContent: options?.justifyContent as 'start' ?? undefined,
+    flexWrap: options?.flexWrap as 'wrap' ?? undefined,
+    alignContent: options?.alignContent as 'center' ?? undefined,
     draggable: options?.draggable,
     colorFg: 0xFF_FF_FF_FF,
     colorBg: 0x00_00_00_FF,
@@ -954,5 +956,354 @@ describe('reverse direction', () => {
     expect(c2.rect.height).toBe(5);
     expect(c1.rect.y).toBe(5);
     expect(c2.rect.y).toBe(0);
+  });
+});
+
+describe('flexShrink (per-child overflow compression)', () => {
+  // Nested boxes (no intrinsic size) → base size falls back to rect height.
+  function createBoxChild(height: number) {
+    return createBoxWith({width: 5, height});
+  }
+
+  it('children with flexShrink compress to fit overflowing container', () => {
+    const box = createBoxWith({width: 20, height: 4, direction: 'vertical', align: 'start'});
+    const c1 = createBoxChild(3);
+    c1.setFlexShrink(1);
+    const c2 = createBoxChild(3);
+    c2.setFlexShrink(1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // totalBase=6, mainSize=4, overflow=2; each shrinks by 1 → height 2
+    expect(c1.rect.height).toBe(2);
+    expect(c2.rect.height).toBe(2);
+    expect(c2.rect.y).toBe(2);
+  });
+
+  it('flexShrink distributes proportionally by weight', () => {
+    const box = createBoxWith({width: 20, height: 4, direction: 'vertical', align: 'start'});
+    const c1 = createBoxChild(4);
+    c1.setFlexShrink(3);
+    const c2 = createBoxChild(4);
+    c2.setFlexShrink(1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // overflow=4; totalShrink=4; c1 loses floor(3/4*4)=3 → 1; c2 loses floor(1/4*4)=1 → 3
+    expect(c1.rect.height).toBe(1);
+    expect(c2.rect.height).toBe(3);
+  });
+
+  it('children without flexShrink do not compress (overflow clipped)', () => {
+    const box = createBoxWith({width: 20, height: 4, direction: 'vertical', align: 'start'});
+    const c1 = createBoxChild(3);
+    const c2 = createBoxChild(3);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(c1.rect.height).toBe(3);
+    expect(c2.rect.height).toBe(3);
+    expect(c2.rect.y).toBe(3); // overflows past content area
+  });
+
+  it('flexShrink never shrinks a child below 0', () => {
+    const box = createBoxWith({width: 20, height: 1, direction: 'vertical', align: 'start'});
+    const c1 = createBoxChild(5);
+    c1.setFlexShrink(1);
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // overflow=4; deduction=min(5,4)=4 → height 1
+    expect(c1.rect.height).toBe(1);
+  });
+
+  it('flexShrink works on horizontal axis', () => {
+    const box = createBoxWith({width: 4, height: 10, direction: 'horizontal', align: 'start'});
+    const c1 = createBoxWith({width: 3, height: 5});
+    c1.setFlexShrink(1);
+    const c2 = createBoxWith({width: 3, height: 5});
+    c2.setFlexShrink(1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // mainSize=4, totalBase=6, overflow=2; each shrinks by 1 → width 2
+    expect(c1.rect.width).toBe(2);
+    expect(c2.rect.width).toBe(2);
+    expect(c2.rect.x).toBe(2);
+  });
+
+  it('flexShrink default is 0', () => {
+    const c = createChild('x', 5, 1);
+    expect(c.flexShrink).toBe(0);
+  });
+});
+
+describe('flexBasis (per-child base size hint)', () => {
+  it('numeric flexBasis sets child main-axis base size', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'start'});
+    const c1 = createChild('a', 5, 1); // intrinsic height 1
+    c1.setFlexBasis(4);
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(c1.rect.height).toBe(4);
+  });
+
+  it('percent flexBasis resolves against container main size', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'start'});
+    const c1 = createChild('a', 5, 1);
+    c1.setFlexBasis('50%');
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(c1.rect.height).toBe(5); // 50% of content height 10
+  });
+
+  it('flexBasis overrides intrinsic size in flexGrow distribution', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'stretch'});
+    const c1 = createChild('a', 5, 1); // intrinsic height 1
+    c1.setFlexBasis(2);
+    c1.setFlexGrow(1);
+    const c2 = createChild('b', 5, 1); // intrinsic height 1
+    c2.setFlexGrow(1);
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // baseSizes: c1=2 (basis), c2=1 (intrinsic). totalBase=3, freeSpace=7.
+    // grow: each floor(1/2*7)=3 → c1=5, c2=4; remainder 1 → c2=5
+    expect(c1.rect.height).toBe(5);
+    expect(c2.rect.height).toBe(5);
+    expect(c2.rect.y).toBe(5);
+  });
+
+  it('flexBasis works on horizontal axis', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', align: 'start'});
+    const c1 = createChild('a', 5, 1); // intrinsic width 1
+    c1.setFlexBasis(8);
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(c1.rect.width).toBe(8);
+  });
+
+  it('flexBasis default undefined uses intrinsic/rect size', () => {
+    const c = createChild('ab', 5, 1);
+    expect(c.flexBasis).toBeUndefined();
+  });
+});
+
+describe('alignSelf (per-child cross-axis override)', () => {
+  it('alignSelf center overrides parent align start', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'start'});
+    const c1 = createChild('ab', 5, 1); // intrinsic width 2
+    c1.setAlignSelf('center');
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(c1.rect.x).toBe(9); // floor((20-2)/2)
+    expect(c1.rect.width).toBe(2);
+  });
+
+  it('alignSelf stretch overrides parent align start', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'start'});
+    const c1 = createChild('ab', 5, 1);
+    c1.setAlignSelf('stretch');
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(c1.rect.x).toBe(0);
+    expect(c1.rect.width).toBe(20);
+  });
+
+  it('alignSelf end overrides parent align start', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'start'});
+    const c1 = createChild('ab', 5, 1); // intrinsic width 2
+    c1.setAlignSelf('end');
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(c1.rect.x).toBe(18); // 20 - 2
+  });
+
+  it('siblings mix alignSelf independently while others inherit parent align', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'start', gap: 0});
+    const c1 = createChild('ab', 5, 1); // intrinsic width 2
+    c1.setAlignSelf('end');
+    const c2 = createChild('cd', 5, 1); // intrinsic width 2 — no alignSelf
+    box.addChild(c1);
+    box.addChild(c2);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(c1.rect.x).toBe(18); // end
+    expect(c2.rect.x).toBe(0); // inherited start
+  });
+
+  it('alignSelf default undefined inherits parent align', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'vertical', align: 'center'});
+    const c1 = createChild('ab', 5, 1);
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(c1.alignSelf).toBeUndefined();
+    expect(c1.rect.x).toBe(9); // inherited center: floor((20-2)/2)
+  });
+
+  it('alignSelf works on horizontal layout (vertical cross axis)', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', align: 'start'});
+    const c1 = createChild('ab', 5, 1); // intrinsic height 1
+    c1.setAlignSelf('end');
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    expect(c1.rect.y).toBe(9); // 10 - 1
+    expect(c1.rect.height).toBe(1);
+  });
+});
+
+describe('flexWrap (multi-line layout)', () => {
+  // Geometry: horizontal direction → main=x, cross=y. Box 20×10, no border/padding.
+  function childWithBasis(label: string, basis: number) {
+    const c = createChild(label, basis, 1);
+    c.setFlexBasis(basis);
+    return c;
+  }
+
+  it('children wrap to next line when overflowing main axis', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', flexWrap: 'wrap', align: 'start'});
+    const c1 = childWithBasis('a', 8);
+    const c2 = childWithBasis('b', 8);
+    const c3 = childWithBasis('c', 8);
+    box.addChild(c1);
+    box.addChild(c2);
+    box.addChild(c3);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // mainSize=20; line1: c1(8)+c2(8)=16 ≤20; adding c3(8): 16+8=24>20 → wrap
+    // line1 [c1,c2] at crossPos 0; line2 [c3] at crossPos 1 (height 1 each)
+    expect(c1.rect.x).toBe(0);
+    expect(c2.rect.x).toBe(8);
+    expect(c3.rect.x).toBe(0); // wrapped to start of line 2
+    expect(c3.rect.y).toBe(1); // second line
+  });
+
+  it('nowrap keeps all children on one line (overflow clipped)', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', flexWrap: 'nowrap', align: 'start'});
+    const c1 = childWithBasis('a', 8);
+    const c2 = childWithBasis('b', 8);
+    const c3 = childWithBasis('c', 8);
+    box.addChild(c1);
+    box.addChild(c2);
+    box.addChild(c3);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // nowrap: all on one line, c3 overflows (x=16, beyond width 20)
+    expect(c3.rect.x).toBe(16);
+    expect(c3.rect.y).toBe(0);
+  });
+
+  it('each line independently distributes free space via flexGrow', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', flexWrap: 'wrap', align: 'stretch'});
+    const c1 = childWithBasis('a', 8);
+    c1.setFlexGrow(1);
+    const c2 = childWithBasis('b', 8);
+    c2.setFlexGrow(1);
+    const c3 = childWithBasis('c', 8);
+    c3.setFlexGrow(1);
+    box.addChild(c1);
+    box.addChild(c2);
+    box.addChild(c3);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // line1: c1(8)+c2(8)=16, freeSpace=4, each grows by 2 → width 10
+    // line2: c3(8), freeSpace=12, grows by 12 → width 20
+    expect(c1.rect.width).toBe(10);
+    expect(c2.rect.width).toBe(10);
+    expect(c3.rect.width).toBe(20);
+  });
+
+  it('alignContent center centers the block of lines', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', flexWrap: 'wrap', align: 'start', alignContent: 'center'});
+    const c1 = childWithBasis('a', 8);
+    const c2 = childWithBasis('b', 8);
+    const c3 = childWithBasis('c', 8);
+    box.addChild(c1);
+    box.addChild(c2);
+    box.addChild(c3);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // 2 lines, each crossExtent 1. total=2. freeCrossSpace=10-2=8. startOffset=4
+    // line1 at y=4, line2 at y=5
+    expect(c1.rect.y).toBe(4);
+    expect(c3.rect.y).toBe(5);
+  });
+
+  it('wrap-reverse reverses line order', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', flexWrap: 'wrap-reverse', align: 'start'});
+    const c1 = childWithBasis('a', 8);
+    const c2 = childWithBasis('b', 8);
+    const c3 = childWithBasis('c', 8);
+    box.addChild(c1);
+    box.addChild(c2);
+    box.addChild(c3);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // wrap-reverse: line2 (c3) comes first (y=0), line1 (c1,c2) comes second (y=1)
+    expect(c3.rect.y).toBe(0);
+    expect(c1.rect.y).toBe(1);
+  });
+
+  it('gap applies both within lines and between lines', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', flexWrap: 'wrap', gap: 1, align: 'start'});
+    const c1 = childWithBasis('a', 8);
+    const c2 = childWithBasis('b', 8);
+    const c3 = childWithBasis('c', 8);
+    box.addChild(c1);
+    box.addChild(c2);
+    box.addChild(c3);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // mainSize=20; line1: c1(8)+gap(1)+c2(8)=17 ≤20; adding c3: 17+1+8=26>20 → wrap
+    // line1 [c1,c2]: c1 at x=0, c2 at x=9 (8+gap1)
+    // line2 [c3] at crossPos: 1(crossExtent of line1) + gap(1) = 2
+    expect(c2.rect.x).toBe(9); // 8 + gap(1)
+    expect(c3.rect.y).toBe(2); // line1 height(1) + line gap(1)
+  });
+
+  it('flexWrap default is nowrap', () => {
+    const box = createBoxWith({width: 20, height: 10, direction: 'horizontal', align: 'start'});
+    const c1 = childWithBasis('a', 30);
+    box.addChild(c1);
+    const buf = new DrawListBuffer();
+    buf.reset();
+    box.emitDrawCommands(buf);
+    // nowrap: single child wider than container stays on one line
+    expect(c1.rect.width).toBe(30);
+    expect(c1.rect.y).toBe(0);
   });
 });

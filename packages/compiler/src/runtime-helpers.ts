@@ -83,7 +83,12 @@ const PH_PADDING: PropHandlers = {
 const PH_VISIBLE: PropHandlers = {visible: {method: 'setVisible'}};
 const PH_DRAGGABLE: PropHandlers = {draggable: {method: 'setDraggable'}};
 const PH_DISABLED: PropHandlers = {disabled: {method: 'setDisabled'}};
-const PH_FLEX_GROW: PropHandlers = {flexGrow: {method: 'setFlexGrow'}};
+const PH_FLEX: PropHandlers = {
+  flexGrow: {method: 'setFlexGrow'},
+  flexShrink: {method: 'setFlexShrink'},
+  flexBasis: {method: 'setFlexBasis'},
+  alignSelf: {method: 'setAlignSelf'},
+};
 
 export type TuiComponentRegistry = Record<string, {
   creator: string;
@@ -97,7 +102,9 @@ const BOX_PROP_HANDLERS: PropHandlers = {
   gap: {method: 'setGap'},
   align: {method: 'setAlign'},
   justifyContent: {method: 'setJustifyContent'},
-  ...PH_DRAGGABLE, ...PH_FLEX_GROW, ...PH_VISIBLE,
+  flexWrap: {method: 'setFlexWrap'},
+  alignContent: {method: 'setAlignContent'},
+  ...PH_DRAGGABLE, ...PH_FLEX, ...PH_VISIBLE,
 };
 
 const TEXT_PROP_HANDLERS: PropHandlers = {
@@ -105,7 +112,7 @@ const TEXT_PROP_HANDLERS: PropHandlers = {
   value: {method: 'updateValue'},
   scrollSpeed: {method: 'setScrollSpeed'},
   scrollPauseMs: {method: 'setScrollPauseMs'},
-  ...PH_DRAGGABLE, ...PH_FLEX_GROW, ...PH_VISIBLE,
+  ...PH_DRAGGABLE, ...PH_FLEX, ...PH_VISIBLE,
 };
 
 const INPUT_PROP_HANDLERS: PropHandlers = {
@@ -118,7 +125,7 @@ const INPUT_PROP_HANDLERS: PropHandlers = {
   placeholder: {method: 'setPlaceholder'},
   label: {method: 'setLabel'},
   readonly: {method: 'setReadonly'},
-  ...PH_DISABLED, ...PH_FLEX_GROW, ...PH_VISIBLE,
+  ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE,
 };
 
 const BUTTON_PROP_HANDLERS: PropHandlers = {
@@ -136,7 +143,7 @@ const BUTTON_PROP_HANDLERS: PropHandlers = {
   colorBgPressed: {method: 'updatePressedStyle', field: 'colorBgPressed'},
   colorBorderPressed: {method: 'updatePressedStyle', field: 'colorBorderPressed'},
   borderStylePressed: {method: 'updatePressedStyle', field: 'borderStylePressed'},
-  ...PH_DISABLED, ...PH_FLEX_GROW, ...PH_VISIBLE,
+  ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE,
 };
 
 const CHECKBOX_PROP_HANDLERS: PropHandlers = {
@@ -144,14 +151,14 @@ const CHECKBOX_PROP_HANDLERS: PropHandlers = {
   checked: {method: 'setChecked'},
   indeterminate: {method: 'setIndeterminate'},
   label: {method: 'setLabel'},
-  ...PH_DISABLED, ...PH_FLEX_GROW, ...PH_VISIBLE,
+  ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE,
 };
 
 const SWITCH_PROP_HANDLERS: PropHandlers = {
   ...PH_RECT,
   checked: {method: 'setChecked'},
   label: {method: 'setLabel'},
-  ...PH_DISABLED, ...PH_FLEX_GROW, ...PH_VISIBLE,
+  ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE,
 };
 
 const RADIO_GROUP_PROP_HANDLERS: PropHandlers = {
@@ -159,7 +166,7 @@ const RADIO_GROUP_PROP_HANDLERS: PropHandlers = {
   value: {method: 'updateValue'},
   options: {method: 'setOptions'},
   tabs: {method: 'setOptions'},
-  ...PH_DISABLED, ...PH_FLEX_GROW, ...PH_VISIBLE,
+  ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE,
 };
 
 const SELECT_BUTTON_PROP_HANDLERS: PropHandlers = {
@@ -167,23 +174,28 @@ const SELECT_BUTTON_PROP_HANDLERS: PropHandlers = {
   value: {method: 'updateValue'},
   options: {method: 'setOptions'},
   tabs: {method: 'setOptions'},
-  ...PH_DISABLED, ...PH_FLEX_GROW, ...PH_VISIBLE,
+  ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE,
 };
 
 const SCROLL_BOX_PROP_HANDLERS: PropHandlers = {
   ...PH_RECT, ...PH_COLOR, ...PH_BORDER_FULL, ...PH_SHADOW, ...PH_PADDING,
+  direction: {method: 'setDirection'},
   gap: {method: 'setGap'},
+  align: {method: 'setAlign'},
+  justifyContent: {method: 'setJustifyContent'},
+  flexWrap: {method: 'setFlexWrap'},
+  alignContent: {method: 'setAlignContent'},
   alwaysShowScrollbar: {method: 'setAlwaysShowScrollbar'},
   colorScrollbar: {method: 'setColorScrollbar'},
   colorScrollbarTrack: {method: 'setColorScrollbarTrack'},
-  ...PH_DISABLED, ...PH_FLEX_GROW, ...PH_VISIBLE,
+  ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE,
 };
 
 const PROGRESS_PROP_HANDLERS: PropHandlers = {
   ...PH_RECT,
   value: {method: 'updateValue'},
   max: {method: 'setMax'},
-  ...PH_DISABLED, ...PH_FLEX_GROW, ...PH_VISIBLE,
+  ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE,
 };
 
 const TEXTAREA_PROP_HANDLERS: PropHandlers = {
@@ -193,14 +205,14 @@ const TEXTAREA_PROP_HANDLERS: PropHandlers = {
   placeholder: {method: 'setPlaceholder'},
   label: {method: 'setLabel'},
   readonly: {method: 'setReadonly'},
-  ...PH_DISABLED, ...PH_FLEX_GROW, ...PH_VISIBLE,
+  ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE,
 };
 
 const TABLE_PROP_HANDLERS: PropHandlers = {
   ...PH_RECT, ...PH_COLOR, ...PH_BORDER_STYLE_ONLY,
   columns: {method: 'setColumns'},
   rows: {method: 'setRows'},
-  ...PH_DISABLED, ...PH_FLEX_GROW, ...PH_VISIBLE,
+  ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE,
 };
 
 const SELECT_PROP_HANDLERS: PropHandlers = {
@@ -212,7 +224,7 @@ const SELECT_PROP_HANDLERS: PropHandlers = {
   placeholder: {method: 'setPlaceholder'},
   label: {method: 'setLabel'},
   borderStyle: {method: 'updateBorder', field: 'borderStyle'},
-  ...PH_DISABLED, ...PH_FLEX_GROW, ...PH_VISIBLE,
+  ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE,
 };
 
 export const CORE_REGISTRY: TuiComponentRegistry = {
