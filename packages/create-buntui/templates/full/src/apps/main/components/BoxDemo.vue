@@ -1,5 +1,5 @@
 <template>
-    <Text :x="1" :y="3" value="Box widget — layout container with borders, padding, alignment" />
+    <Text :x="1" :y="3" value="Box widget — flex layout container with borders, padding, alignment" />
 
     <Box
         :x="1"

@@ -1,9 +1,9 @@
 <template>
     <Matrix width="100%" height="100%" />
 
-    <Select :x="1" :y="0" width="30%" label="Widget" :options="tabOptions" v-model="currentTab" />
+    <Select :x="1" :y="1" width="50%" label="Widget" :options="tabOptions" v-model="currentTab" />
 
-    <ScrollBox :x="0" :y="2" width="100%" height="90%">
+    <ScrollBox :x="0" :y="4" width="100%" height="90%">
         <BoxDemo v-if="currentTab === 'Box'" />
         <ButtonDemo v-if="currentTab === 'Button'" />
         <CheckboxDemo v-if="currentTab === 'Checkbox'" />

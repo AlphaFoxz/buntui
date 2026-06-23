@@ -33,6 +33,16 @@ import {TuiWidgetEntity} from '../TuiWidgetEntity';
 
 export type BorderShorthand = boolean | string | number;
 
+/**
+ Options for {@link BoxWidget}, a flex row/column layout container.
+
+ The layout engine is always flexbox-style. With all defaults
+ (`direction: 'vertical'`, `align: 'stretch'`, `justifyContent: 'start'`,
+ `gap: 0`, children `flexGrow: 0`) children simply stack sequentially — this
+ is the "stack" baseline. Set `justifyContent` or give children `flexGrow` to
+ opt into main-axis free-space distribution. There is no separate "stack"
+ mode; stacking is the default behavior of the single flex engine.
+ */
 export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & Partial<TuiWidgetShadow>, 'colorFg' | 'colorBg' | 'colorBorder' | 'colorShadow' | 'borderStyle'>
   & Partial<TuiWidgetPadding>
   & {
@@ -105,6 +115,13 @@ function initBorder(options: BoxWidgetOptions): TuiWidgetBorder {
   };
 }
 
+/**
+ Flex row/column layout container (always-on flexbox engine).
+
+ Two-pass layout (measure → arrange). Default props reproduce plain sequential
+ stacking; `justifyContent` / per-child `flexGrow` enable free-space
+ distribution. There is no separate "stack" mode — stacking is the default.
+ */
 export class BoxWidget extends TuiWidgetEntity {
   readonly #rect: TuiWidgetRect;
   readonly #color: TuiWidgetColor;
@@ -687,6 +704,9 @@ export function getDefaultBoxOptions(): BoxWidgetOptions {
   };
 }
 
+/**
+ Create a {@link BoxWidget} flex row/column container.
+ */
 export function createBox(options: Partial<BoxWidgetOptions> = {}): BoxWidget {
   const ctorOptions = resolveThemedOverrides(options, BOX_TOKEN_MAP);
   const widget = new BoxWidget({...getDefaultBoxOptions(), ...ctorOptions});
