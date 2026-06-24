@@ -202,6 +202,12 @@ export class ScrollBoxWidget extends InteractiveWidget {
         }
       }
 
+      for (const child of this.#layoutChildren) {
+        if (child.draggable && child.visible && child.containsPoint(data.x, data.y)) {
+          return;
+        }
+      }
+
       this.#dragScrolling = true;
       this.#dragStartY = data.y;
       this.#dragStartX = data.x;
@@ -563,22 +569,42 @@ export class ScrollBoxWidget extends InteractiveWidget {
     const viewport = this.#computeViewport();
     buffer.pushClip(viewport.x, viewport.y, viewport.width, viewport.height);
 
-    for (const child of this.#layoutChildren) {
+    // Paint in zIndex ascending order (low first, high on top) — same painter's
+    // algorithm as TuiScene. Stable sort keeps insertion order for equal zIndex.
+    const renderOrder = this.#layoutChildren.toSorted((a, b) => a.zIndex - b.zIndex);
+    for (const child of renderOrder) {
       if (!child.visible) {
         continue;
       }
 
-      const {x: childX, y: childY, width: childW, height: childH} = child.rect;
+      if (child.position === 'absolute') {
+        // Rect is content-canvas coordinate; render position = canvas + viewport − scroll.
+        const renderX = child.rect.x + viewport.x - this.#scrollOffsetX;
+        const renderY = child.rect.y + viewport.y - this.#scrollOffsetY;
+        if (renderY + child.rect.height <= viewport.y || renderY >= viewport.y + viewport.height) {
+          continue;
+        }
 
-      if (childY + childH <= viewport.y || childY >= viewport.y + viewport.height) {
-        continue;
+        if (renderX + child.rect.width <= viewport.x || renderX >= viewport.x + viewport.width) {
+          continue;
+        }
+
+        buffer.pushOffset(viewport.x - this.#scrollOffsetX, viewport.y - this.#scrollOffsetY);
+        child.emitDrawCommands(buffer);
+        buffer.popOffset();
+      } else {
+        // Static / fixed: rect is already a terminal render coordinate.
+        const {x: childX, y: childY, width: childW, height: childH} = child.rect;
+        if (childY + childH <= viewport.y || childY >= viewport.y + viewport.height) {
+          continue;
+        }
+
+        if (childX + childW <= viewport.x || childX >= viewport.x + viewport.width) {
+          continue;
+        }
+
+        child.emitDrawCommands(buffer);
       }
-
-      if (childX >= viewport.x + viewport.width || childX + childW <= viewport.x) {
-        continue;
-      }
-
-      child.emitDrawCommands(buffer);
     }
 
     buffer.popClip();
@@ -619,9 +645,9 @@ export class ScrollBoxWidget extends InteractiveWidget {
   // -- Content extent (post-layout, flex-aware) --
 
   #computeContentHeight(): number {
-    const children = this.#layoutChildren.filter(c => c.visible);
+    const staticChildren = this.#layoutChildren.filter(c => c.visible && c.position === 'static');
     let total = 0;
-    for (const child of children) {
+    for (const child of staticChildren) {
       let h: number;
       if (child.hasExplicitHeight) {
         h = child.rect.height;
@@ -633,7 +659,21 @@ export class ScrollBoxWidget extends InteractiveWidget {
       total += h;
     }
 
-    total += Math.max(0, children.length - 1) * this.#gap;
+    total += Math.max(0, staticChildren.length - 1) * this.#gap;
+
+    // Absolute children keep content-canvas coordinates, so their canvas bottom
+    // is simply rect.y + height.
+    for (const child of this.#layoutChildren) {
+      if (!child.visible || child.position !== 'absolute') {
+        continue;
+      }
+
+      const canvasBottom = child.rect.y + child.rect.height;
+      if (canvasBottom > total) {
+        total = canvasBottom;
+      }
+    }
+
     return total;
   }
 
@@ -641,7 +681,16 @@ export class ScrollBoxWidget extends InteractiveWidget {
     const viewport = this.#computeViewport();
     let max = viewport.width;
     for (const child of this.#layoutChildren) {
-      if (!child.visible) {
+      if (!child.visible || child.position === 'fixed') {
+        continue;
+      }
+
+      if (child.position === 'absolute') {
+        const canvasRight = child.rect.x + child.rect.width;
+        if (canvasRight > max) {
+          max = canvasRight;
+        }
+
         continue;
       }
 
@@ -672,21 +721,12 @@ export class ScrollBoxWidget extends InteractiveWidget {
   }
 
   #computeLayout(): void {
-    const children = this.#layoutChildren.filter(c => c.visible);
-    if (children.length === 0) {
-      this.#layoutDirty = false;
-      return;
-    }
-
     const viewport = this.#computeViewport();
-    const contentX = viewport.x;
-    const contentY = viewport.y;
-    const contentWidth = viewport.width;
-    const contentHeight = viewport.height;
 
-    // Re-clamp scroll offsets against the current content extent. A stale offset
-    // (e.g. after swapping child views via v-if) would otherwise push the new,
-    // shorter content off the viewport and leave it blank.
+    // Re-clamp scroll offsets against the current content extent (which now
+    // includes absolute children). A stale offset (e.g. after swapping child
+    // views via v-if) would otherwise push the new, shorter content off the
+    // viewport and leave it blank.
     const maxY = this.#maxScrollOffset();
     if (this.#scrollOffsetY > maxY) {
       this.#scrollOffsetY = maxY;
@@ -696,6 +736,17 @@ export class ScrollBoxWidget extends InteractiveWidget {
     if (this.#scrollOffsetX > maxX) {
       this.#scrollOffsetX = maxX;
     }
+
+    const children = this.#layoutChildren.filter(c => c.visible && c.position === 'static');
+    if (children.length === 0) {
+      this.#layoutDirty = false;
+      return;
+    }
+
+    const contentX = viewport.x;
+    const contentY = viewport.y;
+    const contentWidth = viewport.width;
+    const contentHeight = viewport.height;
 
     const isVertical = this.#direction === 1 || this.#direction === 3;
     const mainSize = isVertical ? contentHeight : contentWidth;

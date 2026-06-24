@@ -1,10 +1,9 @@
 <template>
     <Box
+        position="static"
         :draggable="true"
         @dragstart="handleDragstart"
         @dragend="handleDragend"
-        :x="1"
-        :y="3"
         :width="28"
         :height="3"
         borderStyle="solid"
@@ -13,6 +12,7 @@
     </Box>
 
     <Box
+        position="absolute"
         @mousedown="handleMousedown"
         @mouseup="handleMouseup"
         :x="31"
@@ -24,30 +24,31 @@
         <Text :value="text2" />
     </Box>
 
-    <Box @click="handleClick" :x="1" :y="6" :width="28" :height="3" borderStyle="double">
+    <Box position="absolute" @click="handleClick" :x="1" :y="6" :width="28" :height="3" borderStyle="double">
         <Text :value="text3" />
     </Box>
 
-    <Box @contextmenu="handleContextmenu" :x="31" :y="6" :width="28" :height="3" borderStyle="bold">
+    <Box position="absolute" @contextmenu="handleContextmenu" :x="31" :y="6" :width="28" :height="3" borderStyle="bold">
         <Text :value="text4" />
     </Box>
 
     <!-- Dashed border -->
-    <Box :x="1" :y="9" :width="20" :height="3" borderStyle="dashed">
+    <Box position="absolute" :x="1" :y="9" :width="20" :height="3" borderStyle="dashed">
         <Text value="虚线 Dashed" />
     </Box>
 
     <!-- OutsetBold border -->
-    <Box :x="22" :y="9" :width="20" :height="3" borderStyle="outsetbold">
+    <Box position="absolute" :x="22" :y="9" :width="20" :height="3" borderStyle="outsetbold">
         <Text value="浮雕 Outset" />
     </Box>
 
     <!-- OutsetDouble border -->
-    <Box :x="43" :y="9" :width="20" borderStyle="outsetdouble">
+    <Box position="absolute" :x="43" :y="9" :width="20" borderStyle="outsetdouble">
         <Text value="双浮雕 Outset²" />
     </Box>
 
     <Box
+        position="absolute"
         draggable
         :x="35"
         :y="12"
@@ -63,6 +64,7 @@
 
     <!-- Z-Index: blue (middle, zIndex=1) -->
     <Box
+        position="absolute"
         draggable
         :x="25"
         :y="13"
@@ -77,6 +79,7 @@
 
     <!-- Z-Index: red (bottom, zIndex=0) -->
     <Box
+        position="absolute"
         draggable
         :x="15"
         :y="14"
@@ -90,35 +93,76 @@
         <Text value="zIndex=0 最底层" />
     </Box>
 
-    <Text :x="1" :y="19" value="▸ Flex Layout (row/column container)" styleModifier="bold" />
-    <Text :x="1" :y="20" value="▶ Alignment (cross-axis)" styleModifier="bold" />
+    <Text position="absolute" :x="1" :y="19" value="▸ Flex Layout (row/column container)" styleModifier="bold" />
+    <Text position="absolute" :x="1" :y="20" value="▶ Alignment (cross-axis)" styleModifier="bold" />
 
-    <Box draggable v-model:x="dx" :y="21" width="48%" :height="7" :direction="'vertical'" :gap="1" :align="'start'">
+    <Box
+        position="absolute"
+        draggable
+        v-model:x="dx"
+        :y="21"
+        width="48%"
+        :height="7"
+        :direction="'vertical'"
+        :gap="1"
+        :align="'start'"
+    >
         <Text :colorFg="'rgba(108,112,134,1)'" value="align=Start" />
         <Text value="Row 1" />
         <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
     </Box>
 
-    <Box draggable x="50%" :y="21" width="48%" :height="7" :direction="'vertical'" :gap="1" :align="'center'">
+    <Box
+        position="absolute"
+        draggable
+        x="50%"
+        :y="21"
+        width="48%"
+        :height="7"
+        :direction="'vertical'"
+        :gap="1"
+        :align="'center'"
+    >
         <Text :colorFg="'rgba(108,112,134,1)'" value="align=Center" />
         <Text value="Row 1" />
         <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
     </Box>
 
-    <Box draggable :x="dx" :y="29" width="48%" :height="7" :direction="'vertical'" :gap="1" :align="'end'">
+    <Box
+        position="absolute"
+        draggable
+        :x="dx"
+        :y="29"
+        width="48%"
+        :height="7"
+        :direction="'vertical'"
+        :gap="1"
+        :align="'end'"
+    >
         <Text :colorFg="'rgba(108,112,134,1)'" value="align=End" />
         <Text value="Row 1" />
         <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
     </Box>
 
-    <Box draggable x="50%" :y="29" width="48%" :height="7" :direction="'vertical'" :gap="1" :align="'stretch'">
+    <Box
+        position="absolute"
+        draggable
+        x="50%"
+        :y="29"
+        width="48%"
+        :height="7"
+        :direction="'vertical'"
+        :gap="1"
+        :align="'stretch'"
+    >
         <Text :colorFg="'rgba(108,112,134,1)'" value="align=Stretch" />
         <Text value="Row 1" />
         <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
     </Box>
 
-    <Text :x="1" :y="37" value="▶ justifyContent (main-axis distribution)" styleModifier="bold" />
+    <Text position="absolute" :x="1" :y="37" value="▶ justifyContent (main-axis distribution)" styleModifier="bold" />
     <Box
+        position="absolute"
         :x="1"
         :y="38"
         width="48%"
@@ -130,6 +174,7 @@
         <Text value="[start]" />
     </Box>
     <Box
+        position="absolute"
         x="50%"
         :y="38"
         width="48%"
@@ -140,10 +185,20 @@
     >
         <Text value="[center]" />
     </Box>
-    <Box :x="1" :y="42" width="48%" :height="3" :direction="'horizontal'" :justifyContent="'end'" borderStyle="rounded">
+    <Box
+        position="absolute"
+        :x="1"
+        :y="42"
+        width="48%"
+        :height="3"
+        :direction="'horizontal'"
+        :justifyContent="'end'"
+        borderStyle="rounded"
+    >
         <Text value="[end]" />
     </Box>
     <Box
+        position="absolute"
         x="50%"
         :y="42"
         width="48%"
@@ -156,46 +211,99 @@
         <Text value="B" />
     </Box>
 
-    <Text :x="1" :y="46" value="▶ flexGrow (per-child free-space share)" styleModifier="bold" />
-    <Box :x="1" :y="47" width="48%" :height="3" :direction="'horizontal'" borderStyle="rounded">
+    <Text position="absolute" :x="1" :y="46" value="▶ flexGrow (per-child free-space share)" styleModifier="bold" />
+    <Box position="absolute" :x="1" :y="47" width="48%" :height="3" :direction="'horizontal'" borderStyle="rounded">
         <Text value="g=0" />
         <Text value="g=1 absorbs free space" :flexGrow="1" />
     </Box>
-    <Box x="50%" :y="47" width="48%" :height="3" :direction="'horizontal'" borderStyle="rounded">
+    <Box position="absolute" x="50%" :y="47" width="48%" :height="3" :direction="'horizontal'" borderStyle="rounded">
         <Text value="g=1" :flexGrow="1" />
         <Text value="g=1" :flexGrow="1" />
         <Text value="g=1" :flexGrow="1" />
     </Box>
 
-    <Text :x="1" :y="51" value="▶ Reverse directions" styleModifier="bold" />
-    <Box :x="1" :y="52" width="48%" :height="4" :direction="'vertical-reverse'" :gap="1" borderStyle="rounded">
+    <Text position="absolute" :x="1" :y="51" value="▶ Reverse directions" styleModifier="bold" />
+    <Box
+        position="absolute"
+        :x="1"
+        :y="52"
+        width="48%"
+        :height="4"
+        :direction="'vertical-reverse'"
+        :gap="1"
+        borderStyle="rounded"
+    >
         <Text :colorFg="'rgba(137,180,250,1)'" value="first (bottom)" />
         <Text value="second (top)" />
     </Box>
-    <Box x="50%" :y="52" width="48%" :height="4" :direction="'horizontal-reverse'" borderStyle="rounded">
+    <Box
+        position="absolute"
+        x="50%"
+        :y="52"
+        width="48%"
+        :height="4"
+        :direction="'horizontal-reverse'"
+        borderStyle="rounded"
+    >
         <Text value="A" />
         <Text :colorFg="'rgba(137,180,250,1)'" value="B (right)" />
     </Box>
 
-    <Text :x="1" :y="57" value="▶ flexShrink (overflow compression)" styleModifier="bold" />
-    <Box :x="1" :y="58" :width="20" :height="3" :direction="'horizontal'" :align="'start'" borderStyle="rounded">
+    <Text position="absolute" :x="1" :y="57" value="▶ flexShrink (overflow compression)" styleModifier="bold" />
+    <Box
+        position="absolute"
+        :x="1"
+        :y="58"
+        :width="20"
+        :height="3"
+        :direction="'horizontal'"
+        :align="'start'"
+        borderStyle="rounded"
+    >
         <Text value="s=1" :flexBasis="12" :flexShrink="1" />
         <Text value="s=0" :flexBasis="12" />
     </Box>
-    <Box :x="24" :y="58" :width="20" :height="3" :direction="'horizontal'" :align="'start'" borderStyle="rounded">
+    <Box
+        position="absolute"
+        :x="24"
+        :y="58"
+        :width="20"
+        :height="3"
+        :direction="'horizontal'"
+        :align="'start'"
+        borderStyle="rounded"
+    >
         <Text value="s=1" :flexBasis="12" :flexShrink="1" />
         <Text value="s=1" :flexBasis="12" :flexShrink="1" />
     </Box>
 
-    <Text :x="1" :y="62" value="▶ flexBasis (main-axis base size)" styleModifier="bold" />
-    <Box :x="1" :y="63" :width="28" :height="3" :direction="'horizontal'" :align="'start'" borderStyle="rounded">
+    <Text position="absolute" :x="1" :y="62" value="▶ flexBasis (main-axis base size)" styleModifier="bold" />
+    <Box
+        position="absolute"
+        :x="1"
+        :y="63"
+        :width="28"
+        :height="3"
+        :direction="'horizontal'"
+        :align="'start'"
+        borderStyle="rounded"
+    >
         <Text value="b=4" :flexBasis="4" />
         <Text value="b=8" :flexBasis="8" />
         <Text value="b=12" :flexBasis="12" />
     </Box>
 
-    <Text :x="1" :y="67" value="▶ alignSelf (per-child cross-axis override)" styleModifier="bold" />
-    <Box :x="1" :y="68" :width="28" :height="5" :direction="'horizontal'" :align="'start'" borderStyle="rounded">
+    <Text position="absolute" :x="1" :y="67" value="▶ alignSelf (per-child cross-axis override)" styleModifier="bold" />
+    <Box
+        position="absolute"
+        :x="1"
+        :y="68"
+        :width="28"
+        :height="5"
+        :direction="'horizontal'"
+        :align="'start'"
+        borderStyle="rounded"
+    >
         <Text value="start" />
         <Text value="center" :alignSelf="'center'" />
         <Text value="end" :alignSelf="'end'" />

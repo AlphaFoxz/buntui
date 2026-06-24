@@ -23,6 +23,7 @@ import {
   type TuiFlexWrapName,
   type TuiAlignContent,
   type TuiAlignContentName,
+  type TuiPositionName,
   type TuiSizeValue,
   type TuiWidgetBorder,
   type TuiWidgetColor,
@@ -68,6 +69,7 @@ export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & 
     flexWrap?: TuiFlexWrapName;
     alignContent?: TuiAlignContentName;
     draggable?: boolean;
+    position?: TuiPositionName;
     styleModifier?: TuiFontStyleInput;
     styleZIndex?: I16;
   };
@@ -179,6 +181,10 @@ export class BoxWidget extends TuiWidgetEntity {
 
     if (options.draggable ?? false) {
       this.setDraggable(true);
+    }
+
+    if (options.position) {
+      this.setPosition(options.position);
     }
   }
 
@@ -475,7 +481,21 @@ export class BoxWidget extends TuiWidgetEntity {
     const contentHeight = height - paddingTop - this.#padding.paddingBottom - borderV;
 
     buffer.pushClip(contentX, contentY, contentWidth, contentHeight);
-    this.renderChildren(buffer);
+    const renderOrder = this.children.toSorted((a, b) => a.zIndex - b.zIndex);
+    for (const child of renderOrder) {
+      if (!child.visible || child.portal) {
+        continue;
+      }
+
+      if (child.position === 'absolute') {
+        buffer.pushOffset(contentX, contentY);
+        child.emitDrawCommands(buffer);
+        buffer.popOffset();
+      } else {
+        child.emitDrawCommands(buffer);
+      }
+    }
+
     buffer.popClip();
 
     buffer.popClip();
@@ -484,7 +504,7 @@ export class BoxWidget extends TuiWidgetEntity {
   // -- Layout engine --
 
   #computeLayout(): void {
-    const children = this.#layoutChildren;
+    const children = this.#layoutChildren.filter(c => c.position === 'static');
     if (children.length === 0) {
       return;
     }

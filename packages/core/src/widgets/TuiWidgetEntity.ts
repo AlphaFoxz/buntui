@@ -10,6 +10,7 @@ import {
   type TuiFlexBasisValue,
   type TuiLayoutAlignment,
   type TuiLayoutAlignmentName,
+  type TuiPositionName,
   type TuiSizeValue,
   type TuiWidgetPercentSpec,
   type TuiWidgetRect,
@@ -56,6 +57,7 @@ export abstract class TuiWidgetEntity implements Mountable {
   #referenceCount = 0;
   #draggable = false;
   #visible = true;
+  #position: TuiPositionName = 'static';
   #portal = false;
   #zIndexOverride: number | undefined = undefined;
   #parent: TuiWidgetEntity | null = null;
@@ -147,6 +149,10 @@ export abstract class TuiWidgetEntity implements Mountable {
     return this.#draggable;
   }
 
+  get position(): TuiPositionName {
+    return this.#position;
+  }
+
   get portal(): boolean {
     return this.#portal;
   }
@@ -190,6 +196,10 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   setDraggable(value: boolean): void {
     this.#draggable = value;
+  }
+
+  setPosition(value: TuiPositionName): void {
+    this.#position = value;
   }
 
   setZIndex(value: number): void {

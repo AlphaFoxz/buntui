@@ -353,3 +353,11 @@ export function resolveAlignContent(value: TuiAlignContentName | TuiAlignContent
 
   return value;
 }
+
+/**
+ How a widget participates in its parent's layout container.
+ - `static` (default): in the flex flow; repositioned by the container each layout pass.
+ - `absolute`: removed from the flex flow; keeps its own x/y. Inside a ScrollBox it scrolls with the content canvas (its rect is shifted by the scroll delta each frame).
+ - `fixed`: removed from the flex flow; keeps its own x/y relative to the viewport and never scrolls.
+ */
+export type TuiPositionName = 'static' | 'absolute' | 'fixed';

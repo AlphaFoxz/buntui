@@ -1093,3 +1093,237 @@ describe('flex layout (ScrollBox)', () => {
     expect(hidden.rect.y).toBe(a.rect.y + 3);
   });
 });
+
+// Geometry: createScrollBox default 20×10 with solid borders → viewport {x:1, y:1, w:18, h:8}
+describe('position: absolute/fixed', () => {
+  function render(sb: ScrollBoxWidget) {
+    const buf = new DrawListBuffer();
+    buf.reset();
+    sb.emitDrawCommands(buf);
+  }
+
+  function renderBuf(sb: ScrollBoxWidget): DrawListBuffer {
+    const buf = new DrawListBuffer();
+    buf.reset();
+    sb.emitDrawCommands(buf);
+    return buf;
+  }
+
+  // Scan the binary buffer for the first DrawRect (cmd 0x10) whose height matches.
+  function findRectY(buffer: ArrayBuffer, byteLength: number, height: number): number | undefined {
+    const view = new DataView(buffer);
+    let cursor = 8; // skip buffer header
+    while (cursor < byteLength) {
+      const cmdType = view.getUint16(cursor, true);
+      const payloadLen = view.getUint32(cursor + 4, true);
+      cursor += 8;
+      if (cmdType === 0x10 && view.getInt16(cursor + 6, true) === height) {
+        return view.getInt16(cursor + 2, true);
+      }
+
+      cursor += payloadLen;
+    }
+
+    return undefined;
+  }
+
+  // Return the paint order of DrawRect commands as their heights.
+  function rectHeightsInOrder(buffer: ArrayBuffer, byteLength: number): number[] {
+    const view = new DataView(buffer);
+    let cursor = 8;
+    const heights: number[] = [];
+    while (cursor < byteLength) {
+      const cmdType = view.getUint16(cursor, true);
+      const payloadLen = view.getUint32(cursor + 4, true);
+      cursor += 8;
+      if (cmdType === 0x10) {
+        heights.push(view.getInt16(cursor + 6, true));
+      }
+
+      cursor += payloadLen;
+    }
+
+    return heights;
+  }
+
+  it('absolute child keeps its own x/y (not repositioned by flex)', () => {
+    const sb = createScrollBox({height: 10});
+    const abs = createBox({x: 5, y: 7, width: 4, height: 3});
+    abs.setPosition('absolute');
+    sb.addChild(abs);
+    render(sb);
+    expect(abs.rect.x).toBe(5);
+    expect(abs.rect.y).toBe(7);
+  });
+
+  it('fixed child keeps its own x/y', () => {
+    const sb = createScrollBox({height: 10});
+    const fixed = createBox({x: 2, y: 3, width: 4, height: 2});
+    fixed.setPosition('fixed');
+    sb.addChild(fixed);
+    render(sb);
+    expect(fixed.rect.x).toBe(2);
+    expect(fixed.rect.y).toBe(3);
+  });
+
+  it('static children are still flex-laid-out (default)', () => {
+    const sb = createScrollBox({height: 10}); // viewport y=1, h=8
+    const a = createBox({height: 3});
+    const b = createBox({height: 3});
+    sb.addChild(a);
+    sb.addChild(b);
+    render(sb);
+    expect(a.rect.y).toBe(1);
+    expect(b.rect.y).toBe(4); // 1 + 3
+  });
+
+  it('absolute child does not affect static flex flow', () => {
+    const sb = createScrollBox({height: 10});
+    const a = createBox({height: 3});
+    const abs = createBox({x: 10, y: 10, width: 4, height: 5});
+    abs.setPosition('absolute');
+    const b = createBox({height: 3});
+    sb.addChild(a);
+    sb.addChild(abs);
+    sb.addChild(b);
+    render(sb);
+    expect(a.rect.y).toBe(1);
+    expect(b.rect.y).toBe(4); // abs is skipped, b follows a directly
+  });
+
+  it('absolute child canvas coords are stable across scrolling', () => {
+    const sb = createScrollBox({height: 10}); // viewport h=8
+    const tall = createBox({height: 20}); // static, makes content scrollable
+    const abs = createBox({x: 1, y: 1, width: 4, height: 3});
+    abs.setPosition('absolute');
+    sb.addChild(tall);
+    sb.addChild(abs);
+    render(sb);
+    expect(abs.rect.y).toBe(1); // canvas coord
+    sb.scrollTo(5);
+    render(sb);
+    // rect stays in canvas coords; the render-time translate handles scrolling.
+    expect(abs.rect.y).toBe(1);
+  });
+
+  it('fixed child never scrolls', () => {
+    const sb = createScrollBox({height: 10});
+    const tall = createBox({height: 20});
+    const fixed = createBox({x: 1, y: 1, width: 4, height: 2});
+    fixed.setPosition('fixed');
+    sb.addChild(tall);
+    sb.addChild(fixed);
+    render(sb);
+    const beforeY = fixed.rect.y;
+    sb.scrollTo(5);
+    render(sb);
+    expect(fixed.rect.y).toBe(beforeY);
+  });
+
+  it('absolute child contributes to content height (scrollable)', () => {
+    const sb = createScrollBox({height: 10}); // viewport h=8, contentY=1
+    const abs = createBox({x: 1, y: 1, width: 4, height: 5});
+    abs.setPosition('absolute');
+    abs.updateRect({y: 20}); // place far down the content canvas
+    sb.addChild(abs);
+    render(sb);
+    // canvas bottom = 20 + 5 = 25; maxScroll = 25 - 8 = 17
+    expect(sb.maxScrollY).toBe(17);
+  });
+
+  it('fixed child does not contribute to content height', () => {
+    const sb = createScrollBox({height: 10}); // viewport h=8
+    const fixed = createBox({x: 1, y: 50, width: 4, height: 5});
+    fixed.setPosition('fixed');
+    sb.addChild(fixed);
+    render(sb);
+    expect(sb.maxScrollY).toBe(0);
+  });
+
+  it('absolute child position survives a relayout (drag not clobbered)', () => {
+    const sb = createScrollBox({height: 10});
+    const abs = createBox({x: 5, y: 5, width: 4, height: 3});
+    abs.setPosition('absolute');
+    abs.setDraggable(true);
+    sb.addChild(abs);
+    render(sb);
+    abs.updateRect({x: 8, y: 2}); // simulate a drag
+    render(sb);
+    expect(abs.rect.x).toBe(8);
+    expect(abs.rect.y).toBe(2);
+  });
+
+  it('mousedown on a draggable child does not start content drag-scroll', () => {
+    const sb = createScrollBox({height: 10});
+    const draggable = createBox({height: 3});
+    draggable.setDraggable(true);
+    const tall = createBox({height: 20});
+    sb.addChild(draggable);
+    sb.addChild(tall);
+    render(sb);
+    const px = draggable.rect.x;
+    const py = draggable.rect.y;
+    sb.dispatch('mousedown', mouse({x: px, y: py, button: 0, buttons: 1}));
+    sb.dispatch('mousemove', mouse({x: px, y: py + 3, button: undefined, buttons: 1}));
+    expect(sb.scrollOffsetY).toBe(0);
+  });
+
+  it('absolute child canvas coords are unaffected by scroll (drag-safe)', () => {
+    const sb = createScrollBox({height: 10}); // viewport h=8
+    const tall = createBox({height: 30}); // static, scrollable
+    const abs = createBox({x: 1, y: 1, width: 4, height: 3});
+    abs.setPosition('absolute');
+    sb.addChild(tall);
+    sb.addChild(abs);
+    render(sb);
+    expect(abs.rect.y).toBe(1);
+
+    sb.scrollTo(5);
+    expect(abs.rect.y).toBe(1); // scroll never mutates canvas coords
+
+    abs.updateRect({y: 2}); // user drags
+    expect(abs.rect.y).toBe(2);
+
+    sb.scrollTo(3);
+    expect(abs.rect.y).toBe(2); // still the dragged canvas coord
+  });
+
+  it('absolute child renders at canvas + viewport - scrollOffset', () => {
+    const sb = createScrollBox({x: 0, y: 4, width: 20, height: 10}); // viewport {x:1, y:5, w:18, h:8}
+    const tall = createBox({height: 30}); // static, makes content scrollable
+    const abs = createBox({x: 2, y: 3, width: 5, height: 3});
+    abs.setPosition('absolute');
+    sb.addChild(tall);
+    sb.addChild(abs);
+
+    let buf = renderBuf(sb);
+    // scrollOffset=0: canvas(2,3) + viewport(1,5) − 0 → render y = 8
+    expect(findRectY(buf.buffer, buf.byteLength, 3)).toBe(8);
+
+    sb.scrollTo(4);
+    buf = renderBuf(sb);
+    // scrollOffset=4: render y = 3 + 5 − 4 = 4
+    expect(findRectY(buf.buffer, buf.byteLength, 3)).toBe(4);
+  });
+
+  it('children paint in zIndex ascending order (low first, high on top)', () => {
+    const sb = createScrollBox({height: 10});
+    const top = createBox({x: 1, y: 1, width: 5, height: 3}); // height 3
+    top.setPosition('absolute');
+    top.setZIndex(2);
+    const bottom = createBox({x: 1, y: 1, width: 5, height: 4}); // height 4
+    bottom.setPosition('absolute');
+    bottom.setZIndex(0);
+    // Add top (zIndex=2) FIRST, bottom (zIndex=0) SECOND — reverse of paint order.
+    sb.addChild(top);
+    sb.addChild(bottom);
+    const buf = renderBuf(sb);
+    const heights = rectHeightsInOrder(buf.buffer, buf.byteLength);
+    const idxH4 = heights.indexOf(4); // zIndex=0
+    const idxH3 = heights.indexOf(3); // zIndex=2
+    expect(idxH4).toBeGreaterThan(-1);
+    expect(idxH3).toBeGreaterThan(-1);
+    // zIndex=0 (h=4) painted before zIndex=2 (h=3) → 2 ends up on top.
+    expect(idxH4).toBeLessThan(idxH3);
+  });
+});
