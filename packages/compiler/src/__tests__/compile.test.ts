@@ -740,6 +740,22 @@ describe('compile', () => {
       expect(result.code).toContain('colorFg: unref(c)');
       expect(result.code).not.toContain('updateColor');
     });
+
+    it('emits setPosition for a static position prop (non-Box widgets do not read it from options)', () => {
+      const result = compile('<template><Text position="absolute" value="hi"/></template>');
+      expect(result.code).toContain('setPosition("absolute")');
+    });
+
+    it('emits setDraggable for a static draggable flag', () => {
+      const result = compile('<template><Text draggable value="hi"/></template>');
+      expect(result.code).toContain('setDraggable(true)');
+    });
+
+    it('does not emit updateRect for static size/percent props (constructor owns percent coercion)', () => {
+      const result = compile('<template><Box width="48%" height="3"/></template>');
+      expect(result.code).toContain('width: "48%"');
+      expect(result.code).not.toContain('updateRect');
+    });
   });
 
   describe('dynamic prop expressions', () => {

@@ -1,6 +1,6 @@
 <template>
     <Box
-        position="static"
+        position="absolute"
         :draggable="true"
         @dragstart="handleDragstart"
         @dragend="handleDragend"
@@ -24,26 +24,62 @@
         <Text :value="text2" />
     </Box>
 
-    <Box position="absolute" @click="handleClick" :x="1" :y="6" :width="28" :height="3" borderStyle="double">
+    <Box
+        position="absolute"
+        @click="handleClick"
+        :x="1"
+        :y="6"
+        :width="28"
+        :height="3"
+        borderStyle="double"
+    >
         <Text :value="text3" />
     </Box>
 
-    <Box position="absolute" @contextmenu="handleContextmenu" :x="31" :y="6" :width="28" :height="3" borderStyle="bold">
+    <Box
+        position="absolute"
+        @contextmenu="handleContextmenu"
+        :x="31"
+        :y="6"
+        :width="28"
+        :height="3"
+        borderStyle="bold"
+    >
         <Text :value="text4" />
     </Box>
 
     <!-- Dashed border -->
-    <Box position="absolute" :x="1" :y="9" :width="20" :height="3" borderStyle="dashed">
+    <Box
+        position="absolute"
+        :x="1"
+        :y="9"
+        :width="20"
+        :height="3"
+        borderStyle="dashed"
+    >
         <Text value="虚线 Dashed" />
     </Box>
 
     <!-- OutsetBold border -->
-    <Box position="absolute" :x="22" :y="9" :width="20" :height="3" borderStyle="outsetbold">
+    <Box
+        position="absolute"
+        :x="22"
+        :y="9"
+        :width="20"
+        :height="3"
+        borderStyle="outsetbold"
+    >
         <Text value="浮雕 Outset" />
     </Box>
 
     <!-- OutsetDouble border -->
-    <Box position="absolute" :x="43" :y="9" :width="20" borderStyle="outsetdouble">
+    <Box
+        position="absolute"
+        :x="43"
+        :y="9"
+        :width="20"
+        borderStyle="outsetdouble"
+    >
         <Text value="双浮雕 Outset²" />
     </Box>
 
@@ -93,8 +129,20 @@
         <Text value="zIndex=0 最底层" />
     </Box>
 
-    <Text position="absolute" :x="1" :y="19" value="▸ Flex Layout (row/column container)" styleModifier="bold" />
-    <Text position="absolute" :x="1" :y="20" value="▶ Alignment (cross-axis)" styleModifier="bold" />
+    <Text
+        position="absolute"
+        :x="1"
+        :y="19"
+        value="▸ Flex Layout (row/column container)"
+        styleModifier="bold"
+    />
+    <Text
+        position="absolute"
+        :x="1"
+        :y="20"
+        value="▶ Alignment (cross-axis)"
+        styleModifier="bold"
+    />
 
     <Box
         position="absolute"
@@ -160,7 +208,13 @@
         <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
     </Box>
 
-    <Text position="absolute" :x="1" :y="37" value="▶ justifyContent (main-axis distribution)" styleModifier="bold" />
+    <Text
+        position="absolute"
+        :x="1"
+        :y="37"
+        value="▶ justifyContent (main-axis distribution)"
+        styleModifier="bold"
+    />
     <Box
         position="absolute"
         :x="1"
@@ -211,18 +265,46 @@
         <Text value="B" />
     </Box>
 
-    <Text position="absolute" :x="1" :y="46" value="▶ flexGrow (per-child free-space share)" styleModifier="bold" />
-    <Box position="absolute" :x="1" :y="47" width="48%" :height="3" :direction="'horizontal'" borderStyle="rounded">
+    <Text
+        position="absolute"
+        :x="1"
+        :y="46"
+        value="▶ flexGrow (per-child free-space share)"
+        styleModifier="bold"
+    />
+    <Box
+        position="absolute"
+        :x="1"
+        :y="47"
+        width="48%"
+        :height="3"
+        :direction="'horizontal'"
+        borderStyle="rounded"
+    >
         <Text value="g=0" />
         <Text value="g=1 absorbs free space" :flexGrow="1" />
     </Box>
-    <Box position="absolute" x="50%" :y="47" width="48%" :height="3" :direction="'horizontal'" borderStyle="rounded">
+    <Box
+        position="absolute"
+        x="50%"
+        :y="47"
+        width="48%"
+        :height="3"
+        :direction="'horizontal'"
+        borderStyle="rounded"
+    >
         <Text value="g=1" :flexGrow="1" />
         <Text value="g=1" :flexGrow="1" />
         <Text value="g=1" :flexGrow="1" />
     </Box>
 
-    <Text position="absolute" :x="1" :y="51" value="▶ Reverse directions" styleModifier="bold" />
+    <Text
+        position="absolute"
+        :x="1"
+        :y="51"
+        value="▶ Reverse directions"
+        styleModifier="bold"
+    />
     <Box
         position="absolute"
         :x="1"
@@ -249,7 +331,13 @@
         <Text :colorFg="'rgba(137,180,250,1)'" value="B (right)" />
     </Box>
 
-    <Text position="absolute" :x="1" :y="57" value="▶ flexShrink (overflow compression)" styleModifier="bold" />
+    <Text
+        position="absolute"
+        :x="1"
+        :y="57"
+        value="▶ flexShrink (overflow compression)"
+        styleModifier="bold"
+    />
     <Box
         position="absolute"
         :x="1"
@@ -277,7 +365,13 @@
         <Text value="s=1" :flexBasis="12" :flexShrink="1" />
     </Box>
 
-    <Text position="absolute" :x="1" :y="62" value="▶ flexBasis (main-axis base size)" styleModifier="bold" />
+    <Text
+        position="absolute"
+        :x="1"
+        :y="62"
+        value="▶ flexBasis (main-axis base size)"
+        styleModifier="bold"
+    />
     <Box
         position="absolute"
         :x="1"
@@ -293,7 +387,13 @@
         <Text value="b=12" :flexBasis="12" />
     </Box>
 
-    <Text position="absolute" :x="1" :y="67" value="▶ alignSelf (per-child cross-axis override)" styleModifier="bold" />
+    <Text
+        position="absolute"
+        :x="1"
+        :y="67"
+        value="▶ alignSelf (per-child cross-axis override)"
+        styleModifier="bold"
+    />
     <Box
         position="absolute"
         :x="1"
@@ -312,41 +412,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from '@vue/reactivity'
+import { ref } from "@vue/reactivity";
 
-const timeCount = ref(0)
-const show = ref(true)
+const timeCount = ref(0);
+const show = ref(true);
 
 setInterval(() => {
-    timeCount.value += 1
-    show.value = !show.value
-}, 1000)
+    timeCount.value += 1;
+    show.value = !show.value;
+}, 1000);
 
-const text1 = ref('Drag Me!')
+const text1 = ref("Drag Me!");
 function handleDragstart() {
-    text1.value = 'Dragging...'
+    text1.value = "Dragging...";
 }
 function handleDragend() {
-    text1.value = 'Dragged!'
+    text1.value = "Dragged!";
 }
 
-const text2 = ref('Click Me!')
+const text2 = ref("Click Me!");
 function handleMousedown() {
-    text2.value = 'MouseDown!'
+    text2.value = "MouseDown!";
 }
 function handleMouseup() {
-    text2.value = 'MouseUp!'
+    text2.value = "MouseUp!";
 }
 
-const text3 = ref('Click Me!')
+const text3 = ref("Click Me!");
 function handleClick() {
-    text3.value = 'Clicked!'
+    text3.value = "Clicked!";
 }
 
-const text4 = ref('Right click me!')
+const text4 = ref("Right click me!");
 function handleContextmenu() {
-    text4.value = 'Right clicked!'
+    text4.value = "Right clicked!";
 }
 
-const dx = ref(1)
+const dx = ref(1);
 </script>

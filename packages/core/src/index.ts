@@ -62,6 +62,7 @@ export type {
   TuiWidgetPercentSpec,
   TuiLayoutDirectionName,
   TuiLayoutAlignmentName,
+  TuiPositionName,
 } from './widgets/types';
 export {
   TuiLayoutDirection, TuiLayoutAlignment, resolveFontStyle, resolveBorderStyle,

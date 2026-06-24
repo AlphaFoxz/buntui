@@ -203,7 +203,12 @@ export class ScrollBoxWidget extends InteractiveWidget {
       }
 
       for (const child of this.#layoutChildren) {
-        if (child.draggable && child.visible && child.containsPoint(data.x, data.y)) {
+        if (!child.draggable || !child.visible) {
+          continue;
+        }
+
+        const {dx, dy} = this.contentOffsetForChild(child);
+        if (child.containsPoint(data.x - dx, data.y - dy)) {
           return;
         }
       }
@@ -542,6 +547,20 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
   override intrinsicSize(): TuiWidgetSize | undefined {
     return undefined;
+  }
+
+  // -- Hit testing --
+
+  override contentOffsetForChild(child: TuiWidgetEntity): {dx: number; dy: number} {
+    if (child.position !== 'absolute') {
+      return {dx: 0, dy: 0};
+    }
+
+    const viewport = this.#computeViewport();
+    return {
+      dx: viewport.x - this.#scrollOffsetX,
+      dy: viewport.y - this.#scrollOffsetY,
+    };
   }
 
   // -- Rendering --

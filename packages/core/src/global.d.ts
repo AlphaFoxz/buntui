@@ -9,6 +9,7 @@ import type {
   TuiFlexWrapName,
   TuiAlignContentName,
   TuiFontStyleName,
+  TuiPositionName,
 } from './widgets/types';
 
 declare global {
@@ -53,6 +54,7 @@ declare global {
   type TuiJustifyContent = TuiJustifyContentName;
   type TuiFlexWrap = TuiFlexWrapName;
   type TuiAlignContent = TuiAlignContentName;
+  type TuiPosition = TuiPositionName;
 
   type TuiFlexItemProps = {
     flexGrow?: number;
@@ -60,6 +62,7 @@ declare global {
     flexBasis?: TuiSizeValue;
     alignSelf?: TuiLayoutAlignment;
     visible?: boolean;
+    position?: TuiPosition;
   };
 
   type TuiBoxProps = {

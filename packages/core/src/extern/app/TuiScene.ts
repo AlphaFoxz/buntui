@@ -141,7 +141,7 @@ export class TuiScene implements Entity {
 
     for (const widget of this.#getSortedAllWidgetsReverse()) {
       if (widget.visible && widget.containsPoint(mx, my)) {
-        return this.#deepHitTest(widget, mx, my);
+        return widget.hitTestDeep(mx, my);
       }
     }
 
@@ -235,20 +235,6 @@ export class TuiScene implements Entity {
     const all = [...this.#widgets, ...this.#collectPortalWidgets()];
     this.#sortedAllReverseCache = all.toReversed().toSorted((a, b) => b.zIndex - a.zIndex);
     return this.#sortedAllReverseCache;
-  }
-
-  #deepHitTest(widget: TuiWidgetEntity, x: number, y: number): TuiWidgetEntity {
-    const {children} = widget;
-    if (children.length > 0) {
-      const sorted = children.toSorted((a, b) => b.zIndex - a.zIndex);
-      for (const child of sorted) {
-        if (child.visible && child.containsPoint(x, y)) {
-          return this.#deepHitTest(child, x, y);
-        }
-      }
-    }
-
-    return widget;
   }
 
   #buildFocusableList(): Array<TuiWidgetEntity & Focusable> {

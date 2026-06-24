@@ -271,6 +271,41 @@ export abstract class TuiWidgetEntity implements Mountable {
     return x >= rx && x < rx + rw && y >= ry && y < ry + rh;
   }
 
+  /**
+  Render-time translation (in cells) applied to `child`'s rect before painting.
+  Containers that draw `position: 'absolute'` children via `DrawListBuffer.pushOffset`
+  override this so hit-testing can subtract the same offset and pick the child at the
+  screen cell where it is actually visible. The default {0,0} means the child rect is
+  already stored in screen coordinates.
+  */
+  contentOffsetForChild(_child: TuiWidgetEntity): {dx: number; dy: number} {
+    void _child;
+    return {dx: 0, dy: 0};
+  }
+
+  /**
+  Return the deepest descendant (or `this`) under the screen-space point (x, y).
+  Mirrors the painter's-algorithm render path: each container translates the point
+  into its children's coordinate space via `contentOffsetForChild` before testing.
+  */
+  hitTestDeep(x: number, y: number): TuiWidgetEntity {
+    if (this.#children.length > 0) {
+      const sorted = this.#children.toSorted((a, b) => b.zIndex - a.zIndex);
+      for (const child of sorted) {
+        if (!child.visible) {
+          continue;
+        }
+
+        const {dx, dy} = this.contentOffsetForChild(child);
+        if (child.containsPoint(x - dx, y - dy)) {
+          return child.hitTestDeep(x - dx, y - dy);
+        }
+      }
+    }
+
+    return this;
+  }
+
   on<E extends keyof TuiWidgetEventData>(event: E, handler: (data: TuiWidgetEventData[E]) => void): void;
   on(event: string, handler: WidgetEventHandler): void;
   on(event: string, handler: WidgetEventHandler): void {

@@ -196,6 +196,19 @@ describe('hit testing', () => {
     expect(box.containsPoint(10, 12)).toBe(true);
     expect(box.containsPoint(10, 13)).toBe(false);
   });
+
+  it('absolute child is hit-testable at its painted (content-offset) position', () => {
+    const box = createBoxWith({x: 10, y: 10, width: 20, height: 10, borderStyle: 'solid', border: true});
+    const abs = createBox({x: 2, y: 3, width: 5, height: 3});
+    abs.setPosition('absolute');
+    box.addChild(abs);
+    box.emitDrawCommands(new DrawListBuffer());
+
+    // content origin = box(10,10) + border(1) = (11,11); local (2,3) → painted (13,14)
+    expect(box.hitTestDeep(13, 14)).toBe(abs);
+    // raw local coord (2,3) is not where it paints — must fall through to the box
+    expect(box.hitTestDeep(2, 3)).toBe(box);
+  });
 });
 
 describe('child management', () => {

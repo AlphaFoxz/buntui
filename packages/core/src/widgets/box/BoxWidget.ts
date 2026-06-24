@@ -4,6 +4,7 @@ import {parseColor, type TuiColor} from '../../utils/color';
 import {getTheme} from '../../theme/store';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
 import {resolveThemedOverrides} from '../../theme/color-ref';
+import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import {
   resolveBorderStyle,
   resolveLayoutDirection,
@@ -34,7 +35,6 @@ import {
   type TuiWidgetStyle,
   type TuiFontStyleInput,
 } from '../types';
-import {TuiWidgetEntity} from '../TuiWidgetEntity';
 import {computeFlexLayout} from '../layout-flex';
 
 export type BorderShorthand = boolean | string | number;
@@ -433,6 +433,20 @@ export class BoxWidget extends TuiWidgetEntity {
   }
 
   // -- Hit testing --
+
+  override contentOffsetForChild(child: TuiWidgetEntity): {dx: number; dy: number} {
+    if (child.position !== 'absolute') {
+      return {dx: 0, dy: 0};
+    }
+
+    const {x, y} = this.#rect;
+    const {paddingTop, paddingLeft} = this.#padding;
+    const {borderStyle, borderLeft, borderTop} = this.#border;
+    return {
+      dx: x + paddingLeft + (borderStyle !== 0 && borderLeft ? 1 : 0),
+      dy: y + paddingTop + (borderStyle !== 0 && borderTop ? 1 : 0),
+    };
+  }
 
   // -- Rendering --
 

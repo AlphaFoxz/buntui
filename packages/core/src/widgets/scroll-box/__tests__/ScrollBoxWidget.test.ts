@@ -4,6 +4,7 @@ import {ScrollBoxWidget} from '../ScrollBoxWidget';
 import {createBox} from '../../box/BoxWidget';
 import {createTextWidget} from '../../text/TextWidget';
 import {DrawListBuffer} from '../../../draw-list/DrawListBuffer';
+import {TuiScene} from '../../../extern/app/TuiScene';
 import type {KeyboardEvent, MouseEvent} from '../../../events/types';
 
 function key(options: Partial<KeyboardEvent> & {key: string}): KeyboardEvent {
@@ -1304,6 +1305,54 @@ describe('position: absolute/fixed', () => {
     buf = renderBuf(sb);
     // scrollOffset=4: render y = 3 + 5 − 4 = 4
     expect(findRectY(buf.buffer, buf.byteLength, 3)).toBe(4);
+  });
+
+  it('absolute child is hit-testable at its painted screen position (no scroll)', () => {
+    const scene = new TuiScene({visible: true});
+    const sb = createScrollBox({x: 0, y: 4, width: 20, height: 10}); // viewport {x:1, y:5, w:18, h:8}
+    const abs = createBox({x: 2, y: 3, width: 5, height: 3});
+    abs.setPosition('absolute');
+    sb.addChild(abs);
+    scene.mount(sb);
+    sb.emitDrawCommands(new DrawListBuffer());
+
+    // canvas(2,3) + viewport(1,5) → painted at screen (3,8)
+    expect(scene.hitTest(mouse({x: 3, y: 8, button: 0, buttons: 1}))).toBe(abs);
+  });
+
+  it('absolute child hit-test follows the viewport − scroll translate', () => {
+    const scene = new TuiScene({visible: true});
+    const sb = createScrollBox({x: 0, y: 4, width: 20, height: 10}); // viewport {x:1, y:5}
+    const tall = createBox({height: 30}); // static, makes content scrollable
+    const abs = createBox({x: 2, y: 3, width: 5, height: 3});
+    abs.setPosition('absolute');
+    abs.setZIndex(1); // sit above the static filler so it is picked first
+    sb.addChild(tall);
+    sb.addChild(abs);
+    scene.mount(sb);
+
+    sb.scrollTo(4);
+    sb.emitDrawCommands(new DrawListBuffer());
+    // painted y = canvas 3 + viewport 5 − scroll 4 = 4
+    expect(scene.hitTest(mouse({x: 3, y: 4, button: 0, buttons: 1}))).toBe(abs);
+  });
+
+  it('mousedown on a draggable absolute child (at painted cell) does not drag-scroll', () => {
+    const scene = new TuiScene({visible: true});
+    const sb = createScrollBox({x: 0, y: 4, width: 20, height: 10});
+    const abs = createBox({x: 2, y: 3, width: 5, height: 3});
+    abs.setPosition('absolute');
+    abs.setDraggable(true);
+    const tall = createBox({height: 30});
+    sb.addChild(tall);
+    sb.addChild(abs);
+    scene.mount(sb);
+    sb.emitDrawCommands(new DrawListBuffer());
+
+    // Press on the painted cell (screen 3,8) and drag — content must not scroll.
+    sb.dispatch('mousedown', mouse({x: 3, y: 8, button: 0}));
+    sb.dispatch('mousemove', mouse({x: 3, y: 11, button: undefined, buttons: 1}));
+    expect(sb.scrollOffsetY).toBe(0);
   });
 
   it('children paint in zIndex ascending order (low first, high on top)', () => {

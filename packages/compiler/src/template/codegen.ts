@@ -28,11 +28,14 @@ function resolvePropHandler(node: TuiWidgetCall, propName: string, propLoc?: Sou
   throw new Error(`Unknown prop "${propName}" on <${node.tag}> at line ${propLoc?.start.line ?? node.loc.start.line}:${propLoc?.start.column ?? node.loc.start.column}. This widget only accepts: ${Object.keys(node.propHandlers).join(', ')}.`);
 }
 
+function buildSetterCall(varName: string, handler: PropHandler, valueExpr: string): string {
+  return handler.field
+    ? `${varName}.${handler.method}({${handler.field}: ${valueExpr}})`
+    : `${varName}.${handler.method}(${valueExpr})`;
+}
+
 function emitPropEffect(varName: string, handler: PropHandler, expression: string, guard?: string): string {
-  const expr = wrapExpr(expression);
-  const call = handler.field
-    ? `${varName}.${handler.method}({${handler.field}: ${expr}})`
-    : `${varName}.${handler.method}(${expr})`;
+  const call = buildSetterCall(varName, handler, wrapExpr(expression));
   if (guard) {
     return `${EFFECT}(() => { ${guard} { ${call}; } });`;
   }
@@ -239,6 +242,23 @@ function generateWidgetCall(node: TuiWidgetCall, index: number, parentVarName?: 
   const lines: string[] = [
     `const ${varName} = ${node.creator}(${args.join(', ')});`,
   ];
+
+  // Apply static props through their setters too. All props are passed to the
+  // constructor above, but only some widgets read every prop from options (e.g.
+  // only Box reads `position`/`draggable`), so a static `position="absolute"` on
+  // a Text would otherwise be dropped and the widget would stay `static`. The
+  // `updateRect` handler is excluded because size/percent coercion is owned by the
+  // constructor's initRect path.
+  for (const prop of node.props) {
+    const handler = node.propHandlers?.[prop.name];
+    if (!handler || handler.method === 'updateRect') {
+      continue;
+    }
+
+    const isFlag = BOOLEAN_FLAGS.has(prop.name);
+    const valueExpr = isFlag ? String(prop.value === 'true') : JSON.stringify(prop.value);
+    lines.push(`${buildSetterCall(varName, handler, valueExpr)};`);
+  }
 
   // Generate reactive effect bindings
   for (const prop of node.dynamicProps) {
