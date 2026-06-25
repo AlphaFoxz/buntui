@@ -18,6 +18,10 @@ export type RadioGroupWidgetOptions = {
   colorFgFocused?: TuiColor;
   colorBgFocused?: TuiColor;
 
+  // Hovered item highlight
+  colorFgHovered?: TuiColor;
+  colorBgHovered?: TuiColor;
+
   // Disabled state
   colorFgDisabled?: TuiColor;
   colorBgDisabled?: TuiColor;

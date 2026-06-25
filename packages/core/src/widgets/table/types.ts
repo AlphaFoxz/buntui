@@ -24,7 +24,9 @@ export type TableWidgetOptions = {
   colorFgDisabled?: TuiColor;
   colorBgDisabled?: TuiColor;
   colorBorder?: TuiColor;
+  colorBorderFocused?: TuiColor;
   borderStyle?: TuiBorderStyleName;
+  borderStyleFocused?: TuiBorderStyleName;
   colorHeaderFg?: TuiColor;
   colorHeaderBg?: TuiColor;
   colorSelectionBg?: TuiColor;

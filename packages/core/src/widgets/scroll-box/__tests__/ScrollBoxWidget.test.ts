@@ -4,6 +4,7 @@ import {ScrollBoxWidget} from '../ScrollBoxWidget';
 import {createBox} from '../../box/BoxWidget';
 import {createTextWidget} from '../../text/TextWidget';
 import {DrawListBuffer} from '../../../draw-list/DrawListBuffer';
+import {BorderSides} from '../../../draw-list/types';
 import {TuiScene} from '../../../extern/app/TuiScene';
 import type {KeyboardEvent, MouseEvent} from '../../../events/types';
 
@@ -405,6 +406,154 @@ describe('focus', () => {
     sb.on('blur', () => { blurred = true; });
     sb.blur();
     expect(blurred).toBe(true);
+  });
+});
+
+describe('focus border', () => {
+  function countBorders(buffer: ArrayBuffer, byteLength: number): number {
+    const view = new DataView(buffer);
+    let cursor = 8;
+    let count = 0;
+    while (cursor < byteLength) {
+      const cmdType = view.getUint16(cursor, true);
+      const payloadLen = view.getUint32(cursor + 4, true);
+      cursor += 8;
+      if (cmdType === 0x12) {
+        count++;
+      }
+
+      cursor += payloadLen;
+    }
+
+    return count;
+  }
+
+  function getBorderColors(buffer: ArrayBuffer, byteLength: number): number[] {
+    const view = new DataView(buffer);
+    let cursor = 8;
+    const colors: number[] = [];
+    while (cursor < byteLength) {
+      const cmdType = view.getUint16(cursor, true);
+      const payloadLen = view.getUint32(cursor + 4, true);
+      cursor += 8;
+      if (cmdType === 0x12) {
+        colors.push(view.getUint32(cursor + 8, true));
+      }
+
+      cursor += payloadLen;
+    }
+
+    return colors;
+  }
+
+  function getBorderSides(buffer: ArrayBuffer, byteLength: number): number[] {
+    const view = new DataView(buffer);
+    let cursor = 8;
+    const sides: number[] = [];
+    while (cursor < byteLength) {
+      const cmdType = view.getUint16(cursor, true);
+      const payloadLen = view.getUint32(cursor + 4, true);
+      cursor += 8;
+      if (cmdType === 0x12) {
+        sides.push(view.getUint8(cursor + 13));
+      }
+
+      cursor += payloadLen;
+    }
+
+    return sides;
+  }
+
+  it('renders focus border overlay when focused', () => {
+    const sb = createScrollBox();
+    sb.focus();
+    const buf = new DrawListBuffer();
+    buf.reset();
+    sb.emitDrawCommands(buf);
+    expect(countBorders(buf.buffer, buf.byteLength)).toBe(2);
+  });
+
+  it('does not render focus border when not focused', () => {
+    const sb = createScrollBox();
+    const buf = new DrawListBuffer();
+    buf.reset();
+    sb.emitDrawCommands(buf);
+    expect(countBorders(buf.buffer, buf.byteLength)).toBe(1);
+  });
+
+  it('does not render focus border when disabled', () => {
+    const sb = createScrollBox();
+    sb.setDisabled(true);
+    sb.focus();
+    const buf = new DrawListBuffer();
+    buf.reset();
+    sb.emitDrawCommands(buf);
+    expect(countBorders(buf.buffer, buf.byteLength)).toBe(1);
+  });
+
+  it('focus border uses a different color than normal border', () => {
+    const sb = createScrollBox();
+    sb.focus();
+    const buf = new DrawListBuffer();
+    buf.reset();
+    sb.emitDrawCommands(buf);
+    const colors = getBorderColors(buf.buffer, buf.byteLength);
+    expect(colors).toHaveLength(2);
+    expect(colors[1]).not.toBe(colors[0]);
+  });
+
+  it('respects per-side border config (top + bottom only)', () => {
+    const sb = new ScrollBoxWidget({
+      x: 0, y: 0, width: 20, height: 10,
+      borderStyle: 'solid',
+      borderTop: true,
+      borderRight: false,
+      borderBottom: true,
+      borderLeft: false,
+    });
+    sb.focus();
+    const buf = new DrawListBuffer();
+    buf.reset();
+    sb.emitDrawCommands(buf);
+    const sides = getBorderSides(buf.buffer, buf.byteLength);
+    expect(sides).toHaveLength(2);
+    expect(sides[0]).toBe(BorderSides.Top | BorderSides.Bottom);
+    expect(sides[1]).toBe(BorderSides.Top | BorderSides.Bottom);
+  });
+
+  it('does not render focus border when no border sides are enabled', () => {
+    const sb = new ScrollBoxWidget({
+      x: 0, y: 0, width: 20, height: 10,
+      borderStyle: 'solid',
+      borderTop: false,
+      borderRight: false,
+      borderBottom: false,
+      borderLeft: false,
+    });
+    sb.focus();
+    const buf = new DrawListBuffer();
+    buf.reset();
+    sb.emitDrawCommands(buf);
+    const sides = getBorderSides(buf.buffer, buf.byteLength);
+    expect(sides).toHaveLength(1);
+    expect(sides[0]).toBe(0);
+  });
+
+  it('does not render focus border when borderStyleFocused is none', () => {
+    const sb = new ScrollBoxWidget({
+      x: 0, y: 0, width: 20, height: 10,
+      borderStyle: 'solid',
+      borderStyleFocused: 'none',
+      borderTop: true,
+      borderRight: true,
+      borderBottom: true,
+      borderLeft: true,
+    });
+    sb.focus();
+    const buf = new DrawListBuffer();
+    buf.reset();
+    sb.emitDrawCommands(buf);
+    expect(countBorders(buf.buffer, buf.byteLength)).toBe(1);
   });
 });
 

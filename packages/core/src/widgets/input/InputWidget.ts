@@ -287,6 +287,8 @@ export class InputWidget extends InteractiveWidget {
       } else if (data.wheelDeltaY < 0) {
         this.#decrement();
       }
+
+      this.stopPropagation();
     });
   }
 

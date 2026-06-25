@@ -29,11 +29,13 @@ const TABLE_TOKEN_MAP = {
   colorFgNormal: 'text',
   colorBgNormal: 'surface',
   colorFgFocused: 'text',
-  colorBgFocused: 'surface',
+  colorBgFocused: 'surfaceFocused',
   colorFgDisabled: 'textMuted',
   colorBgDisabled: 'surfaceDisabled',
   colorBorder: 'border',
+  colorBorderFocused: 'borderFocused',
   borderStyle: 'border.normal',
+  borderStyleFocused: 'border.focused',
   colorHeaderFg: 'textMuted',
   colorHeaderBg: 'surface',
   colorSelectionBg: 'selectionBg',
@@ -73,6 +75,7 @@ export class TableWidget extends InteractiveWidget {
 
   readonly #colors: ColorScheme<TableColors>;
   #borderStyle: number;
+  #focusBorderStyle: number;
   readonly #extraColors: TableExtraColors;
 
   #columns: ResolvedColumn[] = [];
@@ -99,7 +102,7 @@ export class TableWidget extends InteractiveWidget {
       focused: {
         fg: parseColor(resolved.colorFgFocused),
         bg: parseColor(resolved.colorBgFocused),
-        colorBorder: parseColor(resolved.colorBorder),
+        colorBorder: parseColor(resolved.colorBorderFocused ?? resolved.colorBorder),
         colorHeaderFg: parseColor(resolved.colorHeaderFg),
         colorHeaderBg: parseColor(resolved.colorHeaderBg),
       },
@@ -112,6 +115,7 @@ export class TableWidget extends InteractiveWidget {
       },
     };
     this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
+    this.#focusBorderStyle = resolveBorderStyle(resolved.borderStyleFocused ?? resolved.borderStyle ?? 'solid');
     this.#extraColors = {
       headerFg: parseColor(resolved.colorHeaderFg),
       headerBg: parseColor(resolved.colorHeaderBg),
@@ -149,7 +153,11 @@ export class TableWidget extends InteractiveWidget {
     });
 
     this.on('wheel', data => {
+      const before = this.#scrollOffsetY;
       this.scrollBy(data.wheelDeltaY * 3);
+      if (this.#scrollOffsetY !== before) {
+        this.stopPropagation();
+      }
     });
   }
 
@@ -211,9 +219,13 @@ export class TableWidget extends InteractiveWidget {
     }
   }
 
-  updateBorder(border: {borderStyle?: TuiBorderStyleName}): void {
+  updateBorder(border: {borderStyle?: TuiBorderStyleName; borderStyleFocused?: TuiBorderStyleName}): void {
     if (border.borderStyle !== undefined) {
       this.#borderStyle = resolveBorderStyle(border.borderStyle);
+    }
+
+    if (border.borderStyleFocused !== undefined) {
+      this.#focusBorderStyle = resolveBorderStyle(border.borderStyleFocused);
     }
   }
 
@@ -221,6 +233,10 @@ export class TableWidget extends InteractiveWidget {
     applyColorSchemeUpdates(this.#colors, resolved);
     if (resolved.borderStyle !== undefined) {
       this.#borderStyle = resolveBorderStyle(resolved.borderStyle);
+    }
+
+    if (resolved.borderStyleFocused !== undefined) {
+      this.#focusBorderStyle = resolveBorderStyle(resolved.borderStyleFocused);
     }
 
     if (resolved.colorHeaderFg !== undefined) {
@@ -363,14 +379,16 @@ export class TableWidget extends InteractiveWidget {
       this.#renderBody(buffer, innerX, innerY + 1, innerWidth, innerHeight - 1);
     }
 
-    if (this.#borderStyle !== 0) {
+    const useFocusBorder = this.focused && !this.disabled && this.#focusBorderStyle !== 0;
+    const borderStyle = useFocusBorder ? this.#focusBorderStyle : this.#borderStyle;
+    if (borderStyle !== 0) {
       buffer.drawBorder({
         x: this.#x,
         y: this.#y,
         width: this.#width,
         height: this.#height,
         colorRgba: colors.colorBorder,
-        style: this.#borderStyle,
+        style: borderStyle,
         sides: BorderSides.All,
       });
     }

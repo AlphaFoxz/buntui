@@ -25,6 +25,7 @@
         <TextDemo v-show="currentTab === 'Text'" />
         <TableDemo v-if="currentTab === 'Table'" />
         <SelectDemo v-if="currentTab === 'Select'" />
+        <TextareaDemo v-if="currentTab === 'Textarea'" />
     </ScrollBox>
 
     <FrameRateWatcher x="10%" />
@@ -58,6 +59,7 @@ import SwitchDemo from './components/SwitchDemo.vue'
 import TextDemo from './components/TextDemo.vue'
 import TableDemo from './components/TableDemo.vue'
 import SelectDemo from './components/SelectDemo.vue'
+import TextareaDemo from './components/TextareaDemo.vue'
 
 const themes = [tokyoNightMoon, tokyoNightStorm, rosePineMoon, rosePineDawn, highContrast] as const
 const themeOptions = ref(themes.map((t) => ({ value: t.name, label: t.name })))
@@ -80,6 +82,7 @@ const tabOptions = ref([
     { value: 'Text', label: 'Text' },
     { value: 'Table', label: 'Table' },
     { value: 'Select', label: 'Select' },
+    { value: 'Textarea', label: 'Textarea' },
 ])
 const currentTab = ref(tabOptions.value[0]!.value)
 </script>

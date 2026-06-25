@@ -1,4 +1,5 @@
 import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
+import {BorderSides} from '../../draw-list/types';
 import {type KeyboardEvent} from '../../events/types';
 import {parseColor} from '../../utils/color';
 import {getTheme} from '../../theme/store';
@@ -22,6 +23,7 @@ import {
   resolveJustifyContent,
   resolveFlexWrap,
   resolveAlignContent,
+  resolveBorderStyle,
 } from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import type {TuiWidgetEntity} from '../TuiWidgetEntity';
@@ -59,6 +61,8 @@ export class ScrollBoxWidget extends InteractiveWidget {
   readonly #scrollSpeed: number;
   #alwaysShowScrollbar: boolean;
   readonly #extraColors: ScrollBoxExtraColors;
+  #focusBorderColor: number;
+  #focusBorderStyle: number;
 
   #dragScrolling = false;
   #dragStartY = 0;
@@ -113,6 +117,8 @@ export class ScrollBoxWidget extends InteractiveWidget {
       scrollbar: parseColor(options.colorScrollbar ?? theme.colors.scrollbar),
       scrollbarTrack: parseColor(options.colorScrollbarTrack ?? theme.colors.scrollbarTrack),
     };
+    this.#focusBorderColor = parseColor(options.colorBorderFocused ?? theme.colors.borderFocused);
+    this.#focusBorderStyle = resolveBorderStyle(options.borderStyleFocused ?? theme.borderStyle.focused ?? 'solid');
 
     this.on('wheel', data => {
       const horizontal = data.shiftKey;
@@ -460,6 +466,14 @@ export class ScrollBoxWidget extends InteractiveWidget {
     if (resolved.colorScrollbarTrack !== undefined) {
       this.setColorScrollbarTrack(parseColor(resolved.colorScrollbarTrack));
     }
+
+    if (resolved.colorBorderFocused !== undefined) {
+      this.#focusBorderColor = parseColor(resolved.colorBorderFocused);
+    }
+
+    if (resolved.borderStyleFocused !== undefined) {
+      this.#focusBorderStyle = resolveBorderStyle(resolved.borderStyleFocused);
+    }
   }
 
   // -- Visual chrome update methods (delegate to innerBox) --
@@ -627,8 +641,39 @@ export class ScrollBoxWidget extends InteractiveWidget {
     }
 
     buffer.popClip();
+
+    if (this.focused && !this.disabled && this.#focusBorderStyle !== 0) {
+      const {borderTop, borderRight, borderBottom, borderLeft} = this.#innerBox.border;
+      let sides = 0;
+      if (borderTop) {
+        sides |= BorderSides.Top;
+      }
+
+      if (borderRight) {
+        sides |= BorderSides.Right;
+      }
+
+      if (borderBottom) {
+        sides |= BorderSides.Bottom;
+      }
+
+      if (borderLeft) {
+        sides |= BorderSides.Left;
+      }
+
+      if (sides !== 0) {
+        buffer.drawBorder({
+          x, y, width, height,
+          colorRgba: this.#focusBorderColor,
+          style: this.#focusBorderStyle,
+          sides,
+        });
+      }
+    }
+
     this.#renderScrollbar(buffer);
     this.#renderHorizontalScrollbar(buffer);
+
     buffer.popClip();
   }
 
@@ -757,15 +802,22 @@ export class ScrollBoxWidget extends InteractiveWidget {
     }
 
     const children = this.#layoutChildren.filter(c => c.visible && c.position === 'static');
-    if (children.length === 0) {
-      this.#layoutDirty = false;
-      return;
-    }
 
     const contentX = viewport.x;
     const contentY = viewport.y;
     const contentWidth = viewport.width;
     const contentHeight = viewport.height;
+
+    for (const child of this.#layoutChildren) {
+      if (child.visible && child.position === 'absolute' && child.hasPercentLayout) {
+        child.resolveLayout(contentWidth, contentHeight);
+      }
+    }
+
+    if (children.length === 0) {
+      this.#layoutDirty = false;
+      return;
+    }
 
     const isVertical = this.#direction === 1 || this.#direction === 3;
     const mainSize = isVertical ? contentHeight : contentWidth;
@@ -912,6 +964,8 @@ export class ScrollBoxWidget extends InteractiveWidget {
 const SCROLLBOX_TOKEN_MAP = {
   colorBg: 'background',
   colorBorder: 'border',
+  colorBorderFocused: 'borderFocused',
+  borderStyleFocused: 'border.focused',
   colorScrollbar: 'scrollbar',
   colorScrollbarTrack: 'scrollbarTrack',
 } as const;

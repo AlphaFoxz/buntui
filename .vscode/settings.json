@@ -18,7 +18,10 @@
     },
     "[vue]": {
         "editor.tabSize": 2,
-        "editor.defaultFormatter": "esbenp.prettier-vscode"
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "prettier.printWidth": 80,
+        "prettier.semi": true,
+        "prettier.singleQuote": true
     },
     "[json]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode",

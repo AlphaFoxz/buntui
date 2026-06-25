@@ -2,6 +2,8 @@
     <Box
         position="absolute"
         :draggable="true"
+        :x="1"
+        :y="0"
         @dragstart="handleDragstart"
         @dragend="handleDragend"
         :width="28"
@@ -16,7 +18,7 @@
         @mousedown="handleMousedown"
         @mouseup="handleMouseup"
         :x="31"
-        :y="3"
+        :y="0"
         :width="28"
         :height="3"
         borderStyle="rounded"
@@ -28,7 +30,7 @@
         position="absolute"
         @click="handleClick"
         :x="1"
-        :y="6"
+        :y="3"
         :width="28"
         :height="3"
         borderStyle="double"
@@ -40,7 +42,7 @@
         position="absolute"
         @contextmenu="handleContextmenu"
         :x="31"
-        :y="6"
+        :y="3"
         :width="28"
         :height="3"
         borderStyle="bold"
@@ -52,7 +54,7 @@
     <Box
         position="absolute"
         :x="1"
-        :y="9"
+        :y="6"
         :width="20"
         :height="3"
         borderStyle="dashed"
@@ -64,7 +66,7 @@
     <Box
         position="absolute"
         :x="22"
-        :y="9"
+        :y="6"
         :width="20"
         :height="3"
         borderStyle="outsetbold"
@@ -76,8 +78,9 @@
     <Box
         position="absolute"
         :x="43"
-        :y="9"
+        :y="6"
         :width="20"
+        :height="3"
         borderStyle="outsetdouble"
     >
         <Text value="双浮雕 Outset²" />
@@ -87,7 +90,7 @@
         position="absolute"
         draggable
         :x="35"
-        :y="12"
+        :y="9"
         :width="24"
         :height="5"
         :colorBg="'rgba(166,227,161,0.5)'"
@@ -103,7 +106,7 @@
         position="absolute"
         draggable
         :x="25"
-        :y="13"
+        :y="10"
         :width="24"
         :height="5"
         :colorBg="'rgba(137,180,250,0.33)'"
@@ -118,7 +121,7 @@
         position="absolute"
         draggable
         :x="15"
-        :y="14"
+        :y="11"
         :width="24"
         :height="5"
         :colorBg="'rgba(243,139,168,1)'"
@@ -132,14 +135,14 @@
     <Text
         position="absolute"
         :x="1"
-        :y="19"
+        :y="16"
         value="▸ Flex Layout (row/column container)"
         styleModifier="bold"
     />
     <Text
         position="absolute"
         :x="1"
-        :y="20"
+        :y="17"
         value="▶ Alignment (cross-axis)"
         styleModifier="bold"
     />
@@ -148,7 +151,7 @@
         position="absolute"
         draggable
         v-model:x="dx"
-        :y="21"
+        :y="18"
         width="48%"
         :height="7"
         :direction="'vertical'"
@@ -164,7 +167,7 @@
         position="absolute"
         draggable
         x="50%"
-        :y="21"
+        :y="18"
         width="48%"
         :height="7"
         :direction="'vertical'"
@@ -180,7 +183,7 @@
         position="absolute"
         draggable
         :x="dx"
-        :y="29"
+        :y="26"
         width="48%"
         :height="7"
         :direction="'vertical'"
@@ -196,7 +199,7 @@
         position="absolute"
         draggable
         x="50%"
-        :y="29"
+        :y="26"
         width="48%"
         :height="7"
         :direction="'vertical'"
@@ -211,14 +214,14 @@
     <Text
         position="absolute"
         :x="1"
-        :y="37"
+        :y="34"
         value="▶ justifyContent (main-axis distribution)"
         styleModifier="bold"
     />
     <Box
         position="absolute"
         :x="1"
-        :y="38"
+        :y="35"
         width="48%"
         :height="3"
         :direction="'horizontal'"
@@ -230,7 +233,7 @@
     <Box
         position="absolute"
         x="50%"
-        :y="38"
+        :y="35"
         width="48%"
         :height="3"
         :direction="'horizontal'"
@@ -242,7 +245,7 @@
     <Box
         position="absolute"
         :x="1"
-        :y="42"
+        :y="39"
         width="48%"
         :height="3"
         :direction="'horizontal'"
@@ -254,7 +257,7 @@
     <Box
         position="absolute"
         x="50%"
-        :y="42"
+        :y="39"
         width="48%"
         :height="3"
         :direction="'horizontal'"
@@ -268,14 +271,14 @@
     <Text
         position="absolute"
         :x="1"
-        :y="46"
+        :y="43"
         value="▶ flexGrow (per-child free-space share)"
         styleModifier="bold"
     />
     <Box
         position="absolute"
         :x="1"
-        :y="47"
+        :y="44"
         width="48%"
         :height="3"
         :direction="'horizontal'"
@@ -287,7 +290,7 @@
     <Box
         position="absolute"
         x="50%"
-        :y="47"
+        :y="44"
         width="48%"
         :height="3"
         :direction="'horizontal'"
@@ -301,14 +304,14 @@
     <Text
         position="absolute"
         :x="1"
-        :y="51"
+        :y="48"
         value="▶ Reverse directions"
         styleModifier="bold"
     />
     <Box
         position="absolute"
         :x="1"
-        :y="52"
+        :y="49"
         width="48%"
         :height="4"
         :direction="'vertical-reverse'"
@@ -321,7 +324,7 @@
     <Box
         position="absolute"
         x="50%"
-        :y="52"
+        :y="49"
         width="48%"
         :height="4"
         :direction="'horizontal-reverse'"
@@ -334,14 +337,14 @@
     <Text
         position="absolute"
         :x="1"
-        :y="57"
+        :y="54"
         value="▶ flexShrink (overflow compression)"
         styleModifier="bold"
     />
     <Box
         position="absolute"
         :x="1"
-        :y="58"
+        :y="55"
         :width="20"
         :height="3"
         :direction="'horizontal'"
@@ -354,7 +357,7 @@
     <Box
         position="absolute"
         :x="24"
-        :y="58"
+        :y="55"
         :width="20"
         :height="3"
         :direction="'horizontal'"
@@ -368,14 +371,14 @@
     <Text
         position="absolute"
         :x="1"
-        :y="62"
+        :y="59"
         value="▶ flexBasis (main-axis base size)"
         styleModifier="bold"
     />
     <Box
         position="absolute"
         :x="1"
-        :y="63"
+        :y="60"
         :width="28"
         :height="3"
         :direction="'horizontal'"
@@ -390,14 +393,14 @@
     <Text
         position="absolute"
         :x="1"
-        :y="67"
+        :y="64"
         value="▶ alignSelf (per-child cross-axis override)"
         styleModifier="bold"
     />
     <Box
         position="absolute"
         :x="1"
-        :y="68"
+        :y="65"
         :width="28"
         :height="5"
         :direction="'horizontal'"
@@ -412,41 +415,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "@vue/reactivity";
+import { ref } from '@vue/reactivity'
 
-const timeCount = ref(0);
-const show = ref(true);
+const timeCount = ref(0)
+const show = ref(true)
 
 setInterval(() => {
-    timeCount.value += 1;
-    show.value = !show.value;
-}, 1000);
+    timeCount.value += 1
+    show.value = !show.value
+}, 1000)
 
-const text1 = ref("Drag Me!");
+const text1 = ref('Drag Me!')
 function handleDragstart() {
-    text1.value = "Dragging...";
+    text1.value = 'Dragging...'
 }
 function handleDragend() {
-    text1.value = "Dragged!";
+    text1.value = 'Dragged!'
 }
 
-const text2 = ref("Click Me!");
+const text2 = ref('Click Me!')
 function handleMousedown() {
-    text2.value = "MouseDown!";
+    text2.value = 'MouseDown!'
 }
 function handleMouseup() {
-    text2.value = "MouseUp!";
+    text2.value = 'MouseUp!'
 }
 
-const text3 = ref("Click Me!");
+const text3 = ref('Click Me!')
 function handleClick() {
-    text3.value = "Clicked!";
+    text3.value = 'Clicked!'
 }
 
-const text4 = ref("Right click me!");
+const text4 = ref('Right click me!')
 function handleContextmenu() {
-    text4.value = "Right clicked!";
+    text4.value = 'Right clicked!'
 }
 
-const dx = ref(1);
+const dx = ref(1)
 </script>

@@ -563,13 +563,15 @@ export class SelectWidget extends InteractiveWidget {
       const isHovered = i === this.#hoveredIndex;
       const isFocused = i === this.#focusedIndex;
 
-      let colors: {fg: number; bg: number} =
-        isSelected
-          ? this.#dropdownColors.itemSelected
-          : this.#dropdownColors.item;
-
+      let colors: {fg: number; bg: number};
       if (isHovered || isFocused) {
-        colors = this.#dropdownColors.itemHovered;
+        colors = isSelected
+          ? {fg: this.#dropdownColors.itemSelected.fg, bg: this.#dropdownColors.itemHovered.bg}
+          : this.#dropdownColors.itemHovered;
+      } else if (isSelected) {
+        colors = this.#dropdownColors.itemSelected;
+      } else {
+        colors = this.#dropdownColors.item;
       }
 
       if (colors.bg !== 0x00_00_00_00) {

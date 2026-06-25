@@ -43,16 +43,8 @@
         :y="11"
         value="shadowOffsetX/Y  number            Shadow offset"
     />
-    <Text
-        :x="2"
-        :y="12"
-        value="zIndex           number            Render order"
-    />
-    <Text
-        :x="2"
-        :y="13"
-        value="draggable        boolean           Enable drag"
-    />
+    <Text :x="2" :y="12" value="zIndex           number            Render order" />
+    <Text :x="2" :y="13" value="draggable        boolean           Enable drag" />
     <Text
         :x="2"
         :y="14"
@@ -60,30 +52,30 @@
     />
 
     <Text :x="2" :y="17" value="▸ Border Styles" styleModifier="bold" />
-    <Box :x="2" :y="18" :width="12" :height="3" borderStyle="solid">
+    <Box :x="2" :y="18" width="48%" :height="3" borderStyle="solid">
         <Text value="  solid" />
     </Box>
-    <Box :x="16" :y="18" :width="12" :height="3" borderStyle="rounded">
+    <Box x="50%" :y="18" width="48%" :height="3" borderStyle="rounded">
         <Text value="  rounded" />
     </Box>
-    <Box :x="30" :y="18" :width="12" :height="3" borderStyle="double">
+    <Box :x="2" :y="22" width="48%" :height="3" borderStyle="double">
         <Text value="  double" />
     </Box>
-    <Box :x="44" :y="18" :width="12" :height="3" borderStyle="bold">
+    <Box x="50%" :y="22" width="48%" :height="3" borderStyle="bold">
         <Text value="  bold" />
     </Box>
-    <Box :x="58" :y="18" :width="12" :height="3" borderStyle="dashed">
+    <Box :x="2" :y="26" width="48%" :height="3" borderStyle="dashed">
         <Text value="  dashed" />
     </Box>
-    <Box :x="72" :y="18" :width="14" :height="3" borderStyle="outsetbold">
+    <Box x="50%" :y="26" width="48%" :height="3" borderStyle="outsetbold">
         <Text value="  outsetbold" />
     </Box>
 
-    <Text :x="2" :y="21" value="▸ Layout Direction" styleModifier="bold" />
+    <Text :x="2" :y="30" value="▸ Layout Direction" styleModifier="bold" />
     <Box
         :x="2"
-        :y="22"
-        width="45%"
+        :y="31"
+        width="48%"
         :height="4"
         :direction="'horizontal'"
         :gap="1"
@@ -96,8 +88,8 @@
     </Box>
     <Box
         x="50%"
-        :y="22"
-        width="45%"
+        :y="31"
+        width="48%"
         :height="4"
         :direction="'vertical'"
         :gap="1"
@@ -108,11 +100,11 @@
         <Text value="vertical + gap=1" />
     </Box>
 
-    <Text :x="2" :y="27" value="▸ Alignment" styleModifier="bold" />
+    <Text :x="2" :y="36" value="▸ Alignment" styleModifier="bold" />
     <Box
         :x="2"
-        :y="28"
-        width="24%"
+        :y="37"
+        width="48%"
         :height="4"
         :direction="'vertical'"
         :gap="1"
@@ -123,9 +115,9 @@
         <Text value="short" />
     </Box>
     <Box
-        x="26%"
-        :y="28"
-        width="24%"
+        x="50%"
+        :y="37"
+        width="48%"
         :height="4"
         :direction="'vertical'"
         :gap="1"
@@ -136,9 +128,9 @@
         <Text value="short" />
     </Box>
     <Box
-        x="52%"
-        :y="28"
-        width="24%"
+        :x="2"
+        :y="42"
+        width="48%"
         :height="4"
         :direction="'vertical'"
         :gap="1"
@@ -149,9 +141,9 @@
         <Text value="short" />
     </Box>
     <Box
-        x="78%"
-        :y="28"
-        width="20%"
+        x="50%"
+        :y="42"
+        width="48%"
         :height="4"
         :direction="'vertical'"
         :gap="1"
@@ -162,11 +154,11 @@
         <Text value="fills width" />
     </Box>
 
-    <Text :x="2" :y="33" value="▸ Shadow & Padding" styleModifier="bold" />
+    <Text :x="2" :y="47" value="▸ Shadow & Padding" styleModifier="bold" />
     <Box
         :x="2"
-        :y="34"
-        :width="20"
+        :y="48"
+        width="48%"
         :height="3"
         borderStyle="rounded"
         :shadowOffsetX="2"
@@ -176,9 +168,9 @@
         <Text value="shadow + padding" />
     </Box>
     <Box
-        :x="25"
-        :y="34"
-        :width="20"
+        x="50%"
+        :y="48"
+        width="48%"
         :height="3"
         borderStyle="rounded"
         :paddingTop="1"
@@ -189,14 +181,14 @@
 
     <Text
         :x="2"
-        :y="38"
+        :y="52"
         value="▸ Events: click, mousedown, mouseup, contextmenu, dragstart, dragend"
         styleModifier="bold"
     />
     <Box
         :x="2"
-        :y="39"
-        :width="30"
+        :y="53"
+        width="48%"
         :height="3"
         borderStyle="rounded"
         @click="handleClick"
@@ -204,9 +196,9 @@
         <Text :value="clickLabel" />
     </Box>
     <Box
-        :x="34"
-        :y="39"
-        :width="30"
+        x="50%"
+        :y="53"
+        width="48%"
         :height="3"
         borderStyle="rounded"
         draggable
@@ -217,14 +209,14 @@
 
     <Text
         :x="2"
-        :y="42"
+        :y="57"
         value="▸ justifyContent (main-axis distribution)"
         styleModifier="bold"
     />
     <Box
         :x="2"
-        :y="43"
-        width="24%"
+        :y="58"
+        width="48%"
         :height="3"
         :direction="'horizontal'"
         :justifyContent="'start'"
@@ -233,9 +225,9 @@
         <Text value="[start]" />
     </Box>
     <Box
-        x="27%"
-        :y="43"
-        width="24%"
+        x="50%"
+        :y="58"
+        width="48%"
         :height="3"
         :direction="'horizontal'"
         :justifyContent="'center'"
@@ -244,9 +236,9 @@
         <Text value="[center]" />
     </Box>
     <Box
-        x="52%"
-        :y="43"
-        width="24%"
+        :x="2"
+        :y="62"
+        width="48%"
         :height="3"
         :direction="'horizontal'"
         :justifyContent="'end'"
@@ -255,9 +247,9 @@
         <Text value="[end]" />
     </Box>
     <Box
-        x="77%"
-        :y="43"
-        width="21%"
+        x="50%"
+        :y="62"
+        width="48%"
         :height="3"
         :direction="'horizontal'"
         :justifyContent="'space-between'"
@@ -269,14 +261,14 @@
 
     <Text
         :x="2"
-        :y="47"
+        :y="66"
         value="▸ flexGrow (per-child free-space share)"
         styleModifier="bold"
     />
     <Box
         :x="2"
-        :y="48"
-        :width="40"
+        :y="67"
+        width="48%"
         :height="3"
         :direction="'horizontal'"
         borderStyle="rounded"
@@ -285,9 +277,9 @@
         <Text value="g=1" :flexGrow="1" />
     </Box>
     <Box
-        :x="44"
-        :y="48"
-        :width="40"
+        x="50%"
+        :y="67"
+        width="48%"
         :height="3"
         :direction="'horizontal'"
         borderStyle="rounded"
@@ -297,11 +289,11 @@
         <Text value="g=1" :flexGrow="1" />
     </Box>
 
-    <Text :x="2" :y="52" value="▸ Reverse directions" styleModifier="bold" />
+    <Text :x="2" :y="71" value="▸ Reverse directions" styleModifier="bold" />
     <Box
         :x="2"
-        :y="53"
-        width="24%"
+        :y="72"
+        width="48%"
         :height="3"
         :direction="'vertical-reverse'"
         borderStyle="rounded"
@@ -310,9 +302,9 @@
         <Text value="second" />
     </Box>
     <Box
-        x="27%"
-        :y="53"
-        width="24%"
+        x="50%"
+        :y="72"
+        width="48%"
         :height="3"
         :direction="'horizontal-reverse'"
         borderStyle="rounded"
@@ -323,14 +315,14 @@
 
     <Text
         :x="2"
-        :y="57"
+        :y="76"
         value="▸ flexShrink (overflow compression)"
         styleModifier="bold"
     />
     <Box
         :x="2"
-        :y="58"
-        :width="40"
+        :y="77"
+        width="48%"
         :height="3"
         :direction="'horizontal'"
         :align="'start'"
@@ -340,9 +332,9 @@
         <Text value="s=0" :flexBasis="24" />
     </Box>
     <Box
-        :x="44"
-        :y="58"
-        :width="40"
+        x="50%"
+        :y="77"
+        width="48%"
         :height="3"
         :direction="'horizontal'"
         :align="'start'"
@@ -354,14 +346,14 @@
 
     <Text
         :x="2"
-        :y="62"
+        :y="81"
         value="▸ flexBasis (main-axis base size)"
         styleModifier="bold"
     />
     <Box
         :x="2"
-        :y="63"
-        :width="60"
+        :y="82"
+        width="96%"
         :height="3"
         :direction="'horizontal'"
         :align="'start'"
@@ -374,14 +366,14 @@
 
     <Text
         :x="2"
-        :y="67"
+        :y="86"
         value="▸ alignSelf (per-child cross-axis override)"
         styleModifier="bold"
     />
     <Box
         :x="2"
-        :y="68"
-        :width="60"
+        :y="87"
+        width="96%"
         :height="5"
         :direction="'horizontal'"
         :align="'start'"
@@ -394,10 +386,10 @@
     </Box>
 </template>
 <script setup lang="ts">
-import { ref } from "@vue/reactivity";
+import { ref } from '@vue/reactivity';
 
-const clickLabel = ref("Click me");
-const dragLabel = ref("Drag me");
+const clickLabel = ref('Click me');
+const dragLabel = ref('Drag me');
 
 function handleClick() {
     clickLabel.value = `Clicked at ${Date.now() % 10000}`;

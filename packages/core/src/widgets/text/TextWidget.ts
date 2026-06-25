@@ -49,7 +49,8 @@ export class TextWidget extends TuiWidgetEntity {
 
   constructor(options: TextWidgetOptions) {
     super();
-    this.#rect = this.initRect(options.x, options.y, options.width, options.height, {width: 32, height: 1});
+    const resolvedWidth = options.width ?? stringDisplayWidth(options.value);
+    this.#rect = this.initRect(options.x, options.y, resolvedWidth, options.height, {height: 1});
     const theme = getTheme();
     this.#color = {
       colorFg: parseColor(options.colorFg ?? theme.colors.text),
@@ -289,7 +290,6 @@ export class TextWidget extends TuiWidgetEntity {
 export const DEFAULT_TEXT_OPTIONS: TextWidgetOptions = {
   x: 0,
   y: 0,
-  width: 32,
   height: 1,
   value: '',
 };

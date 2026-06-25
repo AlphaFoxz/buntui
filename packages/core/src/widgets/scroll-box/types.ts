@@ -19,7 +19,9 @@ export type ScrollBoxWidgetOptions = {
   colorFg?: TuiColor;
   colorBg?: TuiColor;
   colorBorder?: TuiColor;
+  colorBorderFocused?: TuiColor;
   borderStyle?: TuiBorderStyleName;
+  borderStyleFocused?: TuiBorderStyleName;
   borderTop?: boolean;
   borderRight?: boolean;
   borderBottom?: boolean;

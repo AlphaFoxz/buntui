@@ -286,7 +286,11 @@ export class TextareaWidget extends InteractiveWidget {
     });
 
     this.on('wheel', data => {
+      const before = this.#scrollOffsetY;
       this.scrollBy(data.wheelDeltaY * 3);
+      if (this.#scrollOffsetY !== before) {
+        this.stopPropagation();
+      }
     });
   }
 

@@ -15,6 +15,8 @@ const RADIO_TOKEN_MAP = {
   colorBgNormal: 'surface',
   colorFgFocused: 'text',
   colorBgFocused: 'surfaceHover',
+  colorFgHovered: 'text',
+  colorBgHovered: 'surfaceHover',
   colorFgDisabled: 'textMuted',
   colorBgDisabled: 'surfaceDisabled',
   colorFgSelected: 'accent',
@@ -60,6 +62,10 @@ export class RadioGroupWidget extends InteractiveWidget {
       focused: {
         fg: parseColor(resolved.colorFgFocused),
         bg: parseColor(resolved.colorBgFocused),
+      },
+      hovered: {
+        fg: parseColor(resolved.colorFgHovered),
+        bg: parseColor(resolved.colorBgHovered),
       },
       disabled: {
         fg: parseColor(resolved.colorFgDisabled),

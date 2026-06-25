@@ -519,9 +519,6 @@ export class BoxWidget extends TuiWidgetEntity {
 
   #computeLayout(): void {
     const children = this.#layoutChildren.filter(c => c.position === 'static');
-    if (children.length === 0) {
-      return;
-    }
 
     const {x, y, width, height} = this.#rect;
     const {paddingTop, paddingLeft} = this.#padding;
@@ -543,6 +540,16 @@ export class BoxWidget extends TuiWidgetEntity {
       if (child.hasPercentLayout) {
         child.resolveLayout(contentWidth, contentHeight);
       }
+    }
+
+    for (const child of this.#layoutChildren) {
+      if (child.position === 'absolute' && child.hasPercentLayout) {
+        child.resolveLayout(contentWidth, contentHeight);
+      }
+    }
+
+    if (children.length === 0) {
+      return;
     }
 
     const results = computeFlexLayout({
