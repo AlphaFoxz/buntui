@@ -238,6 +238,10 @@ export class HtmlBackend implements TuiBackend {
         return;
       }
 
+      if (Date.now() - this.#lastKeyTime < 50) {
+        return;
+      }
+
       const char = data.at(0)!;
       if (char === '\r' || char === '\n') {
         handler(TuiEventType.KeyboardEvent, new TuiKeyboardEvent(serializeKeyboardEvent('Enter')));
