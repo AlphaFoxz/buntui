@@ -6,5 +6,6 @@ export * from './snake';
 export * from './videoplayer';
 export * from './logger';
 export * from './hmr-error-overlay';
+export * from './canvas';
 
 export {EXTENSION_REGISTRY} from './registry';
