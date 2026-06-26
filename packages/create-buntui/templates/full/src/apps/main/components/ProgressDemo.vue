@@ -1,25 +1,32 @@
 <template>
-    <Text :x="1" :y="3" value="Progress widget — bar indicator" />
+  <Text :x="1" :y="3" value="Progress widget — bar indicator" />
 
-    <Text :x="1" :y="4" value="Determinate:" />
-    <Progress :x="1" :y="5" :width="40" :height="1" :value="progress" />
+  <Text :x="1" :y="4" value="Determinate:" />
+  <Progress :x="1" :y="5" :width="40" :height="1" :value="progress" />
 
-    <Text :x="1" :y="7" :value="`${Math.round(progress * 100)}%`" />
+  <Text :x="1" :y="7" :value="`${Math.round(progress * 100)}%`" />
 
-    <Button :x="1" :y="9" :width="20" :height="3" value="Reset" @click="reset" />
-    <Button :x="23" :y="9" :width="20" :height="3" value="Set 75%" @click="set75" />
+  <Button :x="1" :y="9" :width="20" :height="3" value="Reset" @click="reset" />
+  <Button
+    :x="23"
+    :y="9"
+    :width="20"
+    :height="3"
+    value="Set 75%"
+    @click="set75"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref } from '@vue/reactivity'
+import { ref } from '@vue/reactivity';
 
-const progress = ref(0.5)
+const progress = ref(0.5);
 
 function reset() {
-    progress.value = 0
+  progress.value = 0;
 }
 
 function set75() {
-    progress.value = 0.75
+  progress.value = 0.75;
 }
 </script>

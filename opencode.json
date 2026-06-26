@@ -36,6 +36,7 @@
             "zig *": "allow",
             "ConvertFrom-Json *": "allow",
             "ConvertTo-Json *": "allow",
+            "Copy-Item *": "allow",
             "ForEach-Object *": "allow",
             "Format-Table *": "allow",
             "Get-ChildItem *": "allow",

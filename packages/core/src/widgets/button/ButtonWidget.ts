@@ -9,6 +9,7 @@ import {
 } from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor, type TuiColor} from '../../utils/color';
+import {stringDisplayWidth} from '../../utils/string-width';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
 import {resolveThemedOverrides} from '../../theme/color-ref';
@@ -64,6 +65,7 @@ export class ButtonWidget extends InteractiveWidget {
   #value: string;
 
   #pressed = false;
+  readonly #autoWidth: boolean = false;
 
   readonly #colors: ColorScheme<ButtonColors>;
 
@@ -75,9 +77,8 @@ export class ButtonWidget extends InteractiveWidget {
     }
 
     const resolved = {...defaults, ...options};
-    this.#rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
+    this.#autoWidth = resolved.width === 'auto';
     this.#value = resolved.value;
-    this.setDisabled(resolved.disabled);
 
     this.#colors = {
       normal: {
@@ -112,6 +113,13 @@ export class ButtonWidget extends InteractiveWidget {
       },
     };
 
+    if (this.#autoWidth) {
+      resolved.width = this.#computeAutoWidth();
+    }
+
+    this.#rect = this.initRect(resolved.x, resolved.y, resolved.width as TuiSizeValue, resolved.height);
+    this.setDisabled(resolved.disabled);
+
     this.on('mousedown', () => {
       this.#pressed = true;
     });
@@ -142,6 +150,9 @@ export class ButtonWidget extends InteractiveWidget {
 
   updateValue(value: string): void {
     this.#value = value;
+    if (this.#autoWidth) {
+      this.#rect.width = this.#computeAutoWidth();
+    }
   }
 
   setBorderless(borderless: boolean): void {
@@ -154,6 +165,9 @@ export class ButtonWidget extends InteractiveWidget {
     this.#colors.hovered!.borderStyle = 0;
     this.#colors.pressed!.borderStyle = 0;
     this.#colors.disabled!.borderStyle = 0;
+    if (this.#autoWidth) {
+      this.#rect.width = this.#computeAutoWidth();
+    }
   }
 
   updateNormalStyle(options: {colorFgNormal?: TuiColor; colorBgNormal?: TuiColor; colorBorderNormal?: TuiColor; borderStyleNormal?: TuiBorderStyleName}): void {
@@ -171,6 +185,9 @@ export class ButtonWidget extends InteractiveWidget {
 
     if (options.borderStyleNormal !== undefined) {
       this.#colors.normal.borderStyle = resolveBorderStyle(options.borderStyleNormal);
+      if (this.#autoWidth) {
+        this.#rect.width = this.#computeAutoWidth();
+      }
     }
   }
 
@@ -215,6 +232,10 @@ export class ButtonWidget extends InteractiveWidget {
   }
 
   override intrinsicSize(): TuiWidgetSize | undefined {
+    if (this.#autoWidth) {
+      return {width: this.#computeAutoWidth(), height: this.#rect.height};
+    }
+
     return {width: this.#rect.width, height: this.#rect.height};
   }
 
@@ -278,6 +299,11 @@ export class ButtonWidget extends InteractiveWidget {
 
   updateThemeColors(resolved: Record<string, unknown>): void {
     applyColorSchemeUpdates(this.#colors, resolved);
+  }
+
+  #computeAutoWidth(): number {
+    const pad = this.#colors.normal.borderStyle === 0 ? 0 : 2;
+    return stringDisplayWidth(this.#value) + pad;
   }
 }
 

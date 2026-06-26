@@ -6,6 +6,7 @@ import {bindThemeToWidget} from '../../theme/binding';
 import {resolveThemedOverrides} from '../../theme/color-ref';
 import {
   type TuiSizeValue,
+  type TuiAutoSize,
   type TuiWidgetColor,
   type TuiWidgetRect,
   type TuiWidgetSize,
@@ -21,7 +22,7 @@ export type TextWidgetOptions = Omit<TuiWidgetColor & TuiWidgetText, 'colorFg' |
   & {
     x?: TuiSizeValue;
     y?: TuiSizeValue;
-    width?: TuiSizeValue;
+    width?: TuiSizeValue | TuiAutoSize;
     height?: TuiSizeValue;
     colorFg?: TuiColor;
     colorBg?: TuiColor;
@@ -46,10 +47,13 @@ export class TextWidget extends TuiWidgetEntity {
   #waitingReset = false;
   #lastTimestamp = 0;
   #firstRender = true;
+  readonly #autoWidth: boolean;
 
   constructor(options: TextWidgetOptions) {
     super();
-    const resolvedWidth = options.width ?? stringDisplayWidth(options.value);
+    const isAuto = options.width === undefined || options.width === 'auto';
+    this.#autoWidth = isAuto;
+    const resolvedWidth = isAuto ? stringDisplayWidth(options.value) : options.width as TuiSizeValue;
     this.#rect = this.initRect(options.x, options.y, resolvedWidth, options.height, {height: 1});
     const theme = getTheme();
     this.#color = {
@@ -118,6 +122,10 @@ export class TextWidget extends TuiWidgetEntity {
 
   updateValue(value: string) {
     this.#value = value;
+    if (this.#autoWidth) {
+      this.#rect.width = stringDisplayWidth(value);
+    }
+
     this.#scrollOffset = 0;
     this.#pauseRemaining = 0;
     this.#waitingReset = false;

@@ -6,5 +6,6 @@ export default defineConfig({
     clearLog: true,
     tickRate: 30,
     renderRate: 24,
+    quitOnQ: true,
   },
 });

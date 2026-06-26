@@ -57,22 +57,6 @@ describe('copyNativeBinary', () => {
     expect(fs.existsSync(path.join(distDir, destName))).toBe(true);
   });
 
-  it('copies binary from node_modules/@buntui/core/src/utils', () => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'buntui-test-'));
-    distDir = path.join(tmpDir, 'dist');
-    fs.mkdirSync(distDir, {recursive: true});
-
-    const utilsDir = path.join(tmpDir, 'node_modules', '@buntui', 'core', 'src', 'utils');
-    fs.mkdirSync(utilsDir, {recursive: true});
-
-    const ext = getExt();
-    fs.writeFileSync(path.join(utilsDir, `buntui.${ext}`), Buffer.from('fake-utils-binary'));
-
-    copyNativeBinary(distDir, tmpDir);
-
-    expect(fs.existsSync(path.join(distDir, `buntui.${ext}`))).toBe(true);
-  });
-
   it('produces correctly named destination file', () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'buntui-test-'));
     distDir = path.join(tmpDir, 'dist');

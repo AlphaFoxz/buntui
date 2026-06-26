@@ -91,3 +91,68 @@ describe('hit testing', () => {
     expect(widget.containsPoint(10, 8)).toBe(false);
   });
 });
+
+describe('auto width', () => {
+  it('width=auto computes width from content', () => {
+    const widget = new TextWidget({value: 'Hello', width: 'auto'});
+    expect(widget.rect.width).toBe(5);
+  });
+
+  it('width=auto handles double-width CJK characters', () => {
+    const widget = new TextWidget({value: '你好', width: 'auto'});
+    expect(widget.rect.width).toBe(4);
+  });
+
+  it('width=auto with empty value is zero', () => {
+    const widget = new TextWidget({value: '', width: 'auto'});
+    expect(widget.rect.width).toBe(0);
+  });
+
+  it('omitting width defaults to content width', () => {
+    const widget = new TextWidget({value: 'Hi'});
+    expect(widget.rect.width).toBe(2);
+  });
+
+  it('explicit width is fixed', () => {
+    const widget = new TextWidget({value: 'Hello', width: 20});
+    expect(widget.rect.width).toBe(20);
+  });
+
+  it('intrinsicSize always returns content width', () => {
+    const auto = new TextWidget({value: 'Hello', width: 'auto'});
+    expect(auto.intrinsicSize()).toEqual({width: 5, height: 1});
+
+    const fixed = new TextWidget({value: 'Hello', width: 20});
+    expect(fixed.intrinsicSize()).toEqual({width: 5, height: 1});
+  });
+
+  it('updateValue resizes in auto mode', () => {
+    const widget = new TextWidget({value: 'Hi', width: 'auto'});
+    expect(widget.rect.width).toBe(2);
+    widget.updateValue('Hello World');
+    expect(widget.rect.width).toBe(11);
+  });
+
+  it('updateValue resizes when width was omitted', () => {
+    const widget = new TextWidget({value: 'Hi'});
+    expect(widget.rect.width).toBe(2);
+    widget.updateValue('Hello');
+    expect(widget.rect.width).toBe(5);
+  });
+
+  it('updateValue does not resize with explicit width', () => {
+    const widget = new TextWidget({value: 'Hi', width: 10});
+    widget.updateValue('Hello World');
+    expect(widget.rect.width).toBe(10);
+  });
+
+  it('createTextWidget supports auto width', () => {
+    const widget = createTextWidget({value: 'Test', width: 'auto'});
+    expect(widget.rect.width).toBe(4);
+  });
+
+  it('createTextWidget string shorthand defaults to content width', () => {
+    const widget = createTextWidget('Hello');
+    expect(widget.rect.width).toBe(5);
+  });
+});

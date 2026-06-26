@@ -28,7 +28,7 @@ There is no dedicated typecheck script. TypeScript checking is done per-package 
 
 **native → core → extensions → compiler → cli → playground → buntui → create-buntui → playground-wasm → github-pages**
 
-Native must build first because `core` copies the shared library (`.dll`/`.dylib`/`.so`) from `packages/native-platforms/<platform>/` into `packages/core/src/utils/`. If you skip native, core's `sync` script warns but continues, and runtime FFI will fail.
+Native must build first because it produces the platform binaries (`buntui.dll`/`.dylib`/`.so`) into `packages/native-platforms/<platform>/`. Core resolves these at runtime via `@buntui/native`'s `getBinaryPath()`. If you skip native, the platform binary won't exist and runtime FFI will fail.
 
 ## Monorepo Layout
 

@@ -38,8 +38,7 @@
     },
     "scripts": {
         "test": "bun test",
-        "build": "tsc --project ./tsconfig.json && node -e \"require('fs').copyFileSync('src/global.d.ts','dist/global.d.ts')\"",
-        "sync": "bun run ./scripts/sync.ts"
+        "build": "tsc --project ./tsconfig.json && node -e \"require('fs').copyFileSync('src/global.d.ts','dist/global.d.ts')\""
     },
     "dependencies": {
         "@buntui/native": "workspace:*"

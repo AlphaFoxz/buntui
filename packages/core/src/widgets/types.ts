@@ -290,6 +290,7 @@ export function resolveJustifyContent(value: TuiJustifyContentName | TuiJustifyC
 }
 
 export type TuiPercent = `${number}%`;
+export type TuiAutoSize = 'auto';
 export type TuiSizeValue = U16 | TuiPercent;
 
 /**

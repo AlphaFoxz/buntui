@@ -599,8 +599,13 @@ export function getDefaultBoxOptions(): BoxWidgetOptions {
  Create a {@link BoxWidget} flex row/column container.
  */
 export function createBox(options: Partial<BoxWidgetOptions> = {}): BoxWidget {
+  const defaults = getDefaultBoxOptions();
+  if (options.height === undefined) {
+    delete defaults.height;
+  }
+
   const ctorOptions = resolveThemedOverrides(options, BOX_TOKEN_MAP);
-  const widget = new BoxWidget({...getDefaultBoxOptions(), ...ctorOptions});
+  const widget = new BoxWidget({...defaults, ...ctorOptions});
   widget.initTokenMap(BOX_TOKEN_MAP);
   bindThemeToWidget(widget, BOX_TOKEN_MAP, options, resolved => {
     widget.updateThemeColors(resolved);

@@ -1,10 +1,10 @@
 import type {TuiColor} from '../../utils/color';
-import type {TuiSizeValue, TuiBorderStyleName} from '../types';
+import type {TuiSizeValue, TuiAutoSize, TuiBorderStyleName} from '../types';
 
 export type ButtonWidgetOptions = {
   x?: TuiSizeValue;
   y?: TuiSizeValue;
-  width?: TuiSizeValue;
+  width?: TuiSizeValue | TuiAutoSize;
   height?: TuiSizeValue;
   value?: string;
 

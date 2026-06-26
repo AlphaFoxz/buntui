@@ -2,7 +2,12 @@ import {buntuiVuePlugin} from '@buntui/compiler/vue-plugin';
 import path from 'node:path';
 import fs from 'node:fs';
 import {createDevServer, type DevServerOptions} from '@buntui/compiler';
-import {createApp, type TuiSFCModule, type TuiScene} from '@buntui/core';
+import {
+  createApp,
+  runSetup,
+  type TuiSFCModule,
+  type TuiScene,
+} from '@buntui/core';
 import {mountHmrErrorOverlay, type HmrErrorOverlayHandle} from '@buntui/extensions/hmr-error-overlay';
 import {resolveApp, getDevDir, getCwd} from '../lib/app-resolver.ts';
 import {DEFAULT_COMPILE_OPTIONS, DEFAULT_APP_OPTIONS} from '../lib/constants.ts';
@@ -44,20 +49,28 @@ export async function devCommand(appName?: string): Promise<void> {
   }
 
   let errorOverlay: HmrErrorOverlayHandle | undefined;
+  let reloadCleanup: (() => void) | undefined;
 
   createDevServer({
     file: vueFile,
     tempDir: appDevDir,
     compileOptions: DEFAULT_COMPILE_OPTIONS,
     onClear() {
+      reloadCleanup?.();
+      reloadCleanup = undefined;
       errorOverlay?.dismiss();
       errorOverlay = undefined;
       scene.clearWidgets();
     },
     onReload(setupFn: (scene: unknown) => void) {
+      reloadCleanup?.();
       errorOverlay?.dismiss();
       errorOverlay = undefined;
-      setupFn(scene);
+      function runner() {
+        setupFn(scene);
+      }
+
+      reloadCleanup = runSetup(scene, runner);
     },
     onError(error: Error) {
       errorOverlay?.dismiss();

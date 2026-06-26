@@ -1,7 +1,7 @@
 import {it, expect, describe} from 'bun:test';
 import {ButtonWidget, createButtonWidget} from '../ButtonWidget';
 import type {KeyboardEvent, MouseEvent} from '../../../events/types';
-import type {DrawListBuffer} from '../../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../../draw-list/DrawListBuffer';
 import {parseColor} from '../../../utils/color';
 
 function key(options: Partial<KeyboardEvent> & {key: string}): KeyboardEvent {
@@ -531,5 +531,91 @@ describe('borderless', () => {
   it('createButtonWidget borderless does not override explicit height', () => {
     const button = createButtonWidget({value: 'OK', width: 10, height: 5, borderless: true});
     expect(button.rect.height).toBe(5);
+  });
+});
+
+describe('auto width', () => {
+  it('width=auto computes width from content + border padding', () => {
+    const button = new ButtonWidget({value: 'OK', width: 'auto', height: 3});
+    expect(button.rect.width).toBe(4);
+  });
+
+  it('width=auto with borderless has no border padding', () => {
+    const button = new ButtonWidget({value: 'Hello', width: 'auto', borderless: true});
+    expect(button.rect.width).toBe(5);
+  });
+
+  it('width=auto with empty value collapses to border padding only', () => {
+    const button = new ButtonWidget({value: '', width: 'auto', height: 3});
+    expect(button.rect.width).toBe(2);
+  });
+
+  it('width=auto borderless with empty value is zero', () => {
+    const button = new ButtonWidget({value: '', width: 'auto', borderless: true});
+    expect(button.rect.width).toBe(0);
+  });
+
+  it('width=auto handles double-width CJK characters', () => {
+    const button = new ButtonWidget({value: '你好', width: 'auto', height: 3});
+    expect(button.rect.width).toBe(6);
+  });
+
+  it('omitting width still defaults to 10', () => {
+    const button = new ButtonWidget({value: 'OK'});
+    expect(button.rect.width).toBe(10);
+  });
+
+  it('intrinsicSize returns content width in auto mode', () => {
+    const button = new ButtonWidget({value: 'Submit', width: 'auto', height: 3});
+    expect(button.intrinsicSize()).toEqual({width: 8, height: 3});
+  });
+
+  it('intrinsicSize returns content width in auto mode with borderless', () => {
+    const button = new ButtonWidget({value: 'Submit', width: 'auto', borderless: true});
+    expect(button.intrinsicSize()).toEqual({width: 6, height: 1});
+  });
+
+  it('intrinsicSize still echoes rect in non-auto mode', () => {
+    const button = new ButtonWidget({value: 'OK', width: 10, height: 3});
+    expect(button.intrinsicSize()).toEqual({width: 10, height: 3});
+  });
+
+  it('updateValue resizes in auto mode', () => {
+    const button = new ButtonWidget({value: 'Hi', width: 'auto', height: 3});
+    expect(button.rect.width).toBe(4);
+    button.updateValue('Hello World');
+    expect(button.rect.width).toBe(13);
+  });
+
+  it('updateValue does not resize in non-auto mode', () => {
+    const button = new ButtonWidget({value: 'Hi', width: 10, height: 3});
+    button.updateValue('Hello World');
+    expect(button.rect.width).toBe(10);
+  });
+
+  it('setBorderless recomputes width in auto mode', () => {
+    const button = new ButtonWidget({value: 'Hello', width: 'auto', height: 3});
+    expect(button.rect.width).toBe(7);
+    button.setBorderless(true);
+    expect(button.rect.width).toBe(5);
+  });
+
+  it('updateNormalStyle with borderStyle none recomputes width in auto mode', () => {
+    const button = new ButtonWidget({value: 'Hello', width: 'auto', height: 3});
+    expect(button.rect.width).toBe(7);
+    button.updateNormalStyle({borderStyleNormal: 'none'});
+    expect(button.rect.width).toBe(5);
+  });
+
+  it('createButtonWidget supports auto width', () => {
+    const button = createButtonWidget({value: 'OK', width: 'auto', height: 3});
+    expect(button.rect.width).toBe(4);
+    expect(button.intrinsicSize()).toEqual({width: 4, height: 3});
+  });
+
+  it('createButtonWidget auto width with borderless', () => {
+    const button = createButtonWidget({value: 'Test', width: 'auto', borderless: true});
+    expect(button.rect.width).toBe(4);
+    expect(button.rect.height).toBe(1);
   });
 });

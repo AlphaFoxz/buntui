@@ -39,12 +39,6 @@ export function resolveNativeLibPath(): string {
     return dllPath;
   }
 
-  const srcDir = path.resolve(import.meta.dir, binaryName);
-  if (fs.existsSync(srcDir)) {
-    dllPath = srcDir;
-    return dllPath;
-  }
-
   const workspaceBin = path.resolve(import.meta.dir, '..', '..', '..', 'packages', 'native', 'zig-out', 'bin', binaryName);
   if (fs.existsSync(workspaceBin)) {
     dllPath = workspaceBin;
@@ -65,7 +59,6 @@ export function resolveNativeLibPath(): string {
     envPath ? `BUNTUI_DLL=${envPath}` : '(BUNTUI_DLL env not set)',
     nativePath || `@buntui/native-${platformKey} (not installed)`,
     mainDir,
-    srcDir,
     workspaceBin,
     workspaceLib,
   ];

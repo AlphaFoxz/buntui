@@ -1,5 +1,7 @@
 export {type BoxWidgetOptions, createBox} from './box/BoxWidget';
-export type {TuiPercent, TuiSizeValue, TuiWidgetPercentSpec} from './types';
+export type {
+  TuiPercent, TuiAutoSize, TuiSizeValue, TuiWidgetPercentSpec,
+} from './types';
 export type {Focusable} from './Focusable';
 export {InteractiveWidget} from './InteractiveWidget';
 export {createTextWidget, TextWidget} from './text/TextWidget';

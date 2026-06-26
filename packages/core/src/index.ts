@@ -58,6 +58,7 @@ export type {
   TuiWidgetSize,
   TuiWidgetPadding,
   TuiPercent,
+  TuiAutoSize,
   TuiSizeValue,
   TuiWidgetPercentSpec,
   TuiLayoutDirectionName,

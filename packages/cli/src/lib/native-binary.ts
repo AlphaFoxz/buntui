@@ -27,7 +27,6 @@ export function copyNativeBinary(distDir: string, cwd: string): void {
   const candidates = [
     ...(nativePath ? [nativePath] : []),
     path.join(cwd, 'node_modules', '@buntui', 'core', binaryName),
-    path.join(cwd, 'node_modules', '@buntui', 'core', 'src', 'utils', `buntui.${ext}`),
     path.join(cwd, binaryName),
   ];
 

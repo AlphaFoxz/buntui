@@ -1,19 +1,29 @@
 <template>
-    <Text :x="1" :y="3" value="Switch widget — on/off toggle" />
+  <Text :x="1" :y="3" value="Switch widget — on/off toggle" />
 
-    <Switch :x="1" :y="4" label="Dark mode" @change="handleChange('Dark mode', $event)" />
-    <Switch :x="1" :y="5" label="Notifications" @change="handleChange('Notifications', $event)" />
-    <Switch :x="1" :y="6" label="Disabled" :disabled="true" />
+  <Switch
+    :x="1"
+    :y="4"
+    label="Dark mode"
+    @change="handleChange('Dark mode', $event)"
+  />
+  <Switch
+    :x="1"
+    :y="5"
+    label="Notifications"
+    @change="handleChange('Notifications', $event)"
+  />
+  <Switch :x="1" :y="6" label="Disabled" :disabled="true" />
 
-    <Text :x="1" :y="8" :value="log" />
+  <Text :x="1" :y="8" :value="log" />
 </template>
 
 <script setup lang="ts">
-import { ref } from '@vue/reactivity'
+import { ref } from '@vue/reactivity';
 
-const log = ref('Toggle a switch above')
+const log = ref('Toggle a switch above');
 
 function handleChange(name: string, event: TuiSwitchChangeEvent) {
-    log.value = `${name}: ${event.checked ? 'on' : 'off'}`
+  log.value = `${name}: ${event.checked ? 'on' : 'off'}`;
 }
 </script>
