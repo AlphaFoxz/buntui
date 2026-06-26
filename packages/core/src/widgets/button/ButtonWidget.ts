@@ -55,6 +55,7 @@ function getDefaultButtonOptions(): Required<ButtonWidgetOptions> {
     ...resolveWidgetColors(BUTTON_TOKEN_MAP),
 
     disabled: false,
+    borderless: false,
   };
 }
 
@@ -68,7 +69,12 @@ export class ButtonWidget extends InteractiveWidget {
 
   constructor(options: ButtonWidgetOptions = {}) {
     super();
-    const resolved = {...getDefaultButtonOptions(), ...options};
+    const defaults = getDefaultButtonOptions();
+    if (options.borderless === true && options.height === undefined) {
+      defaults.height = 1;
+    }
+
+    const resolved = {...defaults, ...options};
     this.#rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
     this.#value = resolved.value;
     this.setDisabled(resolved.disabled);
@@ -113,6 +119,10 @@ export class ButtonWidget extends InteractiveWidget {
     this.on('mouseup', () => {
       this.#pressed = false;
     });
+
+    if (resolved.borderless) {
+      this.setBorderless(true);
+    }
   }
 
   override blur(): void {
@@ -132,6 +142,18 @@ export class ButtonWidget extends InteractiveWidget {
 
   updateValue(value: string): void {
     this.#value = value;
+  }
+
+  setBorderless(borderless: boolean): void {
+    if (!borderless) {
+      return;
+    }
+
+    this.#colors.normal.borderStyle = 0;
+    this.#colors.focused!.borderStyle = 0;
+    this.#colors.hovered!.borderStyle = 0;
+    this.#colors.pressed!.borderStyle = 0;
+    this.#colors.disabled!.borderStyle = 0;
   }
 
   updateNormalStyle(options: {colorFgNormal?: TuiColor; colorBgNormal?: TuiColor; colorBorderNormal?: TuiColor; borderStyleNormal?: TuiBorderStyleName}): void {
@@ -224,10 +246,11 @@ export class ButtonWidget extends InteractiveWidget {
     });
 
     if (this.#value.length > 0) {
-      const innerWidth = width - 2;
-      const innerHeight = height - 2;
-      const textX = x + 1 + Math.max(0, Math.floor((innerWidth - this.#value.length) / 2));
-      const textY = y + 1 + Math.floor(innerHeight / 2);
+      const pad = colors.borderStyle === 0 ? 0 : 1;
+      const innerWidth = width - (pad * 2);
+      const innerHeight = height - (pad * 2);
+      const textX = x + pad + Math.max(0, Math.floor((innerWidth - this.#value.length) / 2));
+      const textY = y + pad + Math.floor(innerHeight / 2);
       const visibleText = this.#value.slice(0, Math.max(0, innerWidth));
       buffer.drawText({
         x: textX,
@@ -260,7 +283,12 @@ export class ButtonWidget extends InteractiveWidget {
 
 export function createButtonWidget(options?: Partial<ButtonWidgetOptions>): ButtonWidget {
   const ctorOptions = resolveThemedOverrides(options ?? {}, BUTTON_TOKEN_MAP);
-  const widget = new ButtonWidget({...getDefaultButtonOptions(), ...ctorOptions});
+  const defaults = getDefaultButtonOptions();
+  if (options?.borderless === true && options.height === undefined) {
+    defaults.height = 1;
+  }
+
+  const widget = new ButtonWidget({...defaults, ...ctorOptions});
   widget.initTokenMap(BUTTON_TOKEN_MAP);
   bindThemeToWidget(widget, BUTTON_TOKEN_MAP, options ?? {}, resolved => {
     widget.updateThemeColors(resolved);

@@ -1120,4 +1120,54 @@ describe('codegen', () => {
       expect(result.code).not.toContain('effect(()');
     });
   });
+
+  describe('borderless sugar', () => {
+    const buttonHandlers = CORE_REGISTRY.Button?.propHandlers;
+
+    it('serializes static borderless as boolean true', () => {
+      const root = makeRoot(
+        [makeWidget({
+          tag: 'Button',
+          creator: 'createButtonWidget',
+          props: [{type: 'TuiStaticProp', name: 'borderless', value: 'true'}],
+          propHandlers: buttonHandlers,
+        })],
+        [],
+        new Set(['createButtonWidget']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain('borderless: true');
+      expect(result.code).not.toContain('"true"');
+    });
+
+    it('calls setBorderless for static borderless', () => {
+      const root = makeRoot(
+        [makeWidget({
+          tag: 'Button',
+          creator: 'createButtonWidget',
+          props: [{type: 'TuiStaticProp', name: 'borderless', value: 'true'}],
+          propHandlers: buttonHandlers,
+        })],
+        [],
+        new Set(['createButtonWidget']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain('.setBorderless(true)');
+    });
+
+    it('generates effect for dynamic borderless', () => {
+      const root = makeRoot(
+        [makeWidget({
+          tag: 'Button',
+          creator: 'createButtonWidget',
+          dynamicProps: [{type: 'TuiDynamicProp', name: 'borderless', expression: 'isLink', loc: STUB_LOC}],
+          propHandlers: buttonHandlers,
+        })],
+        [],
+        new Set(['createButtonWidget']),
+      );
+      const result = gen(root);
+      expect(result.code).toContain('effect(() => { __button0.setBorderless(unref(isLink)); });');
+    });
+  });
 });

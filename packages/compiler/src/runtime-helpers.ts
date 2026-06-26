@@ -144,6 +144,7 @@ const BUTTON_PROP_HANDLERS: PropHandlers = {
   colorBgPressed: {method: 'updatePressedStyle', field: 'colorBgPressed'},
   colorBorderPressed: {method: 'updatePressedStyle', field: 'colorBorderPressed'},
   borderStylePressed: {method: 'updatePressedStyle', field: 'borderStylePressed'},
+  borderless: {method: 'setBorderless'},
   ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE, ...PH_POSITION,
 };
 

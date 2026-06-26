@@ -1,119 +1,134 @@
 <template>
-    <Text :x="1" :y="3" value="▶ ScrollBox with Border & Scrollbar" />
+  <Text :x="1" :y="3" value="▶ ScrollBox with Border & Scrollbar" />
 
-    <ScrollBox
+  <ScrollBox
+    :x="1"
+    :y="4"
+    width="45%"
+    :height="10"
+    borderStyle="rounded"
+    :alwaysShowScrollbar="true"
+    @scroll="handleScroll"
+  >
+    <template>
+      <Text
+        v-for="(item, index) in 20"
         :x="1"
-        :y="4"
-        width="45%"
-        :height="10"
-        borderStyle="rounded"
-        :alwaysShowScrollbar="true"
-        @scroll="handleScroll"
-    >
-        <template>
-            <Text
-                v-for="(item, index) in 20"
-                :x="1"
-                :y="5 + index"
-                :colorFg="index % 2 === 0 ? undefined : 'rgba(108,112,134,1)'"
-                :value="`${String(index + 1).padStart(2, '0')}. 第${index + 1}行内容 - Scrollable content line ${index + 1}`"
-            />
-        </template>
-    </ScrollBox>
+        :y="5 + index"
+        :colorFg="index % 2 === 0 ? undefined : 'rgba(108,112,134,1)'"
+        :value="`${String(index + 1).padStart(2, '0')}. 第${index + 1}行内容 - Scrollable content line ${index + 1}`"
+      />
+    </template>
+  </ScrollBox>
 
-    <Box x="50%" :y="4" width="45%" :height="10" borderStyle="rounded" :direction="'vertical'" :gap="1">
-        <Text value="▶ Scroll Info" />
-        <Text :value="`Offset: ${scrollOffsetY}`" />
-        <Text :value="`Max: ${maxScrollY}`" />
-        <Text :value="`Progress: ${scrollPercent}%`" />
-        <Text value="" />
-        <Text value="Controls:" />
-        <Text value="  Mouse wheel / drag to scroll" />
-        <Text value="  ↑↓ Arrow keys (1 line)" />
-        <Text value="  PageUp/Down (viewport)" />
-    </Box>
+  <Box
+    x="50%"
+    :y="4"
+    width="45%"
+    :height="10"
+    borderStyle="rounded"
+    :direction="'vertical'"
+    :gap="1"
+  >
+    <Text value="▶ Scroll Info" />
+    <Text :value="`Offset: ${scrollOffsetY}`" />
+    <Text :value="`Max: ${maxScrollY}`" />
+    <Text :value="`Progress: ${scrollPercent}%`" />
+    <Text value="" />
+    <Text value="Controls:" />
+    <Text value="  Mouse wheel / drag to scroll" />
+    <Text value="  ↑↓ Arrow keys (1 line)" />
+    <Text value="  PageUp/Down (viewport)" />
+  </Box>
 
-    <Text :x="1" :y="15" value="▶ Compact List (no border)" />
+  <Text :x="1" :y="15" value="▶ Compact List (no border)" />
 
-    <ScrollBox :x="1" :y="16" width="45%" :height="6" @scroll="handleScroll2">
-        <template>
-            <Text
-                v-for="(item, index) in 30"
-                :x="1"
-                :y="17 + index"
-                :colorFg="index === highlightIndex ? 'rgba(250,179,135,1)' : undefined"
-                :value="`  ${index === highlightIndex ? '▸' : ' '} Item ${String(index + 1).padStart(2, '0')} - compact scroll list`"
-            />
-        </template>
-    </ScrollBox>
-
-    <ScrollBox x="50%" :y="15" width="45%" :height="6" borderStyle="double">
-        <template>
-            <Text
-                v-for="(item, index) in 15"
-                :x="1"
-                :y="16 + index"
-                :value="`${'█'.repeat(Math.max(1, 20 - index))}${'░'.repeat(index)} ${20 - index}%`"
-            />
-        </template>
-    </ScrollBox>
-
-    <Text :x="1" :y="23" value="▶ Horizontal Scroll (wide content)" />
-
-    <ScrollBox
+  <ScrollBox :x="1" :y="16" width="45%" :height="6" @scroll="handleScroll2">
+    <template>
+      <Text
+        v-for="(item, index) in 30"
         :x="1"
-        :y="24"
-        width="45%"
-        :height="4"
-        borderStyle="rounded"
-        @scroll="handleScrollX"
-    >
-        <template>
-            <Text
-                :x="1"
-                :y="25"
-                :value="wideLine"
-            />
-            <Text
-                :x="1"
-                :y="26"
-                :value="`${'─'.repeat(60)} ← ${wideLine.length} chars wide`"
-            />
-        </template>
-    </ScrollBox>
+        :y="17 + index"
+        :colorFg="index === highlightIndex ? 'rgba(250,179,135,1)' : undefined"
+        :value="`  ${index === highlightIndex ? '▸' : ' '} Item ${String(index + 1).padStart(2, '0')} - compact scroll list`"
+      />
+    </template>
+  </ScrollBox>
 
-    <Box x="50%" :y="24" width="45%" :height="4" borderStyle="rounded" :direction="'vertical'" :gap="0">
-        <Text :value="`OffsetX: ${scrollOffsetX} / ${maxScrollX}`" />
-        <Text value="Shift+wheel ←→  Arrow keys ←→" />
-    </Box>
+  <ScrollBox x="50%" :y="15" width="45%" :height="6" borderStyle="double">
+    <template>
+      <Text
+        v-for="(item, index) in 15"
+        :x="1"
+        :y="16 + index"
+        :value="`${'█'.repeat(Math.max(1, 20 - index))}${'░'.repeat(index)} ${20 - index}%`"
+      />
+    </template>
+  </ScrollBox>
+
+  <Text :x="1" :y="23" value="▶ Horizontal Scroll (wide content)" />
+
+  <ScrollBox
+    :x="1"
+    :y="24"
+    width="45%"
+    :height="4"
+    borderStyle="rounded"
+    @scroll="handleScrollX"
+  >
+    <template>
+      <Text :x="1" :y="25" :value="wideLine" />
+      <Text
+        :x="1"
+        :y="26"
+        :value="`${'─'.repeat(60)} ← ${wideLine.length} chars wide`"
+      />
+    </template>
+  </ScrollBox>
+
+  <Box
+    x="50%"
+    :y="24"
+    width="45%"
+    :height="4"
+    borderStyle="rounded"
+    :direction="'vertical'"
+    :gap="0"
+  >
+    <Text :value="`OffsetX: ${scrollOffsetX} / ${maxScrollX}`" />
+    <Text value="Shift+wheel ←→  Arrow keys ←→" />
+  </Box>
 </template>
 
 <script setup lang="ts">
-import { ref } from '@vue/reactivity'
+import { ref } from '@vue/reactivity';
 
-const scrollOffsetY = ref(0)
-const maxScrollY = ref(0)
-const scrollPercent = ref('0')
+const scrollOffsetY = ref(0);
+const maxScrollY = ref(0);
+const scrollPercent = ref('0');
 
 function handleScroll(event: TuiScrollEvent) {
-    scrollOffsetY.value = event.scrollOffsetY
-    maxScrollY.value = event.maxScrollY
-    scrollPercent.value =
-        maxScrollY.value > 0 ? String(Math.round((event.scrollOffsetY / event.maxScrollY) * 100)) : '0'
+  scrollOffsetY.value = event.scrollOffsetY;
+  maxScrollY.value = event.maxScrollY;
+  scrollPercent.value =
+    maxScrollY.value > 0
+      ? String(Math.round((event.scrollOffsetY / event.maxScrollY) * 100))
+      : '0';
 }
 
-const highlightIndex = ref(3)
+const highlightIndex = ref(3);
 
 function handleScroll2(event: TuiScrollEvent) {
-    void event
+  void event;
 }
 
-const scrollOffsetX = ref(0)
-const maxScrollX = ref(0)
-const wideLine = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.'
+const scrollOffsetX = ref(0);
+const maxScrollX = ref(0);
+const wideLine =
+  'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.';
 
 function handleScrollX(event: TuiScrollEvent) {
-    scrollOffsetX.value = event.scrollOffsetX
-    maxScrollX.value = event.maxScrollX
+  scrollOffsetX.value = event.scrollOffsetX;
+  maxScrollX.value = event.maxScrollX;
 }
 </script>

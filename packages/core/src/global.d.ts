@@ -150,6 +150,7 @@ declare global {
     height?: TuiSizeValue;
     value?: string;
     disabled?: boolean;
+    borderless?: boolean;
     colorFgNormal?: TuiColor;
     colorBgNormal?: TuiColor;
     colorBorderNormal?: TuiColor;

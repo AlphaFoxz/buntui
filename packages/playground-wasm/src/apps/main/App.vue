@@ -1,5 +1,6 @@
 <template>
   <Matrix width="100%" height="100%" />
+
   <Box
     width="100%"
     :height="1"
@@ -9,6 +10,15 @@
   >
     <Text :x="0" :y="0" value="Buntui" styleModifier="bold" />
   </Box>
+
+  <Button
+    borderless
+    :disabled="router.currentRoute.path === '/home'"
+    :x="0"
+    :y="0"
+    value="Go Home"
+    @click="handleGoHome"
+  ></Button>
 
   <Select
     x="50%"
@@ -48,6 +58,11 @@ const pageOptions = ref([
   { value: '/api', label: 'Api' },
 ]);
 const currentPage = ref(pageOptions.value[0]!.value);
+
+function handleGoHome() {
+  router.push({ path: '/home' });
+  console.log('Go Home');
+}
 
 const themes = [
   tokyoNightMoon,

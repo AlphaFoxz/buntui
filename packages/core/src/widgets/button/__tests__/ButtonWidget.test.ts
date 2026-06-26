@@ -1,5 +1,5 @@
 import {it, expect, describe} from 'bun:test';
-import {ButtonWidget} from '../ButtonWidget';
+import {ButtonWidget, createButtonWidget} from '../ButtonWidget';
 import type {KeyboardEvent, MouseEvent} from '../../../events/types';
 import type {DrawListBuffer} from '../../../draw_list/DrawListBuffer';
 import {parseColor} from '../../../utils/color';
@@ -372,6 +372,34 @@ describe('emitDrawCommands', () => {
     expect(captured.borders[0]!.style).toBe(1);
   });
 
+  it('positions text without padding when borderStyle is none', () => {
+    const button = createButton({value: 'OK', width: 10, height: 1});
+    button.updateNormalStyle({borderStyleNormal: 'none'});
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    const text = captured.texts[0]!;
+    expect(text.x).toBe(4);
+    expect(text.y).toBe(0);
+  });
+
+  it('positions text with padding when borderStyle is set', () => {
+    const button = createButton({value: 'OK', width: 10, height: 3});
+    button.updateNormalStyle({borderStyleNormal: 'solid'});
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    const text = captured.texts[0]!;
+    expect(text.x).toBe(4);
+    expect(text.y).toBe(1);
+  });
+
+  it('does not truncate text width by border columns when borderless', () => {
+    const button = createButton({value: 'abcdefghij', width: 10, height: 1});
+    button.updateNormalStyle({borderStyleNormal: 'none'});
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.texts[0]!.text).toBe('abcdefghij');
+  });
+
   it('renders with the updated normal-state background and foreground', () => {
     const button = createButton({value: 'X'});
     button.updateNormalStyle({colorBgNormal: '#ff0000', colorFgNormal: '#00ff00'});
@@ -421,5 +449,87 @@ describe('updatePressedStyle', () => {
     const {buf, captured} = capture();
     button.emitDrawCommands(buf);
     expect(captured.rects[0]!.bgRgba).toBe(parseColor('#445566'));
+  });
+});
+
+describe('borderless', () => {
+  it('setBorderless(true) removes border in normal state', () => {
+    const button = createButton({value: 'OK'});
+    button.setBorderless(true);
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.borders).toHaveLength(0);
+  });
+
+  it('setBorderless(true) removes border in focused state', () => {
+    const button = createButton({value: 'OK'});
+    button.setBorderless(true);
+    button.focus();
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.borders).toHaveLength(0);
+  });
+
+  it('setBorderless(true) removes border in hovered state', () => {
+    const button = createButton({value: 'OK'});
+    button.setBorderless(true);
+    button.dispatch('mouseover', mouse({x: 1, y: 1}));
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.borders).toHaveLength(0);
+  });
+
+  it('setBorderless(true) removes border in pressed state', () => {
+    const button = createButton({value: 'OK'});
+    button.setBorderless(true);
+    button.dispatch('mouseover', mouse({x: 1, y: 1}));
+    button.dispatch('mousedown', mouse({x: 1, y: 1}));
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.borders).toHaveLength(0);
+  });
+
+  it('setBorderless(true) removes border in disabled state', () => {
+    const button = createButton({value: 'OK'});
+    button.setBorderless(true);
+    button.setDisabled(true);
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.borders).toHaveLength(0);
+  });
+
+  it('setBorderless(false) is a no-op', () => {
+    const button = createButton({value: 'OK'});
+    button.setBorderless(false);
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.borders).toHaveLength(1);
+  });
+
+  it('constructor borderless option removes border', () => {
+    const button = new ButtonWidget({value: 'OK', width: 10, height: 3, borderless: true});
+    const {buf, captured} = capture();
+    button.emitDrawCommands(buf);
+    expect(captured.borders).toHaveLength(0);
+  });
+
+  it('constructor borderless defaults height to 1 when height is omitted', () => {
+    const button = new ButtonWidget({value: 'OK', width: 10, borderless: true});
+    expect(button.rect.height).toBe(1);
+  });
+
+  it('constructor borderless does not override explicit height', () => {
+    const button = new ButtonWidget({value: 'OK', width: 10, height: 5, borderless: true});
+    expect(button.rect.height).toBe(5);
+  });
+
+  it('createButtonWidget borderless defaults height to 1', () => {
+    const button = createButtonWidget({value: 'OK', width: 10, borderless: true});
+    expect(button.rect.height).toBe(1);
+  });
+
+  it('createButtonWidget borderless does not override explicit height', () => {
+    const button = createButtonWidget({value: 'OK', width: 10, height: 5, borderless: true});
+    expect(button.rect.height).toBe(5);
   });
 });
