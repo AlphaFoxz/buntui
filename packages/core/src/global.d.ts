@@ -199,6 +199,7 @@ declare global {
     width?: TuiSizeValue;
     height?: TuiSizeValue;
     options?: readonly string[];
+    tabs?: readonly string[];
     value?: number;
     modelValue?: number;
     disabled?: boolean;
@@ -218,6 +219,7 @@ declare global {
     width?: TuiSizeValue;
     height?: TuiSizeValue;
     options?: unknown[];
+    tabs?: unknown[];
     value?: unknown;
     modelValue?: unknown;
     disabled?: boolean;
@@ -270,6 +272,7 @@ declare global {
     height?: TuiSizeValue;
     colorFg?: TuiColor;
     colorBg?: TuiColor;
+    border?: TuiBorderSides;
     colorBorder?: TuiColor;
     borderStyle?: TuiBorderStyle;
     borderTop?: boolean;
@@ -294,6 +297,7 @@ declare global {
     alwaysShowScrollbar?: boolean;
     colorScrollbar?: TuiColor;
     colorScrollbarTrack?: TuiColor;
+    disabled?: boolean;
   };
 
   type TuiProgressProps = {

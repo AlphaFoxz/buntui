@@ -219,14 +219,12 @@ const TABLE_PROP_HANDLERS: PropHandlers = {
 };
 
 const SELECT_PROP_HANDLERS: PropHandlers = {
-  x: {method: 'updateRect', field: 'x'},
-  y: {method: 'updateRect', field: 'y'},
-  width: {method: 'updateRect', field: 'width'},
+  ...PH_RECT,
   value: {method: 'updateValue'},
   options: {method: 'setOptions'},
   placeholder: {method: 'setPlaceholder'},
   label: {method: 'setLabel'},
-  borderStyle: {method: 'updateBorder', field: 'borderStyle'},
+  ...PH_BORDER_STYLE_ONLY,
   ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE, ...PH_POSITION,
 };
 
