@@ -1,92 +1,79 @@
 <template>
-  <Text :x="2" :y="1" value="Select" styleModifier="bold" />
+  <Text value="Select" styleModifier="bold" />
   <Text
-    :x="2"
-    :y="2"
     value="Dropdown select with scrollable options list. Opens on focus + Enter/Space."
   />
 
-  <Text :x="2" :y="4" value="▸ Properties" styleModifier="bold" />
+  <Text value="▸ Properties" styleModifier="bold" />
   <Text
-    :x="2"
-    :y="5"
     value="options         { value: string, label: string }[]  Dropdown options"
   />
-  <Text :x="2" :y="6" value="value           string          Selected value" />
-  <Text
-    :x="2"
-    :y="7"
-    value="placeholder     string          Placeholder text"
-  />
-  <Text
-    :x="2"
-    :y="8"
-    value="label           string          Label in top border"
-  />
-  <Text :x="2" :y="9" value="disabled        boolean          Disabled state" />
-  <Text :x="2" :y="10" value="borderStyle     TuiBorderStyleName" />
+  <Text value="value           string          Selected value" />
+  <Text value="placeholder     string          Placeholder text" />
+  <Text value="label           string          Label in top border" />
+  <Text value="disabled        boolean          Disabled state" />
+  <Text value="borderStyle     TuiBorderStyleName" />
 
-  <Text :x="2" :y="12" value="▸ Plain Selects" styleModifier="bold" />
-  <Select
-    :x="2"
-    :y="13"
-    width="22%"
-    :options="languageOptions"
-    :value="selectedLanguage"
-    placeholder="Choose..."
-    @change="handleLanguage"
-  />
-  <Select
-    x="26%"
-    :y="13"
-    width="22%"
-    :options="themeOptions"
-    :value="selectedTheme"
-    placeholder="Pick theme..."
-    @change="handleTheme"
-  />
-  <Select
-    x="52%"
-    :y="13"
-    width="22%"
-    :options="languageOptions"
-    value="ts"
-    :disabled="true"
-  />
+  <Text value="▸ Plain Selects" styleModifier="bold" />
+  <Box
+    width="98%"
+    :direction="'horizontal'"
+    :gap="1"
+    borderStyle="none"
+    colorBg="rgba(0,0,0,0)"
+  >
+    <Select
+      :flexGrow="1"
+      :options="languageOptions"
+      :value="selectedLanguage"
+      placeholder="Choose..."
+      @change="handleLanguage"
+    />
+    <Select
+      :flexGrow="1"
+      :options="themeOptions"
+      :value="selectedTheme"
+      placeholder="Pick theme..."
+      @change="handleTheme"
+    />
+    <Select
+      :flexGrow="1"
+      :options="languageOptions"
+      value="ts"
+      :disabled="true"
+    />
+  </Box>
 
-  <Text :x="2" :y="16" value="▸ With Label & Border" styleModifier="bold" />
-  <Select
-    :x="2"
-    :y="17"
-    width="30%"
-    label="Language"
-    borderStyle="rounded"
-    :options="languageOptions"
-    :value="selectedLanguage"
-    @change="handleLanguage"
-  />
-  <Select
-    x="34%"
-    :y="17"
-    width="30%"
-    label="Theme"
-    borderStyle="rounded"
-    :options="themeOptions"
-    :value="selectedTheme"
-    placeholder="Pick theme..."
-    @change="handleTheme"
-  />
+  <Text value="▸ With Label & Border" styleModifier="bold" />
+  <Box
+    width="98%"
+    :direction="'horizontal'"
+    :gap="1"
+    borderStyle="none"
+    colorBg="rgba(0,0,0,0)"
+  >
+    <Select
+      :flexGrow="1"
+      label="Language"
+      borderStyle="rounded"
+      :options="languageOptions"
+      :value="selectedLanguage"
+      @change="handleLanguage"
+    />
+    <Select
+      :flexGrow="1"
+      label="Theme"
+      borderStyle="rounded"
+      :options="themeOptions"
+      :value="selectedTheme"
+      placeholder="Pick theme..."
+      @change="handleTheme"
+    />
+  </Box>
 
-  <Text
-    :x="2"
-    :y="21"
-    value="▸ Long List (scrollable dropdown)"
-    styleModifier="bold"
-  />
+  <Text value="▸ Long List (scrollable dropdown)" styleModifier="bold" />
   <Select
-    :x="2"
-    :y="22"
-    width="30%"
+    width="98%"
     label="Country"
     borderStyle="rounded"
     :options="countryOptions"
@@ -94,56 +81,49 @@
     @change="handleCountry"
   />
 
-  <Text :x="2" :y="26" value="▸ Border Styles" styleModifier="bold" />
-  <Select
-    :x="2"
-    :y="27"
-    width="20%"
-    label="Solid"
-    borderStyle="solid"
-    :options="languageOptions"
-    v-model="borderDemoValue"
-  />
-  <Select
-    x="24%"
-    :y="27"
-    width="20%"
-    label="Dashed"
-    borderStyle="dashed"
-    :options="languageOptions"
-    v-model="borderDemoValue"
-  />
-  <Select
-    x="48%"
-    :y="27"
-    width="20%"
-    label="Double"
-    borderStyle="double"
-    :options="languageOptions"
-    v-model="borderDemoValue"
-  />
-
-  <Text :x="2" :y="31" value="▸ Summary" styleModifier="bold" />
+  <Text value="▸ Border Styles" styleModifier="bold" />
   <Box
-    :x="2"
-    :y="32"
-    width="95%"
-    borderStyle="rounded"
-    :direction="'vertical'"
+    width="98%"
+    :direction="'horizontal'"
     :gap="1"
+    borderStyle="none"
+    colorBg="rgba(0,0,0,0)"
   >
+    <Select
+      :flexGrow="1"
+      label="Solid"
+      borderStyle="solid"
+      :options="languageOptions"
+      v-model="borderDemoValue"
+    />
+    <Select
+      :flexGrow="1"
+      label="Dashed"
+      borderStyle="dashed"
+      :options="languageOptions"
+      v-model="borderDemoValue"
+    />
+    <Select
+      :flexGrow="1"
+      label="Double"
+      borderStyle="double"
+      :options="languageOptions"
+      v-model="borderDemoValue"
+    />
+  </Box>
+
+  <Text value="▸ Summary" styleModifier="bold" />
+  <Box width="98%" borderStyle="rounded" :direction="'vertical'" :gap="1">
     <Text
       :value="`Language: ${languageLabel} | Theme: ${themeLabel} | Country: ${countryLabel}`"
     />
   </Box>
 
   <Text
-    :x="2"
-    :y="35"
     value="▸ Events: change ({ value, label }), open, close"
     styleModifier="bold"
   />
-  <Text :x="2" :y="36" :value="eventLog" />
+  <Text :value="eventLog" />
 </template>
 <script setup lang="ts">
 import { ref, computed } from '@vue/reactivity';

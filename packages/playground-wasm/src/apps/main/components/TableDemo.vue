@@ -1,87 +1,64 @@
 <template>
-  <Text :x="2" :y="1" value="Table" styleModifier="bold" />
+  <Text value="Table" styleModifier="bold" />
   <Text
-    :x="2"
-    :y="2"
     value="Data table with column definitions, row selection, scrolling, and keyboard navigation."
   />
 
-  <Text :x="2" :y="4" value="▸ Properties" styleModifier="bold" />
+  <Text value="▸ Properties" styleModifier="bold" />
   <Text
-    :x="2"
-    :y="5"
     value="columns         { key, label?, width?, align? }[]  Column definitions"
   />
-  <Text
-    :x="2"
-    :y="6"
-    value="rows            Record<string, unknown>[]         Row data"
-  />
-  <Text :x="2" :y="7" value="disabled        boolean          Disabled state" />
-  <Text :x="2" :y="8" value="borderStyle     TuiBorderStyleName" />
-  <Text :x="2" :y="9" value="width, height    TuiSizeValue    Size" />
+  <Text value="rows            Record<string, unknown>[]         Row data" />
+  <Text value="disabled        boolean          Disabled state" />
+  <Text value="borderStyle     TuiBorderStyleName" />
+  <Text value="width, height    TuiSizeValue    Size" />
 
-  <Text :x="2" :y="11" value="▸ Basic Table" styleModifier="bold" />
-  <Table
-    :x="2"
-    :y="12"
-    width="60%"
-    :height="8"
-    :columns="basicColumns"
-    :rows="basicRows"
-    @rowSelect="onRowSelect"
-    @rowActivate="onRowActivate"
-  />
-
+  <Text value="▸ Basic Table" styleModifier="bold" />
   <Box
-    x="64%"
-    :y="12"
-    width="33%"
-    :height="5"
-    borderStyle="rounded"
-    :direction="'vertical'"
+    width="98%"
+    :direction="'horizontal'"
     :gap="1"
+    :align="'start'"
+    borderStyle="none"
+    colorBg="rgba(0,0,0,0)"
   >
-    <Text value="▸ Selection" styleModifier="bold" />
-    <Text :value="selectionInfo" />
+    <Table
+      width="60%"
+      :height="8"
+      :columns="basicColumns"
+      :rows="basicRows"
+      @rowSelect="onRowSelect"
+      @rowActivate="onRowActivate"
+    />
+
+    <Box
+      width="33%"
+      :height="5"
+      borderStyle="rounded"
+      :direction="'vertical'"
+      :gap="1"
+    >
+      <Text value="▸ Selection" styleModifier="bold" />
+      <Text :value="selectionInfo" />
+    </Box>
   </Box>
 
-  <Text
-    :x="2"
-    :y="21"
-    value="▸ Large Dataset (scrollable)"
-    styleModifier="bold"
-  />
-  <Table
-    :x="2"
-    :y="22"
-    width="95%"
-    :height="10"
-    :columns="scrollColumns"
-    :rows="scrollRows"
-  />
+  <Text value="▸ Large Dataset (scrollable)" styleModifier="bold" />
+  <Table width="98%" :height="10" :columns="scrollColumns" :rows="scrollRows" />
 
   <Text
-    :x="2"
-    :y="33"
     value="▸ Column align: 'left' | 'center' | 'right'"
     styleModifier="bold"
   />
   <Text
-    :x="2"
-    :y="34"
     value="▸ Methods: setColumns(cols), setRows(rows), scrollTo(n), scrollBy(n)"
     styleModifier="bold"
   />
   <Text
-    :x="2"
-    :y="35"
     value="▸ Events: rowSelect ({ index, row }), rowActivate ({ index, row })"
     styleModifier="bold"
   />
   <Text
-    :x="2"
-    :y="36"
     value="▸ Keyboard: ArrowUp/Down, PageUp/Down, Home/End, Enter (rowActivate)"
     styleModifier="bold"
   />

@@ -8,7 +8,13 @@
     borderStyle="none"
     colorBg="none"
   >
-    <Text :x="0" :y="0" value="Buntui" styleModifier="bold" />
+    <Text
+      :x="0"
+      :y="0"
+      :colorFg="colorThemed({ hueOffset: 300 })"
+      value="Buntui Documentation"
+      styleModifier="bold"
+    />
   </Box>
 
   <Button
@@ -16,6 +22,7 @@
     :disabled="router.currentRoute.path === '/home'"
     :x="0"
     :y="0"
+    :colorFgNormal="colorThemed({ hueOffset: 300 })"
     value="← Home"
     @click="handleGoHome"
   ></Button>
@@ -43,6 +50,7 @@ import {
   rosePineMoon,
   rosePineDawn,
   highContrast,
+  colorThemed,
 } from '@buntui/core';
 import { useRouter } from './domain/router.ts';
 import Api from './Api.vue';

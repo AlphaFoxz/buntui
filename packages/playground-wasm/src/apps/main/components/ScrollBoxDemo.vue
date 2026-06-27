@@ -1,116 +1,95 @@
 <template>
-  <Text :x="2" :y="1" value="ScrollBox" styleModifier="bold" />
+  <Text value="ScrollBox" styleModifier="bold" />
   <Text
-    :x="2"
-    :y="2"
     value="Scrollable container with optional border and scrollbar. Clips children to its viewport."
   />
 
-  <Text :x="2" :y="4" value="▸ Properties" styleModifier="bold" />
-  <Text :x="2" :y="5" value="borderStyle     TuiBorderStyleName" />
+  <Text value="▸ Properties" styleModifier="bold" />
+  <Text value="borderStyle     TuiBorderStyleName" />
   <Text
-    :x="2"
-    :y="6"
     value="scrollSpeed      number         Scroll speed multiplier (default: 3)"
   />
   <Text
-    :x="2"
-    :y="7"
     value="alwaysShowScrollbar  boolean   Always show scrollbar (default: false)"
   />
-  <Text
-    :x="2"
-    :y="8"
-    value="colorScrollbar   TuiColor       Scrollbar thumb color"
-  />
-  <Text
-    :x="2"
-    :y="9"
-    value="colorScrollbarTrack TuiColor    Scrollbar track color"
-  />
-  <Text :x="2" :y="10" value="padding*        number         Padding" />
-  <Text
-    :x="2"
-    :y="11"
-    value="gap             number         Gap between children"
-  />
-  <Text
-    :x="2"
-    :y="12"
-    value="shadow*         Shadow props   Shadow offset and color"
-  />
+  <Text value="colorScrollbar   TuiColor       Scrollbar thumb color" />
+  <Text value="colorScrollbarTrack TuiColor    Scrollbar track color" />
+  <Text value="padding*        number         Padding" />
+  <Text value="gap             number         Gap between children" />
+  <Text value="shadow*         Shadow props   Shadow offset and color" />
 
-  <Text :x="2" :y="14" value="▸ With Border & Scrollbar" styleModifier="bold" />
-  <ScrollBox
-    :x="2"
-    :y="15"
-    width="45%"
-    :height="8"
-    borderStyle="rounded"
-    :alwaysShowScrollbar="true"
-    @scroll="handleScroll"
-  >
-    <template>
-      <Text
-        v-for="(item, index) in 20"
-        :x="1"
-        :y="16 + index"
-        :value="`${String(index + 1).padStart(2, '0')}. Line ${index + 1} — scrollable content`"
-      />
-    </template>
-  </ScrollBox>
-
+  <Text value="▸ With Border & Scrollbar" styleModifier="bold" />
   <Box
-    x="50%"
-    :y="15"
-    width="45%"
-    :height="8"
-    borderStyle="rounded"
-    :direction="'vertical'"
+    width="98%"
+    :direction="'horizontal'"
     :gap="1"
+    :align="'start'"
+    borderStyle="none"
+    colorBg="rgba(0,0,0,0)"
   >
-    <Text value="▸ Scroll Info" styleModifier="bold" />
-    <Text :value="`Offset: ${scrollOffsetY}`" />
-    <Text :value="`Max: ${maxScrollY}`" />
-    <Text :value="`Progress: ${scrollPercent}%`" />
-    <Text value="" />
-    <Text value="Controls:" />
-    <Text value="  Mouse wheel to scroll" />
-    <Text value="  Arrow keys / PageUp/Down" />
+    <ScrollBox
+      width="48%"
+      :height="8"
+      borderStyle="rounded"
+      :alwaysShowScrollbar="true"
+      @scroll="handleScroll"
+    >
+      <template>
+        <Text
+          v-for="(item, index) in 20"
+          :value="`${String(index + 1).padStart(2, '0')}. Line ${index + 1} — scrollable content`"
+        />
+      </template>
+    </ScrollBox>
+
+    <Box
+      width="48%"
+      :height="7"
+      borderStyle="rounded"
+      :direction="'vertical'"
+      :gap="1"
+    >
+      <Text value="▸ Scroll Info" styleModifier="bold" />
+      <Text :value="`Offset: ${scrollOffsetY}`" />
+      <Text :value="`Max: ${maxScrollY}`" />
+      <Text :value="`Progress: ${scrollPercent}%`" />
+      <Text value="" />
+      <Text value="Controls:" />
+      <Text value="  Mouse wheel to scroll" />
+      <Text value="  Arrow keys / PageUp/Down" />
+    </Box>
   </Box>
 
-  <Text :x="2" :y="24" value="▸ No Border (compact)" styleModifier="bold" />
-  <ScrollBox :x="2" :y="25" width="45%" :height="5">
-    <template>
-      <Text
-        v-for="(item, index) in 30"
-        :x="1"
-        :y="26 + index"
-        :value="`  Item ${String(index + 1).padStart(2, '0')} — no border scroll`"
-      />
-    </template>
-  </ScrollBox>
+  <Text value="▸ No Border (compact)" styleModifier="bold" />
+  <Box
+    width="98%"
+    :direction="'horizontal'"
+    :gap="1"
+    :align="'start'"
+    borderStyle="none"
+    colorBg="rgba(0,0,0,0)"
+  >
+    <ScrollBox width="48%" :height="5">
+      <template>
+        <Text
+          v-for="(item, index) in 30"
+          :value="`  Item ${String(index + 1).padStart(2, '0')} — no border scroll`"
+        />
+      </template>
+    </ScrollBox>
 
-  <ScrollBox x="50%" :y="25" width="45%" :height="5" borderStyle="double">
-    <template>
-      <Text
-        v-for="(item, index) in 15"
-        :x="1"
-        :y="26 + index"
-        :value="barValues[index]"
-      />
-    </template>
-  </ScrollBox>
+    <ScrollBox width="48%" :height="5" borderStyle="double">
+      <template>
+        <Text v-for="(item, index) in 15" :value="barValues[index]" />
+      </template>
+    </ScrollBox>
+  </Box>
 
   <Text
-    :x="2"
-    :y="31"
     value="▸ Methods: scrollTo(n), scrollToTop(), scrollToBottom(), scrollBy(n), scrollIntoView(child)"
     styleModifier="bold"
   />
   <Text
-    :x="2"
-    :y="32"
     value="▸ Events: scroll ({ scrollOffsetY, maxScrollY })"
     styleModifier="bold"
   />

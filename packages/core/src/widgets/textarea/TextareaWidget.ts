@@ -14,6 +14,13 @@ import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../c
 import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
 import {resolveThemedOverrides} from '../../theme/color-ref';
 import {getClipboard} from '../../clipboard';
+import {
+  computeScrollbarGeometry,
+  scrollbarHitTest,
+  computeThumbDragOffset,
+  renderScrollbar,
+  type ScrollbarHitTest,
+} from '../scrollbar-helper';
 import type {TextareaWidgetOptions} from './types';
 
 type TextareaColors = {fg: number; bg: number; colorBorder: number};
@@ -128,6 +135,9 @@ export class TextareaWidget extends InteractiveWidget {
   #clickCount = 0;
   #lastClickTime = 0;
   #lastClickPos: TextPosition = {line: -1, col: -1};
+  #thumbDragging = false;
+  #thumbDragStartY = 0;
+  #thumbDragStartOffset = 0;
   #cursorMode: CursorModeName = 'blinking-ibeam';
   readonly #undoStack: Array<{value: string; cursorLine: number; cursorCol: number; selectionAnchor: TextPosition | undefined}> = [];
   readonly #redoStack: Array<{value: string; cursorLine: number; cursorCol: number; selectionAnchor: TextPosition | undefined}> = [];
@@ -181,6 +191,38 @@ export class TextareaWidget extends InteractiveWidget {
         return;
       }
 
+      const vHit = this.#scrollbarHitTest();
+      if (vHit) {
+        const result = scrollbarHitTest(mouseData.x, mouseData.y, vHit);
+        switch (result.type) {
+          case 'thumb': {
+            this.#thumbDragging = true;
+            this.#thumbDragStartY = mouseData.y;
+            this.#thumbDragStartOffset = this.#scrollOffsetY;
+            this.stopPropagation();
+            return;
+          }
+
+          case 'track-above': {
+            this.scrollBy(-this.#computeViewport().height);
+            this.stopPropagation();
+            return;
+          }
+
+          case 'track-below': {
+            this.scrollBy(this.#computeViewport().height);
+            this.stopPropagation();
+            return;
+          }
+
+          case 'track-left':
+          case 'track-right':
+          case 'none': {
+            break;
+          }
+        }
+      }
+
       const targetPos = this.#posFromMouse(mouseData);
       const now = Date.now();
       if (now - this.#lastClickTime < 300
@@ -231,6 +273,20 @@ export class TextareaWidget extends InteractiveWidget {
     });
 
     this.on('mousemove', mouseData => {
+      if (this.#thumbDragging) {
+        if ((mouseData.buttons ?? 0) === 0) {
+          this.#thumbDragging = false;
+          return;
+        }
+
+        const delta = mouseData.y - this.#thumbDragStartY;
+        const viewport = this.#computeViewport();
+        const geometry = computeScrollbarGeometry(viewport.height, this.#visualLines.length, this.#thumbDragStartOffset);
+        this.scrollTo(computeThumbDragOffset(delta, this.#thumbDragStartOffset, geometry));
+        this.stopPropagation();
+        return;
+      }
+
       if (!this.#isSelecting) {
         return;
       }
@@ -277,6 +333,12 @@ export class TextareaWidget extends InteractiveWidget {
     });
 
     this.on('mouseup', () => {
+      if (this.#thumbDragging) {
+        this.#thumbDragging = false;
+        this.stopPropagation();
+        return;
+      }
+
       if (!this.#isSelecting) {
         return;
       }
@@ -1456,24 +1518,34 @@ export class TextareaWidget extends InteractiveWidget {
       return;
     }
 
+    const geometry = computeScrollbarGeometry(viewport.height, totalVisual, this.#scrollOffsetY);
     const scrollbarX = viewport.x + viewport.width + 1;
-    const thumbRatio = viewport.height / totalVisual;
-    const thumbSize = Math.max(1, Math.round(thumbRatio * viewport.height));
-    const scrollableRange = viewport.height - thumbSize;
-    const thumbOffset = maxScroll > 0
-      ? Math.round((this.#scrollOffsetY / maxScroll) * scrollableRange)
-      : 0;
+    renderScrollbar({
+      buffer, x: scrollbarX, trackY: viewport.y, trackHeight: viewport.height, geometry, thumbColor: this.#extraColors.scrollbar, trackColor: this.#extraColors.scrollbarTrack,
+    });
+  }
 
-    for (let row = 0; row < viewport.height; row++) {
-      const isThumb = row >= thumbOffset && row < thumbOffset + thumbSize;
-      buffer.drawChar({
-        x: scrollbarX,
-        y: viewport.y + row,
-        char: isThumb ? 0x25_88 : 0x25_02,
-        fgRgba: isThumb ? this.#extraColors.scrollbar : this.#extraColors.scrollbarTrack,
-        bgRgba: 0x00_00_00_00,
-      });
+  #scrollbarHitTest(): ScrollbarHitTest | undefined {
+    const maxScroll = this.#maxScrollOffset();
+    if (maxScroll === 0) {
+      return undefined;
     }
+
+    const totalVisual = this.#visualLines.length;
+    if (totalVisual <= 0) {
+      return undefined;
+    }
+
+    const viewport = this.#computeViewport();
+    const geometry = computeScrollbarGeometry(viewport.height, totalVisual, this.#scrollOffsetY);
+    const scrollbarX = viewport.x + viewport.width + 1;
+    return {
+      x: scrollbarX,
+      trackY: viewport.y,
+      trackHeight: viewport.height,
+      thumbY: viewport.y + geometry.thumbOffset,
+      thumbSize: geometry.thumbSize,
+    };
   }
 }
 

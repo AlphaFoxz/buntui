@@ -401,12 +401,12 @@ export class BoxWidget extends TuiWidgetEntity {
     let maxCross = 0;
     for (const child of this.#layoutChildren) {
       const intrinsic = child.intrinsicSize();
-      if (!intrinsic) {
-        return undefined;
-      }
-
-      const childMain = isVertical ? intrinsic.height : intrinsic.width;
-      const childCross = isVertical ? intrinsic.width : intrinsic.height;
+      const childMain = isVertical
+        ? (child.hasExplicitHeight ? child.rect.height : (intrinsic?.height ?? child.rect.height))
+        : (child.hasExplicitWidth ? child.rect.width : (intrinsic?.width ?? child.rect.width));
+      const childCross = isVertical
+        ? (child.hasExplicitWidth ? child.rect.width : (intrinsic?.width ?? child.rect.width))
+        : (child.hasExplicitHeight ? child.rect.height : (intrinsic?.height ?? child.rect.height));
       totalMain += childMain;
       if (childCross > maxCross) {
         maxCross = childCross;

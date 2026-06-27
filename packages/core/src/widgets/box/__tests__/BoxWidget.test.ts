@@ -289,10 +289,14 @@ describe('intrinsicSize', () => {
     expect(size!.height).toBe(3); // child(1) + top(1) + bottom(1)
   });
 
-  it('returns undefined if any child has no intrinsic size', () => {
+  it('falls back to child rect when child has no intrinsic size', () => {
     const box = createBoxWith();
-    box.addChild(createBoxWith()); // Nested box with no children → no intrinsic size
-    expect(box.intrinsicSize()).toBeUndefined();
+    const nested = createBoxWith(); // Nested box with no children → no intrinsic size
+    box.addChild(nested);
+    const size = box.intrinsicSize();
+    expect(size).toBeDefined();
+    expect(size!.width).toBe(20); // nested rect.width (no explicit width, no intrinsic)
+    expect(size!.height).toBe(10); // nested hasExplicitHeight → rect.height
   });
 });
 
