@@ -116,11 +116,13 @@ inline fn detectPosixTermRect(context: *TuiContext) void {
 test "screen_rect" {
     const testing = std.testing;
     var context = TuiContext{
+        .tick = 0,
         .x = 0,
         .y = 0,
         .rows = 0,
         .cols = 0,
         .resize_behavior = .Auto,
+        .debug_mode = .False,
     };
     detectTermSize(&context);
     try testing.expect(context.cols > 10);

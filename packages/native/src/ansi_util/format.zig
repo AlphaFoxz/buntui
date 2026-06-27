@@ -1,5 +1,4 @@
 const std = @import("std");
-const fixedBufferStream = std.io.fixedBufferStream;
 const testing = std.testing;
 const CellStyle = @import("./style.zig").CellStyle;
 const FontStyle = @import("./style.zig").FontStyle;
@@ -123,136 +122,136 @@ pub fn updateStyleAndFlush(writer: anytype, new: CellStyle, old: ?CellStyle) !vo
 
 test "same style default, no update" {
     var buf: [1024]u8 = undefined;
-    var fixed_buf_stream = fixedBufferStream(&buf);
+    var fw = std.Io.Writer.fixed(&buf);
 
-    try updateStyle(fixed_buf_stream.writer(), CellStyle{}, CellStyle{});
+    try updateStyle(&fw, CellStyle{}, CellStyle{});
 
     const expected = "";
-    const actual = fixed_buf_stream.getWritten();
+    const actual = fw.buffer[0..fw.end];
 
     try testing.expectEqualSlices(u8, expected, actual);
 }
 
 test "same style non-default, no update" {
     var buf: [1024]u8 = undefined;
-    var fixed_buf_stream = fixedBufferStream(&buf);
+    var fw = std.Io.Writer.fixed(&buf);
 
     const sty = CellStyle{
         .foreground = Color.Green,
     };
-    try updateStyle(fixed_buf_stream.writer(), sty, sty);
+    try updateStyle(&fw, sty, sty);
 
     const expected = "";
-    const actual = fixed_buf_stream.getWritten();
+    const actual = fw.buffer[0..fw.end];
 
     try testing.expectEqualSlices(u8, expected, actual);
 }
 
 test "reset to default, old null" {
     var buf: [1024]u8 = undefined;
-    var fixed_buf_stream = fixedBufferStream(&buf);
+    var fw = std.Io.Writer.fixed(&buf);
 
-    try updateStyle(fixed_buf_stream.writer(), CellStyle{}, null);
+    try updateStyle(&fw, CellStyle{}, null);
 
     const expected = "\x1B[0m";
-    const actual = fixed_buf_stream.getWritten();
+    const actual = fw.buffer[0..fw.end];
 
     try testing.expectEqualSlices(u8, expected, actual);
 }
 
 test "reset to default, old non-null" {
     var buf: [1024]u8 = undefined;
-    var fixed_buf_stream = fixedBufferStream(&buf);
+    var fw = std.Io.Writer.fixed(&buf);
 
-    try updateStyle(fixed_buf_stream.writer(), CellStyle{}, CellStyle{
+    try updateStyle(&fw, CellStyle{}, CellStyle{
         .font_style = .{ .bold = true },
     });
 
     const expected = "\x1B[0m";
-    const actual = fixed_buf_stream.getWritten();
+    const actual = fw.buffer[0..fw.end];
 
     try testing.expectEqualSlices(u8, expected, actual);
 }
 
 test "bold style" {
     var buf: [1024]u8 = undefined;
-    var fixed_buf_stream = fixedBufferStream(&buf);
+    var fw = std.Io.Writer.fixed(&buf);
 
-    try updateStyle(fixed_buf_stream.writer(), CellStyle{
+    try updateStyle(&fw, CellStyle{
         .font_style = .{ .bold = true },
     }, CellStyle{});
 
     const expected = "\x1B[1m";
-    const actual = fixed_buf_stream.getWritten();
+    const actual = fw.buffer[0..fw.end];
 
     try testing.expectEqualSlices(u8, expected, actual);
 }
 
 test "add bold style" {
     var buf: [1024]u8 = undefined;
-    var fixed_buf_stream = fixedBufferStream(&buf);
+    var fw = std.Io.Writer.fixed(&buf);
 
-    try updateStyle(fixed_buf_stream.writer(), CellStyle{
+    try updateStyle(&fw, CellStyle{
         .font_style = .{ .bold = true, .italic = true },
     }, CellStyle{
         .font_style = .{ .italic = true },
     });
 
     const expected = "\x1B[1m";
-    const actual = fixed_buf_stream.getWritten();
+    const actual = fw.buffer[0..fw.end];
 
     try testing.expectEqualSlices(u8, expected, actual);
 }
 
 test "reset required font style" {
     var buf: [1024]u8 = undefined;
-    var fixed_buf_stream = fixedBufferStream(&buf);
+    var fw = std.Io.Writer.fixed(&buf);
 
-    try updateStyle(fixed_buf_stream.writer(), CellStyle{
+    try updateStyle(&fw, CellStyle{
         .font_style = .{ .bold = true },
     }, CellStyle{
         .font_style = .{ .bold = true, .underline = true },
     });
 
     const expected = "\x1B[0m\x1B[1m";
-    const actual = fixed_buf_stream.getWritten();
+    const actual = fw.buffer[0..fw.end];
 
     try testing.expectEqualSlices(u8, expected, actual);
 }
 
 test "reset required color style" {
     var buf: [1024]u8 = undefined;
-    var fixed_buf_stream = fixedBufferStream(&buf);
+    var fw = std.Io.Writer.fixed(&buf);
 
-    try updateStyle(fixed_buf_stream.writer(), CellStyle{
+    try updateStyle(&fw, CellStyle{
         .foreground = Color.Red,
     }, null);
 
     const expected = "\x1B[0m\x1B[31m";
-    const actual = fixed_buf_stream.getWritten();
+    const actual = fw.buffer[0..fw.end];
 
     try testing.expectEqualSlices(u8, expected, actual);
 }
 
 test "no reset required color style" {
     var buf: [1024]u8 = undefined;
-    var fixed_buf_stream = fixedBufferStream(&buf);
+    var fw = std.Io.Writer.fixed(&buf);
 
-    try updateStyle(fixed_buf_stream.writer(), CellStyle{
+    try updateStyle(&fw, CellStyle{
         .foreground = Color.Red,
     }, CellStyle{});
 
     const expected = "\x1B[31m";
-    const actual = fixed_buf_stream.getWritten();
+    const actual = fw.buffer[0..fw.end];
 
     try testing.expectEqualSlices(u8, expected, actual);
 }
 
 test "no reset required add color style" {
     var buf: [1024]u8 = undefined;
-    var fixed_buf_stream = fixedBufferStream(&buf);
+    var fw = std.Io.Writer.fixed(&buf);
 
-    try updateStyle(fixed_buf_stream.writer(), CellStyle{
+    try updateStyle(&fw, CellStyle{
         .foreground = Color.Red,
         .background = Color.Magenta,
     }, CellStyle{
@@ -260,7 +259,7 @@ test "no reset required add color style" {
     });
 
     const expected = "\x1B[31m";
-    const actual = fixed_buf_stream.getWritten();
+    const actual = fw.buffer[0..fw.end];
 
     try testing.expectEqualSlices(u8, expected, actual);
 }
@@ -276,12 +275,12 @@ pub fn resetStyleAndFlush(writer: anytype) !void {
 
 test "reset style" {
     var buf: [1024]u8 = undefined;
-    var fixed_buf_stream = fixedBufferStream(&buf);
+    var fw = std.Io.Writer.fixed(&buf);
 
-    try resetStyle(fixed_buf_stream.writer());
+    try resetStyle(&fw);
 
     const expected = "\x1B[0m";
-    const actual = fixed_buf_stream.getWritten();
+    const actual = fw.buffer[0..fw.end];
 
     try testing.expectEqualSlices(u8, expected, actual);
 }
@@ -289,14 +288,14 @@ test "reset style" {
 test "Grey foreground color" {
     const GrayColor = @import("./style.zig").GrayColor;
     var buf: [1024]u8 = undefined;
-    var fixed_buf_stream = fixedBufferStream(&buf);
+    var fw = std.Io.Writer.fixed(&buf);
     var new_style = CellStyle{};
     new_style.foreground = Color{ .Grey = GrayColor{ .value = 1 } };
 
-    try updateStyle(fixed_buf_stream.writer(), new_style, CellStyle{});
+    try updateStyle(&fw, new_style, CellStyle{});
 
     const expected = "\x1B[38;2;1;1;1m";
-    const actual = fixed_buf_stream.getWritten();
+    const actual = fw.buffer[0..fw.end];
 
     try testing.expectEqualSlices(u8, expected, actual);
 }
@@ -304,14 +303,14 @@ test "Grey foreground color" {
 test "Grey background color" {
     const GrayColor = @import("./style.zig").GrayColor;
     var buf: [1024]u8 = undefined;
-    var fixed_buf_stream = fixedBufferStream(&buf);
+    var fw = std.Io.Writer.fixed(&buf);
     var new_style = CellStyle{};
     new_style.background = Color{ .Grey = GrayColor{ .value = 1 } };
 
-    try updateStyle(fixed_buf_stream.writer(), new_style, CellStyle{});
+    try updateStyle(&fw, new_style, CellStyle{});
 
     const expected = "\x1B[48;2;1;1;1m";
-    const actual = fixed_buf_stream.getWritten();
+    const actual = fw.buffer[0..fw.end];
 
     try testing.expectEqualSlices(u8, expected, actual);
 }
