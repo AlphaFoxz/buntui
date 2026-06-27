@@ -31,7 +31,7 @@ bun dev
 | **Zig 驱动渲染**     | 通过 FFI 调用原生光栅化器 — 零 GC 停顿，极低帧耗时                                        |
 | **Bun 运行时**       | `<script>` 中拥有完整 OS 访问能力 — 启动进程、读写文件、调用任意 npm 包                   |
 | **热重载**           | 编辑 `.vue` 文件即刻生效，无需重启                                                        |
-| **丰富的组件库**     | Box、Text、Input、Button、Checkbox、Switch、RadioGroup、SelectButton、Progress、ScrollBox |
+| **丰富的组件库**     | Box、Text、Input、Button、Checkbox、Switch、RadioGroup、SelectButton、Progress、ScrollBox、Textarea、Table、Select |
 
 ## 架构
 
@@ -72,7 +72,7 @@ bun dev
 
 ```vue
 <template>
-  <Box :x="1" :y="1" :width="40" :height="5" borderStyle="rounded" :borderColor="'rgba(137,180,250,1)'">
+  <Box :x="1" :y="1" :width="40" :height="5" borderStyle="rounded" colorBorder="rgba(137,180,250,1)">
     <Text :colorFg="'rgba(205,214,244,1)'" :value="greeting" />
     <Button :width="16" :height="3" value="Click me" @click="onClick" />
   </Box>
@@ -104,15 +104,19 @@ function onClick() {
 | `<SelectButton>` | 水平分段控制器（标签栏）                                                  |
 | `<Progress>`     | 进度条：确定/不确定模式，带动画                                           |
 | `<ScrollBox>`    | 可滚动容器：滚动条、鼠标拖拽、键盘翻页                                    |
+| `<Textarea>`     | 多行文本编辑器：滚动、光标、选区、撤销/重做、剪贴板                       |
+| `<Table>`        | 数据表格：键盘导航、行选择、列对齐                                        |
+| `<Select>`       | 下拉选择列表：键盘导航、滚动条、可自定义选项颜色                          |
 
 ## 扩展组件
 
-```bash
+```ts
 import Matrix      from '@buntui/extensions/matrix'
 import Snake       from '@buntui/extensions/snake'
 import VideoPlayer from '@buntui/extensions/videoplayer'
 import Logger      from '@buntui/extensions/logger'
 import FrameRate   from '@buntui/extensions/framerate'
+import Canvas      from '@buntui/extensions/canvas'
 ```
 
 | 组件        | 说明                              |
@@ -122,6 +126,7 @@ import FrameRate   from '@buntui/extensions/framerate'
 | VideoPlayer | 在终端中以 braille art 播放视频   |
 | Logger      | 浮动可拖拽的日志面板，带时间戳    |
 | FrameRate   | 实时帧率计数器覆盖层              |
+| Canvas      | 像素级画布：逐单元格自定义绘制（字符、前景/背景色） |
 
 ## Monorepo 结构
 

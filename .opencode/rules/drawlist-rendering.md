@@ -35,7 +35,7 @@ Unknown command types are skipped (`payload_len` allows parser to advance past t
 ## Key Files
 
 - **Zig**: `packages/native/src/draw_list/` — commands.zig, clip_stack.zig, rasterizer.zig, draw_list.zig, parser.zig, presenter.zig, binary.zig
-- **TS**: `packages/core/src/draw_list/` — DrawListBuffer.ts (builder), types.ts (enums)
+- **TS**: `packages/core/src/draw-list/` — DrawListBuffer.ts (builder), types.ts (enums)
 - **FFI**: `renderDrawList(ctx, buf_ptr, buf_len)` in lib.zig + app/NativeBackend.ts
 
 ## Rendering Rules

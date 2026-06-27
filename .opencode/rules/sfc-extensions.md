@@ -22,6 +22,7 @@ The compiler resolves template tags with a three-tier strategy (highest priority
   "./snake": { "types": "./dist/snake.d.ts", "default": "./dist/snake.js" },
   "./videoplayer": { "types": "./dist/videoplayer.d.ts", "default": "./dist/videoplayer.js" },
   "./logger": { "types": "./dist/logger.d.ts", "default": "./dist/logger.js" },
+  "./canvas": { "types": "./dist/canvas.d.ts", "default": "./dist/canvas.js" },
   "./hmr-error-overlay": { "types": "./dist/hmr-error-overlay.d.ts", "default": "./dist/hmr-error-overlay.js" }
 }
 ```

@@ -31,7 +31,7 @@ bun dev
 | **Zig-powered rendering** | Native rasterizer via FFI — zero GC pauses, minimal frame time                                  |
 | **Bun runtime**           | Full OS access in `<script>` — spawn processes, read files, call any npm package                |
 | **Hot reload**            | Edit `.vue` files and see changes instantly, no restart needed                                  |
-| **Rich widget set**       | Box, Text, Input, Button, Checkbox, Switch, RadioGroup, SelectButton, Progress, ScrollBox       |
+| **Rich widget set**       | Box, Text, Input, Button, Checkbox, Switch, RadioGroup, SelectButton, Progress, ScrollBox, Textarea, Table, Select |
 
 ## Architecture
 
@@ -72,7 +72,7 @@ Per-frame: reset buffer → widget tree emits draw commands → Zig rasterizes (
 
 ```vue
 <template>
-  <Box :x="1" :y="1" :width="40" :height="5" borderStyle="rounded" :borderColor="'rgba(137,180,250,1)'">
+  <Box :x="1" :y="1" :width="40" :height="5" borderStyle="rounded" colorBorder="rgba(137,180,250,1)">
     <Text :colorFg="'rgba(205,214,244,1)'" :value="greeting" />
     <Button :width="16" :height="3" value="Click me" @click="onClick" />
   </Box>
@@ -104,15 +104,19 @@ function onClick() {
 | `<SelectButton>` | Horizontal segmented control (tab bar)                                                 |
 | `<Progress>`     | Determinate and indeterminate progress bar with animation                              |
 | `<ScrollBox>`    | Scrollable container with scrollbar, mouse drag, keyboard paging                       |
+| `<Textarea>`     | Multi-line text editor with scrolling, cursor, selection, undo/redo, clipboard         |
+| `<Table>`        | Structured data grid with keyboard navigation, row selection, column alignment         |
+| `<Select>`       | Dropdown list with keyboard navigation, scrollbar, customizable item colors            |
 
 ## Extension Widgets
 
-```bash
+```ts
 import Matrix      from '@buntui/extensions/matrix'
 import Snake       from '@buntui/extensions/snake'
 import VideoPlayer from '@buntui/extensions/videoplayer'
 import Logger      from '@buntui/extensions/logger'
 import FrameRate   from '@buntui/extensions/framerate'
+import Canvas      from '@buntui/extensions/canvas'
 ```
 
 | Widget      | Description                                   |
@@ -122,6 +126,7 @@ import FrameRate   from '@buntui/extensions/framerate'
 | VideoPlayer | Video playback as braille art in the terminal |
 | Logger      | Floating draggable log panel with timestamps  |
 | FrameRate   | Real-time FPS counter overlay                 |
+| Canvas      | Pixel-level canvas for custom drawing (chars, per-cell fg/bg colors) |
 
 ## Monorepo
 
