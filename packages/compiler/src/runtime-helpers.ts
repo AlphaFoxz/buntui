@@ -207,6 +207,7 @@ const TEXTAREA_PROP_HANDLERS: PropHandlers = {
   placeholder: {method: 'setPlaceholder'},
   label: {method: 'setLabel'},
   readonly: {method: 'setReadonly'},
+  borderless: {method: 'setBorderless'},
   ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE, ...PH_POSITION,
 };
 

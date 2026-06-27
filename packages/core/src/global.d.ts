@@ -384,6 +384,10 @@ declare global {
     height?: TuiSizeValue;
     colorFg?: TuiColor;
     colorBg?: TuiColor;
+    colorFgNormal?: TuiColor;
+    colorBgNormal?: TuiColor;
+    colorFgFocused?: TuiColor;
+    colorBgFocused?: TuiColor;
     placeholder?: string;
     colorPlaceholder?: TuiColor;
     value?: string;
@@ -391,6 +395,7 @@ declare global {
     label?: string;
     colorBorderUnfocused?: TuiColor;
     colorBorderFocused?: TuiColor;
+    colorBorderDisabled?: TuiColor;
     borderStyle?: TuiBorderStyle;
     maxLength?: number;
     colorSelectionBg?: TuiColor;
@@ -399,6 +404,9 @@ declare global {
     disabled?: boolean;
     colorFgDisabled?: TuiColor;
     colorBgDisabled?: TuiColor;
+    colorScrollbar?: TuiColor;
+    colorScrollbarTrack?: TuiColor;
+    borderless?: boolean;
   };
 
   type TuiTableProps = {

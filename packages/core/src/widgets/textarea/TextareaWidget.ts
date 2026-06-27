@@ -93,6 +93,7 @@ function getDefaultTextareaOptions(): TextareaWidgetOptions {
     label: '',
     readonly: false,
     disabled: false,
+    borderless: false,
 
     ...resolveWidgetColors(TEXTAREA_TOKEN_MAP),
   };
@@ -167,7 +168,9 @@ export class TextareaWidget extends InteractiveWidget {
         colorBorder: parseColor(resolved.colorBorderDisabled),
       },
     };
-    this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
+    this.#borderStyle = resolved.borderless === true
+      ? 0
+      : resolveBorderStyle(resolved.borderStyle ?? 'solid');
     this.#maxLength = resolved.maxLength ?? 0;
     this.#placeholder = resolved.placeholder ?? '';
     this.#extraColors = {
@@ -368,6 +371,11 @@ export class TextareaWidget extends InteractiveWidget {
     this.#isReadonly = value;
   }
 
+  setBorderless(borderless: boolean): void {
+    this.#borderStyle = borderless ? 0 : resolveBorderStyle('solid');
+    this.#rebuildVisualLines();
+  }
+
   setLabel(value: string): void {
     this.#label = value;
   }
@@ -395,9 +403,12 @@ export class TextareaWidget extends InteractiveWidget {
   }
 
   updateBorder(border: {borderStyle?: TuiBorderStyleName}): void {
-    if (border.borderStyle !== undefined) {
-      this.#borderStyle = resolveBorderStyle(border.borderStyle);
+    if (border.borderStyle === undefined) {
+      return;
     }
+
+    this.#borderStyle = resolveBorderStyle(border.borderStyle);
+    this.#rebuildVisualLines();
   }
 
   updateValue(newValue: string): void {
@@ -560,6 +571,7 @@ export class TextareaWidget extends InteractiveWidget {
     applyColorSchemeUpdates(this.#colors, resolved);
     if (resolved.borderStyle !== undefined) {
       this.#borderStyle = resolveBorderStyle(resolved.borderStyle);
+      this.#rebuildVisualLines();
     }
 
     if (resolved.colorPlaceholder !== undefined) {
@@ -764,10 +776,11 @@ export class TextareaWidget extends InteractiveWidget {
   }
 
   #computeViewport(): {x: number; y: number; width: number; height: number} {
-    const textX = this.#x + 1;
-    const textY = this.#y + 1;
-    const textWidth = this.#width - 3;
-    const textHeight = this.#height - 2;
+    const pad = this.#borderStyle === 0 ? 0 : 1;
+    const textX = this.#x + pad;
+    const textY = this.#y + pad;
+    const textWidth = this.#width - pad - 2;
+    const textHeight = this.#height - (pad * 2);
     return {
       x: textX, y: textY, width: Math.max(0, textWidth), height: Math.max(0, textHeight),
     };
