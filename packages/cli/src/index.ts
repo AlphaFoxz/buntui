@@ -5,8 +5,6 @@ import fs from 'node:fs';
 import {Command} from 'commander';
 import {devCommand} from './commands/dev.ts';
 import {buildCommand} from './commands/build.ts';
-import {wasmDevCommand} from './commands/wasm-dev.ts';
-import {wasmBuildCommand} from './commands/wasm-build.ts';
 
 const {version} = JSON.parse(fs.readFileSync(path.join(import.meta.dir, '..', 'package.json'), 'utf-8')) as {version: string};
 
@@ -44,6 +42,7 @@ wasm
   .description('start WASM dev server (requires vite)')
   .argument('[app]', 'app name (auto-detected if only one exists)')
   .action(async (appName?: string) => {
+    const {wasmDevCommand} = await import('./commands/wasm-dev.ts');
     await wasmDevCommand(appName);
   });
 
@@ -51,6 +50,7 @@ wasm
   .command('build')
   .description('production build for browser target')
   .action(async () => {
+    const {wasmBuildCommand} = await import('./commands/wasm-build.ts');
     await wasmBuildCommand();
   });
 

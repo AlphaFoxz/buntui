@@ -30,8 +30,8 @@
         "@vue/tsconfig": "^0.9.1",
         "jsdom": "^29.1.1",
         "npm-run-all2": "^9.0.2",
-        "typescript": "=5.9.3",
-        "vite": "^8.0.16",
+        "typescript": "=6.0.3",
+        "vite": "^8.1.0",
         "vitest": "^4.1.9",
         "vue-tsc": "^3.3.3"
     },

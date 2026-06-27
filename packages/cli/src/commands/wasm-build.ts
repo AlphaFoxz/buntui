@@ -1,7 +1,6 @@
 import process from 'node:process';
 import path from 'node:path';
 import fs from 'node:fs';
-import {binaryPath} from '@buntui/native-wasm32-wasi';
 import {listApps, getDistDir, getCwd} from '../lib/app-resolver.ts';
 import {createVuePlugin} from '../lib/vue-plugin.ts';
 
@@ -77,6 +76,7 @@ function generateDts(appName: string, distDir: string, cwd: string): void {
 }
 
 export async function wasmBuildCommand(): Promise<void> {
+  const {binaryPath} = await import('@buntui/native-wasm32-wasi');
   const cwd = getCwd();
   const distDir = getDistDir(cwd);
   const apps = listApps(cwd);

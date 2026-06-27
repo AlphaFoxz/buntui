@@ -1,12 +1,12 @@
 import process from 'node:process';
 import path from 'node:path';
 import fs from 'node:fs';
-import {binaryPath} from '@buntui/native-wasm32-wasi';
 import {resolveApp, getCwd} from '../lib/app-resolver.ts';
 import {createBuntuiVitePlugin} from '../lib/vite-plugin.ts';
 import {loadConfig} from '../lib/config.ts';
 
 export async function wasmDevCommand(appName?: string): Promise<void> {
+  const {binaryPath} = await import('@buntui/native-wasm32-wasi');
   const cwd = getCwd();
   const app = resolveApp(appName, cwd);
   const config = await loadConfig(cwd);

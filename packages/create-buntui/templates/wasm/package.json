@@ -16,7 +16,9 @@
     "devDependencies": {
         "@buntui/cli": "{{version}}",
         "@buntui/compiler": "{{version}}",
+        "@buntui/native-wasm32-wasi": "{{version}}",
         "@types/bun": "1.3.14",
+        "typescript": "=6.0.3",
         "vite": "^8.0.16",
         "vue": "^3.5.38"
     }

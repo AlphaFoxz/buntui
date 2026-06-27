@@ -75,7 +75,7 @@ export function discoverVueFiles(entryPath: string): string[] {
  */
 export function findVueImportPath(compiledCode: string, resolvedPath: string, baseDir: string): string | undefined {
   for (const match of compiledCode.matchAll(VUE_IMPORT_RE)) {
-    const importPath = match[1]!;
+    const importPath = match.groups!.vuePath!;
     const candidate = path.resolve(baseDir, importPath);
     if (candidate === resolvedPath) {
       return importPath;
