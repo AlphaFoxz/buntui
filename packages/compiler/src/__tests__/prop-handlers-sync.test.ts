@@ -18,7 +18,7 @@ import {
 import fs from 'node:fs';
 import path from 'node:path';
 
-const TAG_TO_CLASS: Record<string, new (...args: unknown[]) => unknown> = {
+const TAG_TO_CLASS: Record<string, unknown> = {
   Box: BoxWidget,
   Text: TextWidget,
   Input: InputWidget,
@@ -172,12 +172,12 @@ describe('runtime-helpers ↔ widget ↔ global.d.ts sync', () => {
   describe('method existence — every propHandler.method exists on widget prototype', () => {
     for (const tag of tags) {
       it(`${tag}`, () => {
-        const WidgetClass = TAG_TO_CLASS[tag]!;
+        const proto = (TAG_TO_CLASS[tag] as {prototype: Record<string, unknown>}).prototype;
         const handlers = CORE_REGISTRY[tag]!.propHandlers ?? {};
         const missing: string[] = [];
         for (const [prop, handler] of Object.entries(handlers)) {
           const method = (handler as {method: string}).method;
-          if (typeof (WidgetClass.prototype as Record<string, unknown>)[method] !== 'function') {
+          if (typeof proto[method] !== 'function') {
             missing.push(`${prop} → ${method}()`);
           }
         }
