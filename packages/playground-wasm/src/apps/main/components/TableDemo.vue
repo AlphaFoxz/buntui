@@ -16,9 +16,9 @@
   <Text value="▸ Basic Table" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="1"
-    :align="'start'"
+    align="start"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
   >
@@ -35,7 +35,7 @@
       width="33%"
       :height="5"
       borderStyle="rounded"
-      :direction="'vertical'"
+      direction="vertical"
       :gap="1"
     >
       <Text value="▸ Selection" styleModifier="bold" />

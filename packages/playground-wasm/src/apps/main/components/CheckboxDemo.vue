@@ -16,9 +16,9 @@
   <Text value="▸ Basic" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="2"
-    :align="'start'"
+    align="start"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
   >
@@ -38,9 +38,9 @@
   </Box>
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="2"
-    :align="'start'"
+    align="start"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
   >
@@ -62,14 +62,14 @@
   <Text value="▸ Indeterminate (Select All pattern)" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="2"
-    :align="'start'"
+    align="start"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
   >
     <Box
-      :direction="'vertical'"
+      direction="vertical"
       :gap="1"
       borderStyle="none"
       colorBg="rgba(0,0,0,0)"
@@ -108,7 +108,7 @@
       width="60%"
       :height="5"
       borderStyle="rounded"
-      :direction="'vertical'"
+      direction="vertical"
       :gap="1"
     >
       <Text value="▸ Summary" styleModifier="bold" />

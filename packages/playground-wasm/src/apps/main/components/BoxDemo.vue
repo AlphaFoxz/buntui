@@ -51,7 +51,7 @@
   <Box
     width="98%"
     :height="4"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="1"
     borderStyle="rounded"
   >
@@ -63,7 +63,7 @@
   <Box
     width="98%"
     :height="4"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
     borderStyle="rounded"
   >
@@ -76,9 +76,9 @@
   <Box
     width="98%"
     :height="4"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
-    :align="'start'"
+    align="start"
     borderStyle="rounded"
   >
     <Text value="align=start" />
@@ -87,9 +87,9 @@
   <Box
     width="98%"
     :height="4"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
-    :align="'center'"
+    align="center"
     borderStyle="rounded"
   >
     <Text value="align=center" />
@@ -98,9 +98,9 @@
   <Box
     width="98%"
     :height="4"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
-    :align="'end'"
+    align="end"
     borderStyle="rounded"
   >
     <Text value="align=end" />
@@ -109,9 +109,9 @@
   <Box
     width="98%"
     :height="4"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
-    :align="'stretch'"
+    align="stretch"
     borderStyle="rounded"
   >
     <Text value="align=stretch" />
@@ -163,8 +163,8 @@
   <Box
     width="98%"
     :height="3"
-    :direction="'horizontal'"
-    :justifyContent="'start'"
+    direction="horizontal"
+    justifyContent="start"
     borderStyle="rounded"
   >
     <Text value="[start]" />
@@ -172,8 +172,8 @@
   <Box
     width="98%"
     :height="3"
-    :direction="'horizontal'"
-    :justifyContent="'center'"
+    direction="horizontal"
+    justifyContent="center"
     borderStyle="rounded"
   >
     <Text value="[center]" />
@@ -181,8 +181,8 @@
   <Box
     width="98%"
     :height="3"
-    :direction="'horizontal'"
-    :justifyContent="'end'"
+    direction="horizontal"
+    justifyContent="end"
     borderStyle="rounded"
   >
     <Text value="[end]" />
@@ -190,8 +190,8 @@
   <Box
     width="98%"
     :height="3"
-    :direction="'horizontal'"
-    :justifyContent="'space-between'"
+    direction="horizontal"
+    justifyContent="space-between"
     borderStyle="rounded"
   >
     <Text value="A" />
@@ -199,11 +199,11 @@
   </Box>
 
   <Text value="▸ flexGrow (per-child free-space share)" styleModifier="bold" />
-  <Box width="98%" :height="3" :direction="'horizontal'" borderStyle="rounded">
+  <Box width="98%" :height="3" direction="horizontal" borderStyle="rounded">
     <Text value="g=0" />
     <Text value="g=1" :flexGrow="1" />
   </Box>
-  <Box width="98%" :height="3" :direction="'horizontal'" borderStyle="rounded">
+  <Box width="98%" :height="3" direction="horizontal" borderStyle="rounded">
     <Text value="g=1" :flexGrow="1" />
     <Text value="g=1" :flexGrow="1" />
     <Text value="g=1" :flexGrow="1" />
@@ -213,7 +213,7 @@
   <Box
     width="98%"
     :height="3"
-    :direction="'vertical-reverse'"
+    direction="vertical-reverse"
     borderStyle="rounded"
   >
     <Text value="first (bottom)" />
@@ -222,7 +222,7 @@
   <Box
     width="98%"
     :height="3"
-    :direction="'horizontal-reverse'"
+    direction="horizontal-reverse"
     borderStyle="rounded"
   >
     <Text value="A" />
@@ -233,8 +233,8 @@
   <Box
     width="98%"
     :height="3"
-    :direction="'horizontal'"
-    :align="'start'"
+    direction="horizontal"
+    align="start"
     borderStyle="rounded"
   >
     <Text value="s=1" :flexBasis="24" :flexShrink="1" />
@@ -243,8 +243,8 @@
   <Box
     width="98%"
     :height="3"
-    :direction="'horizontal'"
-    :align="'start'"
+    direction="horizontal"
+    align="start"
     borderStyle="rounded"
   >
     <Text value="s=1" :flexBasis="24" :flexShrink="1" />
@@ -255,8 +255,8 @@
   <Box
     width="98%"
     :height="3"
-    :direction="'horizontal'"
-    :align="'start'"
+    direction="horizontal"
+    align="start"
     borderStyle="rounded"
   >
     <Text value="b=8" :flexBasis="8" />
@@ -271,14 +271,14 @@
   <Box
     width="98%"
     :height="5"
-    :direction="'horizontal'"
-    :align="'start'"
+    direction="horizontal"
+    align="start"
     borderStyle="rounded"
   >
     <Text value="start" />
-    <Text value="center" :alignSelf="'center'" />
-    <Text value="end" :alignSelf="'end'" />
-    <Text value="stretch" :alignSelf="'stretch'" />
+    <Text value="center" alignSelf="center" />
+    <Text value="end" alignSelf="end" />
+    <Text value="stretch" alignSelf="stretch" />
   </Box>
 </template>
 <script setup lang="ts">

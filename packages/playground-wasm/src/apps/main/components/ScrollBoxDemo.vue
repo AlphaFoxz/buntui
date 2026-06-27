@@ -21,9 +21,9 @@
   <Text value="▸ With Border & Scrollbar" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="1"
-    :align="'start'"
+    align="start"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
   >
@@ -46,7 +46,7 @@
       width="48%"
       :height="7"
       borderStyle="rounded"
-      :direction="'vertical'"
+      direction="vertical"
       :gap="1"
     >
       <Text value="▸ Scroll Info" styleModifier="bold" />
@@ -63,9 +63,9 @@
   <Text value="▸ No Border (compact)" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="1"
-    :align="'start'"
+    align="start"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
   >

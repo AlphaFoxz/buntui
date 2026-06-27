@@ -16,7 +16,7 @@
   <Text value="▸ Basic Usage" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="1"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
@@ -34,7 +34,7 @@
   <Text value="▸ Border Styles (per state)" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="1"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
@@ -79,9 +79,9 @@
   <Text value="▸ Sizes" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="1"
-    :align="'start'"
+    align="start"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
   >
@@ -103,7 +103,7 @@
   <Text value="▸ Toggle Disabled Demo" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="1"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"

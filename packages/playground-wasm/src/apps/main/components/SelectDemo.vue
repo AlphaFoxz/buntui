@@ -17,7 +17,7 @@
   <Text value="▸ Plain Selects" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="1"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
@@ -47,7 +47,7 @@
   <Text value="▸ With Label & Border" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="1"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
@@ -84,7 +84,7 @@
   <Text value="▸ Border Styles" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="1"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
@@ -113,7 +113,7 @@
   </Box>
 
   <Text value="▸ Summary" styleModifier="bold" />
-  <Box width="98%" borderStyle="rounded" :direction="'vertical'" :gap="1">
+  <Box width="98%" borderStyle="rounded" direction="vertical" :gap="1">
     <Text
       :value="`Language: ${languageLabel} | Theme: ${themeLabel} | Country: ${countryLabel}`"
     />

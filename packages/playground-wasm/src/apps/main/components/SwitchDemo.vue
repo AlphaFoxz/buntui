@@ -13,9 +13,9 @@
   <Text value="▸ Basic" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="2"
-    :align="'start'"
+    align="start"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
   >
@@ -37,9 +37,9 @@
   <Text value="▸ More Options" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="2"
-    :align="'start'"
+    align="start"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
   >
@@ -60,9 +60,9 @@
   </Box>
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="2"
-    :align="'start'"
+    align="start"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
   >
@@ -85,9 +85,9 @@
   <Text value="▸ Disabled" styleModifier="bold" />
   <Box
     width="98%"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="2"
-    :align="'start'"
+    align="start"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
   >
@@ -106,7 +106,7 @@
     width="98%"
     :height="3"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
   >
     <Text

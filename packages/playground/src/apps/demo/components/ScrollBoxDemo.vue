@@ -27,7 +27,7 @@
     width="45%"
     :height="10"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
   >
     <Text value="▶ Scroll Info" />
@@ -92,7 +92,7 @@
     width="45%"
     :height="4"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="0"
   >
     <Text :value="`OffsetX: ${scrollOffsetX} / ${maxScrollX}`" />

@@ -17,7 +17,7 @@
     width="48%"
     :height="10"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
   >
     <Text value="▶ Feedback" styleModifier="bold" />

@@ -93,8 +93,8 @@
     :y="9"
     :width="24"
     :height="5"
-    :colorBg="'rgba(166,227,161,0.5)'"
-    :colorBorder="'rgba(166,227,161,1)'"
+    colorBg="rgba(166,227,161,0.5)"
+    colorBorder="rgba(166,227,161,1)"
     borderStyle="rounded"
     :z-index="2"
   >
@@ -109,8 +109,8 @@
     :y="10"
     :width="24"
     :height="5"
-    :colorBg="'rgba(137,180,250,0.33)'"
-    :colorBorder="'rgba(137,180,250,1)'"
+    colorBg="rgba(137,180,250,0.33)"
+    colorBorder="rgba(137,180,250,1)"
     :zIndex="1"
   >
     <Text value="zIndex=1 中间层" />
@@ -124,8 +124,8 @@
     :y="11"
     :width="24"
     :height="5"
-    :colorBg="'rgba(243,139,168,1)'"
-    :colorBorder="'rgba(243,139,168,1)'"
+    colorBg="rgba(243,139,168,1)"
+    colorBorder="rgba(243,139,168,1)"
     border="1 0"
     :zIndex="0"
   >
@@ -154,13 +154,13 @@
     :y="18"
     width="48%"
     :height="7"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
-    :align="'start'"
+    align="start"
   >
-    <Text :colorFg="'rgba(108,112,134,1)'" value="align=Start" />
+    <Text colorFg="rgba(108,112,134,1)" value="align=Start" />
     <Text value="Row 1" />
-    <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
+    <Text colorFg="rgba(166,227,161,1)" value="Row Two" />
   </Box>
 
   <Box
@@ -170,13 +170,13 @@
     :y="18"
     width="48%"
     :height="7"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
-    :align="'center'"
+    align="center"
   >
-    <Text :colorFg="'rgba(108,112,134,1)'" value="align=Center" />
+    <Text colorFg="rgba(108,112,134,1)" value="align=Center" />
     <Text value="Row 1" />
-    <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
+    <Text colorFg="rgba(166,227,161,1)" value="Row Two" />
   </Box>
 
   <Box
@@ -186,13 +186,13 @@
     :y="26"
     width="48%"
     :height="7"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
-    :align="'end'"
+    align="end"
   >
-    <Text :colorFg="'rgba(108,112,134,1)'" value="align=End" />
+    <Text colorFg="rgba(108,112,134,1)" value="align=End" />
     <Text value="Row 1" />
-    <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
+    <Text colorFg="rgba(166,227,161,1)" value="Row Two" />
   </Box>
 
   <Box
@@ -202,13 +202,13 @@
     :y="26"
     width="48%"
     :height="7"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
-    :align="'stretch'"
+    align="stretch"
   >
-    <Text :colorFg="'rgba(108,112,134,1)'" value="align=Stretch" />
+    <Text colorFg="rgba(108,112,134,1)" value="align=Stretch" />
     <Text value="Row 1" />
-    <Text :colorFg="'rgba(166,227,161,1)'" value="Row Two" />
+    <Text colorFg="rgba(166,227,161,1)" value="Row Two" />
   </Box>
 
   <Text
@@ -224,8 +224,8 @@
     :y="35"
     width="48%"
     :height="3"
-    :direction="'horizontal'"
-    :justifyContent="'start'"
+    direction="horizontal"
+    justifyContent="start"
     borderStyle="rounded"
   >
     <Text value="[start]" />
@@ -236,8 +236,8 @@
     :y="35"
     width="48%"
     :height="3"
-    :direction="'horizontal'"
-    :justifyContent="'center'"
+    direction="horizontal"
+    justifyContent="center"
     borderStyle="rounded"
   >
     <Text value="[center]" />
@@ -248,8 +248,8 @@
     :y="39"
     width="48%"
     :height="3"
-    :direction="'horizontal'"
-    :justifyContent="'end'"
+    direction="horizontal"
+    justifyContent="end"
     borderStyle="rounded"
   >
     <Text value="[end]" />
@@ -260,8 +260,8 @@
     :y="39"
     width="48%"
     :height="3"
-    :direction="'horizontal'"
-    :justifyContent="'space-between'"
+    direction="horizontal"
+    justifyContent="space-between"
     borderStyle="rounded"
   >
     <Text value="A" />
@@ -281,7 +281,7 @@
     :y="44"
     width="48%"
     :height="3"
-    :direction="'horizontal'"
+    direction="horizontal"
     borderStyle="rounded"
   >
     <Text value="g=0" />
@@ -293,7 +293,7 @@
     :y="44"
     width="48%"
     :height="3"
-    :direction="'horizontal'"
+    direction="horizontal"
     borderStyle="rounded"
   >
     <Text value="g=1" :flexGrow="1" />
@@ -314,11 +314,11 @@
     :y="49"
     width="48%"
     :height="4"
-    :direction="'vertical-reverse'"
+    direction="vertical-reverse"
     :gap="1"
     borderStyle="rounded"
   >
-    <Text :colorFg="'rgba(137,180,250,1)'" value="first (bottom)" />
+    <Text colorFg="rgba(137,180,250,1)" value="first (bottom)" />
     <Text value="second (top)" />
   </Box>
   <Box
@@ -327,11 +327,11 @@
     :y="49"
     width="48%"
     :height="4"
-    :direction="'horizontal-reverse'"
+    direction="horizontal-reverse"
     borderStyle="rounded"
   >
     <Text value="A" />
-    <Text :colorFg="'rgba(137,180,250,1)'" value="B (right)" />
+    <Text colorFg="rgba(137,180,250,1)" value="B (right)" />
   </Box>
 
   <Text
@@ -347,8 +347,8 @@
     :y="55"
     :width="20"
     :height="3"
-    :direction="'horizontal'"
-    :align="'start'"
+    direction="horizontal"
+    align="start"
     borderStyle="rounded"
   >
     <Text value="s=1" :flexBasis="12" :flexShrink="1" />
@@ -360,8 +360,8 @@
     :y="55"
     :width="20"
     :height="3"
-    :direction="'horizontal'"
-    :align="'start'"
+    direction="horizontal"
+    align="start"
     borderStyle="rounded"
   >
     <Text value="s=1" :flexBasis="12" :flexShrink="1" />
@@ -381,8 +381,8 @@
     :y="60"
     :width="28"
     :height="3"
-    :direction="'horizontal'"
-    :align="'start'"
+    direction="horizontal"
+    align="start"
     borderStyle="rounded"
   >
     <Text value="b=4" :flexBasis="4" />
@@ -403,14 +403,14 @@
     :y="65"
     :width="28"
     :height="5"
-    :direction="'horizontal'"
-    :align="'start'"
+    direction="horizontal"
+    align="start"
     borderStyle="rounded"
   >
     <Text value="start" />
-    <Text value="center" :alignSelf="'center'" />
-    <Text value="end" :alignSelf="'end'" />
-    <Text value="stretch" :alignSelf="'stretch'" />
+    <Text value="center" alignSelf="center" />
+    <Text value="end" alignSelf="end" />
+    <Text value="stretch" alignSelf="stretch" />
   </Box>
 </template>
 

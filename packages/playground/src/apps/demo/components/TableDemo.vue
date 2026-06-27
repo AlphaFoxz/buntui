@@ -30,7 +30,7 @@
     width="33%"
     :height="6"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
   >
     <Text value="▶ Selection Info" />

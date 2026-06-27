@@ -69,7 +69,7 @@
     width="60%"
     :height="9"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
   >
     <Text value="▶ Checklist Summary" />

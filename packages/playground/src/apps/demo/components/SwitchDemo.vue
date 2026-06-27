@@ -86,7 +86,7 @@
     width="95%"
     :height="5"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
   >
     <Text :value="statusLine1" />

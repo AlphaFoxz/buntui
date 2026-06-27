@@ -27,7 +27,7 @@
     width="98%"
     :height="7"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
   >
     <Text styleModifier="bold" value="bold" />
@@ -44,7 +44,7 @@
     width="98%"
     :height="7"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
   >
     <Text styleModifier="reverse" value="reverse" />

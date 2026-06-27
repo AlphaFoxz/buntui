@@ -34,7 +34,7 @@
     width="45%"
     :height="15"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
   >
     <Text value="▶ How it works" />
@@ -76,7 +76,7 @@
     width="45%"
     :height="8"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
   >
     <Text value="▶ Click Log" />

@@ -79,7 +79,7 @@
     width="98%"
     :height="5"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
   >
     <Text :value="`Username: [${inputValue}] (${inputValue.length} chars)`" />

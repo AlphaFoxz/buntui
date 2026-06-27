@@ -16,7 +16,7 @@
   <Box
     width="98%"
     :height="1"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="1"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
@@ -27,7 +27,7 @@
   <Box
     width="98%"
     :height="1"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="1"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
@@ -38,7 +38,7 @@
   <Box
     width="98%"
     :height="1"
-    :direction="'horizontal'"
+    direction="horizontal"
     :gap="1"
     borderStyle="none"
     colorBg="rgba(0,0,0,0)"
@@ -62,7 +62,7 @@
     width="98%"
     :height="4"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
   >
     <Text :value="`Step ${currentStep}/3 — ${stepLabel}`" />

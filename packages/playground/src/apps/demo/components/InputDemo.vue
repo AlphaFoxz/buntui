@@ -87,7 +87,7 @@
     width="52%"
     :height="8"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
   >
     <Text :value="textareaFeedback" />
@@ -102,7 +102,7 @@
     width="95%"
     :height="5"
     borderStyle="rounded"
-    :direction="'vertical'"
+    direction="vertical"
     :gap="1"
   >
     <Text :value="inputFeedback" />
