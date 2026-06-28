@@ -23,6 +23,16 @@ function syncDir(baseDir: string, rootVersion: string) {
   }
 }
 
+function syncZigZon(version: string) {
+  const zonPath = path.join(packagesDir, 'native', 'build.zig.zon');
+  if (!fs.existsSync(zonPath)) return;
+  const content = fs.readFileSync(zonPath, 'utf-8');
+  const updated = content.replace(/(\.version\s*=\s*)"[^"]*"/, `$1"${version}"`);
+  if (updated !== content) {
+    fs.writeFileSync(zonPath, updated, 'utf-8');
+  }
+}
+
 function run() {
   const rootPackage = fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8');
   const rootPackageJson = JSON.parse(rootPackage) as PackageJson;
@@ -30,6 +40,7 @@ function run() {
 
   syncDir(packagesDir, rootVersion);
   syncDir(path.join(packagesDir, 'native-platforms'), rootVersion);
+  syncZigZon(rootVersion);
 }
 
 run();
