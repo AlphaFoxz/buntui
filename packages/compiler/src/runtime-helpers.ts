@@ -132,6 +132,7 @@ const INPUT_PROP_HANDLERS: PropHandlers = {
 const BUTTON_PROP_HANDLERS: PropHandlers = {
   ...PH_RECT,
   value: {method: 'updateValue'},
+  borderStyle: {method: 'updateBorder', field: 'borderStyle'},
   colorFgNormal: {method: 'updateNormalStyle', field: 'colorFgNormal'},
   colorBgNormal: {method: 'updateNormalStyle', field: 'colorBgNormal'},
   colorBorderNormal: {method: 'updateNormalStyle', field: 'colorBorderNormal'},
@@ -144,12 +145,12 @@ const BUTTON_PROP_HANDLERS: PropHandlers = {
   colorBgPressed: {method: 'updatePressedStyle', field: 'colorBgPressed'},
   colorBorderPressed: {method: 'updatePressedStyle', field: 'colorBorderPressed'},
   borderStylePressed: {method: 'updatePressedStyle', field: 'borderStylePressed'},
-  borderless: {method: 'setBorderless'},
   ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE, ...PH_POSITION,
 };
 
 const CHECKBOX_PROP_HANDLERS: PropHandlers = {
   ...PH_RECT,
+  borderStyle: {method: 'updateBorder', field: 'borderStyle'},
   checked: {method: 'setChecked'},
   indeterminate: {method: 'setIndeterminate'},
   label: {method: 'setLabel'},
@@ -158,6 +159,7 @@ const CHECKBOX_PROP_HANDLERS: PropHandlers = {
 
 const SWITCH_PROP_HANDLERS: PropHandlers = {
   ...PH_RECT,
+  borderStyle: {method: 'updateBorder', field: 'borderStyle'},
   checked: {method: 'setChecked'},
   label: {method: 'setLabel'},
   ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE, ...PH_POSITION,
@@ -207,7 +209,6 @@ const TEXTAREA_PROP_HANDLERS: PropHandlers = {
   placeholder: {method: 'setPlaceholder'},
   label: {method: 'setLabel'},
   readonly: {method: 'setReadonly'},
-  borderless: {method: 'setBorderless'},
   ...PH_DISABLED, ...PH_FLEX, ...PH_VISIBLE, ...PH_POSITION,
 };
 

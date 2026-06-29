@@ -392,7 +392,7 @@ describe('emitDrawCommands', () => {
     expect(text.y).toBe(1);
   });
 
-  it('does not truncate text width by border columns when borderless', () => {
+  it('does not truncate text width by border columns when borderStyle is none', () => {
     const button = createButton({value: 'abcdefghij', width: 10, height: 1});
     button.updateNormalStyle({borderStyleNormal: 'none'});
     const {buf, captured} = capture();
@@ -452,36 +452,37 @@ describe('updatePressedStyle', () => {
   });
 });
 
-describe('borderless', () => {
-  it('setBorderless(true) removes border in normal state', () => {
+describe('per-state borderStyle none', () => {
+  it('borderStyleNormal none removes border in normal state', () => {
     const button = createButton({value: 'OK'});
-    button.setBorderless(true);
+    button.updateNormalStyle({borderStyleNormal: 'none'});
     const {buf, captured} = capture();
     button.emitDrawCommands(buf);
     expect(captured.borders).toHaveLength(0);
   });
 
-  it('setBorderless(true) removes border in focused state', () => {
-    const button = createButton({value: 'OK'});
-    button.setBorderless(true);
+  it('borderStyleFocused none removes border in focused state', () => {
+    const button = new ButtonWidget({value: 'OK', width: 10, height: 3, borderStyleNormal: 'none', borderStyleFocused: 'none'});
     button.focus();
     const {buf, captured} = capture();
     button.emitDrawCommands(buf);
     expect(captured.borders).toHaveLength(0);
   });
 
-  it('setBorderless(true) removes border in hovered state', () => {
+  it('borderStyleHovered none removes border in hovered state', () => {
     const button = createButton({value: 'OK'});
-    button.setBorderless(true);
+    button.updateNormalStyle({borderStyleNormal: 'none'});
+    button.updateHoveredStyle({borderStyleHovered: 'none'});
     button.dispatch('mouseover', mouse({x: 1, y: 1}));
     const {buf, captured} = capture();
     button.emitDrawCommands(buf);
     expect(captured.borders).toHaveLength(0);
   });
 
-  it('setBorderless(true) removes border in pressed state', () => {
+  it('borderStylePressed none removes border in pressed state', () => {
     const button = createButton({value: 'OK'});
-    button.setBorderless(true);
+    button.updateNormalStyle({borderStyleNormal: 'none'});
+    button.updatePressedStyle({borderStylePressed: 'none'});
     button.dispatch('mouseover', mouse({x: 1, y: 1}));
     button.dispatch('mousedown', mouse({x: 1, y: 1}));
     const {buf, captured} = capture();
@@ -489,47 +490,78 @@ describe('borderless', () => {
     expect(captured.borders).toHaveLength(0);
   });
 
-  it('setBorderless(true) removes border in disabled state', () => {
-    const button = createButton({value: 'OK'});
-    button.setBorderless(true);
+  it('borderStyleDisabled none removes border in disabled state', () => {
+    const button = new ButtonWidget({
+      value: 'OK',
+      width: 10,
+      height: 3,
+      borderStyleNormal: 'none',
+      borderStyleDisabled: 'none',
+    });
     button.setDisabled(true);
     const {buf, captured} = capture();
     button.emitDrawCommands(buf);
     expect(captured.borders).toHaveLength(0);
   });
+});
 
-  it('setBorderless(false) is a no-op', () => {
+describe('updateBorder', () => {
+  it('borderStyle none removes border in all states', () => {
     const button = createButton({value: 'OK'});
-    button.setBorderless(false);
+    button.updateBorder({borderStyle: 'none'});
+
+    const {buf: buf1, captured: c1} = capture();
+    button.emitDrawCommands(buf1);
+    expect(c1.borders).toHaveLength(0);
+
+    button.focus();
+    const {buf: buf2, captured: c2} = capture();
+    button.emitDrawCommands(buf2);
+    expect(c2.borders).toHaveLength(0);
+
+    button.dispatch('mouseover', mouse({x: 1, y: 1}));
+    const {buf: buf3, captured: c3} = capture();
+    button.emitDrawCommands(buf3);
+    expect(c3.borders).toHaveLength(0);
+
+    button.dispatch('mousedown', mouse({x: 1, y: 1}));
+    const {buf: buf4, captured: c4} = capture();
+    button.emitDrawCommands(buf4);
+    expect(c4.borders).toHaveLength(0);
+
+    button.dispatch('mouseup', mouse({x: 1, y: 1}));
+    button.setDisabled(true);
+    const {buf: buf5, captured: c5} = capture();
+    button.emitDrawCommands(buf5);
+    expect(c5.borders).toHaveLength(0);
+  });
+
+  it('borderStyle solid sets border in all states', () => {
+    const button = createButton({value: 'OK'});
+    button.updateNormalStyle({borderStyleNormal: 'none'});
+    button.updateBorder({borderStyle: 'solid'});
+
     const {buf, captured} = capture();
     button.emitDrawCommands(buf);
     expect(captured.borders).toHaveLength(1);
   });
 
-  it('constructor borderless option removes border', () => {
-    const button = new ButtonWidget({value: 'OK', width: 10, height: 3, borderless: true});
-    const {buf, captured} = capture();
-    button.emitDrawCommands(buf);
-    expect(captured.borders).toHaveLength(0);
-  });
-
-  it('constructor borderless defaults height to 1 when height is omitted', () => {
-    const button = new ButtonWidget({value: 'OK', width: 10, borderless: true});
+  it('borderStyle none auto-reduces height from 3 to 1', () => {
+    const button = createButton({value: 'OK'});
+    expect(button.rect.height).toBe(3);
+    button.updateBorder({borderStyle: 'none'});
     expect(button.rect.height).toBe(1);
   });
 
-  it('constructor borderless does not override explicit height', () => {
-    const button = new ButtonWidget({value: 'OK', width: 10, height: 5, borderless: true});
-    expect(button.rect.height).toBe(5);
+  it('borderStyle solid auto-restores height from 1 to 3', () => {
+    const button = createButton({value: 'OK', height: 1});
+    button.updateBorder({borderStyle: 'solid'});
+    expect(button.rect.height).toBe(3);
   });
 
-  it('createButtonWidget borderless defaults height to 1', () => {
-    const button = createButtonWidget({value: 'OK', width: 10, borderless: true});
-    expect(button.rect.height).toBe(1);
-  });
-
-  it('createButtonWidget borderless does not override explicit height', () => {
-    const button = createButtonWidget({value: 'OK', width: 10, height: 5, borderless: true});
+  it('borderStyle none does not change non-default height', () => {
+    const button = createButton({value: 'OK', height: 5});
+    button.updateBorder({borderStyle: 'none'});
     expect(button.rect.height).toBe(5);
   });
 });
@@ -540,8 +572,8 @@ describe('auto width', () => {
     expect(button.rect.width).toBe(4);
   });
 
-  it('width=auto with borderless has no border padding', () => {
-    const button = new ButtonWidget({value: 'Hello', width: 'auto', borderless: true});
+  it('width=auto with borderStyle none has no border padding', () => {
+    const button = new ButtonWidget({value: 'Hello', width: 'auto', height: 1, borderStyleNormal: 'none'});
     expect(button.rect.width).toBe(5);
   });
 
@@ -550,8 +582,8 @@ describe('auto width', () => {
     expect(button.rect.width).toBe(2);
   });
 
-  it('width=auto borderless with empty value is zero', () => {
-    const button = new ButtonWidget({value: '', width: 'auto', borderless: true});
+  it('width=auto borderStyle none with empty value is zero', () => {
+    const button = new ButtonWidget({value: '', width: 'auto', height: 1, borderStyleNormal: 'none'});
     expect(button.rect.width).toBe(0);
   });
 
@@ -570,8 +602,8 @@ describe('auto width', () => {
     expect(button.intrinsicSize()).toEqual({width: 8, height: 3});
   });
 
-  it('intrinsicSize returns content width in auto mode with borderless', () => {
-    const button = new ButtonWidget({value: 'Submit', width: 'auto', borderless: true});
+  it('intrinsicSize returns content width in auto mode with borderStyle none', () => {
+    const button = new ButtonWidget({value: 'Submit', width: 'auto', height: 1, borderStyleNormal: 'none'});
     expect(button.intrinsicSize()).toEqual({width: 6, height: 1});
   });
 
@@ -593,13 +625,6 @@ describe('auto width', () => {
     expect(button.rect.width).toBe(10);
   });
 
-  it('setBorderless recomputes width in auto mode', () => {
-    const button = new ButtonWidget({value: 'Hello', width: 'auto', height: 3});
-    expect(button.rect.width).toBe(7);
-    button.setBorderless(true);
-    expect(button.rect.width).toBe(5);
-  });
-
   it('updateNormalStyle with borderStyle none recomputes width in auto mode', () => {
     const button = new ButtonWidget({value: 'Hello', width: 'auto', height: 3});
     expect(button.rect.width).toBe(7);
@@ -613,8 +638,8 @@ describe('auto width', () => {
     expect(button.intrinsicSize()).toEqual({width: 4, height: 3});
   });
 
-  it('createButtonWidget auto width with borderless', () => {
-    const button = createButtonWidget({value: 'Test', width: 'auto', borderless: true});
+  it('createButtonWidget auto width with borderStyle none', () => {
+    const button = createButtonWidget({value: 'Test', width: 'auto', height: 1, borderStyleNormal: 'none'});
     expect(button.rect.width).toBe(4);
     expect(button.rect.height).toBe(1);
   });

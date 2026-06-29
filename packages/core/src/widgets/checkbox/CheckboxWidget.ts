@@ -3,6 +3,7 @@ import {type KeyboardEvent} from '../../events/types';
 import {BorderSides} from '../../draw-list/types';
 import {
   resolveBorderStyle,
+  type TuiBorderStyleName,
   type TuiWidgetRect,
   type TuiWidgetSize,
 } from '../types';
@@ -134,6 +135,14 @@ export class CheckboxWidget extends InteractiveWidget {
 
   setLabel(text: string): void {
     this.#label = text;
+  }
+
+  updateBorder(options: {borderStyle?: TuiBorderStyleName}): void {
+    if (options.borderStyle === undefined) {
+      return;
+    }
+
+    this.#focusBorder.borderStyle = resolveBorderStyle(options.borderStyle);
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {

@@ -1486,6 +1486,25 @@ describe('position: absolute/fixed', () => {
     expect(scene.hitTest(mouse({x: 3, y: 4, button: 0, buttons: 1}))).toBe(abs);
   });
 
+  it('moving the ScrollBox parent shifts an absolute child by exactly the delta (no drift)', () => {
+    const sb = createScrollBox({x: 0, y: 4, width: 20, height: 10}); // viewport {x:1, y:5}
+    const abs = createBox({x: 2, y: 3, width: 5, height: 3});
+    abs.setPosition('absolute');
+    sb.addChild(abs);
+
+    let buf = renderBuf(sb);
+    const beforeY = findRectY(buf.buffer, buf.byteLength, 3); // canvas 3 + viewport 5 = 8
+    expect(beforeY).toBe(8);
+
+    // Simulate a drag: parent moves down by 6 (delta +6).
+    sb.updateRect({y: 10}); // viewport y becomes 11
+    expect(abs.rect.y).toBe(3); // canvas coords untouched (not double-shifted)
+
+    buf = renderBuf(sb);
+    const afterY = findRectY(buf.buffer, buf.byteLength, 3); // 3 + 11 = 14
+    expect(afterY).toBe(14); // moved by exactly +6, not +12
+  });
+
   it('mousedown on a draggable absolute child (at painted cell) does not drag-scroll', () => {
     const scene = new TuiScene({visible: true});
     const sb = createScrollBox({x: 0, y: 4, width: 20, height: 10});

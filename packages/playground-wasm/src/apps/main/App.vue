@@ -18,7 +18,7 @@
   </Box>
 
   <Button
-    borderless
+    borderStyle="none"
     :disabled="router.currentRoute.path === '/home'"
     :x="0"
     :y="0"

@@ -29,6 +29,4 @@ export type TextareaWidgetOptions = {
   colorBgDisabled?: TuiColor;
   colorScrollbar?: TuiColor;
   colorScrollbarTrack?: TuiColor;
-
-  borderless?: boolean;
 };

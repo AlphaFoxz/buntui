@@ -1,7 +1,12 @@
 import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
 import {BorderSides} from '../../draw-list/types';
-import {resolveBorderStyle, type TuiWidgetRect, type TuiWidgetSize} from '../types';
+import {
+  resolveBorderStyle,
+  type TuiBorderStyleName,
+  type TuiWidgetRect,
+  type TuiWidgetSize,
+} from '../types';
 import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
@@ -141,6 +146,14 @@ export class SwitchWidget extends InteractiveWidget {
 
   setLabel(text: string): void {
     this.#label = text;
+  }
+
+  updateBorder(options: {borderStyle?: TuiBorderStyleName}): void {
+    if (options.borderStyle === undefined) {
+      return;
+    }
+
+    this.#focusBorder.borderStyle = resolveBorderStyle(options.borderStyle);
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {

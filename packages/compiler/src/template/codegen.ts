@@ -12,7 +12,7 @@ import {buildEventHandler} from './event-codegen';
 
 const {EFFECT, UNREF} = RUNTIME_HELPERS;
 
-const BOOLEAN_FLAGS = new Set(['disabled', 'checked', 'readonly', 'draggable', 'borderless']);
+const BOOLEAN_FLAGS = new Set(['disabled', 'checked', 'readonly', 'draggable']);
 
 function resolvePropHandler(node: TuiWidgetCall, propName: string, propLoc?: SourceLocation): PropHandler | undefined {
   if (!node.propHandlers) {

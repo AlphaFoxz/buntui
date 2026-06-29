@@ -93,7 +93,6 @@ function getDefaultTextareaOptions(): TextareaWidgetOptions {
     label: '',
     readonly: false,
     disabled: false,
-    borderless: false,
 
     ...resolveWidgetColors(TEXTAREA_TOKEN_MAP),
   };
@@ -168,9 +167,7 @@ export class TextareaWidget extends InteractiveWidget {
         colorBorder: parseColor(resolved.colorBorderDisabled),
       },
     };
-    this.#borderStyle = resolved.borderless === true
-      ? 0
-      : resolveBorderStyle(resolved.borderStyle ?? 'solid');
+    this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
     this.#maxLength = resolved.maxLength ?? 0;
     this.#placeholder = resolved.placeholder ?? '';
     this.#extraColors = {
@@ -369,11 +366,6 @@ export class TextareaWidget extends InteractiveWidget {
 
   setReadonly(value: boolean): void {
     this.#isReadonly = value;
-  }
-
-  setBorderless(borderless: boolean): void {
-    this.#borderStyle = borderless ? 0 : resolveBorderStyle('solid');
-    this.#rebuildVisualLines();
   }
 
   setLabel(value: string): void {

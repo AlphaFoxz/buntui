@@ -423,6 +423,12 @@ export abstract class TuiWidgetEntity implements Mountable {
   /**
    Propagate a position delta to all children.
    Called by subclasses in their updateRect when position changes.
+
+   `position: 'absolute'` children are skipped: their rect is stored in
+   content-relative coordinates and their render-time origin
+   (contentOffsetForChild / DrawListBuffer.pushOffset) already includes the
+   parent's screen position, so shifting their rect would double-count the
+   delta (visible as drifting when a draggable parent is moved).
    */
   protected propagatePositionDelta(dx: number, dy: number): void {
     if (dx === 0 && dy === 0) {
@@ -430,6 +436,10 @@ export abstract class TuiWidgetEntity implements Mountable {
     }
 
     for (const child of this.#children) {
+      if (child.position === 'absolute') {
+        continue;
+      }
+
       child.updateRect({
         x: child.rect.x + dx,
         y: child.rect.y + dy,
