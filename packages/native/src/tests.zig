@@ -19,7 +19,7 @@ const typedef = @import("core/typedef.zig");
 const platform = @import("core/platform.zig");
 const error_ = @import("core/error.zig");
 const builtin = @import("builtin");
-const posix_listener = switch (builtin.os.tag) {
+const input_listener = switch (builtin.os.tag) {
     .linux, .macos, .freebsd, .netbsd, .openbsd => @import("input/posix_listener.zig"),
     .windows => @import("input/windows_listener.zig"),
     else => err.unsupportedOS(),
@@ -43,5 +43,5 @@ comptime {
     _ = typedef;
     _ = platform;
     _ = error_;
-    _ = posix_listener;
+    _ = input_listener;
 }
