@@ -116,3 +116,131 @@ pub fn deinit() void {
         allocator.free(next_frame.cells);
     }
 }
+
+const testing = std.testing;
+
+test "TuiCell equality same fields" {
+    const a = TuiCell{
+        .entity_id = 1,
+        .fg_rgba = Rgba.fromU32(0xFFFFFFFF),
+        .bg_rgba = Rgba.fromU32(0x000000FF),
+        .char = 'A',
+        .font_style = 0,
+        .cell_type = .Ascii,
+    };
+    const b = TuiCell{
+        .entity_id = 1,
+        .fg_rgba = Rgba.fromU32(0xFFFFFFFF),
+        .bg_rgba = Rgba.fromU32(0x000000FF),
+        .char = 'A',
+        .font_style = 0,
+        .cell_type = .Ascii,
+    };
+    try testing.expect(a.eql(b));
+}
+
+test "TuiCell equality different entity_id" {
+    const a = TuiCell{
+        .entity_id = 1,
+        .fg_rgba = Rgba.fromU32(0xFFFFFFFF),
+        .bg_rgba = Rgba.fromU32(0x000000FF),
+        .char = 'A',
+        .font_style = 0,
+        .cell_type = .Ascii,
+    };
+    const b = TuiCell{
+        .entity_id = 2,
+        .fg_rgba = Rgba.fromU32(0xFFFFFFFF),
+        .bg_rgba = Rgba.fromU32(0x000000FF),
+        .char = 'A',
+        .font_style = 0,
+        .cell_type = .Ascii,
+    };
+    try testing.expect(!a.eql(b));
+}
+
+test "TuiCell equality different char" {
+    const a = TuiCell{
+        .entity_id = 1,
+        .fg_rgba = Rgba.fromU32(0xFFFFFFFF),
+        .bg_rgba = Rgba.fromU32(0x000000FF),
+        .char = 'A',
+        .font_style = 0,
+        .cell_type = .Ascii,
+    };
+    const b = TuiCell{
+        .entity_id = 1,
+        .fg_rgba = Rgba.fromU32(0xFFFFFFFF),
+        .bg_rgba = Rgba.fromU32(0x000000FF),
+        .char = 'B',
+        .font_style = 0,
+        .cell_type = .Ascii,
+    };
+    try testing.expect(!a.eql(b));
+}
+
+test "TuiCell equality different cell_type" {
+    const a = TuiCell{
+        .entity_id = 1,
+        .fg_rgba = Rgba.fromU32(0xFFFFFFFF),
+        .bg_rgba = Rgba.fromU32(0x000000FF),
+        .char = 'A',
+        .font_style = 0,
+        .cell_type = .Ascii,
+    };
+    const b = TuiCell{
+        .entity_id = 1,
+        .fg_rgba = Rgba.fromU32(0xFFFFFFFF),
+        .bg_rgba = Rgba.fromU32(0x000000FF),
+        .char = 'A',
+        .font_style = 0,
+        .cell_type = .Wide,
+    };
+    try testing.expect(!a.eql(b));
+}
+
+test "TuiCell equality different bg_rgba" {
+    const a = TuiCell{
+        .entity_id = 1,
+        .fg_rgba = Rgba.fromU32(0xFFFFFFFF),
+        .bg_rgba = Rgba.fromU32(0x000000FF),
+        .char = 'A',
+        .font_style = 0,
+        .cell_type = .Ascii,
+    };
+    const b = TuiCell{
+        .entity_id = 1,
+        .fg_rgba = Rgba.fromU32(0xFFFFFFFF),
+        .bg_rgba = Rgba.fromU32(0xFF0000FF),
+        .char = 'A',
+        .font_style = 0,
+        .cell_type = .Ascii,
+    };
+    try testing.expect(!a.eql(b));
+}
+
+test "TuiCell equality different font_style" {
+    const a = TuiCell{
+        .entity_id = 1,
+        .fg_rgba = Rgba.fromU32(0xFFFFFFFF),
+        .bg_rgba = Rgba.fromU32(0x000000FF),
+        .char = 'A',
+        .font_style = 0,
+        .cell_type = .Ascii,
+    };
+    const b = TuiCell{
+        .entity_id = 1,
+        .fg_rgba = Rgba.fromU32(0xFFFFFFFF),
+        .bg_rgba = Rgba.fromU32(0x000000FF),
+        .char = 'A',
+        .font_style = 1,
+        .cell_type = .Ascii,
+    };
+    try testing.expect(!a.eql(b));
+}
+
+test "CellType enum values" {
+    try testing.expectEqual(@as(u8, 0), @intFromEnum(CellType.Ascii));
+    try testing.expectEqual(@as(u8, 1), @intFromEnum(CellType.Wide));
+    try testing.expectEqual(@as(u8, 2), @intFromEnum(CellType.Hidden));
+}

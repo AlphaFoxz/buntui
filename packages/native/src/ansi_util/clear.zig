@@ -54,3 +54,49 @@ pub fn clearFromCursorToScreenEndAndFlush(writer: anytype) !void {
     try clearFromCursorToScreenEnd(writer);
     try writer.flush();
 }
+
+const std = @import("std");
+const testing = std.testing;
+const csi_local = "\x1B[";
+
+test "clearCurrentLine writes 2K" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try clearCurrentLine(&fw);
+    try testing.expectEqualSlices(u8, csi_local ++ "2K", fw.buffer[0..fw.end]);
+}
+
+test "clearFromCursorToLineBeginning writes 1K" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try clearFromCursorToLineBeginning(&fw);
+    try testing.expectEqualSlices(u8, csi_local ++ "1K", fw.buffer[0..fw.end]);
+}
+
+test "clearFromCursorToLineEnd writes K" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try clearFromCursorToLineEnd(&fw);
+    try testing.expectEqualSlices(u8, csi_local ++ "K", fw.buffer[0..fw.end]);
+}
+
+test "clearScreen writes 2J" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try clearScreen(&fw);
+    try testing.expectEqualSlices(u8, csi_local ++ "2J", fw.buffer[0..fw.end]);
+}
+
+test "clearFromCursorToScreenBeginning writes 1J" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try clearFromCursorToScreenBeginning(&fw);
+    try testing.expectEqualSlices(u8, csi_local ++ "1J", fw.buffer[0..fw.end]);
+}
+
+test "clearFromCursorToScreenEnd writes J" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try clearFromCursorToScreenEnd(&fw);
+    try testing.expectEqualSlices(u8, csi_local ++ "J", fw.buffer[0..fw.end]);
+}

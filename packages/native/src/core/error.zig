@@ -39,3 +39,19 @@ pub fn osApiErrorFmt(comptime fmt: []const u8, args: anytype) noreturn {
     logger.logErrorFmt("OS API error: " ++ fmt, args);
     std.process.exit(103);
 }
+
+test "outOfMemory is noreturn" {
+    try std.testing.expect(@typeInfo(@TypeOf(outOfMemory)).@"fn".return_type.? == noreturn);
+}
+
+test "unsupportedOS is noreturn" {
+    try std.testing.expect(@typeInfo(@TypeOf(unsupportedOS)).@"fn".return_type.? == noreturn);
+}
+
+test "osApiError is noreturn" {
+    try std.testing.expect(@typeInfo(@TypeOf(osApiError)).@"fn".return_type.? == noreturn);
+}
+
+test "osApiErrorFmt is noreturn" {
+    try std.testing.expect(@typeInfo(@TypeOf(osApiErrorFmt)).@"fn".return_type.? == noreturn);
+}
