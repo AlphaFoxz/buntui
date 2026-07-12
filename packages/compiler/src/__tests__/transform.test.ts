@@ -6,6 +6,7 @@ import type {
   TuiWidgetCall,
   TuiConditionalBlock,
   TuiListBlock,
+  TuiDynamicComponent,
   TuiDynamicProp,
   TuiEventBinding,
 } from '../template/ast';
@@ -25,6 +26,10 @@ function asConditional(node: unknown): TuiConditionalBlock {
 
 function asList(node: unknown): TuiListBlock {
   return node as TuiListBlock;
+}
+
+function asDynamicComponent(node: unknown): TuiDynamicComponent {
+  return node as TuiDynamicComponent;
 }
 
 describe('transform', () => {
@@ -523,6 +528,50 @@ describe('transform', () => {
       const widget = asWidget(root.children[0]!);
       expect(widget.propHandlers!.colorFg).toEqual({method: 'updateColor', field: 'colorFg'});
       expect(widget.propHandlers!.borderStyle).toEqual({method: 'updateBorder', field: 'borderStyle'});
+    });
+  });
+
+  describe('dynamic component (<component :is>)', () => {
+    it('transforms <component :is="X"> to TuiDynamicComponent', () => {
+      const root = parseTemplate('<component :is="Window"/>');
+      expect(root.children).toHaveLength(1);
+      const dyn = asDynamicComponent(root.children[0]!);
+      expect(dyn.type).toBe('TuiDynamicComponent');
+      expect(dyn.isExpression).toBe('Window');
+    });
+
+    it('collects static props on dynamic component', () => {
+      const root = parseTemplate('<component :is="Window" title="hello"/>');
+      const dyn = asDynamicComponent(root.children[0]!);
+      expect(dyn.props).toHaveLength(1);
+      expect(dyn.props[0]).toEqual({type: 'TuiStaticProp', name: 'title', value: 'hello'});
+    });
+
+    it('collects dynamic props on dynamic component', () => {
+      const root = parseTemplate('<component :is="Window" :count="num"/>');
+      const dyn = asDynamicComponent(root.children[0]!);
+      expect(dyn.dynamicProps).toHaveLength(1);
+      expect(dyn.dynamicProps[0]).toMatchObject({name: 'count', expression: 'num'});
+    });
+
+    it('does not treat :is as a regular dynamic prop', () => {
+      const root = parseTemplate('<component :is="Window" :count="num"/>');
+      const dyn = asDynamicComponent(root.children[0]!);
+      expect(dyn.dynamicProps.find(p => p.name === 'is')).toBeUndefined();
+    });
+
+    it('throws when :is is missing', () => {
+      expect(() => parseTemplate('<component/>')).toThrow('requires a :is binding');
+    });
+
+    it('throws on static is attribute', () => {
+      expect(() => parseTemplate('<component is="Window"/>')).toThrow('dynamic :is binding');
+    });
+
+    it('strips :key from dynamic component props', () => {
+      const root = parseTemplate('<component :is="Window" :key="idx"/>');
+      const dyn = asDynamicComponent(root.children[0]!);
+      expect(dyn.dynamicProps.find(p => p.name === 'key')).toBeUndefined();
     });
   });
 });

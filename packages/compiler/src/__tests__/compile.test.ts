@@ -141,6 +141,33 @@ describe('compile', () => {
     });
   });
 
+  describe('dynamic component (<component :is>)', () => {
+    it('compiles <component :is="Window"> end-to-end', () => {
+      const result = compile(
+        '<template><component :is="Window"/></template>'
+        + '<script setup>import Window from "./Window.vue";</script>',
+      );
+      expect(result.code).toContain('let __component0_cleanup;');
+      expect(result.code).toContain('const __c = unref(Window)');
+      expect(result.code).toContain('__runSetup(__scene, () => __c.setup(__scene))');
+      expect(result.imports.some(i => i.includes('runSetup as __runSetup'))).toBe(true);
+    });
+
+    it('passes props to dynamic component', () => {
+      const result = compile(
+        '<template><component :is="Window" title="hi" :count="n"/></template>'
+        + '<script setup>import Window from "./Window.vue"; import {ref} from "@vue/reactivity"; const n = ref(0);</script>',
+      );
+      expect(result.code).toContain('reactive({ title: "hi" })');
+      expect(result.code).toContain('__component0_props.count = unref(n)');
+      expect(result.code).toContain('__runSetup(__scene, () => __c.setup(__scene), __component0_props)');
+    });
+
+    it('throws on <component> without :is', () => {
+      expect(() => compile('<template><component/></template>')).toThrow('requires a :is binding');
+    });
+  });
+
   describe('v-for', () => {
     it('generates for-of loop with unref for array iteration', () => {
       const result = compile('<template><Text v-for="item in items" :value="item"/></template>');

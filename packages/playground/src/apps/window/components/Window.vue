@@ -1,9 +1,10 @@
 <template>
-  <Box draggable :height="20" :width="20">
+  <Box v-show="props.visible" draggable :height="20" :width="20">
     <SelectButton
       position="absolute"
       :x="7"
       width="100%"
+      v-model="currentStats"
       :tabs="windowOprations"
     />
     <ScrollBox
@@ -20,18 +21,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 const currentStats = ref('○');
 const windowOprations = computed(() => {
   const options = ['-', '○', '□', 'X'];
   return options.filter((o) => o !== currentStats.value);
 });
 
+watch(currentStats, (v) => {
+  if (v === '-') {
+  }
+});
+
 const props = defineProps({
   title: {
     type: String,
-    required: true,
     default: '标题',
   },
+  visible: {
+    type: Boolean,
+    default: true,
+  },
 });
+// const emit = defineEmits(['update:modelValue']);
 </script>

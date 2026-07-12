@@ -6,6 +6,9 @@ import type {
   TuiRenderNode,
   TuiConditionalBlock,
   TuiListBlock,
+  TuiDynamicComponent,
+  TuiStaticProp,
+  TuiDynamicProp,
 } from './ast';
 import {wrapExpr, wrapConditionExpr} from './expression-wrapping';
 import {buildEventHandler} from './event-codegen';
@@ -185,6 +188,10 @@ function generateNode(node: TuiRenderNode, index: number, parentVarName?: string
 
     case 'TuiListBlock': {
       return generateList(node, index, parentVarName);
+    }
+
+    case 'TuiDynamicComponent': {
+      return generateDynamicComponent(node, index, parentVarName);
     }
 
     default: {
@@ -819,12 +826,54 @@ function generateKeyedBodyWidget(
   return nextIndex;
 }
 
+function generateDynamicComponent(
+  node: TuiDynamicComponent,
+  index: number,
+  parentVarName?: string,
+): NodeGenResult {
+  const varName = `__component${index}`;
+  const {preLines, propsArg} = buildComponentPropsInfo(node, varName);
+  const lines = [...preLines];
+  const propsPart = propsArg ? `, ${propsArg}` : '';
+
+  lines.push(
+    `let ${varName}_cleanup;`,
+    `let ${varName}_prev;`,
+    `${EFFECT}(() => {`,
+    `  const __c = ${wrapExpr(node.isExpression)};`,
+    `  if (__c === ${varName}_prev) {`,
+    '    return;',
+    '  }',
+    `  ${varName}_cleanup?.();`,
+    `  ${varName}_prev = __c;`,
+    '  if (!__c) {',
+    `    ${varName}_cleanup = undefined;`,
+    '    return;',
+    '  }',
+  );
+
+  if (parentVarName) {
+    lines.push(`  ${varName}_cleanup = __runSetup(__scene, () => __c.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${propsPart});`);
+  } else {
+    lines.push(`  ${varName}_cleanup = __runSetup(__scene, () => __c.setup(__scene)${propsPart});`);
+  }
+
+  lines.push('});');
+
+  return {lines, nextIndex: index + 1};
+}
+
 type ComponentPropsInfo = {
   preLines: string[];
   propsArg: string | undefined;
 };
 
-function buildComponentPropsInfo(node: TuiWidgetCall, varName: string): ComponentPropsInfo {
+type ComponentPropsSource = {
+  props: readonly TuiStaticProp[];
+  dynamicProps: readonly TuiDynamicProp[];
+};
+
+function buildComponentPropsInfo(node: ComponentPropsSource, varName: string): ComponentPropsInfo {
   const staticProps: string[] = [];
   const dynamicPropList: Array<{name: string; expr: string}> = [];
 
@@ -896,6 +945,10 @@ function hasDynamicBindings(root: TuiRenderRoot): boolean {
       return node.body.some(n => checkNode(n));
     }
 
+    if (node.type === 'TuiDynamicComponent') {
+      return true;
+    }
+
     return false;
   }
 
@@ -923,6 +976,10 @@ function hasComponentCalls(root: TuiRenderRoot): boolean {
 
     if (node.type === 'TuiListBlock') {
       return node.body.some(n => checkNode(n));
+    }
+
+    if (node.type === 'TuiDynamicComponent') {
+      return true;
     }
 
     return false;
@@ -959,6 +1016,10 @@ function hasDynamicComponentProps(root: TuiRenderRoot): boolean {
 
     if (node.type === 'TuiListBlock') {
       return node.body.some(n => checkNode(n));
+    }
+
+    if (node.type === 'TuiDynamicComponent') {
+      return node.dynamicProps.some(p => p.name !== 'visible');
     }
 
     return false;

@@ -12,8 +12,9 @@ import type {
   TuiRenderRoot,
   TuiRenderNode,
   TuiWidgetCall,
-  TuiStaticProp,
+  TuiDynamicComponent,
   TuiDynamicProp,
+  TuiStaticProp,
   TuiEventBinding,
   TuiReactiveEffect,
   TuiConditionalBlock,
@@ -108,8 +109,12 @@ function transformNode(
 function transformElement(
   node: ElementNode,
   ctx: TransformContext,
-): TuiWidgetCall {
+): TuiWidgetCall | TuiDynamicComponent {
   const {tag} = node;
+
+  if (tag === 'component') {
+    return transformDynamicComponent(node, ctx);
+  }
 
   const widgetId = `${tag.toLowerCase()}${ctx.widgetCounter++}`;
   const props: TuiStaticProp[] = [];
@@ -230,6 +235,64 @@ function transformElement(
     children,
     refName,
     propHandlers: entry.propHandlers,
+    loc: node.loc,
+  };
+}
+
+function transformDynamicComponent(node: ElementNode, ctx: TransformContext): TuiDynamicComponent {
+  const widgetId = `component${ctx.widgetCounter++}`;
+  const props: TuiStaticProp[] = [];
+  const dynamicProps: TuiDynamicProp[] = [];
+  const events: TuiEventBinding[] = [];
+  let isExpression = '';
+
+  for (const prop of node.props) {
+    if (prop.type === NodeTypes.ATTRIBUTE) {
+      if (prop.name === 'is') {
+        throw new Error(`<component> requires a dynamic :is binding, not a static is attribute, at ${node.loc.start.line}:${node.loc.start.column}. Use :is instead.`);
+      }
+
+      props.push(...transformStaticProp(prop));
+    } else if (prop.type === NodeTypes.DIRECTIVE) {
+      if (
+        prop.name === 'bind'
+        && prop.arg?.type === NodeTypes.SIMPLE_EXPRESSION
+        && prop.arg.content === 'is'
+      ) {
+        isExpression = resolveExpContent(prop);
+        continue;
+      }
+
+      const results = transformDirective(prop, widgetId, 'component');
+      if (!results) {
+        continue;
+      }
+
+      for (const result of results) {
+        if (result.type === 'event') {
+          events.push(result.binding);
+        } else if (result.type === 'dynamic') {
+          dynamicProps.push(result.binding);
+        }
+      }
+    }
+  }
+
+  if (!isExpression) {
+    throw new Error(`<component> requires a :is binding (e.g. <component :is="MyComponent">) at ${node.loc.start.line}:${node.loc.start.column}.`);
+  }
+
+  const keyIndex = dynamicProps.findIndex(p => p.name === 'key');
+  if (keyIndex !== -1) {
+    dynamicProps.splice(keyIndex, 1);
+  }
+
+  return {
+    type: 'TuiDynamicComponent',
+    isExpression,
+    props,
+    dynamicProps,
+    events,
     loc: node.loc,
   };
 }

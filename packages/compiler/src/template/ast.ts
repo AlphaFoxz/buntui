@@ -103,12 +103,32 @@ export type TuiListBlock = {
 };
 
 /**
+ A dynamic component (<component :is="...">).
+ The :is expression evaluates to a component object { setup } at runtime,
+ allowing the rendered component to be chosen dynamically.
+ */
+export type TuiDynamicComponent = {
+  readonly type: 'TuiDynamicComponent';
+  /** The :is binding expression — evaluates to a component object at runtime */
+  isExpression: string;
+  /** Static props passed to the resolved component */
+  props: TuiStaticProp[];
+  /** Dynamic props passed to the resolved component */
+  dynamicProps: TuiDynamicProp[];
+  /** Event handler bindings (not forwarded to dynamic components) */
+  events: TuiEventBinding[];
+  /** Source location for error reporting */
+  loc: SourceLocation;
+};
+
+/**
  Union of all TUI render AST nodes.
  */
 export type TuiRenderNode =
   | TuiWidgetCall
   | TuiConditionalBlock
-  | TuiListBlock;
+  | TuiListBlock
+  | TuiDynamicComponent;
 
 /**
  The root of a compiled TUI render tree.
