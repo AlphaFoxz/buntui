@@ -34,7 +34,6 @@
     label="Color Theme"
     :options="themeOptions"
     v-model="currentTheme"
-    @change="handleThemeChange"
   />
 
   <Home v-if="currentPage === '/home'" />
@@ -73,16 +72,21 @@ function handleGoHome() {
 }
 
 const themes = [
+  highContrast,
   tokyoNightMoon,
   tokyoNightStorm,
   rosePineMoon,
   rosePineDawn,
-  highContrast,
 ] as const;
 const themeOptions = ref(themes.map((t) => ({ value: t.name, label: t.name })));
-const currentTheme = ref(tokyoNightMoon.name);
-function handleThemeChange(data: TuiSelectChangeEvent) {
-  const t = themes.find((t) => t.name === data.value);
-  if (t) setTheme(t);
-}
+const currentTheme = ref(highContrast.name);
+
+watch(
+  currentTheme,
+  (data) => {
+    const t = themes.find((t) => t.name === data);
+    if (t) setTheme(t);
+  },
+  { immediate: true },
+);
 </script>
