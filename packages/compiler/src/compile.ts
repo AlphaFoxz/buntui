@@ -31,6 +31,7 @@ type ScriptAnalysis = {
   bodyLineIndices: number[];
   componentMap: Record<string, string>;
   widgetImportMap: Record<string, string>;
+  usesDefineProps: boolean;
 };
 
 const DEFAULT_MODULE_REWRITES: Record<string, string> = {
@@ -42,6 +43,7 @@ const DEFAULT_SYMBOL_REDIRECTS: Record<string, string> = {
   onUnmounted: '@buntui/core',
   onTick: '@buntui/core',
   useTemplateRef: '@buntui/core',
+  defineProps: '@buntui/core',
 };
 
 export function compile(source: string, options?: CompileOptions): CompileResult {
@@ -73,6 +75,7 @@ export function compile(source: string, options?: CompileOptions): CompileResult
     const codegenResult = generate(renderRoot, {
       ...options?.codegen,
       scriptBody: analysis.scriptBody.length > 0 ? analysis.scriptBody : undefined,
+      usesDefineProps: analysis.usesDefineProps,
     });
 
     const coreModuleId = options?.codegen?.coreModuleId ?? '@buntui/core';
@@ -109,20 +112,26 @@ function analyzeScript(
   if (!content) {
     return {
       scriptImports: [], scriptBody: [], bodyLineIndices: [], componentMap: {}, widgetImportMap: {},
+      usesDefineProps: false,
     };
   }
 
   const {scriptImports, scriptBody, bodyLineIndices} = splitScript(content);
 
+  const usesDefineProps = scriptBody.some(line => /\bdefineProps\s*\(/v.test(line))
+    && scriptImports.every(i => !i.includes('defineProps'));
+
   if (!descriptor.scriptSetup) {
     return {
       scriptImports, scriptBody, bodyLineIndices, componentMap: {}, widgetImportMap: {},
+      usesDefineProps,
     };
   }
 
   const {componentMap, widgetImportMap} = analyzeImportsFromAst(descriptor, filename, registry);
   return {
     scriptImports, scriptBody, bodyLineIndices, componentMap, widgetImportMap,
+    usesDefineProps,
   };
 }
 

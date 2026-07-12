@@ -151,7 +151,8 @@ export class SelectWidget extends InteractiveWidget {
       this.#didDrag = false;
       if (this.#opened) {
         const hit = this.#scrollbarHitTest();
-        const result = hit ? scrollbarHitTest(mouseData.x, mouseData.y, hit) : {type: 'none'} as const;
+        const {dx, dy} = this.computeAccumulatedOffset();
+        const result = hit ? scrollbarHitTest(mouseData.x - dx, mouseData.y - dy, hit) : {type: 'none'} as const;
         if (result.type === 'thumb') {
           this.#thumbDragging = true;
           this.#thumbDragStartY = mouseData.y;
@@ -661,8 +662,9 @@ export class SelectWidget extends InteractiveWidget {
   }
 
   #hitTestDropdown(mouseY: number): number {
+    const {dy} = this.computeAccumulatedOffset();
     const ddY = this.#rect.y + this.#rect.height;
-    const relativeY = mouseY - ddY;
+    const relativeY = mouseY - dy - ddY;
     if (relativeY < 0 || relativeY >= this.#dropdownHeight()) {
       return -1;
     }

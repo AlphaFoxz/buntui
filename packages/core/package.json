@@ -41,7 +41,8 @@
         "build": "tsc --project ./tsconfig.json && node -e \"require('fs').copyFileSync('src/global.d.ts','dist/global.d.ts')\""
     },
     "dependencies": {
-        "@buntui/native": "workspace:*"
+        "@buntui/native": "workspace:*",
+        "@vue/reactivity": "^3.5.38"
     },
     "devDependencies": {
         "@types/bun": "1.3.14",

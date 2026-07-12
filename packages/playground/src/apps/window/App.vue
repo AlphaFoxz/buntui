@@ -1,23 +1,20 @@
 <template>
-  <Box draggable :height="20" :width="20">
-    <SelectButton
-      position="absolute"
-      :x="7"
-      width="100%"
-      :tabs="['↓', '↑', 'X']"
-    />
-    <ScrollBox
-      position="absolute"
-      :y="1"
-      :height="17"
-      width="100%"
-      borderStyle="none"
-    ></ScrollBox>
-  </Box>
+  <Window :title="compTitle"></Window>
+  <Bar />
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import Window from './components/Window.vue';
+import Bar from './components/Bar.vue';
 
+const title = ref('Hello');
+const time = ref(0);
+setInterval(() => {
+  time.value += 1;
+}, 1000);
+const compTitle = computed(() => {
+  return title.value + ' ' + time.value;
+});
 const options = ref(['Option 1', 'Option 2', 'Option 3']);
 </script>

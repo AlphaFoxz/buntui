@@ -78,7 +78,8 @@ export class RadioGroupWidget extends InteractiveWidget {
     };
 
     this.on('mousedown', mouseData => {
-      const innerY = mouseData.y - this.#rect.y;
+      const {dy} = this.computeAccumulatedOffset();
+      const innerY = mouseData.y - dy - this.#rect.y;
       if (innerY >= 0 && innerY < this.#options.length) {
         this.#hoveredIndex = innerY;
         this.#select(this.#hoveredIndex);
@@ -86,14 +87,16 @@ export class RadioGroupWidget extends InteractiveWidget {
     });
 
     this.on('mouseover', mouseData => {
-      const innerY = mouseData.y - this.#rect.y;
+      const {dy} = this.computeAccumulatedOffset();
+      const innerY = mouseData.y - dy - this.#rect.y;
       if (innerY >= 0 && innerY < this.#options.length) {
         this.#hoveredIndex = innerY;
       }
     });
 
     this.on('mousemove', mouseData => {
-      const innerY = mouseData.y - this.#rect.y;
+      const {dy} = this.computeAccumulatedOffset();
+      const innerY = mouseData.y - dy - this.#rect.y;
       if (innerY >= 0 && innerY < this.#options.length) {
         this.#hoveredIndex = innerY;
       }

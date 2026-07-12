@@ -1,6 +1,8 @@
 export {createApp} from './app';
 export type {TuiSFCModule} from './app';
 export {runSetup} from './app/scene-context';
+export {setCurrentProps, getCurrentProps} from './app/scene-context';
+export {defineProps} from './app/define-props';
 export {HtmlBackend} from './app/HtmlBackend';
 export type {HtmlBackendOptions, TerminalLike, TerminalMouseEvent} from './app/HtmlBackend';
 export {WasmModule} from './app/wasm-module';

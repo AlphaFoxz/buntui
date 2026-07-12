@@ -193,7 +193,8 @@ export class TextareaWidget extends InteractiveWidget {
 
       const vHit = this.#scrollbarHitTest();
       if (vHit) {
-        const result = scrollbarHitTest(mouseData.x, mouseData.y, vHit);
+        const {dx, dy} = this.computeAccumulatedOffset();
+        const result = scrollbarHitTest(mouseData.x - dx, mouseData.y - dy, vHit);
         switch (result.type) {
           case 'thumb': {
             this.#thumbDragging = true;
@@ -296,8 +297,9 @@ export class TextareaWidget extends InteractiveWidget {
       }
 
       const viewport = this.#computeViewport();
+      const {dy} = this.computeAccumulatedOffset();
 
-      if (mouseData.y < viewport.y && this.#scrollOffsetY > 0) {
+      if (mouseData.y - dy < viewport.y && this.#scrollOffsetY > 0) {
         this.#scrollOffsetY--;
         const vl = this.#visualLines[this.#scrollOffsetY];
         if (vl) {
@@ -309,7 +311,7 @@ export class TextareaWidget extends InteractiveWidget {
         return;
       }
 
-      if (mouseData.y >= viewport.y + viewport.height) {
+      if (mouseData.y - dy >= viewport.y + viewport.height) {
         const targetVisual = Math.min(this.#visualLines.length - 1, this.#scrollOffsetY + viewport.height);
         const vl = this.#visualLines[targetVisual];
         if (vl) {
@@ -846,9 +848,10 @@ export class TextareaWidget extends InteractiveWidget {
   }
 
   #posFromMouse(data: MouseEvent): TextPosition {
+    const {dx, dy} = this.computeAccumulatedOffset();
     const viewport = this.#computeViewport();
-    const relY = data.y - viewport.y;
-    const relX = data.x - viewport.x;
+    const relY = data.y - dy - viewport.y;
+    const relX = data.x - dx - viewport.x;
     const visualIndex = Math.max(0, Math.min(
       this.#visualLines.length - 1,
       this.#scrollOffsetY + relY,

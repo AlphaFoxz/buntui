@@ -3,6 +3,7 @@ import type {TuiScene} from '../extern/app/TuiScene';
 let currentScene: TuiScene | undefined;
 let currentScope: Array<() => void> | undefined;
 let mountedQueue: Array<() => void> | undefined;
+let currentProps: Record<string, unknown> | undefined;
 
 export function setCurrentScene(scene: TuiScene | undefined): void {
   currentScene = scene;
@@ -10,6 +11,14 @@ export function setCurrentScene(scene: TuiScene | undefined): void {
 
 export function getCurrentScene(): TuiScene | undefined {
   return currentScene;
+}
+
+export function setCurrentProps(props: Record<string, unknown> | undefined): void {
+  currentProps = props;
+}
+
+export function getCurrentProps(): Record<string, unknown> | undefined {
+  return currentProps;
 }
 
 export function trackInScope(cleanup: () => void): void {
@@ -27,16 +36,29 @@ export function trackMounted(callback: () => void): void {
 export function runSetup(
   scene: TuiScene,
   setupFn: () => (() => void) | void,
+  props?: Record<string, unknown>,
 ): () => void {
+  const previousScene = currentScene;
+  const previousScope = currentScope;
+  const previousMounted = mountedQueue;
+  const previousProps = currentProps;
+
   const scope: Array<() => void> = [];
   const mounted: Array<() => void> = [];
   currentScene = scene;
   currentScope = scope;
   mountedQueue = mounted;
-  const cleanup = setupFn();
-  currentScope = undefined;
-  currentScene = undefined;
-  mountedQueue = undefined;
+  currentProps = props;
+
+  let cleanup: (() => void) | void;
+  try {
+    cleanup = setupFn();
+  } finally {
+    currentScene = previousScene;
+    currentScope = previousScope;
+    mountedQueue = previousMounted;
+    currentProps = previousProps;
+  }
 
   for (const cb of mounted) {
     cb();

@@ -26,6 +26,7 @@ export const RUNTIME_HELPERS = {
   EFFECT: 'effect',
   COMPUTED: 'computed',
   UNREF: 'unref',
+  REACTIVE: 'reactive',
 } as const;
 
 export type PropHandler = {

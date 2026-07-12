@@ -10,7 +10,7 @@ import type {
 import {wrapExpr, wrapConditionExpr} from './expression-wrapping';
 import {buildEventHandler} from './event-codegen';
 
-const {EFFECT, UNREF} = RUNTIME_HELPERS;
+const {EFFECT, UNREF, REACTIVE} = RUNTIME_HELPERS;
 
 const BOOLEAN_FLAGS = new Set(['disabled', 'checked', 'readonly', 'draggable']);
 
@@ -50,6 +50,8 @@ export type CodegenOptions = {
   reactivityModuleId?: string;
   /** Script body lines to embed inside setup() */
   scriptBody?: string[];
+  /** Whether the script body uses defineProps() without an explicit import */
+  usesDefineProps?: boolean;
 };
 
 export type CodegenResult = {
@@ -90,14 +92,25 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
     }
   }
 
-  // Import reactivity helpers if we have dynamic bindings
-  if (root.effects.length > 0 || hasDynamicBindings(root)) {
-    imports.push(`import {${EFFECT}, ${UNREF}} from '${react}';`);
+  // Import reactivity helpers if we have dynamic bindings or component dynamic props
+  const needsReactiveImport = hasDynamicComponentProps(root);
+  if (root.effects.length > 0 || hasDynamicBindings(root) || needsReactiveImport) {
+    const reactHelpers: string[] = [EFFECT, UNREF];
+    if (needsReactiveImport) {
+      reactHelpers.push(REACTIVE);
+    }
+
+    imports.push(`import {${reactHelpers.join(', ')}} from '${react}';`);
   }
 
   // Import runSetup for component lifecycle scoping
   if (hasComponentCalls(root)) {
     imports.push(`import { runSetup as __runSetup } from '${core}';`);
+  }
+
+  // Import defineProps when script uses it without an explicit import
+  if (options?.usesDefineProps === true) {
+    imports.push(`import { defineProps } from '${core}';`);
   }
 
   // Generate setup function
@@ -188,30 +201,33 @@ function generateWidgetCall(node: TuiWidgetCall, index: number, parentVarName?: 
     const varName = getWidgetVarName(node, index);
     const mountCall = parentVarName ? `${parentVarName}.addChild(w)` : '__target.mount(w)';
     const unmountCall = parentVarName ? `${parentVarName}.removeChild(w)` : '__target.unmount(w)';
+    const {preLines, propsArg} = buildComponentPropsInfo(node, varName);
     const lines = [
+      ...preLines,
       `const ${varName}_w = [];`,
       `const ${varName} = __runSetup(__scene, () => ${node.creator}.setup(__scene, {`,
       `  mount(w) { ${mountCall}; ${varName}_w.push(w); },`,
       `  unmount(w) { ${unmountCall}; const i = ${varName}_w.indexOf(w); if (i >= 0) ${varName}_w.splice(i, 1); }`,
-      '}));',
+      `})${propsArg ? `, ${propsArg}` : ''});`,
       `effect(() => { const _v = ${wrapConditionExpr(showProp.expression)}; for (const w of ${varName}_w) { w.setVisible(_v); } });`,
     ];
     return {lines, nextIndex: index + 1};
   }
 
-  // Component call: ImportName.setup(scene[, mountTarget])
+  // Component call: wrap in __runSetup for lifecycle scoping + props passing
   if (node.isComponent ?? false) {
+    const varName = getWidgetVarName(node, index);
+    const {preLines, propsArg} = buildComponentPropsInfo(node, varName);
+    const lines = [...preLines];
+    const propsPart = propsArg ? `, ${propsArg}` : '';
+
     if (parentVarName) {
-      return {
-        lines: [`${node.creator}.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } });`],
-        nextIndex: index + 1,
-      };
+      lines.push(`__runSetup(__scene, () => ${node.creator}.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${propsPart});`);
+    } else {
+      lines.push(`__runSetup(__scene, () => ${node.creator}.setup(__scene)${propsPart});`);
     }
 
-    return {
-      lines: [`${node.creator}.setup(__scene);`],
-      nextIndex: index + 1,
-    };
+    return {lines, nextIndex: index + 1};
   }
 
   const varName = getWidgetVarName(node, index);
@@ -340,6 +356,7 @@ function flattenConditional(block: TuiConditionalBlock): FlattenedBranch[] {
 type WidgetInfo = {
   varName: string;
   createLine: string;
+  preLines: string[];
   updateEffects: string[];
   eventLines: string[];
   isComponent: boolean;
@@ -363,6 +380,9 @@ function collectWidgetTree(
 
   const isComponentNode = node.isComponent ?? false;
   const childParent = isComponentNode ? parentVarName : varName;
+  const propsInfo = isComponentNode
+    ? buildComponentPropsInfo(node, varName)
+    : {preLines: [] as string[], propsArg: undefined as string | undefined};
 
   for (const child of node.children) {
     if (child.type === 'TuiWidgetCall') {
@@ -387,7 +407,8 @@ function collectWidgetTree(
     tree: {
       root: {
         varName,
-        createLine: buildWidgetCreation(node, isComponentNode ? parentVarName : undefined),
+        createLine: buildWidgetCreation(node, isComponentNode ? parentVarName : undefined, propsInfo.propsArg),
+        preLines: propsInfo.preLines,
         updateEffects: buildGuardedUpdateEffects(node, varName),
         eventLines: buildEventLines(node, varName),
         isComponent: isComponentNode,
@@ -483,6 +504,16 @@ function generateConditional(block: TuiConditionalBlock, index: number, parentVa
     branchTrees.push(trees);
   }
 
+  // Emit preLines (reactive props objects + effects) for all branches before the toggle effect
+  for (const trees of branchTrees) {
+    for (const tree of trees) {
+      lines.push(...tree.root.preLines);
+      for (const d of tree.descendants) {
+        lines.push(...d.preLines);
+      }
+    }
+  }
+
   // Declare all vars as null (root + descendants)
   for (const trees of branchTrees) {
     for (const tree of trees) {
@@ -555,13 +586,14 @@ function generateConditional(block: TuiConditionalBlock, index: number, parentVa
   return {lines, nextIndex};
 }
 
-function buildWidgetCreation(node: TuiWidgetCall, parentVarName?: string): string {
+function buildWidgetCreation(node: TuiWidgetCall, parentVarName?: string, propsArg?: string): string {
   if (node.isComponent ?? false) {
+    const propsPart = propsArg ? `, ${propsArg}` : '';
     if (parentVarName) {
-      return `__runSetup(__scene, () => ${node.creator}.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } }))`;
+      return `__runSetup(__scene, () => ${node.creator}.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${propsPart})`;
     }
 
-    return `__runSetup(__scene, () => ${node.creator}.setup(__scene))`;
+    return `__runSetup(__scene, () => ${node.creator}.setup(__scene)${propsPart})`;
   }
 
   const props: string[] = [];
@@ -787,6 +819,49 @@ function generateKeyedBodyWidget(
   return nextIndex;
 }
 
+type ComponentPropsInfo = {
+  preLines: string[];
+  propsArg: string | undefined;
+};
+
+function buildComponentPropsInfo(node: TuiWidgetCall, varName: string): ComponentPropsInfo {
+  const staticProps: string[] = [];
+  const dynamicPropList: Array<{name: string; expr: string}> = [];
+
+  for (const prop of node.props) {
+    staticProps.push(`${prop.name}: ${JSON.stringify(prop.value)}`);
+  }
+
+  for (const prop of node.dynamicProps) {
+    if (prop.name === 'visible') {
+      continue;
+    }
+
+    dynamicPropList.push({name: prop.name, expr: wrapExpr(prop.expression)});
+  }
+
+  if (staticProps.length === 0 && dynamicPropList.length === 0) {
+    return {preLines: [], propsArg: undefined};
+  }
+
+  if (dynamicPropList.length === 0) {
+    return {
+      preLines: [],
+      propsArg: `{ ${staticProps.join(', ')} }`,
+    };
+  }
+
+  const propsVar = `${varName}_props`;
+  const initialObject = staticProps.length > 0 ? `{ ${staticProps.join(', ')} }` : '{}';
+  const preLines = [
+    `const ${propsVar} = ${REACTIVE}(${initialObject});`,
+    ...dynamicPropList.map(({name, expr}) =>
+      `${EFFECT}(() => { ${propsVar}.${name} = ${expr}; });`),
+  ];
+
+  return {preLines, propsArg: propsVar};
+}
+
 function getWidgetVarName(node: TuiWidgetCall, index: number): string {
   return `__${node.tag.toLowerCase()}${index}`;
 }
@@ -831,6 +906,42 @@ function hasComponentCalls(root: TuiRenderRoot): boolean {
   function checkNode(node: TuiRenderNode): boolean {
     if (node.type === 'TuiWidgetCall') {
       return Boolean(node.isComponent) || node.children.some(n => checkNode(n));
+    }
+
+    if (node.type === 'TuiConditionalBlock') {
+      if (node.consequent.some(n => checkNode(n))) {
+        return true;
+      }
+
+      if (node.alternate) {
+        const alternates = Array.isArray(node.alternate) ? node.alternate : [node.alternate];
+        return alternates.some(n => checkNode(n));
+      }
+
+      return false;
+    }
+
+    if (node.type === 'TuiListBlock') {
+      return node.body.some(n => checkNode(n));
+    }
+
+    return false;
+  }
+
+  return root.children.some(n => checkNode(n));
+}
+
+function hasDynamicComponentProps(root: TuiRenderRoot): boolean {
+  function checkNode(node: TuiRenderNode): boolean {
+    if (node.type === 'TuiWidgetCall') {
+      if (node.isComponent === true) {
+        const hasDynProps = node.dynamicProps.some(p => p.name !== 'visible');
+        if (hasDynProps) {
+          return true;
+        }
+      }
+
+      return node.children.some(n => checkNode(n));
     }
 
     if (node.type === 'TuiConditionalBlock') {

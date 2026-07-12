@@ -489,6 +489,27 @@ describe('transform', () => {
       expect(widget.propHandlers).toBeUndefined();
     });
 
+    it('collects static props on component nodes', () => {
+      const root = parseTemplate('<MyComp title="hello" count="42"/>', {
+        components: {MyComp: 'MyComp'},
+      });
+      const widget = asWidget(root.children[0]!);
+      expect(widget.isComponent).toBe(true);
+      expect(widget.props).toHaveLength(2);
+      expect(widget.props[0]).toEqual({type: 'TuiStaticProp', name: 'title', value: 'hello'});
+      expect(widget.props[1]).toEqual({type: 'TuiStaticProp', name: 'count', value: '42'});
+    });
+
+    it('collects dynamic props on component nodes', () => {
+      const root = parseTemplate('<MyComp :title="msg"/>', {
+        components: {MyComp: 'MyComp'},
+      });
+      const widget = asWidget(root.children[0]!);
+      expect(widget.isComponent).toBe(true);
+      expect(widget.dynamicProps).toHaveLength(1);
+      expect(widget.dynamicProps[0]).toMatchObject({name: 'title', expression: 'msg'});
+    });
+
     it('does not attach propHandlers when using custom registry without propHandlers', () => {
       const root = parseTemplate('<Box/>', {
         registry: {Box: {creator: 'createBox', module: '@buntui/core'}},

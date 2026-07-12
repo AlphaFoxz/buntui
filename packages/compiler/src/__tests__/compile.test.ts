@@ -67,6 +67,80 @@ describe('compile', () => {
     });
   });
 
+  describe('component props', () => {
+    it('passes static props to child component', () => {
+      const result = compile(
+        '<template><MyWidget title="Hello"/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue";</script>',
+      );
+      expect(result.code).toContain('__runSetup(__scene, () => MyWidget.setup(__scene)');
+      expect(result.code).toContain('title: "Hello"');
+    });
+
+    it('creates reactive props for dynamic component props', () => {
+      const result = compile(
+        '<template><MyWidget :title="msg"/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue"; import {ref} from "@vue/reactivity"; const msg = ref("hi");</script>',
+      );
+      expect(result.code).toContain('reactive(');
+      expect(result.code).toContain('_props');
+      expect(result.code).toContain('effect(');
+      expect(result.code).toContain('unref(msg)');
+    });
+
+    it('auto-imports defineProps when used without explicit import', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>defineProps({ title: { type: String, default: "hello" } });</script>',
+      );
+      expect(result.imports.some(i => i.includes('defineProps') && i.includes('@buntui/core'))).toBe(true);
+      expect(result.code).toContain('defineProps');
+    });
+
+    it('redirects defineProps from vue to @buntui/core', () => {
+      const result = compile(
+        '<template><Box/></template>\n'
+        + '<script setup>\nimport { defineProps } from "vue";\ndefineProps({ title: String });\n</script>',
+      );
+      const definePropsImports = result.imports.filter(i => i.includes('defineProps'));
+      expect(definePropsImports).toHaveLength(1);
+      expect(definePropsImports[0]).toContain('@buntui/core');
+      expect(definePropsImports[0]).not.toContain('"vue"');
+    });
+
+    it('wraps child component calls in __runSetup', () => {
+      const result = compile(
+        '<template><MyWidget/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue";</script>',
+      );
+      expect(result.code).toContain('__runSetup(__scene, () => MyWidget.setup(__scene))');
+    });
+
+    it('imports reactive when component has dynamic props', () => {
+      const result = compile(
+        '<template><MyWidget :count="n"/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue"; import {ref} from "@vue/reactivity"; const n = ref(0);</script>',
+      );
+      expect(result.imports.some(i => i.includes('reactive'))).toBe(true);
+    });
+
+    it('does not import reactive for static-only component props', () => {
+      const result = compile(
+        '<template><MyWidget title="hello"/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue";</script>',
+      );
+      expect(result.imports.some(i => i.includes('reactive'))).toBe(false);
+    });
+
+    it('passes props to nested component inside parent widget', () => {
+      const result = compile(
+        '<template><Box><MyWidget title="inner"/></Box></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue";</script>',
+      );
+      expect(result.code).toContain('__runSetup(__scene, () => MyWidget.setup(__scene, { mount(w) { __box0.addChild(w); }, unmount(w) { __box0.removeChild(w); } }), { title: "inner" })');
+    });
+  });
+
   describe('v-for', () => {
     it('generates for-of loop with unref for array iteration', () => {
       const result = compile('<template><Text v-for="item in items" :value="item"/></template>');

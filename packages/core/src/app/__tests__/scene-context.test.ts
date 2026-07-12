@@ -1,5 +1,5 @@
 import {it, expect, describe} from 'bun:test';
-import {runSetup, setCurrentScene, getCurrentScene, trackInScope, trackMounted} from '../scene-context';
+import {runSetup, setCurrentScene, getCurrentScene, setCurrentProps, getCurrentProps, trackInScope, trackMounted} from '../scene-context';
 import {TuiScene} from '../../extern/app/TuiScene';
 
 describe('setCurrentScene / getCurrentScene', () => {
@@ -19,6 +19,38 @@ describe('setCurrentScene / getCurrentScene', () => {
     setCurrentScene(scene);
     setCurrentScene(undefined);
     expect(getCurrentScene()).toBeUndefined();
+  });
+});
+
+describe('setCurrentProps / getCurrentProps', () => {
+  it('returns undefined by default', () => {
+    expect(getCurrentProps()).toBeUndefined();
+  });
+
+  it('returns props after setCurrentProps', () => {
+    const props = {title: 'hello'};
+    setCurrentProps(props);
+    expect(getCurrentProps()).toBe(props);
+    setCurrentProps(undefined);
+  });
+
+  it('returns undefined after clearing', () => {
+    setCurrentProps({title: 'hello'});
+    setCurrentProps(undefined);
+    expect(getCurrentProps()).toBeUndefined();
+  });
+
+  it('sets props context during runSetup', () => {
+    let captured: Record<string, unknown> | undefined;
+    runSetup(new TuiScene(), () => {
+      captured = getCurrentProps();
+    }, {title: 'test'});
+    expect(captured).toEqual({title: 'test'});
+  });
+
+  it('clears props context after setup', () => {
+    runSetup(new TuiScene(), () => {}, {title: 'test'});
+    expect(getCurrentProps()).toBeUndefined();
   });
 });
 
@@ -83,14 +115,16 @@ describe('runSetup', () => {
     expect(cleanups).toEqual(['a']);
   });
 
-  it('leaks context if setup throws (no try/finally guard)', () => {
-    const scene = new TuiScene();
+  it('restores context on setup throw (try/finally guard)', () => {
+    const outerScene = new TuiScene();
+    setCurrentScene(outerScene);
     try {
-      runSetup(scene, () => {
+      runSetup(new TuiScene(), () => {
         throw new Error('test');
       });
     } catch {}
-    expect(getCurrentScene()).toBe(scene);
+
+    expect(getCurrentScene()).toBe(outerScene);
     setCurrentScene(undefined);
   });
 
@@ -118,5 +152,38 @@ describe('runSetup', () => {
       trackMounted(() => { contextDuringMounted = getCurrentScene(); });
     });
     expect(contextDuringMounted).toBeUndefined();
+  });
+
+  it('restores previous context after nested runSetup', () => {
+    const outerScene = new TuiScene();
+    let innerScene: TuiScene | undefined;
+    let restoredScene: TuiScene | undefined;
+
+    runSetup(outerScene, () => {
+      const nested = new TuiScene();
+      runSetup(nested, () => {
+        innerScene = getCurrentScene();
+      });
+      restoredScene = getCurrentScene();
+    });
+
+    expect(innerScene).toBeDefined();
+    expect(restoredScene).toBe(outerScene);
+  });
+
+  it('restores previous props after nested runSetup', () => {
+    const outerProps = {outer: true};
+    let innerProps: Record<string, unknown> | undefined;
+    let restoredProps: Record<string, unknown> | undefined;
+
+    runSetup(new TuiScene(), () => {
+      runSetup(new TuiScene(), () => {
+        innerProps = getCurrentProps();
+      }, {inner: true});
+      restoredProps = getCurrentProps();
+    }, outerProps);
+
+    expect(innerProps).toEqual({inner: true});
+    expect(restoredProps).toBe(outerProps);
   });
 });
