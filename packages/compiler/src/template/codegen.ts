@@ -9,6 +9,7 @@ import type {
   TuiDynamicComponent,
   TuiStaticProp,
   TuiDynamicProp,
+  TuiEventBinding,
 } from './ast';
 import {wrapExpr, wrapConditionExpr} from './expression-wrapping';
 import {buildEventHandler} from './event-codegen';
@@ -55,6 +56,8 @@ export type CodegenOptions = {
   scriptBody?: string[];
   /** Whether the script body uses defineProps() without an explicit import */
   usesDefineProps?: boolean;
+  /** Whether the script body uses defineEmits() without an explicit import */
+  usesDefineEmits?: boolean;
 };
 
 export type CodegenResult = {
@@ -114,6 +117,10 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
   // Import defineProps when script uses it without an explicit import
   if (options?.usesDefineProps === true) {
     imports.push(`import { defineProps } from '${core}';`);
+  }
+
+  if (options?.usesDefineEmits === true) {
+    imports.push(`import { defineEmits } from '${core}';`);
   }
 
   // Generate setup function
@@ -209,13 +216,15 @@ function generateWidgetCall(node: TuiWidgetCall, index: number, parentVarName?: 
     const mountCall = parentVarName ? `${parentVarName}.addChild(w)` : '__target.mount(w)';
     const unmountCall = parentVarName ? `${parentVarName}.removeChild(w)` : '__target.unmount(w)';
     const {preLines, propsArg} = buildComponentPropsInfo(node, varName);
+    const emitsArg = buildComponentEmits(node.events);
+    const trailing = buildTrailingArgs(propsArg, emitsArg);
     const lines = [
       ...preLines,
       `const ${varName}_w = [];`,
       `const ${varName} = __runSetup(__scene, () => ${node.creator}.setup(__scene, {`,
       `  mount(w) { ${mountCall}; ${varName}_w.push(w); },`,
       `  unmount(w) { ${unmountCall}; const i = ${varName}_w.indexOf(w); if (i >= 0) ${varName}_w.splice(i, 1); }`,
-      `})${propsArg ? `, ${propsArg}` : ''});`,
+      `})${trailing});`,
       `effect(() => { const _v = ${wrapConditionExpr(showProp.expression)}; for (const w of ${varName}_w) { w.setVisible(_v); } });`,
     ];
     return {lines, nextIndex: index + 1};
@@ -225,13 +234,14 @@ function generateWidgetCall(node: TuiWidgetCall, index: number, parentVarName?: 
   if (node.isComponent ?? false) {
     const varName = getWidgetVarName(node, index);
     const {preLines, propsArg} = buildComponentPropsInfo(node, varName);
+    const emitsArg = buildComponentEmits(node.events);
+    const trailing = buildTrailingArgs(propsArg, emitsArg);
     const lines = [...preLines];
-    const propsPart = propsArg ? `, ${propsArg}` : '';
 
     if (parentVarName) {
-      lines.push(`__runSetup(__scene, () => ${node.creator}.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${propsPart});`);
+      lines.push(`__runSetup(__scene, () => ${node.creator}.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${trailing});`);
     } else {
-      lines.push(`__runSetup(__scene, () => ${node.creator}.setup(__scene)${propsPart});`);
+      lines.push(`__runSetup(__scene, () => ${node.creator}.setup(__scene)${trailing});`);
     }
 
     return {lines, nextIndex: index + 1};
@@ -390,6 +400,7 @@ function collectWidgetTree(
   const propsInfo = isComponentNode
     ? buildComponentPropsInfo(node, varName)
     : {preLines: [] as string[], propsArg: undefined as string | undefined};
+  const emitsArg = isComponentNode ? buildComponentEmits(node.events) : undefined;
 
   for (const child of node.children) {
     if (child.type === 'TuiWidgetCall') {
@@ -414,7 +425,7 @@ function collectWidgetTree(
     tree: {
       root: {
         varName,
-        createLine: buildWidgetCreation(node, isComponentNode ? parentVarName : undefined, propsInfo.propsArg),
+        createLine: buildWidgetCreation(node, isComponentNode ? parentVarName : undefined, propsInfo.propsArg, emitsArg),
         preLines: propsInfo.preLines,
         updateEffects: buildGuardedUpdateEffects(node, varName),
         eventLines: buildEventLines(node, varName),
@@ -593,14 +604,14 @@ function generateConditional(block: TuiConditionalBlock, index: number, parentVa
   return {lines, nextIndex};
 }
 
-function buildWidgetCreation(node: TuiWidgetCall, parentVarName?: string, propsArg?: string): string {
+function buildWidgetCreation(node: TuiWidgetCall, parentVarName?: string, propsArg?: string, emitsArg?: string): string {
   if (node.isComponent ?? false) {
-    const propsPart = propsArg ? `, ${propsArg}` : '';
+    const trailing = buildTrailingArgs(propsArg, emitsArg);
     if (parentVarName) {
-      return `__runSetup(__scene, () => ${node.creator}.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${propsPart})`;
+      return `__runSetup(__scene, () => ${node.creator}.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${trailing})`;
     }
 
-    return `__runSetup(__scene, () => ${node.creator}.setup(__scene)${propsPart})`;
+    return `__runSetup(__scene, () => ${node.creator}.setup(__scene)${trailing})`;
   }
 
   const props: string[] = [];
@@ -833,10 +844,10 @@ function generateDynamicComponent(
 ): NodeGenResult {
   const varName = `__component${index}`;
   const {preLines, propsArg} = buildComponentPropsInfo(node, varName);
-  const lines = [...preLines];
-  const propsPart = propsArg ? `, ${propsArg}` : '';
-
-  lines.push(
+  const emitsArg = buildComponentEmits(node.events);
+  const trailing = buildTrailingArgs(propsArg, emitsArg);
+  const lines = [
+    ...preLines,
     `let ${varName}_cleanup;`,
     `let ${varName}_prev;`,
     `${EFFECT}(() => {`,
@@ -850,12 +861,12 @@ function generateDynamicComponent(
     `    ${varName}_cleanup = undefined;`,
     '    return;',
     '  }',
-  );
+  ];
 
   if (parentVarName) {
-    lines.push(`  ${varName}_cleanup = __runSetup(__scene, () => __c.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${propsPart});`);
+    lines.push(`  ${varName}_cleanup = __runSetup(__scene, () => __c.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${trailing});`);
   } else {
-    lines.push(`  ${varName}_cleanup = __runSetup(__scene, () => __c.setup(__scene)${propsPart});`);
+    lines.push(`  ${varName}_cleanup = __runSetup(__scene, () => __c.setup(__scene)${trailing});`);
   }
 
   lines.push('});');
@@ -909,6 +920,31 @@ function buildComponentPropsInfo(node: ComponentPropsSource, varName: string): C
   ];
 
   return {preLines, propsArg: propsVar};
+}
+
+function buildComponentEmits(events: readonly TuiEventBinding[]): string | undefined {
+  if (events.length === 0) {
+    return undefined;
+  }
+
+  const entries = events.map(eb => `'${eb.event}': ${buildEventHandler(eb)}`);
+  return `{ ${entries.join(', ')} }`;
+}
+
+function buildTrailingArgs(propsArg?: string, emitsArg?: string): string {
+  if (!propsArg && !emitsArg) {
+    return '';
+  }
+
+  if (!emitsArg) {
+    return `, ${propsArg}`;
+  }
+
+  if (!propsArg) {
+    return `, undefined, ${emitsArg}`;
+  }
+
+  return `, ${propsArg}, ${emitsArg}`;
 }
 
 function getWidgetVarName(node: TuiWidgetCall, index: number): string {

@@ -108,6 +108,26 @@ describe('compile', () => {
       expect(definePropsImports[0]).not.toContain('"vue"');
     });
 
+    it('auto-imports defineEmits when used without explicit import', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const emit = defineEmits(["update:visible"]);</script>',
+      );
+      expect(result.imports.some(i => i.includes('defineEmits') && i.includes('@buntui/core'))).toBe(true);
+      expect(result.code).toContain('defineEmits');
+    });
+
+    it('redirects defineEmits from vue to @buntui/core', () => {
+      const result = compile(
+        '<template><Box/></template>\n'
+        + '<script setup>\nimport { defineEmits } from "vue";\nconst emit = defineEmits(["close"]);\n</script>',
+      );
+      const defineEmitsImports = result.imports.filter(i => i.includes('defineEmits'));
+      expect(defineEmitsImports).toHaveLength(1);
+      expect(defineEmitsImports[0]).toContain('@buntui/core');
+      expect(defineEmitsImports[0]).not.toContain('"vue"');
+    });
+
     it('wraps child component calls in __runSetup', () => {
       const result = compile(
         '<template><MyWidget/></template>'
@@ -165,6 +185,41 @@ describe('compile', () => {
 
     it('throws on <component> without :is', () => {
       expect(() => compile('<template><component/></template>')).toThrow('requires a :is binding');
+    });
+  });
+
+  describe('component emits forwarding', () => {
+    it('forwards v-model on component as emits to runSetup', () => {
+      const result = compile(
+        '<template><MyWidget v-model:visible="foo"/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue"; import {ref} from "@vue/reactivity"; const foo = ref(true);</script>',
+      );
+      expect(result.code).toContain(`'update:visible': ($event) => { foo.value = $event }`);
+      expect(result.code).toContain('), undefined, {');
+    });
+
+    it('forwards @event on component as emits to runSetup', () => {
+      const result = compile(
+        '<template><MyWidget @close="onClose"/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue";</script>',
+      );
+      expect(result.code).toContain(`'close': onClose`);
+    });
+
+    it('forwards v-model on dynamic component as emits', () => {
+      const result = compile(
+        '<template><component :is="Window" v-model:visible="foo"/></template>'
+        + '<script setup>import Window from "./Window.vue"; import {ref} from "@vue/reactivity"; const foo = ref(true);</script>',
+      );
+      expect(result.code).toContain(`'update:visible': ($event) => { foo.value = $event }`);
+    });
+
+    it('uses $event directly for component v-model (not $event.payloadKey)', () => {
+      const result = compile(
+        '<template><MyWidget v-model:visible="foo"/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue"; import {ref} from "@vue/reactivity"; const foo = ref(true);</script>',
+      );
+      expect(result.code).not.toContain('$event.visible');
     });
   });
 

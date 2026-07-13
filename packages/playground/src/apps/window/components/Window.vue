@@ -21,15 +21,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, watch } from 'vue';
 const currentStats = ref('○');
-const windowOprations = computed(() => {
-  const options = ['-', '○', '□', 'X'];
-  return options.filter((o) => o !== currentStats.value);
-});
+const windowOprations = ['-', '○', '□', 'X'];
 
 watch(currentStats, (v) => {
   if (v === '-') {
+    emit('update:visible', false);
+  } else {
+    emit('update:visible', true);
   }
 });
 
@@ -43,5 +43,5 @@ const props = defineProps({
     default: true,
   },
 });
-// const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits(['update:title', 'update:visible']);
 </script>

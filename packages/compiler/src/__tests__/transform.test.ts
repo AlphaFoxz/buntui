@@ -298,6 +298,22 @@ describe('transform', () => {
       expect(widget.dynamicProps.some(p => p.name === 'title')).toBe(true);
       expect(widget.events.some(e => e.event === 'update:title' && e.handler.includes('.trim()'))).toBe(true);
     });
+
+    it('uses $event directly for v-model on components', () => {
+      const root = parseTemplate('<MyComp v-model:visible="foo"/>', {
+        components: {MyComp: 'MyComp'},
+      });
+      const widget = asWidget(root.children[0]!);
+      expect(widget.isComponent).toBe(true);
+      expect(widget.events.some(e => e.event === 'update:visible' && e.handler.includes('foo.value = $event') && !e.handler.includes('$event.visible'))).toBe(true);
+    });
+
+    it('uses $event.payloadKey for v-model on widgets', () => {
+      const root = parseTemplate('<Box v-model:visible="foo"/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.isComponent).not.toBe(true);
+      expect(widget.events.some(e => e.event === 'update:visible' && e.handler.includes('$event.visible'))).toBe(true);
+    });
   });
 
   describe('v-show', () => {

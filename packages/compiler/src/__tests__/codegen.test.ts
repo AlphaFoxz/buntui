@@ -630,6 +630,71 @@ describe('codegen', () => {
       expect(result.imports.some(i => i.includes('defineProps'))).toBe(false);
     });
 
+    it('generates defineEmits import when usesDefineEmits is true', () => {
+      const root = makeRoot([makeWidget()], [], new Set(['createBox']));
+      const result = gen(root, {usesDefineEmits: true});
+      expect(result.imports.some(i => i.includes('defineEmits') && i.includes('@buntui/core'))).toBe(true);
+    });
+
+    it('does not generate defineEmits import when usesDefineEmits is false', () => {
+      const root = makeRoot([makeWidget()], [], new Set(['createBox']));
+      const result = gen(root, {usesDefineEmits: false});
+      expect(result.imports.some(i => i.includes('defineEmits'))).toBe(false);
+    });
+
+    it('passes emits as 4th arg to runSetup for component with events', () => {
+      const component = makeWidget({
+        tag: 'MyComp',
+        creator: 'MyComp',
+        isComponent: true,
+        events: [
+          {type: 'TuiEventBinding', event: 'update:visible', handler: '($event) => { foo.value = $event }', modifiers: [], loc: STUB_LOC},
+        ],
+      });
+      const root = makeRoot([component], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain(`{ 'update:visible': ($event) => { foo.value = $event } }`);
+      expect(result.code).toContain('MyComp.setup(__scene), undefined,');
+    });
+
+    it('passes both props and emits to runSetup for component', () => {
+      const component = makeWidget({
+        tag: 'MyComp',
+        creator: 'MyComp',
+        isComponent: true,
+        props: [{type: 'TuiStaticProp', name: 'title', value: 'hi'}],
+        events: [
+          {type: 'TuiEventBinding', event: 'close', handler: 'onClose', modifiers: [], loc: STUB_LOC},
+        ],
+      });
+      const root = makeRoot([component], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain(`{ title: "hi" }, { 'close': onClose }`);
+    });
+
+    it('does not add trailing args for component without events or props', () => {
+      const component = makeWidget({
+        tag: 'MyComp',
+        creator: 'MyComp',
+        isComponent: true,
+      });
+      const root = makeRoot([component], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain('MyComp.setup(__scene))');
+    });
+
+    it('passes emits to dynamic component', () => {
+      const dyn = makeDynamicComponent({
+        events: [
+          {type: 'TuiEventBinding', event: 'update:visible', handler: '($event) => { v.value = $event }', modifiers: [], loc: STUB_LOC},
+        ],
+      });
+      const root = makeRoot([dyn], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain(`{ 'update:visible': ($event) => { v.value = $event } }`);
+      expect(result.code).toContain('__c.setup(__scene), undefined,');
+    });
+
     it('passes component props in v-if conditional branch', () => {
       const component = makeWidget({
         tag: 'MyComp',

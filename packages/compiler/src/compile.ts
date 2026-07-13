@@ -32,6 +32,7 @@ type ScriptAnalysis = {
   componentMap: Record<string, string>;
   widgetImportMap: Record<string, string>;
   usesDefineProps: boolean;
+  usesDefineEmits: boolean;
 };
 
 const DEFAULT_MODULE_REWRITES: Record<string, string> = {
@@ -44,6 +45,7 @@ const DEFAULT_SYMBOL_REDIRECTS: Record<string, string> = {
   onTick: '@buntui/core',
   useTemplateRef: '@buntui/core',
   defineProps: '@buntui/core',
+  defineEmits: '@buntui/core',
 };
 
 export function compile(source: string, options?: CompileOptions): CompileResult {
@@ -76,6 +78,7 @@ export function compile(source: string, options?: CompileOptions): CompileResult
       ...options?.codegen,
       scriptBody: analysis.scriptBody.length > 0 ? analysis.scriptBody : undefined,
       usesDefineProps: analysis.usesDefineProps,
+      usesDefineEmits: analysis.usesDefineEmits,
     });
 
     const coreModuleId = options?.codegen?.coreModuleId ?? '@buntui/core';
@@ -113,6 +116,7 @@ function analyzeScript(
     return {
       scriptImports: [], scriptBody: [], bodyLineIndices: [], componentMap: {}, widgetImportMap: {},
       usesDefineProps: false,
+      usesDefineEmits: false,
     };
   }
 
@@ -121,10 +125,14 @@ function analyzeScript(
   const usesDefineProps = scriptBody.some(line => /\bdefineProps\s*\(/v.test(line))
     && scriptImports.every(i => !i.includes('defineProps'));
 
+  const usesDefineEmits = scriptBody.some(line => /\bdefineEmits\s*\(/v.test(line))
+    && scriptImports.every(i => !i.includes('defineEmits'));
+
   if (!descriptor.scriptSetup) {
     return {
       scriptImports, scriptBody, bodyLineIndices, componentMap: {}, widgetImportMap: {},
       usesDefineProps,
+      usesDefineEmits,
     };
   }
 
@@ -132,6 +140,7 @@ function analyzeScript(
   return {
     scriptImports, scriptBody, bodyLineIndices, componentMap, widgetImportMap,
     usesDefineProps,
+    usesDefineEmits,
   };
 }
 

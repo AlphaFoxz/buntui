@@ -5,12 +5,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import Window from './components/Window.vue';
 import Bar from './components/Bar.vue';
 
 const windowVisible = ref(true);
+
 const title = ref('Hello');
+watch(windowVisible, (v) => {
+  title.value = v ? 'visible' : 'hidden';
+});
 const time = ref(0);
 setInterval(() => {
   time.value += 1;

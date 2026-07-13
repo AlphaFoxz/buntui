@@ -121,11 +121,13 @@ function transformElement(
   const dynamicProps: TuiDynamicProp[] = [];
   const events: TuiEventBinding[] = [];
 
+  const isComponent = Object.hasOwn(ctx.components, tag);
+
   for (const prop of node.props) {
     if (prop.type === NodeTypes.ATTRIBUTE) {
       props.push(...transformStaticProp(prop));
     } else if (prop.type === NodeTypes.DIRECTIVE) {
-      const results = transformDirective(prop, widgetId, tag);
+      const results = transformDirective(prop, widgetId, tag, isComponent);
       if (!results) {
         continue;
       }
@@ -263,7 +265,7 @@ function transformDynamicComponent(node: ElementNode, ctx: TransformContext): Tu
         continue;
       }
 
-      const results = transformDirective(prop, widgetId, 'component');
+      const results = transformDirective(prop, widgetId, 'component', true);
       if (!results) {
         continue;
       }
@@ -436,7 +438,7 @@ function isValidModelExpression(expr: string): boolean {
   return true;
 }
 
-function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string): DirectiveResult[] | undefined {
+function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string, isComponent = false): DirectiveResult[] | undefined {
   if (['if', 'else-if', 'else', 'for'].includes(dir.name)) {
     return undefined;
   }
@@ -484,7 +486,7 @@ function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string)
     }
 
     // Build the assignment value, applying modifiers in order
-    let valueExpr = `$event.${config.payloadKey}`;
+    let valueExpr = isComponent ? '$event' : `$event.${config.payloadKey}`;
     if (dir.modifiers.length > 0) {
       for (const mod of dir.modifiers) {
         valueExpr = applyModifier(mod.content, valueExpr);
