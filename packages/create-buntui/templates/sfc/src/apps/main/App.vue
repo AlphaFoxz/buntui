@@ -19,7 +19,7 @@
     <Text :value="clock" />
     <Box direction="horizontal" :gap="2" align="center">
       <Button
-        borderless
+        borderStyle="none"
         width="auto"
         :value="'Count: ' + count"
         @click="increment"

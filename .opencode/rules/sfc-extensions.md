@@ -10,6 +10,31 @@ The compiler resolves template tags with a three-tier strategy (highest priority
 
 3. **Core widgets** — resolved via `CORE_REGISTRY` (`compiler/src/runtime-helpers.ts`). Tags `<Box>`, `<Text>`, `<Input>`, `<Button>`, `<Checkbox>`, `<RadioGroup>`, `<SelectButton>`, `<Select>`, `<Switch>`, `<ScrollBox>`, `<Textarea>`, `<Table>`, `<Progress>` map to creator functions from `@buntui/core`. The codegen auto-generates the import.
 
+## Dynamic Components (`<component :is>`)
+
+The special `<component>` tag is detected before the three-tier resolution above. It requires a dynamic `:is` binding that evaluates to a component object at runtime (e.g., an imported `.vue` component). Static `is="..."` (string name) is not supported — buntui has no runtime component registry.
+
+At codegen, `<component :is="expr">` emits an `effect()` that:
+1. Reads the current `:is` value via `unref(expr)`
+2. Runs the previous component's cleanup (tearing down all its widgets and effects)
+3. Calls `runSetup(scene, () => resolvedComp.setup(scene, mountTarget), props)` for the new component
+
+Props (static + dynamic) are passed through `buildComponentPropsInfo`, identical to regular `.vue` component calls. The mount target follows the same rules: top-level components mount to the scene; nested components use `{ mount(w){parent.addChild(w)}, unmount(w){parent.removeChild(w)} }`.
+
+```vue
+<script setup>
+import Window from './Window.vue'
+import Bar from './Bar.vue'
+import {ref} from '@vue/reactivity'
+const current = ref(Window)
+</script>
+<template>
+  <component :is="current" :title="title"></component>
+</template>
+```
+
+When `:is` changes (e.g., `current.value = Bar`), the old component is fully torn down and the new one is mounted — same lifecycle as v-if branch switching. No per-frame rendering overhead since buntui uses full-frame re-rasterization (no virtual DOM diffing).
+
 ## Extension Package Structure
 
 `@buntui/extensions` uses sub-path exports for tree-shaking:

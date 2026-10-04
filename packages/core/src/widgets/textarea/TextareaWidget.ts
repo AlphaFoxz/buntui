@@ -93,7 +93,6 @@ function getDefaultTextareaOptions(): TextareaWidgetOptions {
     label: '',
     readonly: false,
     disabled: false,
-    borderless: false,
 
     ...resolveWidgetColors(TEXTAREA_TOKEN_MAP),
   };
@@ -168,9 +167,7 @@ export class TextareaWidget extends InteractiveWidget {
         colorBorder: parseColor(resolved.colorBorderDisabled),
       },
     };
-    this.#borderStyle = resolved.borderless === true
-      ? 0
-      : resolveBorderStyle(resolved.borderStyle ?? 'solid');
+    this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
     this.#maxLength = resolved.maxLength ?? 0;
     this.#placeholder = resolved.placeholder ?? '';
     this.#extraColors = {
@@ -196,7 +193,8 @@ export class TextareaWidget extends InteractiveWidget {
 
       const vHit = this.#scrollbarHitTest();
       if (vHit) {
-        const result = scrollbarHitTest(mouseData.x, mouseData.y, vHit);
+        const {dx, dy} = this.computeAccumulatedOffset();
+        const result = scrollbarHitTest(mouseData.x - dx, mouseData.y - dy, vHit);
         switch (result.type) {
           case 'thumb': {
             this.#thumbDragging = true;
@@ -299,8 +297,9 @@ export class TextareaWidget extends InteractiveWidget {
       }
 
       const viewport = this.#computeViewport();
+      const {dy} = this.computeAccumulatedOffset();
 
-      if (mouseData.y < viewport.y && this.#scrollOffsetY > 0) {
+      if (mouseData.y - dy < viewport.y && this.#scrollOffsetY > 0) {
         this.#scrollOffsetY--;
         const vl = this.#visualLines[this.#scrollOffsetY];
         if (vl) {
@@ -312,7 +311,7 @@ export class TextareaWidget extends InteractiveWidget {
         return;
       }
 
-      if (mouseData.y >= viewport.y + viewport.height) {
+      if (mouseData.y - dy >= viewport.y + viewport.height) {
         const targetVisual = Math.min(this.#visualLines.length - 1, this.#scrollOffsetY + viewport.height);
         const vl = this.#visualLines[targetVisual];
         if (vl) {
@@ -369,11 +368,6 @@ export class TextareaWidget extends InteractiveWidget {
 
   setReadonly(value: boolean): void {
     this.#isReadonly = value;
-  }
-
-  setBorderless(borderless: boolean): void {
-    this.#borderStyle = borderless ? 0 : resolveBorderStyle('solid');
-    this.#rebuildVisualLines();
   }
 
   setLabel(value: string): void {
@@ -854,9 +848,10 @@ export class TextareaWidget extends InteractiveWidget {
   }
 
   #posFromMouse(data: MouseEvent): TextPosition {
+    const {dx, dy} = this.computeAccumulatedOffset();
     const viewport = this.#computeViewport();
-    const relY = data.y - viewport.y;
-    const relX = data.x - viewport.x;
+    const relY = data.y - dy - viewport.y;
+    const relX = data.x - dx - viewport.x;
     const visualIndex = Math.max(0, Math.min(
       this.#visualLines.length - 1,
       this.#scrollOffsetY + relY,

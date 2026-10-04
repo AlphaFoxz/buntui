@@ -38,6 +38,7 @@
     <TextDemo v-show="currentTab === 'Text'" />
     <TableDemo v-if="currentTab === 'Table'" />
     <SelectDemo v-if="currentTab === 'Select'" />
+    <SelectButtonDemo v-if="currentTab === 'SelectButton'" />
     <TextareaDemo v-if="currentTab === 'Textarea'" />
   </ScrollBox>
 
@@ -72,6 +73,7 @@ import SwitchDemo from './components/SwitchDemo.vue';
 import TextDemo from './components/TextDemo.vue';
 import TableDemo from './components/TableDemo.vue';
 import SelectDemo from './components/SelectDemo.vue';
+import SelectButtonDemo from './components/SelectButtonDemo.vue';
 import TextareaDemo from './components/TextareaDemo.vue';
 
 const themes = [
@@ -101,6 +103,7 @@ const tabOptions = ref([
   { value: 'Text', label: 'Text' },
   { value: 'Table', label: 'Table' },
   { value: 'Select', label: 'Select' },
+  { value: 'SelectButton', label: 'SelectButton' },
   { value: 'Textarea', label: 'Textarea' },
 ]);
 const currentTab = ref(tabOptions.value[0]!.value);

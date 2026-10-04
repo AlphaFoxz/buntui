@@ -10,3 +10,5 @@ export function createApp(options?: CreateAppOptions) {
 
 export {default as TuiApp} from './TuiApp';
 export type {TuiSFCModule} from './TuiApp';
+export {defineEmits} from './define-emits';
+export type {EmitFn} from './define-emits';

@@ -180,7 +180,7 @@ class HmrErrorOverlayWidget extends TuiWidgetEntity {
 
   #isButtonRow(mouseY: number): boolean {
     const {y: ry, height} = this.rect;
-    return mouseY - 1 === ry + height - 2;
+    return mouseY === ry + height - 2;
   }
 }
 

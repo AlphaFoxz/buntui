@@ -284,6 +284,32 @@ export abstract class TuiWidgetEntity implements Mountable {
   }
 
   /**
+  Compute the accumulated content offset from the scene root to this widget
+  by summing `contentOffsetForChild` along the ancestor chain. For
+  `position: 'static'` widgets this is typically {0,0}; for
+  `position: 'absolute'` descendants it matches the render-time translation
+  applied via `pushOffset`, allowing event handlers to convert screen-space
+  mouse coordinates into the widget's local content-relative space.
+  */
+  computeAccumulatedOffset(): {dx: number; dy: number} {
+    const ancestors: TuiWidgetEntity[] = [];
+    for (let node = this.parent; node; node = node.parent) {
+      ancestors.push(node);
+    }
+
+    let dx = 0;
+    let dy = 0;
+    for (let i = 0; i < ancestors.length; i++) {
+      const child = i === 0 ? this : ancestors[i - 1]!;
+      const offset = ancestors[i]!.contentOffsetForChild(child);
+      dx += offset.dx;
+      dy += offset.dy;
+    }
+
+    return {dx, dy};
+  }
+
+  /**
   Return the deepest descendant (or `this`) under the screen-space point (x, y).
   Mirrors the painter's-algorithm render path: each container translates the point
   into its children's coordinate space via `contentOffsetForChild` before testing.
@@ -423,6 +449,12 @@ export abstract class TuiWidgetEntity implements Mountable {
   /**
    Propagate a position delta to all children.
    Called by subclasses in their updateRect when position changes.
+
+   `position: 'absolute'` children are skipped: their rect is stored in
+   content-relative coordinates and their render-time origin
+   (contentOffsetForChild / DrawListBuffer.pushOffset) already includes the
+   parent's screen position, so shifting their rect would double-count the
+   delta (visible as drifting when a draggable parent is moved).
    */
   protected propagatePositionDelta(dx: number, dy: number): void {
     if (dx === 0 && dy === 0) {
@@ -430,6 +462,10 @@ export abstract class TuiWidgetEntity implements Mountable {
     }
 
     for (const child of this.#children) {
+      if (child.position === 'absolute') {
+        continue;
+      }
+
       child.updateRect({
         x: child.rect.x + dx,
         y: child.rect.y + dy,

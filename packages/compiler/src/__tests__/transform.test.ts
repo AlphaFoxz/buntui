@@ -6,6 +6,7 @@ import type {
   TuiWidgetCall,
   TuiConditionalBlock,
   TuiListBlock,
+  TuiDynamicComponent,
   TuiDynamicProp,
   TuiEventBinding,
 } from '../template/ast';
@@ -25,6 +26,10 @@ function asConditional(node: unknown): TuiConditionalBlock {
 
 function asList(node: unknown): TuiListBlock {
   return node as TuiListBlock;
+}
+
+function asDynamicComponent(node: unknown): TuiDynamicComponent {
+  return node as TuiDynamicComponent;
 }
 
 describe('transform', () => {
@@ -293,6 +298,22 @@ describe('transform', () => {
       expect(widget.dynamicProps.some(p => p.name === 'title')).toBe(true);
       expect(widget.events.some(e => e.event === 'update:title' && e.handler.includes('.trim()'))).toBe(true);
     });
+
+    it('uses $event directly for v-model on components', () => {
+      const root = parseTemplate('<MyComp v-model:visible="foo"/>', {
+        components: {MyComp: 'MyComp'},
+      });
+      const widget = asWidget(root.children[0]!);
+      expect(widget.isComponent).toBe(true);
+      expect(widget.events.some(e => e.event === 'update:visible' && e.handler.includes('foo.value = $event') && !e.handler.includes('$event.visible'))).toBe(true);
+    });
+
+    it('uses $event.payloadKey for v-model on widgets', () => {
+      const root = parseTemplate('<Box v-model:visible="foo"/>');
+      const widget = asWidget(root.children[0]!);
+      expect(widget.isComponent).not.toBe(true);
+      expect(widget.events.some(e => e.event === 'update:visible' && e.handler.includes('$event.visible'))).toBe(true);
+    });
   });
 
   describe('v-show', () => {
@@ -489,6 +510,27 @@ describe('transform', () => {
       expect(widget.propHandlers).toBeUndefined();
     });
 
+    it('collects static props on component nodes', () => {
+      const root = parseTemplate('<MyComp title="hello" count="42"/>', {
+        components: {MyComp: 'MyComp'},
+      });
+      const widget = asWidget(root.children[0]!);
+      expect(widget.isComponent).toBe(true);
+      expect(widget.props).toHaveLength(2);
+      expect(widget.props[0]).toEqual({type: 'TuiStaticProp', name: 'title', value: 'hello'});
+      expect(widget.props[1]).toEqual({type: 'TuiStaticProp', name: 'count', value: '42'});
+    });
+
+    it('collects dynamic props on component nodes', () => {
+      const root = parseTemplate('<MyComp :title="msg"/>', {
+        components: {MyComp: 'MyComp'},
+      });
+      const widget = asWidget(root.children[0]!);
+      expect(widget.isComponent).toBe(true);
+      expect(widget.dynamicProps).toHaveLength(1);
+      expect(widget.dynamicProps[0]).toMatchObject({name: 'title', expression: 'msg'});
+    });
+
     it('does not attach propHandlers when using custom registry without propHandlers', () => {
       const root = parseTemplate('<Box/>', {
         registry: {Box: {creator: 'createBox', module: '@buntui/core'}},
@@ -502,6 +544,50 @@ describe('transform', () => {
       const widget = asWidget(root.children[0]!);
       expect(widget.propHandlers!.colorFg).toEqual({method: 'updateColor', field: 'colorFg'});
       expect(widget.propHandlers!.borderStyle).toEqual({method: 'updateBorder', field: 'borderStyle'});
+    });
+  });
+
+  describe('dynamic component (<component :is>)', () => {
+    it('transforms <component :is="X"> to TuiDynamicComponent', () => {
+      const root = parseTemplate('<component :is="Window"/>');
+      expect(root.children).toHaveLength(1);
+      const dyn = asDynamicComponent(root.children[0]!);
+      expect(dyn.type).toBe('TuiDynamicComponent');
+      expect(dyn.isExpression).toBe('Window');
+    });
+
+    it('collects static props on dynamic component', () => {
+      const root = parseTemplate('<component :is="Window" title="hello"/>');
+      const dyn = asDynamicComponent(root.children[0]!);
+      expect(dyn.props).toHaveLength(1);
+      expect(dyn.props[0]).toEqual({type: 'TuiStaticProp', name: 'title', value: 'hello'});
+    });
+
+    it('collects dynamic props on dynamic component', () => {
+      const root = parseTemplate('<component :is="Window" :count="num"/>');
+      const dyn = asDynamicComponent(root.children[0]!);
+      expect(dyn.dynamicProps).toHaveLength(1);
+      expect(dyn.dynamicProps[0]).toMatchObject({name: 'count', expression: 'num'});
+    });
+
+    it('does not treat :is as a regular dynamic prop', () => {
+      const root = parseTemplate('<component :is="Window" :count="num"/>');
+      const dyn = asDynamicComponent(root.children[0]!);
+      expect(dyn.dynamicProps.find(p => p.name === 'is')).toBeUndefined();
+    });
+
+    it('throws when :is is missing', () => {
+      expect(() => parseTemplate('<component/>')).toThrow('requires a :is binding');
+    });
+
+    it('throws on static is attribute', () => {
+      expect(() => parseTemplate('<component is="Window"/>')).toThrow('dynamic :is binding');
+    });
+
+    it('strips :key from dynamic component props', () => {
+      const root = parseTemplate('<component :is="Window" :key="idx"/>');
+      const dyn = asDynamicComponent(root.children[0]!);
+      expect(dyn.dynamicProps.find(p => p.name === 'key')).toBeUndefined();
     });
   });
 });

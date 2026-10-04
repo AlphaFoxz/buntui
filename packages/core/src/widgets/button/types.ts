@@ -39,6 +39,4 @@ export type ButtonWidgetOptions = {
   borderStyleDisabled?: TuiBorderStyleName;
 
   disabled?: boolean;
-
-  borderless?: boolean;
 };

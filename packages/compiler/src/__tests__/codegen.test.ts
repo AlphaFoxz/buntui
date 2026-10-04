@@ -7,6 +7,7 @@ import type {
   TuiConditionalBlock,
   TuiListBlock,
   TuiReactiveEffect,
+  TuiDynamicComponent,
 } from '../template/ast';
 import type {SourceLocation} from '@vue/compiler-core';
 
@@ -34,6 +35,18 @@ function makeWidget(overrides: Partial<TuiWidgetCall> = {}): TuiWidgetCall {
     dynamicProps: [],
     events: [],
     children: [],
+    loc: STUB_LOC,
+    ...overrides,
+  };
+}
+
+function makeDynamicComponent(overrides: Partial<TuiDynamicComponent> = {}): TuiDynamicComponent {
+  return {
+    type: 'TuiDynamicComponent',
+    isExpression: 'Window',
+    props: [],
+    dynamicProps: [],
+    events: [],
     loc: STUB_LOC,
     ...overrides,
   };
@@ -418,6 +431,308 @@ describe('codegen', () => {
       const root = makeRoot([makeWidget()], [], new Set(['createBox']));
       const result = gen(root);
       expect(result.imports.some(i => i.includes('__runSetup'))).toBe(false);
+    });
+  });
+
+  describe('dynamic component (<component :is>)', () => {
+    it('generates cleanup toggle effect with runSetup', () => {
+      const root = makeRoot([makeDynamicComponent()]);
+      const result = gen(root);
+      expect(result.code).toContain('let __component0_cleanup;');
+      expect(result.code).toContain('let __component0_prev;');
+      expect(result.code).toContain('__component0_cleanup?.()');
+      expect(result.code).toContain('const __c = unref(Window)');
+      expect(result.code).toContain('__runSetup(__scene, () => __c.setup(__scene))');
+    });
+
+    it('uses identity check to skip remount when :is unchanged', () => {
+      const root = makeRoot([makeDynamicComponent()]);
+      const result = gen(root);
+      expect(result.code).toContain('if (__c === __component0_prev)');
+      expect(result.code).toContain('return;');
+    });
+
+    it('imports runSetup, effect and unref for dynamic component', () => {
+      const root = makeRoot([makeDynamicComponent()]);
+      const result = gen(root);
+      expect(result.imports.some(i => i.includes('runSetup as __runSetup'))).toBe(true);
+      expect(result.imports.some(i => i.includes('effect') && i.includes('unref'))).toBe(true);
+    });
+
+    it('does not mount dynamic component as declarative widget', () => {
+      const root = makeRoot([makeDynamicComponent()]);
+      const result = gen(root);
+      expect(result.code).not.toContain('__target.mount(__component');
+    });
+
+    it('uses parent addChild/removeChild when nested inside a widget', () => {
+      const parent = makeWidget({
+        children: [makeDynamicComponent()],
+      });
+      const root = makeRoot([parent], [], new Set(['createBox']));
+      const result = gen(root);
+      expect(result.code).toContain('__runSetup(__scene, () => __c.setup(__scene, { mount(w) { __box0.addChild(w); }, unmount(w) { __box0.removeChild(w); } }))');
+    });
+
+    it('passes static props to dynamic component as plain object', () => {
+      const root = makeRoot([makeDynamicComponent({
+        props: [{type: 'TuiStaticProp', name: 'title', value: 'hello'}],
+      })]);
+      const result = gen(root);
+      expect(result.code).toContain('__runSetup(__scene, () => __c.setup(__scene), { title: "hello" })');
+    });
+
+    it('imports reactive when dynamic component has dynamic props', () => {
+      const root = makeRoot([makeDynamicComponent({
+        dynamicProps: [{type: 'TuiDynamicProp', name: 'count', expression: 'num', loc: STUB_LOC}],
+      })]);
+      const result = gen(root);
+      expect(result.imports.some(i => i.includes('reactive'))).toBe(true);
+      expect(result.code).toContain('effect(() => { __component0_props.count = unref(num); })');
+    });
+
+    it('guards against falsy :is value', () => {
+      const root = makeRoot([makeDynamicComponent()]);
+      const result = gen(root);
+      expect(result.code).toContain('if (!__c)');
+      expect(result.code).toContain('__component0_cleanup = undefined;');
+    });
+  });
+
+  describe('component props', () => {
+    it('wraps top-level component in __runSetup', () => {
+      const component = makeWidget({tag: 'MyComp', creator: 'MyComp', isComponent: true});
+      const root = makeRoot([component], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain('__runSetup(__scene, () => MyComp.setup(__scene))');
+    });
+
+    it('passes static props to component via __runSetup', () => {
+      const component = makeWidget({
+        tag: 'MyComp',
+        creator: 'MyComp',
+        isComponent: true,
+        props: [
+          {type: 'TuiStaticProp', name: 'title', value: 'Hello'},
+          {type: 'TuiStaticProp', name: 'count', value: '42'},
+        ],
+      });
+      const root = makeRoot([component], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain('__runSetup(__scene, () => MyComp.setup(__scene), { title: "Hello", count: "42" })');
+    });
+
+    it('creates reactive props object for dynamic component props', () => {
+      const component = makeWidget({
+        tag: 'MyComp',
+        creator: 'MyComp',
+        isComponent: true,
+        dynamicProps: [
+          {type: 'TuiDynamicProp', name: 'title', expression: 'msg', loc: STUB_LOC},
+        ],
+      });
+      const root = makeRoot([component], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain('reactive({})');
+      expect(result.code).toContain('__mycomp0_props');
+      expect(result.code).toContain('effect(() => { __mycomp0_props.title = unref(msg); });');
+      expect(result.code).toContain('__runSetup(__scene, () => MyComp.setup(__scene), __mycomp0_props)');
+    });
+
+    it('combines static and dynamic component props', () => {
+      const component = makeWidget({
+        tag: 'MyComp',
+        creator: 'MyComp',
+        isComponent: true,
+        props: [{type: 'TuiStaticProp', name: 'mode', value: 'dark'}],
+        dynamicProps: [
+          {type: 'TuiDynamicProp', name: 'title', expression: 'msg', loc: STUB_LOC},
+        ],
+      });
+      const root = makeRoot([component], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain('reactive({ mode: "dark" })');
+      expect(result.code).toContain('effect(() => { __mycomp0_props.title = unref(msg); });');
+    });
+
+    it('excludes visible prop from component props (v-show)', () => {
+      const component = makeWidget({
+        tag: 'MyComp',
+        creator: 'MyComp',
+        isComponent: true,
+        props: [{type: 'TuiStaticProp', name: 'title', value: 'Hi'}],
+        dynamicProps: [
+          {type: 'TuiDynamicProp', name: 'visible', expression: 'show', loc: STUB_LOC},
+          {type: 'TuiDynamicProp', name: 'count', expression: 'n', loc: STUB_LOC},
+        ],
+      });
+      const root = makeRoot([component], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain('setVisible');
+      expect(result.code).toContain('__mycomp0_props');
+      expect(result.code).toContain('effect(() => { __mycomp0_props.count = unref(n); });');
+      expect(result.code).not.toContain('__mycomp0_props.visible');
+    });
+
+    it('passes props for nested component inside parent widget', () => {
+      const parent = makeWidget({
+        tag: 'Box',
+        creator: 'createBox',
+        children: [
+          makeWidget({
+            tag: 'Child',
+            creator: 'Child',
+            isComponent: true,
+            props: [{type: 'TuiStaticProp', name: 'title', value: 'Nested'}],
+          }),
+        ],
+      });
+      const root = makeRoot([parent], [], new Set(['createBox']));
+      const result = gen(root);
+      expect(result.code).toContain('__runSetup(__scene, () => Child.setup(__scene, { mount(w) { __box0.addChild(w); }, unmount(w) { __box0.removeChild(w); } }), { title: "Nested" })');
+    });
+
+    it('imports reactive when component has dynamic props', () => {
+      const component = makeWidget({
+        tag: 'MyComp',
+        creator: 'MyComp',
+        isComponent: true,
+        dynamicProps: [
+          {type: 'TuiDynamicProp', name: 'title', expression: 'msg', loc: STUB_LOC},
+        ],
+      });
+      const root = makeRoot([component], [], new Set());
+      const result = gen(root);
+      expect(result.imports.some(i => i.includes('reactive'))).toBe(true);
+    });
+
+    it('does not import reactive without component dynamic props', () => {
+      const component = makeWidget({
+        tag: 'MyComp',
+        creator: 'MyComp',
+        isComponent: true,
+        props: [{type: 'TuiStaticProp', name: 'title', value: 'Hello'}],
+      });
+      const root = makeRoot([component], [], new Set());
+      const result = gen(root);
+      expect(result.imports.some(i => i.includes('reactive'))).toBe(false);
+    });
+
+    it('generates defineProps import when usesDefineProps is true', () => {
+      const root = makeRoot([makeWidget()], [], new Set(['createBox']));
+      const result = gen(root, {usesDefineProps: true});
+      expect(result.imports.some(i => i.includes('defineProps') && i.includes('@buntui/core'))).toBe(true);
+    });
+
+    it('does not generate defineProps import when usesDefineProps is false', () => {
+      const root = makeRoot([makeWidget()], [], new Set(['createBox']));
+      const result = gen(root, {usesDefineProps: false});
+      expect(result.imports.some(i => i.includes('defineProps'))).toBe(false);
+    });
+
+    it('generates defineEmits import when usesDefineEmits is true', () => {
+      const root = makeRoot([makeWidget()], [], new Set(['createBox']));
+      const result = gen(root, {usesDefineEmits: true});
+      expect(result.imports.some(i => i.includes('defineEmits') && i.includes('@buntui/core'))).toBe(true);
+    });
+
+    it('does not generate defineEmits import when usesDefineEmits is false', () => {
+      const root = makeRoot([makeWidget()], [], new Set(['createBox']));
+      const result = gen(root, {usesDefineEmits: false});
+      expect(result.imports.some(i => i.includes('defineEmits'))).toBe(false);
+    });
+
+    it('passes emits as 4th arg to runSetup for component with events', () => {
+      const component = makeWidget({
+        tag: 'MyComp',
+        creator: 'MyComp',
+        isComponent: true,
+        events: [
+          {type: 'TuiEventBinding', event: 'update:visible', handler: '($event) => { foo.value = $event }', modifiers: [], loc: STUB_LOC},
+        ],
+      });
+      const root = makeRoot([component], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain(`{ 'update:visible': ($event) => { foo.value = $event } }`);
+      expect(result.code).toContain('MyComp.setup(__scene), undefined,');
+    });
+
+    it('passes both props and emits to runSetup for component', () => {
+      const component = makeWidget({
+        tag: 'MyComp',
+        creator: 'MyComp',
+        isComponent: true,
+        props: [{type: 'TuiStaticProp', name: 'title', value: 'hi'}],
+        events: [
+          {type: 'TuiEventBinding', event: 'close', handler: 'onClose', modifiers: [], loc: STUB_LOC},
+        ],
+      });
+      const root = makeRoot([component], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain(`{ title: "hi" }, { 'close': onClose }`);
+    });
+
+    it('does not add trailing args for component without events or props', () => {
+      const component = makeWidget({
+        tag: 'MyComp',
+        creator: 'MyComp',
+        isComponent: true,
+      });
+      const root = makeRoot([component], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain('MyComp.setup(__scene))');
+    });
+
+    it('passes emits to dynamic component', () => {
+      const dyn = makeDynamicComponent({
+        events: [
+          {type: 'TuiEventBinding', event: 'update:visible', handler: '($event) => { v.value = $event }', modifiers: [], loc: STUB_LOC},
+        ],
+      });
+      const root = makeRoot([dyn], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain(`{ 'update:visible': ($event) => { v.value = $event } }`);
+      expect(result.code).toContain('__c.setup(__scene), undefined,');
+    });
+
+    it('passes component props in v-if conditional branch', () => {
+      const component = makeWidget({
+        tag: 'MyComp',
+        creator: 'MyComp',
+        isComponent: true,
+        props: [{type: 'TuiStaticProp', name: 'title', value: 'Cond'}],
+      });
+      const block: TuiConditionalBlock = {
+        type: 'TuiConditionalBlock',
+        condition: 'show',
+        consequent: [component],
+        loc: STUB_LOC,
+      };
+      const root = makeRoot([block], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain('__runSetup(__scene, () => MyComp.setup(__scene), { title: "Cond" })');
+    });
+
+    it('emits reactive props preLines before v-if toggle effect', () => {
+      const component = makeWidget({
+        tag: 'MyComp',
+        creator: 'MyComp',
+        isComponent: true,
+        dynamicProps: [
+          {type: 'TuiDynamicProp', name: 'count', expression: 'n', loc: STUB_LOC},
+        ],
+      });
+      const block: TuiConditionalBlock = {
+        type: 'TuiConditionalBlock',
+        condition: 'show',
+        consequent: [component],
+        loc: STUB_LOC,
+      };
+      const root = makeRoot([block], [], new Set());
+      const result = gen(root);
+      expect(result.code).toContain('const __mycomp0_props = reactive({})');
+      expect(result.code).toContain('effect(() => { __mycomp0_props.count = unref(n); });');
+      expect(result.code).toContain('__runSetup(__scene, () => MyComp.setup(__scene), __mycomp0_props)');
     });
   });
 
@@ -1118,56 +1433,6 @@ describe('codegen', () => {
       expect(result.code).toContain('colorFg: unref(c)');
       expect(result.code).not.toContain('updateColor');
       expect(result.code).not.toContain('effect(()');
-    });
-  });
-
-  describe('borderless sugar', () => {
-    const buttonHandlers = CORE_REGISTRY.Button?.propHandlers;
-
-    it('serializes static borderless as boolean true', () => {
-      const root = makeRoot(
-        [makeWidget({
-          tag: 'Button',
-          creator: 'createButtonWidget',
-          props: [{type: 'TuiStaticProp', name: 'borderless', value: 'true'}],
-          propHandlers: buttonHandlers,
-        })],
-        [],
-        new Set(['createButtonWidget']),
-      );
-      const result = gen(root);
-      expect(result.code).toContain('borderless: true');
-      expect(result.code).not.toContain('"true"');
-    });
-
-    it('calls setBorderless for static borderless', () => {
-      const root = makeRoot(
-        [makeWidget({
-          tag: 'Button',
-          creator: 'createButtonWidget',
-          props: [{type: 'TuiStaticProp', name: 'borderless', value: 'true'}],
-          propHandlers: buttonHandlers,
-        })],
-        [],
-        new Set(['createButtonWidget']),
-      );
-      const result = gen(root);
-      expect(result.code).toContain('.setBorderless(true)');
-    });
-
-    it('generates effect for dynamic borderless', () => {
-      const root = makeRoot(
-        [makeWidget({
-          tag: 'Button',
-          creator: 'createButtonWidget',
-          dynamicProps: [{type: 'TuiDynamicProp', name: 'borderless', expression: 'isLink', loc: STUB_LOC}],
-          propHandlers: buttonHandlers,
-        })],
-        [],
-        new Set(['createButtonWidget']),
-      );
-      const result = gen(root);
-      expect(result.code).toContain('effect(() => { __button0.setBorderless(unref(isLink)); });');
     });
   });
 });

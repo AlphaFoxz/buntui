@@ -82,18 +82,18 @@ export class SelectButtonWidget extends InteractiveWidget {
     };
 
     this.on('mousedown', mouseData => {
-      const index = this.#hitTestOption(mouseData.x);
+      const index = this.#hitTestOptionScreen(mouseData.x);
       if (index >= 0) {
         this.#select(index);
       }
     });
 
     this.on('mousemove', mouseData => {
-      this.#hoveredIndex = this.#hitTestOption(mouseData.x);
+      this.#hoveredIndex = this.#hitTestOptionScreen(mouseData.x);
     });
 
     this.on('mouseover', mouseData => {
-      this.#hoveredIndex = this.#hitTestOption(mouseData.x);
+      this.#hoveredIndex = this.#hitTestOptionScreen(mouseData.x);
     });
 
     this.on('mouseout', () => {
@@ -309,6 +309,11 @@ export class SelectButtonWidget extends InteractiveWidget {
     }
 
     return -1;
+  }
+
+  #hitTestOptionScreen(screenX: number): number {
+    const {dx} = this.computeAccumulatedOffset();
+    return this.#hitTestOption(screenX - dx);
   }
 
   #select(index: number): void {

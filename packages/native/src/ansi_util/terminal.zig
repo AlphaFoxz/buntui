@@ -90,3 +90,76 @@ pub fn endSynchronizedUpdateAndFlush(writer: anytype) !void {
     try endSynchronizedUpdate(writer);
     try writer.flush();
 }
+
+const std = @import("std");
+const testing = std.testing;
+
+test "disableLineWrap writes ?7l" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try disableLineWrap(&fw);
+    try testing.expectEqualSlices(u8, "\x1B[?7l", fw.buffer[0..fw.end]);
+}
+
+test "enableLineWrap writes ?7h" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try enableLineWrap(&fw);
+    try testing.expectEqualSlices(u8, "\x1B[?7h", fw.buffer[0..fw.end]);
+}
+
+test "saveScreen writes ?47h" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try saveScreen(&fw);
+    try testing.expectEqualSlices(u8, "\x1B[?47h", fw.buffer[0..fw.end]);
+}
+
+test "restoreScreen writes ?47l" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try restoreScreen(&fw);
+    try testing.expectEqualSlices(u8, "\x1B[?47l", fw.buffer[0..fw.end]);
+}
+
+test "enterAlternateScreen writes ?1049h" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try enterAlternateScreen(&fw);
+    try testing.expectEqualSlices(u8, "\x1B[?1049h", fw.buffer[0..fw.end]);
+}
+
+test "leaveAlternateScreen writes ?1049l" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try leaveAlternateScreen(&fw);
+    try testing.expectEqualSlices(u8, "\x1B[?1049l", fw.buffer[0..fw.end]);
+}
+
+test "setSize writes correct escape" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try setSize(&fw, 80, 24);
+    try testing.expectEqualSlices(u8, "\x1B[8;24;80t", fw.buffer[0..fw.end]);
+}
+
+test "setTitle writes correct escape" {
+    var buf: [128]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try setTitle(&fw, "test");
+    try testing.expectEqualSlices(u8, "\x1B]0;test\x07", fw.buffer[0..fw.end]);
+}
+
+test "beginSynchronizedUpdate writes ?2026h" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try beginSynchronizedUpdate(&fw);
+    try testing.expectEqualSlices(u8, "\x1B[?2026h", fw.buffer[0..fw.end]);
+}
+
+test "endSynchronizedUpdate writes ?2026l" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try endSynchronizedUpdate(&fw);
+    try testing.expectEqualSlices(u8, "\x1B[?2026l", fw.buffer[0..fw.end]);
+}

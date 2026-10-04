@@ -67,6 +67,162 @@ describe('compile', () => {
     });
   });
 
+  describe('component props', () => {
+    it('passes static props to child component', () => {
+      const result = compile(
+        '<template><MyWidget title="Hello"/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue";</script>',
+      );
+      expect(result.code).toContain('__runSetup(__scene, () => MyWidget.setup(__scene)');
+      expect(result.code).toContain('title: "Hello"');
+    });
+
+    it('creates reactive props for dynamic component props', () => {
+      const result = compile(
+        '<template><MyWidget :title="msg"/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue"; import {ref} from "@vue/reactivity"; const msg = ref("hi");</script>',
+      );
+      expect(result.code).toContain('reactive(');
+      expect(result.code).toContain('_props');
+      expect(result.code).toContain('effect(');
+      expect(result.code).toContain('unref(msg)');
+    });
+
+    it('auto-imports defineProps when used without explicit import', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>defineProps({ title: { type: String, default: "hello" } });</script>',
+      );
+      expect(result.imports.some(i => i.includes('defineProps') && i.includes('@buntui/core'))).toBe(true);
+      expect(result.code).toContain('defineProps');
+    });
+
+    it('redirects defineProps from vue to @buntui/core', () => {
+      const result = compile(
+        '<template><Box/></template>\n'
+        + '<script setup>\nimport { defineProps } from "vue";\ndefineProps({ title: String });\n</script>',
+      );
+      const definePropsImports = result.imports.filter(i => i.includes('defineProps'));
+      expect(definePropsImports).toHaveLength(1);
+      expect(definePropsImports[0]).toContain('@buntui/core');
+      expect(definePropsImports[0]).not.toContain('"vue"');
+    });
+
+    it('auto-imports defineEmits when used without explicit import', () => {
+      const result = compile(
+        '<template><Box/></template>'
+        + '<script setup>const emit = defineEmits(["update:visible"]);</script>',
+      );
+      expect(result.imports.some(i => i.includes('defineEmits') && i.includes('@buntui/core'))).toBe(true);
+      expect(result.code).toContain('defineEmits');
+    });
+
+    it('redirects defineEmits from vue to @buntui/core', () => {
+      const result = compile(
+        '<template><Box/></template>\n'
+        + '<script setup>\nimport { defineEmits } from "vue";\nconst emit = defineEmits(["close"]);\n</script>',
+      );
+      const defineEmitsImports = result.imports.filter(i => i.includes('defineEmits'));
+      expect(defineEmitsImports).toHaveLength(1);
+      expect(defineEmitsImports[0]).toContain('@buntui/core');
+      expect(defineEmitsImports[0]).not.toContain('"vue"');
+    });
+
+    it('wraps child component calls in __runSetup', () => {
+      const result = compile(
+        '<template><MyWidget/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue";</script>',
+      );
+      expect(result.code).toContain('__runSetup(__scene, () => MyWidget.setup(__scene))');
+    });
+
+    it('imports reactive when component has dynamic props', () => {
+      const result = compile(
+        '<template><MyWidget :count="n"/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue"; import {ref} from "@vue/reactivity"; const n = ref(0);</script>',
+      );
+      expect(result.imports.some(i => i.includes('reactive'))).toBe(true);
+    });
+
+    it('does not import reactive for static-only component props', () => {
+      const result = compile(
+        '<template><MyWidget title="hello"/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue";</script>',
+      );
+      expect(result.imports.some(i => i.includes('reactive'))).toBe(false);
+    });
+
+    it('passes props to nested component inside parent widget', () => {
+      const result = compile(
+        '<template><Box><MyWidget title="inner"/></Box></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue";</script>',
+      );
+      expect(result.code).toContain('__runSetup(__scene, () => MyWidget.setup(__scene, { mount(w) { __box0.addChild(w); }, unmount(w) { __box0.removeChild(w); } }), { title: "inner" })');
+    });
+  });
+
+  describe('dynamic component (<component :is>)', () => {
+    it('compiles <component :is="Window"> end-to-end', () => {
+      const result = compile(
+        '<template><component :is="Window"/></template>'
+        + '<script setup>import Window from "./Window.vue";</script>',
+      );
+      expect(result.code).toContain('let __component0_cleanup;');
+      expect(result.code).toContain('const __c = unref(Window)');
+      expect(result.code).toContain('__runSetup(__scene, () => __c.setup(__scene))');
+      expect(result.imports.some(i => i.includes('runSetup as __runSetup'))).toBe(true);
+    });
+
+    it('passes props to dynamic component', () => {
+      const result = compile(
+        '<template><component :is="Window" title="hi" :count="n"/></template>'
+        + '<script setup>import Window from "./Window.vue"; import {ref} from "@vue/reactivity"; const n = ref(0);</script>',
+      );
+      expect(result.code).toContain('reactive({ title: "hi" })');
+      expect(result.code).toContain('__component0_props.count = unref(n)');
+      expect(result.code).toContain('__runSetup(__scene, () => __c.setup(__scene), __component0_props)');
+    });
+
+    it('throws on <component> without :is', () => {
+      expect(() => compile('<template><component/></template>')).toThrow('requires a :is binding');
+    });
+  });
+
+  describe('component emits forwarding', () => {
+    it('forwards v-model on component as emits to runSetup', () => {
+      const result = compile(
+        '<template><MyWidget v-model:visible="foo"/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue"; import {ref} from "@vue/reactivity"; const foo = ref(true);</script>',
+      );
+      expect(result.code).toContain(`'update:visible': ($event) => { foo.value = $event }`);
+      expect(result.code).toContain('), undefined, {');
+    });
+
+    it('forwards @event on component as emits to runSetup', () => {
+      const result = compile(
+        '<template><MyWidget @close="onClose"/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue";</script>',
+      );
+      expect(result.code).toContain(`'close': onClose`);
+    });
+
+    it('forwards v-model on dynamic component as emits', () => {
+      const result = compile(
+        '<template><component :is="Window" v-model:visible="foo"/></template>'
+        + '<script setup>import Window from "./Window.vue"; import {ref} from "@vue/reactivity"; const foo = ref(true);</script>',
+      );
+      expect(result.code).toContain(`'update:visible': ($event) => { foo.value = $event }`);
+    });
+
+    it('uses $event directly for component v-model (not $event.payloadKey)', () => {
+      const result = compile(
+        '<template><MyWidget v-model:visible="foo"/></template>'
+        + '<script setup>import MyWidget from "./MyWidget.vue"; import {ref} from "@vue/reactivity"; const foo = ref(true);</script>',
+      );
+      expect(result.code).not.toContain('$event.visible');
+    });
+  });
+
   describe('v-for', () => {
     it('generates for-of loop with unref for array iteration', () => {
       const result = compile('<template><Text v-for="item in items" :value="item"/></template>');

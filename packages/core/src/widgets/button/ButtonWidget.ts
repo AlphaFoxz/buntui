@@ -15,6 +15,9 @@ import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
 import {resolveThemedOverrides} from '../../theme/color-ref';
 import type {ButtonWidgetOptions} from './types';
 
+const DEFAULT_HEIGHT_WITH_BORDER = 3;
+const DEFAULT_HEIGHT_NO_BORDER = 1;
+
 type ButtonColors = {
   fg: number;
   bg: number;
@@ -56,7 +59,6 @@ function getDefaultButtonOptions(): Required<ButtonWidgetOptions> {
     ...resolveWidgetColors(BUTTON_TOKEN_MAP),
 
     disabled: false,
-    borderless: false,
   };
 }
 
@@ -72,10 +74,6 @@ export class ButtonWidget extends InteractiveWidget {
   constructor(options: ButtonWidgetOptions = {}) {
     super();
     const defaults = getDefaultButtonOptions();
-    if (options.borderless === true && options.height === undefined) {
-      defaults.height = 1;
-    }
-
     const resolved = {...defaults, ...options};
     this.#autoWidth = resolved.width === 'auto';
     this.#value = resolved.value;
@@ -127,10 +125,6 @@ export class ButtonWidget extends InteractiveWidget {
     this.on('mouseup', () => {
       this.#pressed = false;
     });
-
-    if (resolved.borderless) {
-      this.setBorderless(true);
-    }
   }
 
   override blur(): void {
@@ -150,21 +144,6 @@ export class ButtonWidget extends InteractiveWidget {
 
   updateValue(value: string): void {
     this.#value = value;
-    if (this.#autoWidth) {
-      this.#rect.width = this.#computeAutoWidth();
-    }
-  }
-
-  setBorderless(borderless: boolean): void {
-    if (!borderless) {
-      return;
-    }
-
-    this.#colors.normal.borderStyle = 0;
-    this.#colors.focused!.borderStyle = 0;
-    this.#colors.hovered!.borderStyle = 0;
-    this.#colors.pressed!.borderStyle = 0;
-    this.#colors.disabled!.borderStyle = 0;
     if (this.#autoWidth) {
       this.#rect.width = this.#computeAutoWidth();
     }
@@ -224,6 +203,28 @@ export class ButtonWidget extends InteractiveWidget {
 
     if (options.borderStylePressed !== undefined) {
       this.#colors.pressed!.borderStyle = resolveBorderStyle(options.borderStylePressed);
+    }
+  }
+
+  updateBorder(options: {borderStyle?: TuiBorderStyleName}): void {
+    if (options.borderStyle === undefined) {
+      return;
+    }
+
+    const resolved = resolveBorderStyle(options.borderStyle);
+    this.#colors.normal.borderStyle = resolved;
+    this.#colors.hovered!.borderStyle = resolved;
+    this.#colors.focused!.borderStyle = resolved;
+    this.#colors.pressed!.borderStyle = resolved;
+    this.#colors.disabled!.borderStyle = resolved;
+    if (resolved === 0 && this.#rect.height === DEFAULT_HEIGHT_WITH_BORDER) {
+      this.#rect.height = DEFAULT_HEIGHT_NO_BORDER;
+    } else if (resolved !== 0 && this.#rect.height === DEFAULT_HEIGHT_NO_BORDER) {
+      this.#rect.height = DEFAULT_HEIGHT_WITH_BORDER;
+    }
+
+    if (this.#autoWidth) {
+      this.#rect.width = this.#computeAutoWidth();
     }
   }
 
@@ -310,10 +311,6 @@ export class ButtonWidget extends InteractiveWidget {
 export function createButtonWidget(options?: Partial<ButtonWidgetOptions>): ButtonWidget {
   const ctorOptions = resolveThemedOverrides(options ?? {}, BUTTON_TOKEN_MAP);
   const defaults = getDefaultButtonOptions();
-  if (options?.borderless === true && options.height === undefined) {
-    defaults.height = 1;
-  }
-
   const widget = new ButtonWidget({...defaults, ...ctorOptions});
   widget.initTokenMap(BUTTON_TOKEN_MAP);
   bindThemeToWidget(widget, BUTTON_TOKEN_MAP, options ?? {}, resolved => {

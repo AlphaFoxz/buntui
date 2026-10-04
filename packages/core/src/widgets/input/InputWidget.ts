@@ -170,16 +170,17 @@ export class InputWidget extends InteractiveWidget {
       }
 
       if (this.#isNumber) {
+        const {dx, dy} = this.computeAccumulatedOffset();
         const btnX = this.#x + this.#width - 2;
-        if (mouseData.x === btnX) {
+        if (mouseData.x - dx === btnX) {
           const textY = this.#y + 1;
-          if (mouseData.y === textY) {
+          if (mouseData.y - dy === textY) {
             this.#increment();
             this.stopPropagation();
             return;
           }
 
-          if (this.#height === 3 && mouseData.y === textY + 1) {
+          if (this.#height === 3 && mouseData.y - dy === textY + 1) {
             this.#decrement();
             this.stopPropagation();
             return;
@@ -240,7 +241,8 @@ export class InputWidget extends InteractiveWidget {
         return;
       }
 
-      const mouse0 = mouseData.x;
+      const {dx} = this.computeAccumulatedOffset();
+      const mouse0 = mouseData.x - dx;
       const textX = this.#x + 1;
 
       if (mouse0 < textX && this.#scrollOffset > 0) {
@@ -781,7 +783,8 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #posFromMouse(data: MouseEvent): number {
-    const innerX = data.x - this.#x - 1;
+    const {dx} = this.computeAccumulatedOffset();
+    const innerX = data.x - dx - this.#x - 1;
     const visibleWidth = this.#isNumber ? this.#width - 4 : this.#width - 2;
     if (innerX < 0 || innerX >= visibleWidth) {
       return this.#cursorPos;

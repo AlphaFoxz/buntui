@@ -1,5 +1,6 @@
 import {it, expect, describe} from 'bun:test';
 import {SelectButtonWidget} from '../SelectButtonWidget';
+import {BoxWidget} from '../../box/BoxWidget';
 import type {KeyboardEvent, MouseEvent} from '../../../events/types';
 
 function key(options: Partial<KeyboardEvent> & {key: string}): KeyboardEvent {
@@ -365,5 +366,49 @@ describe('unmounted', () => {
     bar.focus();
     bar.unmounted();
     expect(blurred).toBe(true);
+  });
+});
+
+describe('absolute child of draggable container', () => {
+  it('click selects correct option after parent is dragged', () => {
+    // Box at origin with solid border (content origin = 1,1)
+    const box = new BoxWidget({
+      x: 0, y: 0, width: 30, height: 10,
+      border: true, borderStyle: 'solid',
+      draggable: true,
+      colorFg: 0xFF_FF_FF_FF, colorBg: 0x00_00_00_FF,
+    });
+
+    // SelectButton at content-relative x=5: options at local 5..10, 12..17, 19..24
+    const sb = new SelectButtonWidget({
+      options: ['Tab1', 'Tab2', 'Tab3'],
+      value: 'Tab1',
+      x: 5, y: 0, width: 30, height: 1,
+    });
+    sb.setPosition('absolute');
+    box.addChild(sb);
+
+    // Before drag: box at (0,0), content origin (1,1)
+    // Tab2 paints at screen x = 1+12 = 13
+    sb.dispatch('mousedown', mouse({x: 13, y: 1}));
+    expect(sb.value).toBe('Tab2');
+
+    // Reset
+    sb.updateValue('Tab1');
+
+    // Drag box to (20, 0): content origin now (21, 1)
+    box.updateRect({x: 20, y: 0});
+
+    // After drag: Tab2 paints at screen x = 21+12 = 33
+    sb.dispatch('mousedown', mouse({x: 33, y: 1}));
+    expect(sb.value).toBe('Tab2');
+
+    // Tab1 paints at screen x = 21+5 = 26
+    sb.dispatch('mousedown', mouse({x: 26, y: 1}));
+    expect(sb.value).toBe('Tab1');
+
+    // Tab3 paints at screen x = 21+19 = 40
+    sb.dispatch('mousedown', mouse({x: 40, y: 1}));
+    expect(sb.value).toBe('Tab3');
   });
 });

@@ -320,6 +320,40 @@ describe('position propagation', () => {
     expect(child.rect.x).toBe(childX);
     expect(child.rect.y).toBe(childY);
   });
+
+  it('dragging a parent does not double-shift an absolute child (rect stays content-relative)', () => {
+    const box = createBoxWith({x: 10, y: 10, width: 20, height: 10, borderStyle: 'solid', border: true});
+    const abs = createBox({x: 2, y: 3, width: 5, height: 3});
+    abs.setPosition('absolute');
+    box.addChild(abs);
+
+    // Simulate a drag: parent moves from (10,10) to (15,15) — delta +5,+5.
+    box.updateRect({x: 15, y: 15});
+
+    // Absolute child keeps its content-relative coords (not shifted by the delta).
+    expect(abs.rect.x).toBe(2);
+    expect(abs.rect.y).toBe(3);
+  });
+
+  it('absolute child screen position follows parent drag by exactly the delta', () => {
+    const box = createBoxWith({x: 10, y: 10, width: 20, height: 10, borderStyle: 'solid', border: true});
+    const abs = createBox({x: 2, y: 3, width: 5, height: 3});
+    abs.setPosition('absolute');
+    box.addChild(abs);
+    box.emitDrawCommands(new DrawListBuffer());
+
+    // Before drag: content origin = (10,10) + border(1) = (11,11); painted at (13,14).
+    expect(box.hitTestDeep(13, 14)).toBe(abs);
+
+    // Drag parent by +5,+5.
+    box.updateRect({x: 15, y: 15});
+    box.emitDrawCommands(new DrawListBuffer());
+
+    // After drag: content origin = (16,16); painted at (18,19) — exactly +5,+5.
+    expect(box.hitTestDeep(18, 19)).toBe(abs);
+    // The pre-drag screen cell must no longer hit the child (no double-count drift).
+    expect(box.hitTestDeep(13, 14)).toBe(box);
+  });
 });
 
 describe('overflow clipping', () => {

@@ -150,7 +150,7 @@ declare global {
     height?: TuiSizeValue;
     value?: string;
     disabled?: boolean;
-    borderless?: boolean;
+    borderStyle?: TuiBorderStyle;
     colorFgNormal?: TuiColor;
     colorBgNormal?: TuiColor;
     colorBorderNormal?: TuiColor;
@@ -183,6 +183,7 @@ declare global {
     indeterminate?: boolean;
     modelValue?: boolean;
     disabled?: boolean;
+    borderStyle?: TuiBorderStyle;
     colorFgNormal?: TuiColor;
     colorBgNormal?: TuiColor;
     colorFgHovered?: TuiColor;
@@ -243,6 +244,7 @@ declare global {
     checked?: boolean;
     modelValue?: boolean;
     disabled?: boolean;
+    borderStyle?: TuiBorderStyle;
     colorFgNormal?: TuiColor;
     colorBgNormal?: TuiColor;
     colorCrossNormal?: TuiColor;
@@ -410,7 +412,6 @@ declare global {
     colorBgDisabled?: TuiColor;
     colorScrollbar?: TuiColor;
     colorScrollbarTrack?: TuiColor;
-    borderless?: boolean;
   };
 
   type TuiTableProps = {

@@ -49,3 +49,40 @@ pub fn printToPosAndFlush(writer: anytype, x: usize, y: usize, comptime fmt: []c
     try printToPos(writer, x, y, fmt, args);
     try writer.flush();
 }
+
+const testing = std.testing;
+
+test "writeAll outputs string" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try writeAll(&fw, "hello");
+    try testing.expectEqualSlices(u8, "hello", fw.buffer[0..fw.end]);
+}
+
+test "writeCharToPos outputs correct escape" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try writeCharToPos(&fw, 5, 3, 'X');
+    try testing.expectEqualSlices(u8, "\x1B[4;6HX", fw.buffer[0..fw.end]);
+}
+
+test "writeAllToPos outputs correct escape" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try writeAllToPos(&fw, 1, 1, "Hi");
+    try testing.expectEqualSlices(u8, "\x1B[2;2HHi", fw.buffer[0..fw.end]);
+}
+
+test "printToPos outputs formatted escape" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try printToPos(&fw, 0, 0, "{d}", .{42});
+    try testing.expectEqualSlices(u8, "\x1B[1;1H42", fw.buffer[0..fw.end]);
+}
+
+test "print outputs formatted string" {
+    var buf: [64]u8 = undefined;
+    var fw = std.Io.Writer.fixed(&buf);
+    try print(&fw, "{s}{d}", .{ "val", 7 });
+    try testing.expectEqualSlices(u8, "val7", fw.buffer[0..fw.end]);
+}

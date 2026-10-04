@@ -328,6 +328,21 @@ describe('propagatePositionDelta', () => {
     expect(child.rect.x).toBe(originalX);
     expect(child.rect.y).toBe(originalY);
   });
+
+  it('skips position:absolute children (render origin tracks parent)', () => {
+    const parent = new ContainerWidget();
+    const absolute = createWidget();
+    absolute.setPosition('absolute');
+    const relative = createWidget();
+    parent.addChild(absolute);
+    parent.addChild(relative);
+    parent.updateRect({x: 7, y: 4});
+
+    expect(absolute.rect.x).toBe(0); // content-relative coords untouched
+    expect(absolute.rect.y).toBe(0);
+    expect(relative.rect.x).toBe(7); // static child follows the parent
+    expect(relative.rect.y).toBe(4);
+  });
 });
 
 describe('renderChildren', () => {
