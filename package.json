@@ -24,6 +24,10 @@
         "xo": "^5.0.1"
     },
     "peerDependencies": {
-        "typescript": "=6.0.3"
+        "typescript": "=7.0.2"
+    },
+    "engines": {
+        "bun": "^1.4.2",
+        "node": "^24.21.0"
     }
 }

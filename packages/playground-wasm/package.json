@@ -25,7 +25,7 @@
         "@buntui/cli": "workspace:*",
         "@buntui/compiler": "workspace:*",
         "@buntui/native-wasm32-wasi": "workspace:*",
-        "@types/node": "^24.12.4",
+        "@types/node": "^24.19.1",
         "typescript": "npm:typescript-native-bridge@latest",
         "vite": "~8.3.2",
         "vue": "~3.5.43"

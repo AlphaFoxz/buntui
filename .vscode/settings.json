@@ -25,7 +25,7 @@
         "prettier.singleQuote": true
     },
     "[json]": {
-        "editor.defaultFormatter": "samverschueren.linter-xo",
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
         "prettier.printWidth": 80
     },
     "zig.debugTestArgs": [
