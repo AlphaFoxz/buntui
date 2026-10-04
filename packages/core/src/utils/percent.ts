@@ -17,28 +17,14 @@ export function extractPercentSpec(
   width?: TuiSizeValue,
   height?: TuiSizeValue,
 ): TuiWidgetPercentSpec | undefined {
-  const spec: TuiWidgetPercentSpec = {};
-  if (isPercent(x)) {
-    spec.x = x;
-  }
+  const spec: TuiWidgetPercentSpec = {
+    ...(isPercent(x) && {x}),
+    ...(isPercent(y) && {y}),
+    ...(isPercent(width) && {width}),
+    ...(isPercent(height) && {height}),
+  };
 
-  if (isPercent(y)) {
-    spec.y = y;
-  }
-
-  if (isPercent(width)) {
-    spec.width = width;
-  }
-
-  if (isPercent(height)) {
-    spec.height = height;
-  }
-
-  if (spec.x === undefined && spec.y === undefined && spec.width === undefined && spec.height === undefined) {
-    return undefined;
-  }
-
-  return spec;
+  return spec.x === undefined && spec.y === undefined && spec.width === undefined && spec.height === undefined ? undefined : spec;
 }
 
 export function resolveSizeValue(value: TuiSizeValue | undefined, total: number, fallback: number): number {
@@ -46,9 +32,5 @@ export function resolveSizeValue(value: TuiSizeValue | undefined, total: number,
     return fallback;
   }
 
-  if (isPercent(value)) {
-    return resolvePercent(value, total);
-  }
-
-  return value;
+  return isPercent(value) ? resolvePercent(value, total) : value;
 }

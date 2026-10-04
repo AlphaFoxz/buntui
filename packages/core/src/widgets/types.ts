@@ -155,11 +155,7 @@ export function resolveBorderStyle(value: unknown): U8 {
     return BORDER_STYLE_MAP[value as TuiBorderStyleName] ?? 0;
   }
 
-  if (typeof value === 'number') {
-    return value;
-  }
-
-  return 0;
+  return typeof value === 'number' ? value : 0;
 }
 
 /**
@@ -228,11 +224,7 @@ const LAYOUT_DIRECTION_MAP: Record<TuiLayoutDirectionName, TuiLayoutDirection> =
 };
 
 export function resolveLayoutDirection(value: TuiLayoutDirectionName | TuiLayoutDirection): TuiLayoutDirection {
-  if (typeof value === 'string') {
-    return LAYOUT_DIRECTION_MAP[value] ?? 1;
-  }
-
-  return value;
+  return typeof value === 'string' ? LAYOUT_DIRECTION_MAP[value] ?? 1 : value;
 }
 
 export const TuiLayoutAlignment = {
@@ -253,11 +245,7 @@ const LAYOUT_ALIGNMENT_MAP: Record<TuiLayoutAlignmentName, TuiLayoutAlignment> =
 };
 
 export function resolveLayoutAlignment(value: TuiLayoutAlignmentName | TuiLayoutAlignment): TuiLayoutAlignment {
-  if (typeof value === 'string') {
-    return LAYOUT_ALIGNMENT_MAP[value] ?? 3;
-  }
-
-  return value;
+  return typeof value === 'string' ? LAYOUT_ALIGNMENT_MAP[value] ?? 3 : value;
 }
 
 export const TuiJustifyContent = {
@@ -282,11 +270,7 @@ const JUSTIFY_CONTENT_MAP: Record<TuiJustifyContentName, TuiJustifyContent> = {
 };
 
 export function resolveJustifyContent(value: TuiJustifyContentName | TuiJustifyContent): TuiJustifyContent {
-  if (typeof value === 'string') {
-    return JUSTIFY_CONTENT_MAP[value] ?? 0;
-  }
-
-  return value;
+  return typeof value === 'string' ? JUSTIFY_CONTENT_MAP[value] ?? 0 : value;
 }
 
 export type TuiPercent = `${number}%`;
@@ -320,11 +304,7 @@ const FLEX_WRAP_MAP: Record<TuiFlexWrapName, TuiFlexWrap> = {
 };
 
 export function resolveFlexWrap(value: TuiFlexWrapName | TuiFlexWrap): TuiFlexWrap {
-  if (typeof value === 'string') {
-    return FLEX_WRAP_MAP[value] ?? 0;
-  }
-
-  return value;
+  return typeof value === 'string' ? FLEX_WRAP_MAP[value] ?? 0 : value;
 }
 
 export const TuiAlignContent = {
@@ -348,11 +328,7 @@ const ALIGN_CONTENT_MAP: Record<TuiAlignContentName, TuiAlignContent> = {
 };
 
 export function resolveAlignContent(value: TuiAlignContentName | TuiAlignContent): TuiAlignContent {
-  if (typeof value === 'string') {
-    return ALIGN_CONTENT_MAP[value] ?? 0;
-  }
-
-  return value;
+  return typeof value === 'string' ? ALIGN_CONTENT_MAP[value] ?? 0 : value;
 }
 
 /**

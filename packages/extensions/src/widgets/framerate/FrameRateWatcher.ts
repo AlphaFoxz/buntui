@@ -36,20 +36,22 @@ export class FrameRateWatcher extends TuiWidgetEntity {
     this.#colorBg = parseColor(options.colorBg ?? theme.colors.surface);
     this.setDraggable(true);
 
-    if (options.colorFg === undefined || options.colorBg === undefined) {
-      const trackFg = options.colorFg === undefined;
-      const trackBg = options.colorBg === undefined;
-      const unsub = onThemeChange(t => {
-        if (trackFg) {
-          this.#colorFg = parseColor(t.colors.text);
-        }
-
-        if (trackBg) {
-          this.#colorBg = parseColor(t.colors.surface);
-        }
-      });
-      this.addCleanup(unsub);
+    if (options.colorFg !== undefined && options.colorBg !== undefined) {
+      return;
     }
+
+    const isTrackFg = options.colorFg === undefined;
+    const isTrackBg = options.colorBg === undefined;
+    const unsub = onThemeChange(t => {
+      if (isTrackFg) {
+        this.#colorFg = parseColor(t.colors.text);
+      }
+
+      if (isTrackBg) {
+        this.#colorBg = parseColor(t.colors.surface);
+      }
+    });
+    this.addCleanup(unsub);
   }
 
   override get zIndex(): number {
@@ -116,10 +118,12 @@ export class FrameRateWatcher extends TuiWidgetEntity {
 
   override unmounted(): void {
     super.unmounted();
-    if (this.#timer) {
-      clearInterval(this.#timer);
-      this.#timer = null;
+    if (!this.#timer) {
+      return;
     }
+
+    clearInterval(this.#timer);
+    this.#timer = null;
   }
 }
 

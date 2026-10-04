@@ -29,11 +29,7 @@ export type FlexLayoutResult = {
 
 function resolveChildExtent(child: TuiWidgetEntity, isVertical: boolean): number {
   const intrinsic = child.intrinsicSize();
-  if (isVertical) {
-    return intrinsic?.height ?? child.rect.height;
-  }
-
-  return intrinsic?.width ?? child.rect.width;
+  return isVertical ? intrinsic?.height ?? child.rect.height : intrinsic?.width ?? child.rect.width;
 }
 
 export function resolveFlexBasis(child: TuiWidgetEntity, isVertical: boolean, mainSize: number): number {
@@ -91,8 +87,8 @@ function resolveCrossAxis(
 
     case LayoutAlignmentEnum.Stretch: {
       crossPos = 0;
-      const explicit = isVertical ? child.hasExplicitWidth : child.hasExplicitHeight;
-      if (!explicit) {
+      const isExplicit = isVertical ? child.hasExplicitWidth : child.hasExplicitHeight;
+      if (!isExplicit) {
         crossExtent = crossSize;
       }
 
@@ -112,7 +108,7 @@ function resolveCrossAxis(
  and alignContent (cross axis) since they share the same numeric enum values.
  */
 function computeSpaceDistribution(mode: number, freeSpace: number, count: number): {startOffset: number; extraGap: number} {
-  if (freeSpace <= 0 || count === 0) {
+  if (count === 0 || freeSpace <= 0) {
     return {startOffset: 0, extraGap: 0};
   }
 
@@ -130,9 +126,7 @@ function computeSpaceDistribution(mode: number, freeSpace: number, count: number
     }
 
     case 3: {
-      return count > 1
-        ? {startOffset: 0, extraGap: Math.floor(freeSpace / (count - 1))}
-        : {startOffset: 0, extraGap: 0};
+      return {startOffset: 0, extraGap: count > 1 ? Math.floor(freeSpace / (count - 1)) : 0};
     }
 
     case 4: {
@@ -169,11 +163,13 @@ function distributeFlexGrow(
   let absorbed = 0;
   for (const [i, child] of children.entries()) {
     const grow = child.flexGrow;
-    if (grow > 0) {
-      const share = Math.floor((grow / totalGrow) * freeSpace);
-      finalSizes[i] = baseSizes[i]! + share;
-      absorbed += share;
+    if (grow <= 0) {
+      continue;
     }
+
+    const share = Math.floor((grow / totalGrow) * freeSpace);
+    finalSizes[i] = baseSizes[i]! + share;
+    absorbed += share;
   }
 
   const remainder = freeSpace - absorbed;
@@ -209,11 +205,13 @@ function distributeFlexShrink(
   let removed = 0;
   for (const [i, child] of children.entries()) {
     const shrink = child.flexShrink;
-    if (shrink > 0) {
-      const deduction = Math.min(baseSizes[i]!, Math.floor((shrink / totalShrink) * overflow));
-      finalSizes[i] = baseSizes[i]! - deduction;
-      removed += deduction;
+    if (shrink <= 0) {
+      continue;
     }
+
+    const deduction = Math.min(baseSizes[i]!, Math.floor((shrink / totalShrink) * overflow));
+    finalSizes[i] = baseSizes[i]! - deduction;
+    removed += deduction;
   }
 
   const remainder = overflow - removed;

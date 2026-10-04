@@ -86,17 +86,15 @@ export class RenderLoop {
 
   stop(): void {
     this.#running = false;
-    if (this.#immediateId !== undefined) {
-      this.#scheduler.cancel(this.#immediateId);
-      this.#immediateId = undefined;
+    if (this.#immediateId === undefined) {
+      return;
     }
+
+    this.#scheduler.cancel(this.#immediateId);
+    this.#immediateId = undefined;
   }
 }
 
 function formatError(error: unknown): string {
-  if (error instanceof Error) {
-    return error.stack ?? error.message;
-  }
-
-  return String(error);
+  return error instanceof Error ? error.stack ?? error.message : String(error);
 }

@@ -6,17 +6,17 @@
         "url": "git+https://github.com/AlphaFoxz/buntui.git",
         "directory": "packages/native-platforms/darwin-x64"
     },
+    "exports": {
+        ".": "./index.ts"
+    },
     "os": [
         "darwin"
     ],
     "cpu": [
         "x64"
     ],
-    "exports": {
-        ".": "./index.ts"
-    },
     "files": [
-        "buntui.dylib",
-        "index.ts"
+        "index.ts",
+        "buntui.dylib"
     ]
 }

@@ -138,11 +138,7 @@ export class SelectButtonWidget extends InteractiveWidget {
   }
 
   get activeLabel(): string {
-    if (this.#selectedIndex < 0 || this.#selectedIndex >= this.#options.length) {
-      return '';
-    }
-
-    return String(this.#options[this.#selectedIndex]);
+    return this.#selectedIndex < 0 || this.#selectedIndex >= this.#options.length ? '' : String(this.#options[this.#selectedIndex]);
   }
 
   updateValue(value: unknown): void {
@@ -262,28 +258,26 @@ export class SelectButtonWidget extends InteractiveWidget {
         bgRgba: 0x00_00_00_00,
       });
 
-      if (i < layout.length - 1) {
-        const sepX = itemX + itemW;
-        const sepFg = this.disabled ? baseColors.fg : this.#extraColors.separator;
-        buffer.drawText({
-          x: sepX,
-          y,
-          text: '│',
-          fgRgba: sepFg,
-          bgRgba: 0x00_00_00_00,
-        });
+      if (i >= layout.length - 1) {
+        continue;
       }
+
+      const sepX = itemX + itemW;
+      const sepFg = this.disabled ? baseColors.fg : this.#extraColors.separator;
+      buffer.drawText({
+        x: sepX,
+        y,
+        text: '│',
+        fgRgba: sepFg,
+        bgRgba: 0x00_00_00_00,
+      });
     }
 
     buffer.popClip();
   }
 
   #effectiveWidth(): number {
-    if (this.#rect.width > 0) {
-      return this.#rect.width;
-    }
-
-    return this.intrinsicSize()?.width ?? 0;
+    return this.#rect.width > 0 ? this.#rect.width : this.intrinsicSize()?.width ?? 0;
   }
 
   #computeLayout(): Array<{x: number; width: number; label: string}> {

@@ -6,7 +6,7 @@ import type {TuiEvent} from '../events/types';
 export type TuiBackendEventHandler = (eventType: number, event: TuiEvent) => void;
 
 export type TuiBackend = {
-  setupLogger(logFileDir: string, logName: string, logLevel: LogLevel, clearLog: boolean): void;
+  setupLogger(logFileDir: string, logName: string, logLevel: LogLevel, shouldClearLog: boolean): void;
   startApp(): void;
   stopApp(): void;
   detectTermSize(context: TuiContextLike): void;

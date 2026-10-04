@@ -173,11 +173,7 @@ export class ProgressWidget extends InteractiveWidget {
   }
 
   #getRatio(): number {
-    if (this.#value === undefined || this.#max === 0) {
-      return 0;
-    }
-
-    return Math.max(0, Math.min(1, this.#value / this.#max));
+    return this.#value === undefined || this.#max === 0 ? 0 : Math.max(0, Math.min(1, this.#value / this.#max));
   }
 }
 

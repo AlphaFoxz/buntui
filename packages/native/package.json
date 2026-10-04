@@ -6,26 +6,26 @@
         "url": "git+https://github.com/AlphaFoxz/buntui.git",
         "directory": "packages/native"
     },
-    "main": "./src/index.ts",
-    "types": "./src/index.ts",
     "exports": {
         ".": {
             "types": "./src/index.ts",
             "default": "./src/index.ts"
         }
     },
-    "files": [
-        "src/"
-    ],
-    "optionalDependencies": {
-        "@buntui/native-win32-x64": "workspace:*",
-        "@buntui/native-linux-x64": "workspace:*",
-        "@buntui/native-darwin-x64": "workspace:*",
-        "@buntui/native-darwin-arm64": "workspace:*"
-    },
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
     "scripts": {
         "build": "zig build && bun run ./scripts/copy-binary.ts",
         "zig-test": "zig test src/tests.zig -lc",
         "zig-test-posix": "zig test src/input/posix_listener.zig -lc"
+    },
+    "files": [
+        "src/"
+    ],
+    "optionalDependencies": {
+        "@buntui/native-darwin-arm64": "workspace:*",
+        "@buntui/native-darwin-x64": "workspace:*",
+        "@buntui/native-linux-x64": "workspace:*",
+        "@buntui/native-win32-x64": "workspace:*"
     }
 }

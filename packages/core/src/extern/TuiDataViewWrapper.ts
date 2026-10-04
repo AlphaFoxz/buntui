@@ -18,92 +18,92 @@ export class TuiDataViewWrapper {
     return this.#inner.byteLength;
   }
 
-  getFloat32(byteOffset: number, littleEndian?: boolean) {
-    return this.#inner.getFloat32(byteOffset, littleEndian);
+  getFloat32(byteOffset: number, isLittleEndian?: boolean) {
+    return this.#inner.getFloat32(byteOffset, isLittleEndian);
   }
 
-  getFloat64(byteOffset: number, littleEndian?: boolean) {
-    return this.#inner.getFloat64(byteOffset, littleEndian);
+  getFloat64(byteOffset: number, isLittleEndian?: boolean) {
+    return this.#inner.getFloat64(byteOffset, isLittleEndian);
   }
 
   getInt8(byteOffset: number) {
     return this.#inner.getInt8(byteOffset);
   }
 
-  getInt16(byteOffset: number, littleEndian?: boolean) {
-    return this.#inner.getInt16(byteOffset, littleEndian);
+  getInt16(byteOffset: number, isLittleEndian?: boolean) {
+    return this.#inner.getInt16(byteOffset, isLittleEndian);
   }
 
-  getInt32(byteOffset: number, littleEndian?: boolean) {
-    return this.#inner.getInt32(byteOffset, littleEndian);
+  getInt32(byteOffset: number, isLittleEndian?: boolean) {
+    return this.#inner.getInt32(byteOffset, isLittleEndian);
   }
 
   getUint8(byteOffset: number) {
     return this.#inner.getUint8(byteOffset);
   }
 
-  getUint16(byteOffset: number, littleEndian?: boolean) {
-    return this.#inner.getUint16(byteOffset, littleEndian);
+  getUint16(byteOffset: number, isLittleEndian?: boolean) {
+    return this.#inner.getUint16(byteOffset, isLittleEndian);
   }
 
-  getUint32(byteOffset: number, littleEndian?: boolean) {
-    return this.#inner.getUint32(byteOffset, littleEndian);
+  getUint32(byteOffset: number, isLittleEndian?: boolean) {
+    return this.#inner.getUint32(byteOffset, isLittleEndian);
   }
 
-  setFloat32(byteOffset: number, value: number, littleEndian?: boolean) {
-    this.#inner.setFloat32(byteOffset, value, littleEndian);
+  setFloat32(byteOffset: number, value: number, isLittleEndian?: boolean) {
+    this.#inner.setFloat32(byteOffset, value, isLittleEndian);
   }
 
-  setFloat64(byteOffset: number, value: number, littleEndian?: boolean) {
-    this.#inner.setFloat64(byteOffset, value, littleEndian);
+  setFloat64(byteOffset: number, value: number, isLittleEndian?: boolean) {
+    this.#inner.setFloat64(byteOffset, value, isLittleEndian);
   }
 
   setInt8(byteOffset: number, value: number) {
     this.#inner.setInt8(byteOffset, value);
   }
 
-  setInt16(byteOffset: number, value: number, littleEndian?: boolean) {
-    this.#inner.setInt16(byteOffset, value, littleEndian);
+  setInt16(byteOffset: number, value: number, isLittleEndian?: boolean) {
+    this.#inner.setInt16(byteOffset, value, isLittleEndian);
   }
 
-  setInt32(byteOffset: number, value: number, littleEndian?: boolean) {
-    this.#inner.setInt32(byteOffset, value, littleEndian);
+  setInt32(byteOffset: number, value: number, isLittleEndian?: boolean) {
+    this.#inner.setInt32(byteOffset, value, isLittleEndian);
   }
 
   setUint8(byteOffset: number, value: number) {
     this.#inner.setUint8(byteOffset, value);
   }
 
-  setUint16(byteOffset: number, value: number, littleEndian?: boolean) {
-    this.#inner.setUint16(byteOffset, value, littleEndian);
+  setUint16(byteOffset: number, value: number, isLittleEndian?: boolean) {
+    this.#inner.setUint16(byteOffset, value, isLittleEndian);
   }
 
-  setUint32(byteOffset: number, value: number, littleEndian?: boolean) {
-    this.#inner.setUint32(byteOffset, value, littleEndian);
+  setUint32(byteOffset: number, value: number, isLittleEndian?: boolean) {
+    this.#inner.setUint32(byteOffset, value, isLittleEndian);
   }
 
-  getBigInt64(byteOffset: number, littleEndian?: boolean) {
-    return this.#inner.getBigInt64(byteOffset, littleEndian);
+  getBigInt64(byteOffset: number, isLittleEndian?: boolean) {
+    return this.#inner.getBigInt64(byteOffset, isLittleEndian);
   }
 
-  getBigUint64(byteOffset: number, littleEndian?: boolean) {
-    return this.#inner.getBigUint64(byteOffset, littleEndian);
+  getBigUint64(byteOffset: number, isLittleEndian?: boolean) {
+    return this.#inner.getBigUint64(byteOffset, isLittleEndian);
   }
 
-  setBigInt64(byteOffset: number, value: bigint, littleEndian?: boolean) {
-    this.#inner.setBigInt64(byteOffset, value, littleEndian);
+  setBigInt64(byteOffset: number, value: bigint, isLittleEndian?: boolean) {
+    this.#inner.setBigInt64(byteOffset, value, isLittleEndian);
   }
 
-  setBigUint64(byteOffset: number, value: bigint, littleEndian?: boolean) {
-    this.#inner.setBigUint64(byteOffset, value, littleEndian);
+  setBigUint64(byteOffset: number, value: bigint, isLittleEndian?: boolean) {
+    this.#inner.setBigUint64(byteOffset, value, isLittleEndian);
   }
 
-  getFloat16(byteOffset: number, littleEndian?: boolean) {
-    return this.#inner.getFloat16(byteOffset, littleEndian);
+  getFloat16(byteOffset: number, isLittleEndian?: boolean) {
+    return this.#inner.getFloat16(byteOffset, isLittleEndian);
   }
 
-  setFloat16(byteOffset: number, value: number, littleEndian?: boolean) {
-    this.#inner.setFloat16(byteOffset, value, littleEndian);
+  setFloat16(byteOffset: number, value: number, isLittleEndian?: boolean) {
+    this.#inner.setFloat16(byteOffset, value, isLittleEndian);
   }
 
   setPointer(byteOffset: number, value: Pointer) {
@@ -123,8 +123,8 @@ export class TuiDataViewWrapper {
     return value !== 0;
   }
 
-  setBool(byteOffset: number, value: boolean) {
-    this.#inner.setUint8(byteOffset, value ? Bool.True : Bool.False);
+  setBool(byteOffset: number, isSet: boolean) {
+    this.#inner.setUint8(byteOffset, isSet ? Bool.True : Bool.False);
   }
 
   get [Symbol.toStringTag]() {

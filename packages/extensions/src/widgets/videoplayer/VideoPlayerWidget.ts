@@ -171,18 +171,20 @@ export class VideoPlayerWidget extends InteractiveWidget {
     }
 
     this.#accumulator += dt;
-    if (this.#accumulator >= this.#frameInterval) {
-      this.#accumulator -= this.#frameInterval;
-      this.#currentFrame++;
-      if (this.#currentFrame >= this.#frameCount) {
-        if (this.#loop) {
-          this.#currentFrame = 0;
-          this.#startAudio(0);
-        } else {
-          this.#currentFrame = this.#frameCount - 1;
-          this.#playerState = 'ended';
-          this.#stopAudio();
-        }
+    if (!(this.#accumulator >= this.#frameInterval)) {
+      return;
+    }
+
+    this.#accumulator -= this.#frameInterval;
+    this.#currentFrame++;
+    if (this.#currentFrame >= this.#frameCount) {
+      if (this.#loop) {
+        this.#currentFrame = 0;
+        this.#startAudio(0);
+      } else {
+        this.#currentFrame = this.#frameCount - 1;
+        this.#playerState = 'ended';
+        this.#stopAudio();
       }
     }
   }
@@ -506,12 +508,7 @@ export class VideoPlayerWidget extends InteractiveWidget {
 
     this.#stopAudio();
 
-    const args = ['ffplay', '-nodisp', '-autoexit', '-loglevel', 'quiet'];
-    if (offsetMs > 0) {
-      args.push('-ss', String(offsetMs / 1000));
-    }
-
-    args.push(this.#audioSrc);
+    const args = ['ffplay', '-nodisp', '-autoexit', '-loglevel', 'quiet', ...(offsetMs > 0 ? ['-ss', String(offsetMs / 1000)] : []), this.#audioSrc];
 
     try {
       this.#audioProcess = Bun.spawn(args, {

@@ -13,17 +13,17 @@
         "test:ts": "bun test --coverage --parallel",
         "test:zig": "bun run --cwd ./packages/native zig-test"
     },
-    "devDependencies": {
-        "@types/bun": "1.4.2",
-        "vue-tsc": "~3.3.12",
-        "xo": "^3.0.2"
-    },
-    "peerDependencies": {
-        "typescript": "=6.0.3"
-    },
     "workspaces": [
         "packages/*",
         "packages/native-platforms/*",
         "packages/create-buntui/my*"
-    ]
+    ],
+    "devDependencies": {
+        "@types/bun": "=1.4.2",
+        "vue-tsc": "~3.3.12",
+        "xo": "^5.0.1"
+    },
+    "peerDependencies": {
+        "typescript": "=6.0.3"
+    }
 }

@@ -54,11 +54,7 @@ export class FocusManager {
   }
 
   focusWidget(widget: TuiWidgetEntity & Focusable): void {
-    if (widget === this.#focusedWidget) {
-      return;
-    }
-
-    if (!widget.acceptsFocus) {
+    if ((widget === this.#focusedWidget) || !widget.acceptsFocus) {
       return;
     }
 

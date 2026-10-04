@@ -159,10 +159,10 @@ class HmrErrorOverlayWidget extends TuiWidgetEntity {
       });
     }
 
-    const copied = this.#copiedFrames > 0;
-    const label = copied ? COPIED_LABEL : COPY_LABEL;
-    const btnBg = copied ? COLOR_BG : (this.#hoveringButton ? COLOR_BTN_BG_HOVER : COLOR_BTN_BG);
-    const btnFg = copied ? COLOR_BTN_FG_COPIED : COLOR_BTN_FG;
+    const isCopied = this.#copiedFrames > 0;
+    const label = isCopied ? COPIED_LABEL : COPY_LABEL;
+    const btnBg = isCopied ? COLOR_BG : (this.#hoveringButton ? COLOR_BTN_BG_HOVER : COLOR_BTN_BG);
+    const btnFg = isCopied ? COLOR_BTN_FG_COPIED : COLOR_BTN_FG;
     const btnTextX = rx + Math.floor((width - label.length) / 2);
 
     buf.drawRect({
@@ -185,11 +185,7 @@ class HmrErrorOverlayWidget extends TuiWidgetEntity {
 }
 
 function truncate(text: string, maxLength: number): string {
-  if (text.length <= maxLength) {
-    return text;
-  }
-
-  return `${text.slice(0, maxLength - 1)}\u{2026}`;
+  return text.length <= maxLength ? text : `${text.slice(0, maxLength - 1)}\u{2026}`;
 }
 
 function wrapText(text: string, maxLength: number): string[] {

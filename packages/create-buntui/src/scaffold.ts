@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {readPackageVersion} from './utils';
+import {readPackageVersion} from './utils.ts';
 
 export type TemplateName = 'basic' | 'sfc' | 'full' | 'wasm';
 

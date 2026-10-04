@@ -1,7 +1,7 @@
 import type {Pointer} from '../platform/pointer';
 
 export type Disposable = {
-  dispose(disposeWidgets?: boolean): void | Promise<void>;
+  dispose(shouldDisposeWidgets?: boolean): void | Promise<void>;
   [Symbol.dispose](): void;
   // eslint-disable-next-line @typescript-eslint/unified-signatures -- distinct well-known symbols, not overloads
   [Symbol.asyncDispose](): void;

@@ -87,12 +87,16 @@ export abstract class TuiWidgetEntity implements Mountable {
     return this.#percentSpec?.width !== undefined;
   }
 
-  /** See {@link hasExplicitWidth}, for the height axis. */
+  /**
+  See {@link hasExplicitWidth}, for the height axis.
+  */
   get hasExplicitHeight(): boolean {
     return this.#percentSpec?.height !== undefined;
   }
 
-  /** Whether a bare numeric height was passed at construction (base: soft). */
+  /**
+  Whether a bare numeric height was passed at construction (base: soft).
+  */
   protected get hasNumericHeight(): boolean {
     return this.#explicitHeight;
   }
@@ -173,12 +177,8 @@ export abstract class TuiWidgetEntity implements Mountable {
    Walk up the ancestor chain and return the nearest widget matching the predicate.
    Checks self first, then parent, then grandparent, etc.
    */
-  closest(predicate: (widget: TuiWidgetEntity) => boolean): TuiWidgetEntity | undefined {
-    if (predicate(this)) {
-      return this;
-    }
-
-    return this.#parent?.closest(predicate);
+  closest(doesMatch: (widget: TuiWidgetEntity) => boolean): TuiWidgetEntity | undefined {
+    return doesMatch(this) ? this : this.#parent?.closest(doesMatch);
   }
 
   get zIndex(): number {
@@ -194,8 +194,8 @@ export abstract class TuiWidgetEntity implements Mountable {
     };
   }
 
-  setDraggable(value: boolean): void {
-    this.#draggable = value;
+  setDraggable(isDraggable: boolean): void {
+    this.#draggable = isDraggable;
   }
 
   setPosition(value: TuiPositionName): void {
@@ -206,12 +206,12 @@ export abstract class TuiWidgetEntity implements Mountable {
     this.#zIndexOverride = value;
   }
 
-  setPortal(value: boolean): void {
-    this.#portal = value;
+  setPortal(isPortal: boolean): void {
+    this.#portal = isPortal;
   }
 
-  setVisible(value: boolean): void {
-    this.#visible = value;
+  setVisible(isVisible: boolean): void {
+    this.#visible = isVisible;
   }
 
   get flexGrow(): number {
@@ -254,11 +254,13 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   removeChild(child: TuiWidgetEntity): void {
     const index = this.#children.indexOf(child);
-    if (index !== -1) {
-      this.#children.splice(index, 1);
-      child.#parent = null;
-      child.unmounted();
+    if (index === -1) {
+      return;
     }
+
+    this.#children.splice(index, 1);
+    child.#parent = null;
+    child.unmounted();
   }
 
   updateRect(_rect: Partial<TuiWidgetRect>): void {
@@ -369,14 +371,16 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   unmounted(): void {
     this.#referenceCount--;
-    if (this.#referenceCount <= 0) {
-      for (const fn of this.#cleanupFns) {
-        fn();
-      }
-
-      this.#cleanupFns.length = 0;
-      this.#eventHandlers.clear();
+    if (!(this.#referenceCount <= 0)) {
+      return;
     }
+
+    for (const fn of this.#cleanupFns) {
+      fn();
+    }
+
+    this.#cleanupFns.length = 0;
+    this.#eventHandlers.clear();
   }
 
   addCleanup(fn: () => void): void {
@@ -487,8 +491,8 @@ export abstract class TuiWidgetEntity implements Mountable {
     return Math.max(0, Math.floor(pct / 100 * total));
   }
 
-  #dispatchInternal(eventType: string, data: unknown, stopped: boolean): void {
-    if (stopped) {
+  #dispatchInternal(eventType: string, data: unknown, hasStopped: boolean): void {
+    if (hasStopped) {
       return;
     }
 

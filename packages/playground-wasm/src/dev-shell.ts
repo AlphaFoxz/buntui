@@ -4,7 +4,7 @@ import {Terminal} from '@xterm/xterm';
 import {FitAddon} from '@xterm/addon-fit';
 import {type TuiSFCModule} from '@buntui/core';
 import {appName, appOptions} from 'virtual:buntui-dev';
-import {createWebApp, RECOMMENDED_FONTS} from './web-api';
+import {createWebApp, RECOMMENDED_FONTS} from './web-api.ts';
 
 const App: TuiSFCModule = (await import(`./apps/${appName}/App.vue`)).default;
 

@@ -121,15 +121,15 @@ export class ScrollBoxWidget extends InteractiveWidget {
     this.#focusBorderStyle = resolveBorderStyle(options.borderStyleFocused ?? theme.borderStyle.focused ?? 'solid');
 
     this.on('wheel', data => {
-      const horizontal = data.shiftKey;
-      const before = horizontal ? this.#scrollOffsetX : this.#scrollOffsetY;
-      if (horizontal) {
+      const isHorizontal = data.shiftKey;
+      const before = isHorizontal ? this.#scrollOffsetX : this.#scrollOffsetY;
+      if (isHorizontal) {
         this.scrollByX(data.wheelDeltaY * this.#scrollSpeed);
       } else {
         this.scrollBy(data.wheelDeltaY * this.#scrollSpeed);
       }
 
-      const after = horizontal ? this.#scrollOffsetX : this.#scrollOffsetY;
+      const after = isHorizontal ? this.#scrollOffsetX : this.#scrollOffsetY;
       if (before !== after) {
         this.stopPropagation();
       }
@@ -361,11 +361,13 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
   scrollTo(offset: number): void {
     const clamped = Math.max(0, Math.min(offset, this.#maxScrollOffset()));
-    if (clamped !== this.#scrollOffsetY) {
-      this.#scrollOffsetY = clamped;
-      this.#layoutDirty = true;
-      this.#dispatchScroll();
+    if (clamped === this.#scrollOffsetY) {
+      return;
     }
+
+    this.#scrollOffsetY = clamped;
+    this.#layoutDirty = true;
+    this.#dispatchScroll();
   }
 
   scrollToTop(): void {
@@ -382,11 +384,13 @@ export class ScrollBoxWidget extends InteractiveWidget {
 
   scrollToX(offset: number): void {
     const clamped = Math.max(0, Math.min(offset, this.#maxScrollOffsetX()));
-    if (clamped !== this.#scrollOffsetX) {
-      this.#scrollOffsetX = clamped;
-      this.#layoutDirty = true;
-      this.#dispatchScroll();
+    if (clamped === this.#scrollOffsetX) {
+      return;
     }
+
+    this.#scrollOffsetX = clamped;
+    this.#layoutDirty = true;
+    this.#dispatchScroll();
   }
 
   scrollToLeft(): void {
@@ -526,8 +530,8 @@ export class ScrollBoxWidget extends InteractiveWidget {
     this.#layoutDirty = true;
   }
 
-  setAlwaysShowScrollbar(value: boolean): void {
-    this.#alwaysShowScrollbar = value;
+  setAlwaysShowScrollbar(isAlwaysShown: boolean): void {
+    this.#alwaysShowScrollbar = isAlwaysShown;
   }
 
   setColorScrollbar(value: number): void {
@@ -614,11 +618,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
         // Rect is content-canvas coordinate; render position = canvas + viewport − scroll.
         const renderX = child.rect.x + viewport.x - this.#scrollOffsetX;
         const renderY = child.rect.y + viewport.y - this.#scrollOffsetY;
-        if (renderY + child.rect.height <= viewport.y || renderY >= viewport.y + viewport.height) {
-          continue;
-        }
-
-        if (renderX + child.rect.width <= viewport.x || renderX >= viewport.x + viewport.width) {
+        if (renderY + child.rect.height <= viewport.y || renderY >= viewport.y + viewport.height || renderX + child.rect.width <= viewport.x || renderX >= viewport.x + viewport.width) {
           continue;
         }
 
@@ -628,11 +628,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
       } else {
         // Static / fixed: rect is already a terminal render coordinate.
         const {x: childX, y: childY, width: childW, height: childH} = child.rect;
-        if (childY + childH <= viewport.y || childY >= viewport.y + viewport.height) {
-          continue;
-        }
-
-        if (childX + childW <= viewport.x || childX >= viewport.x + viewport.width) {
+        if (childY + childH <= viewport.y || childY >= viewport.y + viewport.height || childX + childW <= viewport.x || childX >= viewport.x + viewport.width) {
           continue;
         }
 
@@ -824,8 +820,8 @@ export class ScrollBoxWidget extends InteractiveWidget {
     let crossSize = isVertical ? contentWidth : contentHeight;
 
     for (const child of children) {
-      const explicit = isVertical ? child.hasExplicitWidth : child.hasExplicitHeight;
-      if (explicit) {
+      const isExplicit = isVertical ? child.hasExplicitWidth : child.hasExplicitHeight;
+      if (isExplicit) {
         continue;
       }
 

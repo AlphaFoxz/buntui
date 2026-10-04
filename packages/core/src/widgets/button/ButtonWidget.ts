@@ -162,11 +162,13 @@ export class ButtonWidget extends InteractiveWidget {
       this.#colors.normal.colorBorder = this._resolveColorValue(options.colorBorderNormal, 'colorBorderNormal');
     }
 
-    if (options.borderStyleNormal !== undefined) {
-      this.#colors.normal.borderStyle = resolveBorderStyle(options.borderStyleNormal);
-      if (this.#autoWidth) {
-        this.#rect.width = this.#computeAutoWidth();
-      }
+    if (options.borderStyleNormal === undefined) {
+      return;
+    }
+
+    this.#colors.normal.borderStyle = resolveBorderStyle(options.borderStyleNormal);
+    if (this.#autoWidth) {
+      this.#rect.width = this.#computeAutoWidth();
     }
   }
 
@@ -233,11 +235,7 @@ export class ButtonWidget extends InteractiveWidget {
   }
 
   override intrinsicSize(): TuiWidgetSize | undefined {
-    if (this.#autoWidth) {
-      return {width: this.#computeAutoWidth(), height: this.#rect.height};
-    }
-
-    return {width: this.#rect.width, height: this.#rect.height};
+    return {width: this.#autoWidth ? this.#computeAutoWidth() : this.#rect.width, height: this.#rect.height};
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {

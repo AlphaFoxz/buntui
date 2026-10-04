@@ -81,8 +81,10 @@ export function tickColumn(col: MatrixColumnState, dt: number, density: number, 
   col.chars.length = col.trailLength;
   col.headY += col.speed;
 
-  if (col.headY - col.trailLength > config.maxY) {
-    col.active = false;
-    col.cooldown = randomInt(1, 30);
+  if (!(col.headY - col.trailLength > config.maxY)) {
+    return;
   }
+
+  col.active = false;
+  col.cooldown = randomInt(1, 30);
 }

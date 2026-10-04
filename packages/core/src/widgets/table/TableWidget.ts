@@ -212,11 +212,13 @@ export class TableWidget extends InteractiveWidget {
       this.#colors.focused!.fg = parsed;
     }
 
-    if (color.colorBg !== undefined) {
-      const parsed = this._resolveColorValue(color.colorBg, 'colorBgNormal');
-      this.#colors.normal.bg = parsed;
-      this.#colors.focused!.bg = parsed;
+    if (color.colorBg === undefined) {
+      return;
     }
+
+    const parsed = this._resolveColorValue(color.colorBg, 'colorBgNormal');
+    this.#colors.normal.bg = parsed;
+    this.#colors.focused!.bg = parsed;
   }
 
   updateBorder(border: {borderStyle?: TuiBorderStyleName; borderStyleFocused?: TuiBorderStyleName}): void {
@@ -379,8 +381,8 @@ export class TableWidget extends InteractiveWidget {
       this.#renderBody(buffer, innerX, innerY + 1, innerWidth, innerHeight - 1);
     }
 
-    const useFocusBorder = this.focused && !this.disabled && this.#focusBorderStyle !== 0;
-    const borderStyle = useFocusBorder ? this.#focusBorderStyle : this.#borderStyle;
+    const isUseFocusBorder = this.focused && !this.disabled && this.#focusBorderStyle !== 0;
+    const borderStyle = isUseFocusBorder ? this.#focusBorderStyle : this.#borderStyle;
     if (borderStyle !== 0) {
       buffer.drawBorder({
         x: this.#x,

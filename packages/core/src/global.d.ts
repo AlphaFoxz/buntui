@@ -341,12 +341,12 @@ declare global {
 
   type TuiCheckboxEmits = TuiInteractiveEmits & {
     change: (data: TuiCheckboxChangeEvent) => void;
-    'update:modelValue': (value: boolean) => void;
+    'update:modelValue': (isChecked: boolean) => void;
   };
 
   type TuiSwitchEmits = TuiInteractiveEmits & {
     change: (data: TuiSwitchChangeEvent) => void;
-    'update:modelValue': (value: boolean) => void;
+    'update:modelValue': (isChecked: boolean) => void;
   };
 
   type TuiInputEmits = TuiInteractiveEmits & {

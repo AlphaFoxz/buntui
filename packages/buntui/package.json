@@ -6,26 +6,26 @@
         "url": "git+https://github.com/AlphaFoxz/buntui.git",
         "directory": "packages/buntui"
     },
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
             "default": "./dist/index.js"
         }
     },
-    "files": [
-        "dist/"
-    ],
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "sideEffects": false,
     "scripts": {
         "build": "bun build --target=bun --production ./src/index.ts --outfile ./dist/index.js --external @buntui/core --external @buntui/extensions && tsc --project ./tsconfig.json"
     },
+    "files": [
+        "dist/"
+    ],
     "dependencies": {
         "@buntui/core": "workspace:*",
         "@buntui/extensions": "workspace:*"
     },
     "devDependencies": {
-        "@types/bun": "1.4.2"
+        "@types/bun": "=1.4.2"
     }
 }

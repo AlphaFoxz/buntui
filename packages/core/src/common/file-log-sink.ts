@@ -25,13 +25,13 @@ function timestampString() {
 
 export class FileLogSink implements LogSink {
   #logFile = '';
-  init(logFileDir: string, logName: string, clearLog: boolean) {
+  init(logFileDir: string, logName: string, shouldClearLog: boolean) {
     this.#logFile = path.resolve(logFileDir, logName);
     if (!fs.existsSync(logFileDir)) {
       fs.mkdirSync(logFileDir, {recursive: true});
     }
 
-    if (clearLog) {
+    if (shouldClearLog) {
       fs.writeFileSync(this.#logFile, '');
     }
   }

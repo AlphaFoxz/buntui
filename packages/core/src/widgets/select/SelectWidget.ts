@@ -227,14 +227,16 @@ export class SelectWidget extends InteractiveWidget {
         return;
       }
 
-      if (this.#opened && !this.#didDrag) {
-        const index = this.#hitTestDropdown(mouseData.y);
-        if (index >= 0) {
-          this.#select(index);
-        }
-
-        this.#close();
+      if (!this.#opened || this.#didDrag) {
+        return;
       }
+
+      const index = this.#hitTestDropdown(mouseData.y);
+      if (index >= 0) {
+        this.#select(index);
+      }
+
+      this.#close();
     });
 
     this.on('mouseover', mouseData => {
@@ -296,9 +298,7 @@ export class SelectWidget extends InteractiveWidget {
     }
 
     if (event.key === 'ArrowUp') {
-      if (this.#focusedIndex < 0) {
-        this.#focusedIndex = this.#options.length - 1;
-      } else if (this.#focusedIndex <= 0) {
+      if (this.#focusedIndex <= 0) {
         this.#focusedIndex = this.#options.length - 1;
       } else {
         this.#focusedIndex--;
@@ -330,14 +330,16 @@ export class SelectWidget extends InteractiveWidget {
       return;
     }
 
-    if (event.key === 'PageUp') {
-      if (this.#focusedIndex < 0) {
-        this.#focusedIndex = 0;
-      }
-
-      this.#focusedIndex = Math.max(this.#focusedIndex - this.#dropdownHeight(), 0);
-      this.#ensureFocusedVisible();
+    if (event.key !== 'PageUp') {
+      return;
     }
+
+    if (this.#focusedIndex < 0) {
+      this.#focusedIndex = 0;
+    }
+
+    this.#focusedIndex = Math.max(this.#focusedIndex - this.#dropdownHeight(), 0);
+    this.#ensureFocusedVisible();
   }
 
   get value(): string {
@@ -350,11 +352,7 @@ export class SelectWidget extends InteractiveWidget {
 
   get selectedLabel(): string {
     const index = this.#selectedIndex();
-    if (index < 0) {
-      return '';
-    }
-
-    return this.#options[index]?.label ?? '';
+    return index < 0 ? '' : this.#options[index]?.label ?? '';
   }
 
   get open(): boolean {
@@ -517,35 +515,39 @@ export class SelectWidget extends InteractiveWidget {
 
     buffer.popClip();
 
-    if (this.#borderStyle !== 0) {
-      buffer.drawBorder({
-        x,
-        y,
-        width,
-        height,
-        colorRgba: colors.colorBorder,
-        style: this.#borderStyle,
-        sides: BorderSides.All,
-      });
-
-      if (this.#label.length > 0) {
-        const maxBorderLabelWidth = width - 2;
-        const clippedLabel = truncateToWidth(this.#label, maxBorderLabelWidth);
-        buffer.drawText({
-          x: x + 1,
-          y,
-          text: clippedLabel,
-          fgRgba: colors.fg,
-          bgRgba: colors.bg,
-        });
-      }
+    if (this.#borderStyle === 0) {
+      return;
     }
+
+    buffer.drawBorder({
+      x,
+      y,
+      width,
+      height,
+      colorRgba: colors.colorBorder,
+      style: this.#borderStyle,
+      sides: BorderSides.All,
+    });
+
+    if (this.#label.length === 0) {
+      return;
+    }
+
+    const maxBorderLabelWidth = width - 2;
+    const clippedLabel = truncateToWidth(this.#label, maxBorderLabelWidth);
+    buffer.drawText({
+      x: x + 1,
+      y,
+      text: clippedLabel,
+      fgRgba: colors.fg,
+      bgRgba: colors.bg,
+    });
   }
 
   #drawDropdown(buffer: DrawListBuffer, x: number, startY: number, width: number): void {
     const ddH = this.#dropdownHeight();
-    const needsScrollbar = this.#options.length > ddH;
-    const listWidth = needsScrollbar ? width - 1 : width;
+    const isNeedsScrollbar = this.#options.length > ddH;
+    const listWidth = isNeedsScrollbar ? width - 1 : width;
 
     buffer.pushClip(x, startY, width, ddH);
 
@@ -594,7 +596,7 @@ export class SelectWidget extends InteractiveWidget {
       });
     }
 
-    if (needsScrollbar) {
+    if (isNeedsScrollbar) {
       const geometry = computeScrollbarGeometry(ddH, this.#options.length, this.#scrollOffset);
       renderScrollbar({
         buffer, x: x + width - 1, trackY: startY, trackHeight: ddH, geometry, thumbColor: this.#extraColors.scrollbar, trackColor: this.#extraColors.scrollbarTrack,
@@ -630,10 +632,12 @@ export class SelectWidget extends InteractiveWidget {
 
   #scrollBy(delta: number): void {
     const newOffset = Math.max(0, Math.min(this.#scrollOffset + delta, this.#maxScrollOffset()));
-    if (newOffset !== this.#scrollOffset) {
-      this.#scrollOffset = newOffset;
-      this.#hoveredIndex = -1;
+    if (newOffset === this.#scrollOffset) {
+      return;
     }
+
+    this.#scrollOffset = newOffset;
+    this.#hoveredIndex = -1;
   }
 
   #ensureFocusedVisible(): void {
@@ -645,20 +649,12 @@ export class SelectWidget extends InteractiveWidget {
   }
 
   #selectedIndex(): number {
-    if (this.#value === '') {
-      return -1;
-    }
-
-    return this.#options.findIndex(option => option.value === this.#value);
+    return this.#value === '' ? -1 : this.#options.findIndex(option => option.value === this.#value);
   }
 
   #selectedLabel(): string {
     const index = this.#selectedIndex();
-    if (index < 0) {
-      return '';
-    }
-
-    return this.#options[index]?.label ?? '';
+    return index < 0 ? '' : this.#options[index]?.label ?? '';
   }
 
   #hitTestDropdown(mouseY: number): number {
@@ -670,11 +666,7 @@ export class SelectWidget extends InteractiveWidget {
     }
 
     const index = this.#scrollOffset + relativeY;
-    if (index >= this.#options.length) {
-      return -1;
-    }
-
-    return index;
+    return index >= this.#options.length ? -1 : index;
   }
 
   #openDropdown(): void {

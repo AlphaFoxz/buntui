@@ -125,10 +125,12 @@ export class LoggerWidget extends TuiWidgetEntity {
   toggle(): void {
     this.#panelVisible = !this.#panelVisible;
     this.#panel.setVisible(this.#panelVisible);
-    if (this.#panelVisible) {
-      this.#updatePanelPosition();
-      this.#scrollPending = true;
+    if (!this.#panelVisible) {
+      return;
     }
+
+    this.#updatePanelPosition();
+    this.#scrollPending = true;
   }
 
   get messages(): readonly string[] {
@@ -148,25 +150,23 @@ export class LoggerWidget extends TuiWidgetEntity {
   }
 
   override containsPoint(x: number, y: number): boolean {
-    if (this.#toggleBtn.containsPoint(x, y)) {
-      return true;
-    }
-
-    return this.#panelVisible && this.#panel.containsPoint(x, y);
+    return this.#toggleBtn.containsPoint(x, y) ? true : this.#panelVisible && this.#panel.containsPoint(x, y);
   }
 
   override emitDrawCommands(buf: Parameters<TuiWidgetEntity['emitDrawCommands']>[0]): void {
     this.#toggleBtn.emitDrawCommands(buf);
 
-    if (this.#panelVisible) {
-      this.#updatePanelPosition();
-      if (this.#scrollPending) {
-        this.#panel.scrollToBottom();
-        this.#scrollPending = false;
-      }
-
-      this.#panel.emitDrawCommands(buf);
+    if (!this.#panelVisible) {
+      return;
     }
+
+    this.#updatePanelPosition();
+    if (this.#scrollPending) {
+      this.#panel.scrollToBottom();
+      this.#scrollPending = false;
+    }
+
+    this.#panel.emitDrawCommands(buf);
   }
 
   // -- Private --

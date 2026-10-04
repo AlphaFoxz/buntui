@@ -25,14 +25,14 @@ function decodeVLQValues(encoded: string): number[] {
   while (pos < encoded.length) {
     let result = 0;
     let shift = 0;
-    let continuation: boolean;
+    let isContinuation: boolean;
     do {
       const digit = BASE64_MAP.get(encoded[pos]!) ?? 0;
       pos++;
-      continuation = (digit & VLQ_CONTINUATION_BIT) !== 0;
+      isContinuation = (digit & VLQ_CONTINUATION_BIT) !== 0;
       result += (digit & VLQ_BASE_MASK) << shift;
       shift += VLQ_BASE_SHIFT;
-    } while (continuation);
+    } while (isContinuation);
 
     const isNegative = (result & 1) === 1;
     result >>= 1;

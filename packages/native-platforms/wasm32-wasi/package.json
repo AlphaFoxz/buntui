@@ -10,7 +10,7 @@
         ".": "./index.ts"
     },
     "files": [
-        "buntui.wasm",
-        "index.ts"
+        "index.ts",
+        "buntui.wasm"
     ]
 }

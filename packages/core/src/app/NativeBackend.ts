@@ -22,7 +22,7 @@ import {
 } from '../events/types';
 import {nextTick} from '../platform/next-tick';
 // eslint-disable-next-line import-x/no-unassigned-import
-import '../platform/native';
+import '../platform/native.js';
 import {type TuiBackend, type TuiBackendEventHandler} from './TuiBackend';
 
 const schemaRegistry = new Map<number, new (buffer: ArrayBuffer) => TuiEvent>([
@@ -68,10 +68,10 @@ function useLib() {
 export class NativeBackend implements TuiBackend {
   #eventRunning = false;
 
-  setupLogger(logFileDir: string, backendLogName: string, logLevel: LogLevel, clearLog: boolean): void {
+  setupLogger(logFileDir: string, backendLogName: string, logLevel: LogLevel, shouldClearLog: boolean): void {
     const logLevelValue = logLevelToNumber(logLevel);
 
-    useLib().setupLogger(toCstring(logFileDir), toCstring(backendLogName), logLevelValue, clearLog ? 1 : 0);
+    useLib().setupLogger(toCstring(logFileDir), toCstring(backendLogName), logLevelValue, shouldClearLog ? 1 : 0);
   }
 
   startApp(): void {
@@ -138,9 +138,5 @@ export class NativeBackend implements TuiBackend {
 }
 
 function formatError(error: unknown): string {
-  if (error instanceof Error) {
-    return error.stack ?? error.message;
-  }
-
-  return String(error);
+  return error instanceof Error ? error.stack ?? error.message : String(error);
 }

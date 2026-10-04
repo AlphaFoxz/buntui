@@ -80,9 +80,9 @@ export type BoxWidgetOptions = Omit<TuiWidgetColor & Partial<TuiWidgetBorder> & 
  */
 type Border = {borderTop: boolean; borderRight: boolean; borderBottom: boolean; borderLeft: boolean};
 
-function fillBorder(v: boolean): Border {
+function fillBorder(isBorder: boolean): Border {
   return {
-    borderTop: v, borderRight: v, borderBottom: v, borderLeft: v,
+    borderTop: isBorder, borderRight: isBorder, borderBottom: isBorder, borderLeft: isBorder,
   };
 }
 
@@ -231,13 +231,13 @@ export class BoxWidget extends TuiWidgetEntity {
   override updateRect(rect: Partial<TuiWidgetRect>): void {
     const oldX = this.#rect.x;
     const oldY = this.#rect.y;
-    const sizeChanged = rect.width !== undefined || rect.height !== undefined;
+    const isSizeChanged = rect.width !== undefined || rect.height !== undefined;
     Object.assign(this.#rect, rect);
     if (rect.x !== undefined || rect.y !== undefined) {
       this.propagatePositionDelta(this.#rect.x - oldX, this.#rect.y - oldY);
     }
 
-    if (sizeChanged) {
+    if (isSizeChanged) {
       this.#layoutDirty = true;
     }
   }
@@ -273,14 +273,14 @@ export class BoxWidget extends TuiWidgetEntity {
   }
 
   updateBorder(border: Omit<Partial<TuiWidgetBorder>, 'borderStyle'> & {border?: BorderShorthand; borderStyle?: TuiBorderStyleName}): void {
-    let dirty = false;
+    let isDirty = false;
     if (border.colorBorder !== undefined) {
       this.#border.colorBorder = this._resolveColorValue(border.colorBorder, 'colorBorder');
     }
 
     if (border.borderStyle !== undefined) {
       this.#border.borderStyle = resolveBorderStyle(border.borderStyle);
-      dirty = true;
+      isDirty = true;
     }
 
     if (border.border !== undefined) {
@@ -289,30 +289,30 @@ export class BoxWidget extends TuiWidgetEntity {
       this.#border.borderRight = borderRight;
       this.#border.borderBottom = borderBottom;
       this.#border.borderLeft = borderLeft;
-      dirty = true;
+      isDirty = true;
     }
 
     if (border.borderTop !== undefined) {
       this.#border.borderTop = border.borderTop;
-      dirty = true;
+      isDirty = true;
     }
 
     if (border.borderRight !== undefined) {
       this.#border.borderRight = border.borderRight;
-      dirty = true;
+      isDirty = true;
     }
 
     if (border.borderBottom !== undefined) {
       this.#border.borderBottom = border.borderBottom;
-      dirty = true;
+      isDirty = true;
     }
 
     if (border.borderLeft !== undefined) {
       this.#border.borderLeft = border.borderLeft;
-      dirty = true;
+      isDirty = true;
     }
 
-    if (dirty) {
+    if (isDirty) {
       this.#layoutDirty = true;
     }
   }

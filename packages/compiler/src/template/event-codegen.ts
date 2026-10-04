@@ -53,10 +53,10 @@ function isArrowFunction(expr: string): boolean {
 
 export function buildEventHandler(eventBinding: TuiEventBinding): string {
   const {handler} = eventBinding;
-  const needsWrapper = !isArrowFunction(handler) && !isBareIdentifier(handler);
+  const isNeedsWrapper = !isArrowFunction(handler) && !isBareIdentifier(handler);
 
   if (eventBinding.modifiers.length === 0) {
-    return needsWrapper ? `($event) => { ${handler} }` : handler;
+    return isNeedsWrapper ? `($event) => { ${handler} }` : handler;
   }
 
   const guards: string[] = [];
@@ -78,7 +78,7 @@ export function buildEventHandler(eventBinding: TuiEventBinding): string {
     }
   }
 
-  if (guards.length === 0 && prefixLines.length === 0 && !needsWrapper) {
+  if (!isNeedsWrapper && guards.length === 0 && prefixLines.length === 0) {
     return handler;
   }
 

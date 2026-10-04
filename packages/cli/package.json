@@ -6,27 +6,35 @@
         "url": "git+https://github.com/AlphaFoxz/buntui.git",
         "directory": "packages/cli"
     },
-    "bin": {
-        "buntui": "./dist/buntui.js"
-    },
     "exports": {
         ".": {
             "types": "./dist/config.d.ts",
             "default": "./dist/config.js"
         }
     },
-    "files": [
-        "dist/"
-    ],
+    "bin": {
+        "buntui": "./dist/buntui.js"
+    },
     "scripts": {
         "build": "bun run ./scripts/build.ts"
     },
+    "files": [
+        "dist/"
+    ],
     "dependencies": {
         "@buntui/compiler": "workspace:*",
         "@buntui/core": "workspace:*",
         "@buntui/extensions": "workspace:*",
         "@vue/reactivity": "^3.5.43",
         "commander": "^15.0.0"
+    },
+    "devDependencies": {
+        "@buntui/native": "workspace:*",
+        "@buntui/native-wasm32-wasi": "workspace:*",
+        "@types/bun": "=1.4.2",
+        "vite": "~8.3.2",
+        "vue": "~3.5.43",
+        "vue-tsc": "~3.3.12"
     },
     "peerDependencies": {
         "vite": ">=8.3.2"
@@ -35,13 +43,5 @@
         "vite": {
             "optional": true
         }
-    },
-    "devDependencies": {
-        "@buntui/native": "workspace:*",
-        "@buntui/native-wasm32-wasi": "workspace:*",
-        "@types/bun": "1.4.2",
-        "vite": "~8.1.5",
-        "vue": "~3.5.43",
-        "vue-tsc": "~3.3.12"
     }
 }

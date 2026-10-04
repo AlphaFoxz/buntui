@@ -1,6 +1,6 @@
 export function charDisplayWidth(char: string): number {
   const code = char.codePointAt(0)!;
-  if (code < 0x20 || code === 0x7F) {
+  if (code === 0x7F || code < 0x20) {
     return 0;
   }
 

@@ -34,11 +34,7 @@ export function resolveWidgetColors<M extends Record<string, ThemeToken>>(tokenM
 function resolveToken(theme: TuiTheme, token: string): unknown {
   if (token.startsWith('border.')) {
     const borderKey = BORDER_KEYS[token.slice(7)];
-    if (borderKey !== undefined) {
-      return theme.borderStyle[borderKey];
-    }
-
-    return undefined;
+    return borderKey === undefined ? undefined : theme.borderStyle[borderKey];
   }
 
   return theme.colors[token as keyof TuiThemeColors];

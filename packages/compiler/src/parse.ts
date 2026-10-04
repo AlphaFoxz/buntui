@@ -7,11 +7,7 @@ export type SFCParseOptions = {
 
 function formatParseError(error: unknown, filename: string): string {
   const {message, loc} = error as {message?: string; loc?: {start?: {line: number; column: number}}};
-  if (loc?.start) {
-    return `${filename}:${loc.start.line}:${loc.start.column} - ${message ?? ''}`;
-  }
-
-  return `${filename} - ${String(error)}`;
+  return loc?.start ? `${filename}:${loc.start.line}:${loc.start.column} - ${message ?? ''}` : `${filename} - ${String(error)}`;
 }
 
 export function parse(source: string, options?: SFCParseOptions): SFCDescriptor {

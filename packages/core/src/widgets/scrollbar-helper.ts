@@ -115,11 +115,7 @@ export function scrollbarHitTest(
     return {type: 'thumb'};
   }
 
-  if (mouseY < hit.thumbY) {
-    return {type: 'track-above'};
-  }
-
-  return {type: 'track-below'};
+  return {type: mouseY < hit.thumbY ? 'track-above' : 'track-below'};
 }
 
 export function scrollbarHitTestHorizontal(
@@ -139,11 +135,7 @@ export function scrollbarHitTestHorizontal(
     return {type: 'thumb'};
   }
 
-  if (mouseX < hit.thumbX) {
-    return {type: 'track-left'};
-  }
-
-  return {type: 'track-right'};
+  return {type: mouseX < hit.thumbX ? 'track-left' : 'track-right'};
 }
 
 export function computeThumbDragOffset(
@@ -151,9 +143,5 @@ export function computeThumbDragOffset(
   startOffset: number,
   geometry: ScrollbarGeometry,
 ): number {
-  if (geometry.scrollableRange <= 0) {
-    return startOffset;
-  }
-
-  return startOffset + Math.round((dragDeltaY / geometry.scrollableRange) * geometry.maxScroll);
+  return geometry.scrollableRange <= 0 ? startOffset : startOffset + Math.round((dragDeltaY / geometry.scrollableRange) * geometry.maxScroll);
 }

@@ -8,8 +8,8 @@
     },
     "dependencies": {
         "@buntui/core": "{{version}}",
-        "@buntui/native": "{{version}}",
         "@buntui/extensions": "{{version}}",
+        "@buntui/native": "{{version}}",
         "@vue/reactivity": "^3.5.38"
     },
     "devDependencies": {

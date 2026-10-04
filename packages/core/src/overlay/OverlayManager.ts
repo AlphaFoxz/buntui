@@ -85,19 +85,21 @@ export class OverlayManager {
   getBackdropEntries(): Array<{zIndex: number; draw: (buf: DrawListBuffer) => void}> {
     const result: Array<{zIndex: number; draw: (buf: DrawListBuffer) => void}> = [];
     for (const entry of this.#stack) {
-      if ((entry.options.backdrop ?? false) && entry.widget.visible) {
-        const bgRgba = entry.options.backdropRgba ?? this.#backdropRgba;
-        result.push({
-          zIndex: entry.zIndex,
-          draw(buf: DrawListBuffer) {
-            const termCols = TUI_CONTEXT_INSTANCE.cols;
-            const termRows = TUI_CONTEXT_INSTANCE.rows;
-            buf.drawRect({
-              x: 0, y: 0, width: termCols, height: termRows, bgRgba,
-            });
-          },
-        });
+      if (!((entry.options.backdrop ?? false) && entry.widget.visible)) {
+        continue;
       }
+
+      const bgRgba = entry.options.backdropRgba ?? this.#backdropRgba;
+      result.push({
+        zIndex: entry.zIndex,
+        draw(buf: DrawListBuffer) {
+          const termCols = TUI_CONTEXT_INSTANCE.cols;
+          const termRows = TUI_CONTEXT_INSTANCE.rows;
+          buf.drawRect({
+            x: 0, y: 0, width: termCols, height: termRows, bgRgba,
+          });
+        },
+      });
     }
 
     return result;

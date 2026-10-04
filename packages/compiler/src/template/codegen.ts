@@ -40,32 +40,44 @@ function buildSetterCall(varName: string, handler: PropHandler, valueExpr: strin
 
 function emitPropEffect(varName: string, handler: PropHandler, expression: string, guard?: string): string {
   const call = buildSetterCall(varName, handler, wrapExpr(expression));
-  if (guard) {
-    return `${EFFECT}(() => { ${guard} { ${call}; } });`;
-  }
-
-  return `${EFFECT}(() => { ${call}; });`;
+  return guard ? `${EFFECT}(() => { ${guard} { ${call}; } });` : `${EFFECT}(() => { ${call}; });`;
 }
 
 export type CodegenOptions = {
-  /** Module ID for the core package import */
+  /**
+  Module ID for the core package import
+  */
   coreModuleId?: string;
-  /** Module ID for \@vue/reactivity import */
+  /**
+  Module ID for \@vue/reactivity import
+  */
   reactivityModuleId?: string;
-  /** Script body lines to embed inside setup() */
+  /**
+  Script body lines to embed inside setup()
+  */
   scriptBody?: string[];
-  /** Whether the script body uses defineProps() without an explicit import */
+  /**
+  Whether the script body uses defineProps() without an explicit import
+  */
   usesDefineProps?: boolean;
-  /** Whether the script body uses defineEmits() without an explicit import */
+  /**
+  Whether the script body uses defineEmits() without an explicit import
+  */
   usesDefineEmits?: boolean;
 };
 
 export type CodegenResult = {
-  /** Full generated code (imports + body, for backward compat) */
+  /**
+  Full generated code (imports + body, for backward compat)
+  */
   code: string;
-  /** Body lines only (no import statements) */
+  /**
+  Body lines only (no import statements)
+  */
   body: string;
-  /** Runtime imports needed by the generated code */
+  /**
+  Runtime imports needed by the generated code
+  */
   imports: string[];
 };
 
@@ -99,13 +111,9 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
   }
 
   // Import reactivity helpers if we have dynamic bindings or component dynamic props
-  const needsReactiveImport = hasDynamicComponentProps(root);
-  if (root.effects.length > 0 || hasDynamicBindings(root) || needsReactiveImport) {
-    const reactHelpers: string[] = [EFFECT, UNREF];
-    if (needsReactiveImport) {
-      reactHelpers.push(REACTIVE);
-    }
-
+  const isNeedsReactiveImport = hasDynamicComponentProps(root);
+  if (isNeedsReactiveImport || root.effects.length > 0 || hasDynamicBindings(root)) {
+    const reactHelpers = isNeedsReactiveImport ? [EFFECT, UNREF, REACTIVE] : [EFFECT, UNREF];
     imports.push(`import {${reactHelpers.join(', ')}} from '${react}';`);
   }
 
@@ -145,11 +153,13 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
   for (const child of root.children) {
     childStartIndices.push(widgetIndex);
     const generated = generateNode(child, widgetIndex);
-    if (generated) {
-      const isDeclarative = child.type === 'TuiWidgetCall' && child.isComponent !== true;
-      (isDeclarative ? declarativeLines : deferredLines).push(...generated.lines.map(line => `  ${line}`));
-      widgetIndex = generated.nextIndex;
+    if (!generated) {
+      continue;
     }
+
+    const isDeclarative = child.type === 'TuiWidgetCall' && child.isComponent !== true;
+    (isDeclarative ? declarativeLines : deferredLines).push(...generated.lines.map(line => `  ${line}`));
+    widgetIndex = generated.nextIndex;
   }
 
   // Emit non-component widget declarations first
@@ -159,11 +169,13 @@ export function generate(root: TuiRenderRoot, options?: CodegenOptions): Codegen
   const mountedWidgetVars: string[] = [];
   for (let childIndex = 0; childIndex < root.children.length; childIndex++) {
     const child = root.children[childIndex]!;
-    if (child.type === 'TuiWidgetCall' && child.isComponent !== true) {
-      const varName = getWidgetVarName(child, childStartIndices[childIndex]!);
-      lines.push(`  __target.mount(${varName});`);
-      mountedWidgetVars.push(varName);
+    if (child.type !== 'TuiWidgetCall' || child.isComponent === true) {
+      continue;
     }
+
+    const varName = getWidgetVarName(child, childStartIndices[childIndex]!);
+    lines.push(`  __target.mount(${varName});`);
+    mountedWidgetVars.push(varName);
   }
 
   // Emit conditional blocks and component setups after non-component widgets are mounted
@@ -211,7 +223,7 @@ function generateWidgetCall(node: TuiWidgetCall, index: number, parentVarName?: 
   const showProp = node.dynamicProps.find(p => p.name === 'visible');
 
   // Component call with v-show: track mounted widgets via a proxy mount target
-  if ((node.isComponent ?? false) && showProp) {
+  if (showProp && (node.isComponent ?? false)) {
     const varName = getWidgetVarName(node, index);
     const mountCall = parentVarName ? `${parentVarName}.addChild(w)` : '__target.mount(w)';
     const unmountCall = parentVarName ? `${parentVarName}.removeChild(w)` : '__target.unmount(w)';
@@ -236,15 +248,10 @@ function generateWidgetCall(node: TuiWidgetCall, index: number, parentVarName?: 
     const {preLines, propsArg} = buildComponentPropsInfo(node, varName);
     const emitsArg = buildComponentEmits(node.events);
     const trailing = buildTrailingArgs(propsArg, emitsArg);
-    const lines = [...preLines];
-
-    if (parentVarName) {
-      lines.push(`__runSetup(__scene, () => ${node.creator}.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${trailing});`);
-    } else {
-      lines.push(`__runSetup(__scene, () => ${node.creator}.setup(__scene)${trailing});`);
-    }
-
-    return {lines, nextIndex: index + 1};
+    const nestedCall = parentVarName
+      ? `__runSetup(__scene, () => ${node.creator}.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${trailing});`
+      : `__runSetup(__scene, () => ${node.creator}.setup(__scene)${trailing});`;
+    return {lines: [...preLines, nestedCall], nextIndex: index + 1};
   }
 
   const varName = getWidgetVarName(node, index);
@@ -403,22 +410,17 @@ function collectWidgetTree(
   const emitsArg = isComponentNode ? buildComponentEmits(node.events) : undefined;
 
   for (const child of node.children) {
-    if (child.type === 'TuiWidgetCall') {
-      if (child.isComponent ?? false) {
-        const childResult = collectWidgetTree(child, nextIndex, childParent);
-        descendants.push(childResult.tree.root, ...childResult.tree.descendants);
-        nextIndex = childResult.nextIndex;
-      } else if (isComponentNode) {
-        const childResult = collectWidgetTree(child, nextIndex, parentVarName);
-        descendants.push(childResult.tree.root, ...childResult.tree.descendants);
-        nextIndex = childResult.nextIndex;
-      } else {
-        const childResult = collectWidgetTree(child, nextIndex, varName);
-        childMountLines.push(`${varName}.addChild(${childResult.tree.root.varName});`, ...childResult.tree.childMountLines);
-        descendants.push(childResult.tree.root, ...childResult.tree.descendants);
-        nextIndex = childResult.nextIndex;
-      }
+    if (child.type !== 'TuiWidgetCall') {
+      continue;
     }
+
+    const childResult = collectWidgetTree(child, nextIndex, childParent);
+    if (!isComponentNode && !(child.isComponent ?? false)) {
+      childMountLines.push(`${varName}.addChild(${childResult.tree.root.varName});`, ...childResult.tree.childMountLines);
+    }
+
+    descendants.push(childResult.tree.root, ...childResult.tree.descendants);
+    nextIndex = childResult.nextIndex;
   }
 
   return {
@@ -607,11 +609,9 @@ function generateConditional(block: TuiConditionalBlock, index: number, parentVa
 function buildWidgetCreation(node: TuiWidgetCall, parentVarName?: string, propsArg?: string, emitsArg?: string): string {
   if (node.isComponent ?? false) {
     const trailing = buildTrailingArgs(propsArg, emitsArg);
-    if (parentVarName) {
-      return `__runSetup(__scene, () => ${node.creator}.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${trailing})`;
-    }
-
-    return `__runSetup(__scene, () => ${node.creator}.setup(__scene)${trailing})`;
+    return parentVarName
+      ? `__runSetup(__scene, () => ${node.creator}.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${trailing})`
+      : `__runSetup(__scene, () => ${node.creator}.setup(__scene)${trailing})`;
   }
 
   const props: string[] = [];
@@ -660,11 +660,7 @@ function buildEventLines(node: TuiWidgetCall, varName: string): string[] {
 }
 
 function generateList(node: TuiListBlock, index: number, parentVar?: string): NodeGenResult {
-  if (node.keyExpression) {
-    return generateKeyedList(node, index, parentVar);
-  }
-
-  return generateStaticList(node, index, parentVar);
+  return node.keyExpression ? generateKeyedList(node, index, parentVar) : generateStaticList(node, index, parentVar);
 }
 
 function generateStaticList(node: TuiListBlock, index: number, parentVar?: string): NodeGenResult {
@@ -692,7 +688,7 @@ function generateStaticList(node: TuiListBlock, index: number, parentVar?: strin
 
   let nextIndex = index;
   for (const child of node.body) {
-    if (child.type === 'TuiWidgetCall' && child.isComponent !== true && parentVar) {
+    if (parentVar && child.type === 'TuiWidgetCall' && child.isComponent !== true) {
       const childVarName = getWidgetVarName(child, nextIndex);
       const result = generateNode(child, nextIndex);
       if (result) {
@@ -799,13 +795,15 @@ function generateKeyedBodyWidget(
 
   for (const prop of node.dynamicProps) {
     const handler = resolvePropHandler(node, prop.name, prop.loc);
-    if (handler) {
-      const expr = wrapExpr(prop.expression);
-      const call = handler.field
-        ? `${varName}.${handler.method}({${handler.field}: ${expr}})`
-        : `${varName}.${handler.method}(${expr})`;
-      lines.push(`      ${call};`);
+    if (!handler) {
+      continue;
     }
+
+    const expr = wrapExpr(prop.expression);
+    const call = handler.field
+      ? `${varName}.${handler.method}({${handler.field}: ${expr}})`
+      : `${varName}.${handler.method}(${expr})`;
+    lines.push(`      ${call};`);
   }
 
   lines.push('    } else {', `      ${varName} = ${buildWidgetCreation(node)};`);
@@ -816,16 +814,18 @@ function generateKeyedBodyWidget(
 
   let nextIndex = index + 1;
   for (const subChild of node.children) {
-    if (subChild.type === 'TuiWidgetCall' && subChild.isComponent !== true) {
-      const subVar = getWidgetVarName(subChild, nextIndex);
-      lines.push(`      const ${subVar} = ${buildWidgetCreation(subChild)};`);
-      for (const eventBinding of subChild.events) {
-        lines.push(`      ${subVar}.on('${eventBinding.event}', ${buildEventHandler(eventBinding)});`);
-      }
-
-      lines.push(`      ${varName}.addChild(${subVar});`);
-      nextIndex++;
+    if (subChild.type !== 'TuiWidgetCall' || subChild.isComponent === true) {
+      continue;
     }
+
+    const subVar = getWidgetVarName(subChild, nextIndex);
+    lines.push(`      const ${subVar} = ${buildWidgetCreation(subChild)};`);
+    for (const eventBinding of subChild.events) {
+      lines.push(`      ${subVar}.on('${eventBinding.event}', ${buildEventHandler(eventBinding)});`);
+    }
+
+    lines.push(`      ${varName}.addChild(${subVar});`);
+    nextIndex++;
   }
 
   lines.push(
@@ -861,15 +861,11 @@ function generateDynamicComponent(
     `    ${varName}_cleanup = undefined;`,
     '    return;',
     '  }',
+    parentVarName
+      ? `  ${varName}_cleanup = __runSetup(__scene, () => __c.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${trailing});`
+      : `  ${varName}_cleanup = __runSetup(__scene, () => __c.setup(__scene)${trailing});`,
+    '});',
   ];
-
-  if (parentVarName) {
-    lines.push(`  ${varName}_cleanup = __runSetup(__scene, () => __c.setup(__scene, { mount(w) { ${parentVarName}.addChild(w); }, unmount(w) { ${parentVarName}.removeChild(w); } })${trailing});`);
-  } else {
-    lines.push(`  ${varName}_cleanup = __runSetup(__scene, () => __c.setup(__scene)${trailing});`);
-  }
-
-  lines.push('});');
 
   return {lines, nextIndex: index + 1};
 }
@@ -940,11 +936,7 @@ function buildTrailingArgs(propsArg?: string, emitsArg?: string): string {
     return `, ${propsArg}`;
   }
 
-  if (!propsArg) {
-    return `, undefined, ${emitsArg}`;
-  }
-
-  return `, ${propsArg}, ${emitsArg}`;
+  return propsArg ? `, ${propsArg}, ${emitsArg}` : `, undefined, ${emitsArg}`;
 }
 
 function getWidgetVarName(node: TuiWidgetCall, index: number): string {
@@ -952,80 +944,64 @@ function getWidgetVarName(node: TuiWidgetCall, index: number): string {
 }
 
 function hasDynamicBindings(root: TuiRenderRoot): boolean {
-  function checkNode(node: TuiRenderNode): boolean {
+  function doesNodeMatch(node: TuiRenderNode): boolean {
     if (node.type === 'TuiWidgetCall') {
       return (
         node.dynamicProps.length > 0
-        || node.children.some(n => checkNode(n))
+        || node.children.some(n => doesNodeMatch(n))
       );
     }
 
     if (node.type === 'TuiConditionalBlock') {
-      if (node.consequent.some(n => checkNode(n))) {
+      if (node.consequent.some(n => doesNodeMatch(n))) {
         return true;
       }
 
       if (node.alternate) {
         const alternates = Array.isArray(node.alternate) ? node.alternate : [node.alternate];
-        return alternates.some(n => checkNode(n));
+        return alternates.some(n => doesNodeMatch(n));
       }
 
       return false;
     }
 
     if (node.type === 'TuiListBlock') {
-      if (node.keyExpression) {
-        return true;
-      }
-
-      return node.body.some(n => checkNode(n));
+      return node.keyExpression ? true : node.body.some(n => doesNodeMatch(n));
     }
 
-    if (node.type === 'TuiDynamicComponent') {
-      return true;
-    }
-
-    return false;
+    return node.type === 'TuiDynamicComponent';
   }
 
-  return root.children.some(n => checkNode(n));
+  return root.children.some(n => doesNodeMatch(n));
 }
 
 function hasComponentCalls(root: TuiRenderRoot): boolean {
-  function checkNode(node: TuiRenderNode): boolean {
+  function doesNodeMatch(node: TuiRenderNode): boolean {
     if (node.type === 'TuiWidgetCall') {
-      return Boolean(node.isComponent) || node.children.some(n => checkNode(n));
+      return Boolean(node.isComponent) || node.children.some(n => doesNodeMatch(n));
     }
 
     if (node.type === 'TuiConditionalBlock') {
-      if (node.consequent.some(n => checkNode(n))) {
+      if (node.consequent.some(n => doesNodeMatch(n))) {
         return true;
       }
 
       if (node.alternate) {
         const alternates = Array.isArray(node.alternate) ? node.alternate : [node.alternate];
-        return alternates.some(n => checkNode(n));
+        return alternates.some(n => doesNodeMatch(n));
       }
 
       return false;
     }
 
-    if (node.type === 'TuiListBlock') {
-      return node.body.some(n => checkNode(n));
-    }
-
-    if (node.type === 'TuiDynamicComponent') {
-      return true;
-    }
-
-    return false;
+    return node.type === 'TuiListBlock' ? node.body.some(n => doesNodeMatch(n)) : node.type === 'TuiDynamicComponent';
   }
 
-  return root.children.some(n => checkNode(n));
+  return root.children.some(n => doesNodeMatch(n));
 }
 
 function hasDynamicComponentProps(root: TuiRenderRoot): boolean {
-  function checkNode(node: TuiRenderNode): boolean {
+  function doesNodeMatch(node: TuiRenderNode): boolean {
     if (node.type === 'TuiWidgetCall') {
       if (node.isComponent === true) {
         const hasDynProps = node.dynamicProps.some(p => p.name !== 'visible');
@@ -1034,32 +1010,28 @@ function hasDynamicComponentProps(root: TuiRenderRoot): boolean {
         }
       }
 
-      return node.children.some(n => checkNode(n));
+      return node.children.some(n => doesNodeMatch(n));
     }
 
     if (node.type === 'TuiConditionalBlock') {
-      if (node.consequent.some(n => checkNode(n))) {
+      if (node.consequent.some(n => doesNodeMatch(n))) {
         return true;
       }
 
       if (node.alternate) {
         const alternates = Array.isArray(node.alternate) ? node.alternate : [node.alternate];
-        return alternates.some(n => checkNode(n));
+        return alternates.some(n => doesNodeMatch(n));
       }
 
       return false;
     }
 
     if (node.type === 'TuiListBlock') {
-      return node.body.some(n => checkNode(n));
+      return node.body.some(n => doesNodeMatch(n));
     }
 
-    if (node.type === 'TuiDynamicComponent') {
-      return node.dynamicProps.some(p => p.name !== 'visible');
-    }
-
-    return false;
+    return node.type === 'TuiDynamicComponent' ? node.dynamicProps.some(p => p.name !== 'visible') : false;
   }
 
-  return root.children.some(n => checkNode(n));
+  return root.children.some(n => doesNodeMatch(n));
 }

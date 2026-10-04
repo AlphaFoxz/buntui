@@ -49,11 +49,7 @@ function charCategory(code: number): number {
     return CHAR_CATEGORY_CJK;
   }
 
-  if ((code >= 0x21 && code <= 0x2F) || (code >= 0x3A && code <= 0x40) || (code >= 0x5B && code <= 0x60) || (code >= 0x7B && code <= 0x7E)) {
-    return CHAR_CATEGORY_PUNCT;
-  }
-
-  return CHAR_CATEGORY_WORD;
+  return (code >= 0x21 && code <= 0x2F) || (code >= 0x3A && code <= 0x40) || (code >= 0x5B && code <= 0x60) || (code >= 0x7B && code <= 0x7E) ? CHAR_CATEGORY_PUNCT : CHAR_CATEGORY_WORD;
 }
 
 const INPUT_TOKEN_MAP = {
@@ -233,11 +229,7 @@ export class InputWidget extends InteractiveWidget {
     });
 
     this.on('mousemove', mouseData => {
-      if (!this.#isSelecting) {
-        return;
-      }
-
-      if (!mouseData.buttons || mouseData.buttons === 0) {
+      if (!this.#isSelecting || !mouseData.buttons || mouseData.buttons === 0) {
         return;
       }
 
@@ -302,8 +294,8 @@ export class InputWidget extends InteractiveWidget {
     return this.#isReadonly;
   }
 
-  setReadonly(value: boolean): void {
-    this.#isReadonly = value;
+  setReadonly(isReadonly: boolean): void {
+    this.#isReadonly = isReadonly;
   }
 
   setLabel(value: string): void {
@@ -337,11 +329,13 @@ export class InputWidget extends InteractiveWidget {
       this.#colors.focused!.fg = parsed;
     }
 
-    if (color.colorBg !== undefined) {
-      const parsed = this._resolveColorValue(color.colorBg, 'colorBgNormal');
-      this.#colors.normal.bg = parsed;
-      this.#colors.focused!.bg = parsed;
+    if (color.colorBg === undefined) {
+      return;
     }
+
+    const parsed = this._resolveColorValue(color.colorBg, 'colorBgNormal');
+    this.#colors.normal.bg = parsed;
+    this.#colors.focused!.bg = parsed;
   }
 
   updateBorder(border: {borderStyle?: TuiBorderStyleName}): void {
@@ -717,11 +711,7 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #maskText(text: string): string {
-    if (!this.#password) {
-      return text;
-    }
-
-    return '\u{2022}'.repeat([...text].length);
+    return this.#password ? '\u{2022}'.repeat([...text].length) : text;
   }
 
   #displaySlice(start: number, end?: number): string {
@@ -819,7 +809,7 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #handleCharInput(key: string): void {
-    if (!(this.#maxLength === 0 || this.#value.length < this.#maxLength || this.#getSelectionRange() !== undefined)) {
+    if (!(this.#maxLength === 0 || this.#value.length < this.#maxLength) && this.#getSelectionRange() === undefined) {
       return;
     }
 
@@ -891,13 +881,15 @@ export class InputWidget extends InteractiveWidget {
       return;
     }
 
-    if (this.#cursorPos > 0) {
-      this.#pushUndo();
-      this.#value = this.#value.slice(0, this.#cursorPos - 1) + this.#value.slice(this.#cursorPos);
-      this.#cursorPos--;
-      this.#clampScrollOffset();
-      this.dispatch('input', {value: this.#value});
+    if (!(this.#cursorPos > 0)) {
+      return;
     }
+
+    this.#pushUndo();
+    this.#value = this.#value.slice(0, this.#cursorPos - 1) + this.#value.slice(this.#cursorPos);
+    this.#cursorPos--;
+    this.#clampScrollOffset();
+    this.dispatch('input', {value: this.#value});
   }
 
   #handleDelete(): void {
@@ -907,12 +899,14 @@ export class InputWidget extends InteractiveWidget {
       return;
     }
 
-    if (this.#cursorPos < this.#value.length) {
-      this.#pushUndo();
-      this.#value = this.#value.slice(0, this.#cursorPos) + this.#value.slice(this.#cursorPos + 1);
-      this.#clampScrollOffset();
-      this.dispatch('input', {value: this.#value});
+    if (!(this.#cursorPos < this.#value.length)) {
+      return;
     }
+
+    this.#pushUndo();
+    this.#value = this.#value.slice(0, this.#cursorPos) + this.#value.slice(this.#cursorPos + 1);
+    this.#clampScrollOffset();
+    this.dispatch('input', {value: this.#value});
   }
 
   #updateSelectionForMovement(event: KeyboardEvent): void {
@@ -927,18 +921,22 @@ export class InputWidget extends InteractiveWidget {
 
   #handleArrowLeft(event: KeyboardEvent): void {
     this.#updateSelectionForMovement(event);
-    if (this.#cursorPos > 0) {
-      this.#cursorPos--;
-      this.#clampScrollOffset();
+    if (!(this.#cursorPos > 0)) {
+      return;
     }
+
+    this.#cursorPos--;
+    this.#clampScrollOffset();
   }
 
   #handleArrowRight(event: KeyboardEvent): void {
     this.#updateSelectionForMovement(event);
-    if (this.#cursorPos < this.#value.length) {
-      this.#cursorPos++;
-      this.#clampScrollOffset();
+    if (!(this.#cursorPos < this.#value.length)) {
+      return;
     }
+
+    this.#cursorPos++;
+    this.#clampScrollOffset();
   }
 
   #handleWordLeft(event: KeyboardEvent): void {
@@ -1075,11 +1073,11 @@ export class InputWidget extends InteractiveWidget {
     if (this.#isNumber) {
       let filtered = '';
       for (const char of text) {
-        if (char >= '0' && char <= '9') {
-          filtered += char;
-        } else if (char === '.' && !this.#value.includes('.') && !filtered.includes('.')) {
-          filtered += char;
-        } else if (char === '-' && filtered.length === 0 && this.#cursorPos === 0 && !this.#value.includes('-')) {
+        if (
+          (char >= '0' && char <= '9')
+          || (char === '.' && !this.#value.includes('.') && !filtered.includes('.'))
+          || (char === '-' && filtered.length === 0 && this.#cursorPos === 0 && !this.#value.includes('-'))
+        ) {
           filtered += char;
         }
       }
@@ -1159,11 +1157,7 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #handleNumberCharInput(key: string): void {
-    if (key >= '0' && key <= '9') {
-      this.#handleCharInput(key);
-    } else if (key === '-' && this.#cursorPos === 0 && !this.#value.includes('-')) {
-      this.#handleCharInput(key);
-    } else if (key === '.' && !this.#value.includes('.')) {
+    if ((key >= '0' && key <= '9') || (key === '-' && this.#cursorPos === 0 && !this.#value.includes('-')) || (key === '.' && !this.#value.includes('.'))) {
       this.#handleCharInput(key);
     }
   }
@@ -1173,15 +1167,17 @@ export class InputWidget extends InteractiveWidget {
     const current = Number.isNaN(parsed) ? this.#min : parsed;
     const next = Math.min(this.#max, current + this.#step);
     const newText = String(next);
-    if (newText !== this.#value) {
-      this.#pushUndo();
-      this.#value = newText;
-      this.#cursorPos = this.#value.length;
-      this.#selectionAnchor = undefined;
-      this.#clampScrollOffset();
-      this.dispatch('input', {value: this.#value});
-      this.dispatch('change', {value: next});
+    if (newText === this.#value) {
+      return;
     }
+
+    this.#pushUndo();
+    this.#value = newText;
+    this.#cursorPos = this.#value.length;
+    this.#selectionAnchor = undefined;
+    this.#clampScrollOffset();
+    this.dispatch('input', {value: this.#value});
+    this.dispatch('change', {value: next});
   }
 
   #decrement(): void {
@@ -1189,15 +1185,17 @@ export class InputWidget extends InteractiveWidget {
     const current = Number.isNaN(parsed) ? this.#max : parsed;
     const next = Math.max(this.#min, current - this.#step);
     const newText = String(next);
-    if (newText !== this.#value) {
-      this.#pushUndo();
-      this.#value = newText;
-      this.#cursorPos = this.#value.length;
-      this.#selectionAnchor = undefined;
-      this.#clampScrollOffset();
-      this.dispatch('input', {value: this.#value});
-      this.dispatch('change', {value: next});
+    if (newText === this.#value) {
+      return;
     }
+
+    this.#pushUndo();
+    this.#value = newText;
+    this.#cursorPos = this.#value.length;
+    this.#selectionAnchor = undefined;
+    this.#clampScrollOffset();
+    this.dispatch('input', {value: this.#value});
+    this.dispatch('change', {value: next});
   }
 
   #commitNumber(): void {

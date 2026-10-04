@@ -55,10 +55,12 @@ function copyPublicFiles(distDir: string, cwd: string): void {
   fs.mkdirSync(distPublicDir, {recursive: true});
   for (const file of fs.readdirSync(publicDir)) {
     const src = path.join(publicDir, file);
-    if (fs.statSync(src).isFile()) {
-      fs.copyFileSync(src, path.join(distPublicDir, file));
-      console.log(`  public/${file}`);
+    if (!fs.statSync(src).isFile()) {
+      continue;
     }
+
+    fs.copyFileSync(src, path.join(distPublicDir, file));
+    console.log(`  public/${file}`);
   }
 }
 

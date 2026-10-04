@@ -119,15 +119,47 @@ const expose: FlatXoConfig = [
       'unicorn/prefer-number-coercion': 'off',
       'unicorn/require-module-specifiers': 'off',
       'unicorn/text-encoding-identifier-case': 'off',
+      'unicorn/prefer-ternary': 'off',
 
       // ===== import-x =====
       'import-x/extensions': 'off',
+
+      // ===== n =====
+      // Keep bundler-style extensionless relative imports; `.js` suffixes are
+      // only mandatory under `moduleResolution: nodenext`, which this repo
+      // doesn't use (bundler + Bun runtime).
+      'n/file-extension-in-import': 'off',
 
       // ===== ESLint core =====
       'complexity': ['error', {max: 35}],
       'max-params': ['error', {max: 6}],
       'no-bitwise': 'off',
       'no-useless-call': 'off',
+    },
+  },
+  {
+    // Scope to package.json explicitly — objects without `files` are scoped to
+    // code files by xo, so package-json rules would never see these overrides.
+    files: ['**/package.json'],
+    rules: {
+      // Opinionated npm-publishing rules; most are false positives for this
+      // Bun workspace monorepo (workspace:* protocol, {{version}} template
+      // placeholders) and changing them would alter packaging structure.
+      'package-json/dependency-version-range': 'off',
+      'package-json/no-dist-tag-dependencies': 'off',
+      'package-json/no-nested-exports': 'off',
+      'package-json/no-workspace-protocol-in-published-package': 'off',
+      'package-json/peer-dependencies-as-dev-dependencies': 'off',
+      'package-json/prefer-exports': 'off',
+      'package-json/prefer-files-field': 'off',
+      'package-json/prefer-side-effects-field': 'off',
+      'package-json/prefer-type-module': 'off',
+      'package-json/require-bin-shebang': 'off',
+      'package-json/require-engines': 'off',
+      'package-json/require-entry-point': 'off',
+      'package-json/require-fields': 'off',
+      'package-json/require-types-in-exports': 'off',
+      'package-json/valid-fields': 'off',
     },
   },
   {

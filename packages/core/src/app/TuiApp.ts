@@ -36,14 +36,14 @@ export class TuiApp implements Disposable {
     const logFileDir = options?.logFilePath ?? getDefaultLogDir();
     const backendLogName = options?.backendLogName ?? 'buntui-backend.log';
     const frontendLogName = options?.frontendLogName ?? 'buntui-frontend.log';
-    const clearLog = options?.clearLog ?? false;
-    this.#backend.setupLogger(logFileDir, backendLogName, logLevel, clearLog);
+    const isClearLog = options?.clearLog ?? false;
+    this.#backend.setupLogger(logFileDir, backendLogName, logLevel, isClearLog);
     this.#debugMode = options?.debugMode ?? (logLevel === 'debug');
     this.#quitOnQ = options?.quitOnQ ?? false;
     LOGGER.init({
       logFileDir,
       logLevel,
-      clearLog,
+      clearLog: isClearLog,
       frontendLogName,
       backendLogName,
     });
@@ -174,14 +174,16 @@ export class TuiApp implements Disposable {
     target.destroy();
     this.#scenes = this.#scenes.filter(s => s.id !== id);
 
-    if (this.#currentScene === target) {
-      this.#currentScene = undefined;
-      this.#focusManager.blurWidget();
-      this.#pointerManager.resetState();
-      const fallback = this.#scenes.at(-1);
-      if (fallback) {
-        this.activateScene(fallback);
-      }
+    if (this.#currentScene !== target) {
+      return;
+    }
+
+    this.#currentScene = undefined;
+    this.#focusManager.blurWidget();
+    this.#pointerManager.resetState();
+    const fallback = this.#scenes.at(-1);
+    if (fallback) {
+      this.activateScene(fallback);
     }
   }
 

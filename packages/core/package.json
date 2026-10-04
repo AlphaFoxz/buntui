@@ -6,8 +6,6 @@
         "url": "git+https://github.com/AlphaFoxz/buntui.git",
         "directory": "packages/core"
     },
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
@@ -29,23 +27,25 @@
             "default": "./dist/buntui.wasm"
         }
     },
-    "files": [
-        "dist/"
-    ],
-    "sideEffects": false,
+    "main": "./dist/index.js",
     "browser": {
         "./dist/platform/native.js": "./dist/platform/browser.js"
     },
+    "types": "./dist/index.d.ts",
+    "sideEffects": false,
     "scripts": {
         "test": "bun test",
         "build": "tsc --project ./tsconfig.json && node -e \"require('fs').copyFileSync('src/global.d.ts','dist/global.d.ts')\""
     },
+    "files": [
+        "dist/"
+    ],
     "dependencies": {
         "@buntui/native": "workspace:*",
         "@vue/reactivity": "^3.5.43"
     },
     "devDependencies": {
-        "@types/bun": "1.4.2",
+        "@types/bun": "=1.4.2",
         "string-width": "^8.2.2"
     }
 }

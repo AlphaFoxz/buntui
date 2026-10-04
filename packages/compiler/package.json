@@ -6,8 +6,6 @@
         "url": "git+https://github.com/AlphaFoxz/buntui.git",
         "directory": "packages/compiler"
     },
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
@@ -18,14 +16,16 @@
             "default": "./dist/vue-plugin.js"
         }
     },
-    "files": [
-        "dist/"
-    ],
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "sideEffects": false,
     "scripts": {
         "test": "bun test",
         "build": "tsc --project ./tsconfig.json"
     },
+    "files": [
+        "dist/"
+    ],
     "dependencies": {
         "@vue/compiler-core": "^3.5.43",
         "@vue/compiler-sfc": "^3.5.43",
@@ -34,7 +34,7 @@
         "sucrase": "^3.35.1"
     },
     "devDependencies": {
-        "@types/bun": "1.4.2",
-        "@buntui/core": "workspace:*"
+        "@buntui/core": "workspace:*",
+        "@types/bun": "=1.4.2"
     }
 }

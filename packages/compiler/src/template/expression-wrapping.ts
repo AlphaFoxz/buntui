@@ -44,11 +44,7 @@ function wrapCore(expr: string, locals: Set<string>): string {
         result += ident;
       } else if (i > 0 && expr[i - 1] === '.') {
         result += i >= 3 && expr[i - 2]! === '.' && expr[i - 3]! === '.' ? `${UNREF}(${ident})` : ident;
-      } else if (CONDITION_KEYWORDS.has(ident)) {
-        result += ident;
-      } else if (isObjectKey(expr, i, end)) {
-        result += ident;
-      } else if (locals.has(ident)) {
+      } else if (CONDITION_KEYWORDS.has(ident) || isObjectKey(expr, i, end) || locals.has(ident)) {
         result += ident;
       } else {
         result += `${UNREF}(${ident})`;

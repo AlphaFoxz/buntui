@@ -22,11 +22,17 @@ import type {
 } from './ast';
 
 export type TransformOptions = {
-  /** Component registry: tag name → {creator, module}. Defaults to CORE_REGISTRY. */
+  /**
+  Component registry: tag name → {creator, module}. Defaults to CORE_REGISTRY.
+  */
   registry?: TuiComponentRegistry;
-  /** .vue component imports detected from <script setup> (tag → identifier) */
+  /**
+  .vue component imports detected from <script setup> (tag → identifier)
+  */
   components?: Record<string, string>;
-  /** Widget tag-named imports detected from <script setup> (tag → local identifier) */
+  /**
+  Widget tag-named imports detected from <script setup> (tag → local identifier)
+  */
   widgetImports?: Record<string, string>;
 };
 
@@ -246,7 +252,7 @@ function transformDynamicComponent(node: ElementNode, ctx: TransformContext): Tu
   const props: TuiStaticProp[] = [];
   const dynamicProps: TuiDynamicProp[] = [];
   const events: TuiEventBinding[] = [];
-  let isExpression = '';
+  let expression = '';
 
   for (const prop of node.props) {
     if (prop.type === NodeTypes.ATTRIBUTE) {
@@ -261,7 +267,7 @@ function transformDynamicComponent(node: ElementNode, ctx: TransformContext): Tu
         && prop.arg?.type === NodeTypes.SIMPLE_EXPRESSION
         && prop.arg.content === 'is'
       ) {
-        isExpression = resolveExpContent(prop);
+        expression = resolveExpContent(prop);
         continue;
       }
 
@@ -280,7 +286,7 @@ function transformDynamicComponent(node: ElementNode, ctx: TransformContext): Tu
     }
   }
 
-  if (!isExpression) {
+  if (!expression) {
     throw new Error(`<component> requires a :is binding (e.g. <component :is="MyComponent">) at ${node.loc.start.line}:${node.loc.start.column}.`);
   }
 
@@ -291,7 +297,7 @@ function transformDynamicComponent(node: ElementNode, ctx: TransformContext): Tu
 
   return {
     type: 'TuiDynamicComponent',
-    isExpression,
+    isExpression: expression,
     props,
     dynamicProps,
     events,
@@ -315,11 +321,7 @@ function resolveArgContent(dir: DirectiveNode): string {
     return '';
   }
 
-  if (dir.arg.type === NodeTypes.SIMPLE_EXPRESSION) {
-    return camelize(dir.arg.content);
-  }
-
-  return '';
+  return dir.arg.type === NodeTypes.SIMPLE_EXPRESSION ? camelize(dir.arg.content) : '';
 }
 
 function resolveExpContent(dir: DirectiveNode): string {
@@ -327,11 +329,7 @@ function resolveExpContent(dir: DirectiveNode): string {
     return '';
   }
 
-  if (dir.exp.type === NodeTypes.SIMPLE_EXPRESSION) {
-    return dir.exp.content;
-  }
-
-  return '';
+  return dir.exp.type === NodeTypes.SIMPLE_EXPRESSION ? dir.exp.content : '';
 }
 
 /**
@@ -356,11 +354,7 @@ function applyModifier(mod: string, raw: string): string {
     return `${raw}.trim()`;
   }
 
-  if (mod === 'number') {
-    return `Number(${raw})`;
-  }
-
-  return raw;
+  return mod === 'number' ? `Number(${raw})` : raw;
 }
 
 function isValidModelExpression(expr: string): boolean {
@@ -487,10 +481,8 @@ function transformDirective(dir: DirectiveNode, _widgetId: string, tag?: string,
 
     // Build the assignment value, applying modifiers in order
     let valueExpr = isComponent ? '$event' : `$event.${config.payloadKey}`;
-    if (dir.modifiers.length > 0) {
-      for (const mod of dir.modifiers) {
-        valueExpr = applyModifier(mod.content, valueExpr);
-      }
+    for (const mod of dir.modifiers) {
+      valueExpr = applyModifier(mod.content, valueExpr);
     }
 
     const isSimpleIdentifier = /^[$A-Z_a-z][\w$]*$/v.test(expression);
@@ -666,11 +658,7 @@ function parseForExpression(exp: string): {itemVar: string; indexVar?: string; l
   }
 
   const {item, index, simpleItem, list} = match.groups;
-  if (item !== undefined && index !== undefined) {
-    return {itemVar: item, indexVar: index, listExpression: list!.trim()};
-  }
-
-  return {itemVar: simpleItem!, listExpression: list!.trim()};
+  return item !== undefined && index !== undefined ? {itemVar: item, indexVar: index, listExpression: list!.trim()} : {itemVar: simpleItem!, listExpression: list!.trim()};
 }
 
 function processFragment(

@@ -138,11 +138,13 @@ export class SnakeWidget extends InteractiveWidget {
     }
 
     this.#accumulator += dt;
-    if (this.#accumulator >= this.#tickInterval) {
-      this.#accumulator -= this.#tickInterval;
-      this.#direction = this.#nextDirection;
-      this.#tick(this.#width - 2, this.#height - 2);
+    if (!(this.#accumulator >= this.#tickInterval)) {
+      return;
     }
+
+    this.#accumulator -= this.#tickInterval;
+    this.#direction = this.#nextDirection;
+    this.#tick(this.#width - 2, this.#height - 2);
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {

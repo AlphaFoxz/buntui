@@ -140,23 +140,25 @@ export class PointerManager {
         this.#dragTarget = undefined;
       }
 
-      if (this.#pressTarget) {
-        this.#pressTarget.dispatch('mouseup', data);
+      if (!this.#pressTarget) {
+        return;
+      }
 
-        if (!wasDragging) {
-          const releaseTarget = scene.hitTest(data);
-          if (releaseTarget === this.#pressTarget) {
-            const dx = data.x - this.#pressX;
-            const dy = data.y - this.#pressY;
-            if (((dx * dx) + (dy * dy)) <= 1) {
-              this.#pressTarget.dispatch('click', data);
-            }
+      this.#pressTarget.dispatch('mouseup', data);
+
+      if (!wasDragging) {
+        const releaseTarget = scene.hitTest(data);
+        if (releaseTarget === this.#pressTarget) {
+          const dx = data.x - this.#pressX;
+          const dy = data.y - this.#pressY;
+          if (((dx * dx) + (dy * dy)) <= 1) {
+            this.#pressTarget.dispatch('click', data);
           }
         }
-
-        this.#pressTarget = undefined;
-        this.#dragTarget = undefined;
       }
+
+      this.#pressTarget = undefined;
+      this.#dragTarget = undefined;
     };
 
     EVENT_BUS.on(TuiEventType.MouseEvent, this.#mouseHandler);

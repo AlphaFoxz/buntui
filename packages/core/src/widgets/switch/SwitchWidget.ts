@@ -140,8 +140,8 @@ export class SwitchWidget extends InteractiveWidget {
     }
   }
 
-  setChecked(value: boolean): void {
-    this.#checked = value;
+  setChecked(isChecked: boolean): void {
+    this.#checked = isChecked;
   }
 
   setLabel(text: string): void {

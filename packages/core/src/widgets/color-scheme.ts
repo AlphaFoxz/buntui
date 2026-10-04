@@ -103,9 +103,5 @@ export function resolveColorState<T extends Record<string, unknown>>(
     return scheme.focused;
   }
 
-  if (state.active! && scheme.active) {
-    return scheme.active;
-  }
-
-  return scheme.normal;
+  return state.active! && scheme.active ? scheme.active : scheme.normal;
 }

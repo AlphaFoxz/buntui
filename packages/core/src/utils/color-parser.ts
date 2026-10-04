@@ -158,11 +158,7 @@ function parseRgbChannels(r: string, g: string, b: string): number | undefined {
   const rv = Number.parseInt(r, 10);
   const gv = Number.parseInt(g, 10);
   const bv = Number.parseInt(b, 10);
-  if (rv > 255 || gv > 255 || bv > 255) {
-    return undefined;
-  }
-
-  return (rv << 16) | (gv << 8) | bv;
+  return rv > 255 || gv > 255 || bv > 255 ? undefined : (rv << 16) | (gv << 8) | bv;
 }
 
 function normalizeToHex(color: string): number | undefined {
@@ -209,11 +205,7 @@ function normalizeToHex(color: string): number | undefined {
   const mRgb = REG_RGB.exec(s);
   if (mRgb?.groups) {
     const rgb = parseRgbChannels(mRgb.groups.r!, mRgb.groups.g!, mRgb.groups.b!);
-    if (rgb === undefined) {
-      return undefined;
-    }
-
-    return (rgb << 8) | 0xFF;
+    return rgb === undefined ? undefined : (rgb << 8) | 0xFF;
   }
 
   const lower = s.toLowerCase();
@@ -222,11 +214,7 @@ function normalizeToHex(color: string): number | undefined {
   }
 
   const named = CSS_COLORS[lower];
-  if (named !== undefined) {
-    return (named << 8) | 0xFF;
-  }
-
-  return undefined;
+  return named === undefined ? undefined : (named << 8) | 0xFF;
 }
 
 export function colorToNumber(color: string): number | undefined {

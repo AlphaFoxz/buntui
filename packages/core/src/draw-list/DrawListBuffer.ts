@@ -58,8 +58,8 @@ export class DrawListBuffer {
     this.#view.setUint8(3, flags);
   }
 
-  setSynchronizedUpdate(value: boolean): void {
-    this.#synchronizedUpdate = value;
+  setSynchronizedUpdate(isSynchronizedUpdate: boolean): void {
+    this.#synchronizedUpdate = isSynchronizedUpdate;
   }
 
   /**
@@ -77,10 +77,12 @@ export class DrawListBuffer {
 
   popOffset(): void {
     const previous = this.#offsetStack.pop();
-    if (previous) {
-      this.#offsetX = previous.x;
-      this.#offsetY = previous.y;
+    if (!previous) {
+      return;
     }
+
+    this.#offsetX = previous.x;
+    this.#offsetY = previous.y;
   }
 
   setBackground(bgRgba: number): void {

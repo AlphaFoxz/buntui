@@ -56,11 +56,7 @@ function charCategory(code: number): number {
     return CHAR_CATEGORY_CJK;
   }
 
-  if ((code >= 0x21 && code <= 0x2F) || (code >= 0x3A && code <= 0x40) || (code >= 0x5B && code <= 0x60) || (code >= 0x7B && code <= 0x7E)) {
-    return CHAR_CATEGORY_PUNCT;
-  }
-
-  return CHAR_CATEGORY_WORD;
+  return (code >= 0x21 && code <= 0x2F) || (code >= 0x3A && code <= 0x40) || (code >= 0x5B && code <= 0x60) || (code >= 0x7B && code <= 0x7E) ? CHAR_CATEGORY_PUNCT : CHAR_CATEGORY_WORD;
 }
 
 const TEXTAREA_TOKEN_MAP = {
@@ -288,11 +284,7 @@ export class TextareaWidget extends InteractiveWidget {
         return;
       }
 
-      if (!this.#isSelecting) {
-        return;
-      }
-
-      if (!mouseData.buttons || mouseData.buttons === 0) {
+      if (!this.#isSelecting || !mouseData.buttons || mouseData.buttons === 0) {
         return;
       }
 
@@ -366,8 +358,8 @@ export class TextareaWidget extends InteractiveWidget {
     return this.#isReadonly;
   }
 
-  setReadonly(value: boolean): void {
-    this.#isReadonly = value;
+  setReadonly(isReadonly: boolean): void {
+    this.#isReadonly = isReadonly;
   }
 
   setLabel(value: string): void {
@@ -389,11 +381,13 @@ export class TextareaWidget extends InteractiveWidget {
       this.#colors.focused!.fg = parsed;
     }
 
-    if (color.colorBg !== undefined) {
-      const parsed = this._resolveColorValue(color.colorBg, 'colorBgNormal');
-      this.#colors.normal.bg = parsed;
-      this.#colors.focused!.bg = parsed;
+    if (color.colorBg === undefined) {
+      return;
     }
+
+    const parsed = this._resolveColorValue(color.colorBg, 'colorBgNormal');
+    this.#colors.normal.bg = parsed;
+    this.#colors.focused!.bg = parsed;
   }
 
   updateBorder(border: {borderStyle?: TuiBorderStyleName}): void {
@@ -807,16 +801,18 @@ export class TextareaWidget extends InteractiveWidget {
   #cursorToVisualLine(): number {
     for (let i = 0; i < this.#visualLines.length; i++) {
       const vl = this.#visualLines[i]!;
-      if (vl.logicalLine === this.#cursorLine) {
-        const endCol = vl.startCol + vl.charCount;
-        if (this.#cursorCol <= endCol) {
-          return i;
-        }
+      if (vl.logicalLine !== this.#cursorLine) {
+        continue;
+      }
 
-        const nextVl = this.#visualLines[i + 1];
-        if (nextVl?.logicalLine !== this.#cursorLine) {
-          return i;
-        }
+      const endCol = vl.startCol + vl.charCount;
+      if (this.#cursorCol <= endCol) {
+        return i;
+      }
+
+      const nextVl = this.#visualLines[i + 1];
+      if (nextVl?.logicalLine !== this.#cursorLine) {
+        return i;
       }
     }
 
@@ -936,7 +932,7 @@ export class TextareaWidget extends InteractiveWidget {
   }
 
   #handleCharInput(char: string): void {
-    if (!(this.#maxLength === 0 || this.#value.length < this.#maxLength || this.#getSelectionRange() !== undefined)) {
+    if (!(this.#maxLength === 0 || this.#value.length < this.#maxLength) && this.#getSelectionRange() === undefined) {
       return;
     }
 
@@ -1498,20 +1494,24 @@ export class TextareaWidget extends InteractiveWidget {
         drawX += stringDisplayWidth(seg2);
       }
 
-      if (segEnd < vLineEndOffset) {
-        const suffixStartChars = segEnd - vLineStartOffset;
-        const remainingWidth = viewport.width - (drawX - viewport.x);
-        if (remainingWidth > 0) {
-          const seg3 = truncateToWidth(vLine.text.slice(suffixStartChars), remainingWidth);
-          buffer.drawText({
-            x: drawX,
-            y: screenY,
-            text: seg3,
-            fgRgba: fgColor,
-            bgRgba: 0x00_00_00_00,
-          });
-        }
+      if (segEnd >= vLineEndOffset) {
+        continue;
       }
+
+      const suffixStartChars = segEnd - vLineStartOffset;
+      const remainingWidth = viewport.width - (drawX - viewport.x);
+      if (remainingWidth <= 0) {
+        continue;
+      }
+
+      const seg3 = truncateToWidth(vLine.text.slice(suffixStartChars), remainingWidth);
+      buffer.drawText({
+        x: drawX,
+        y: screenY,
+        text: seg3,
+        fgRgba: fgColor,
+        bgRgba: 0x00_00_00_00,
+      });
     }
   }
 

@@ -125,12 +125,12 @@ export class CheckboxWidget extends InteractiveWidget {
     }
   }
 
-  setChecked(value: boolean): void {
-    this.#checked = value;
+  setChecked(isChecked: boolean): void {
+    this.#checked = isChecked;
   }
 
-  setIndeterminate(value: boolean): void {
-    this.#indeterminate = value;
+  setIndeterminate(isIndeterminate: boolean): void {
+    this.#indeterminate = isIndeterminate;
   }
 
   setLabel(text: string): void {

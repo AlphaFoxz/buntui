@@ -7,25 +7,45 @@ import type {PropHandler} from '../runtime-helpers';
  */
 export type TuiWidgetCall = {
   readonly type: 'TuiWidgetCall';
-  /** The tag name from template, e.g. "Box" */
+  /**
+  The tag name from template, e.g. "Box"
+  */
   tag: string;
-  /** Resolved creator function name, e.g. "createBox" */
+  /**
+  Resolved creator function name, e.g. "createBox"
+  */
   creator: string;
-  /** True when this tag resolves to an imported .vue component */
+  /**
+  True when this tag resolves to an imported .vue component
+  */
   isComponent?: boolean;
-  /** Static props (known at compile time) */
+  /**
+  Static props (known at compile time)
+  */
   props: TuiStaticProp[];
-  /** Dynamic props (bound to reactive expressions) */
+  /**
+  Dynamic props (bound to reactive expressions)
+  */
   dynamicProps: TuiDynamicProp[];
-  /** Event handler bindings */
+  /**
+  Event handler bindings
+  */
   events: TuiEventBinding[];
-  /** Children (nested widgets) */
+  /**
+  Children (nested widgets)
+  */
   children: TuiRenderNode[];
-  /** Template ref name from ref="xxx" attribute */
+  /**
+  Template ref name from ref="xxx" attribute
+  */
   refName?: string;
-  /** Per-widget prop → handler mappings from registry (undefined for unregistered widgets) */
+  /**
+  Per-widget prop → handler mappings from registry (undefined for unregistered widgets)
+  */
   propHandlers?: Record<string, PropHandler>;
-  /** Source location for error reporting */
+  /**
+  Source location for error reporting
+  */
   loc: SourceLocation;
 };
 
@@ -79,9 +99,13 @@ export type TuiReactiveEffect = {
 export type TuiConditionalBlock = {
   readonly type: 'TuiConditionalBlock';
   condition: string;
-  /** Widgets to mount when condition is true */
+  /**
+  Widgets to mount when condition is true
+  */
   consequent: TuiRenderNode[];
-  /** Widgets for else branch (v-else-if / v-else) */
+  /**
+  Widgets for else branch (v-else-if / v-else)
+  */
   alternate?: TuiConditionalBlock | TuiRenderNode[];
   loc: SourceLocation;
 };
@@ -91,13 +115,19 @@ export type TuiConditionalBlock = {
  */
 export type TuiListBlock = {
   readonly type: 'TuiListBlock';
-  /** E.g. "item in items" or "(item, index) in items" */
+  /**
+  E.g. "item in items" or "(item, index) in items"
+  */
   itemVar: string;
   indexVar?: string;
   listExpression: string;
-  /** Key expression from :key="expr", enables reactive keyed diffing */
+  /**
+  Key expression from :key="expr", enables reactive keyed diffing
+  */
   keyExpression?: string;
-  /** Body template to repeat */
+  /**
+  Body template to repeat
+  */
   body: TuiRenderNode[];
   loc: SourceLocation;
 };
@@ -109,15 +139,25 @@ export type TuiListBlock = {
  */
 export type TuiDynamicComponent = {
   readonly type: 'TuiDynamicComponent';
-  /** The :is binding expression — evaluates to a component object at runtime */
+  /**
+  The :is binding expression — evaluates to a component object at runtime
+  */
   isExpression: string;
-  /** Static props passed to the resolved component */
+  /**
+  Static props passed to the resolved component
+  */
   props: TuiStaticProp[];
-  /** Dynamic props passed to the resolved component */
+  /**
+  Dynamic props passed to the resolved component
+  */
   dynamicProps: TuiDynamicProp[];
-  /** Event handler bindings (not forwarded to dynamic components) */
+  /**
+  Event handler bindings (not forwarded to dynamic components)
+  */
   events: TuiEventBinding[];
-  /** Source location for error reporting */
+  /**
+  Source location for error reporting
+  */
   loc: SourceLocation;
 };
 
@@ -135,13 +175,21 @@ export type TuiRenderNode =
  */
 export type TuiRenderRoot = {
   readonly type: 'TuiRenderRoot';
-  /** Top-level nodes in the template */
+  /**
+  Top-level nodes in the template
+  */
   children: TuiRenderNode[];
-  /** Reactive effects needed for dynamic bindings */
+  /**
+  Reactive effects needed for dynamic bindings
+  */
   effects: TuiReactiveEffect[];
-  /** All widget creators used (for import generation) */
+  /**
+  All widget creators used (for import generation)
+  */
   usedCreators: Set<string>;
-  /** Creator → module mapping (filled during transform from registry) */
+  /**
+  Creator → module mapping (filled during transform from registry)
+  */
   usedModules: Map<string, string>;
 };
 

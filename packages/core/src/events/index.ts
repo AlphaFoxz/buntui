@@ -21,11 +21,13 @@ class EventBusImpl {
 
   off<T extends TuiEventType>(eventType: T, handler: (data: InferEvent<T>) => void) {
     const handlers = this.#handlers[eventType];
-    if (handlers) {
-      const index = handlers.indexOf(handler);
-      if (index !== -1) {
-        handlers.splice(index, 1);
-      }
+    if (!handlers) {
+      return;
+    }
+
+    const index = handlers.indexOf(handler);
+    if (index !== -1) {
+      handlers.splice(index, 1);
     }
   }
 

@@ -6,8 +6,6 @@
         "url": "git+https://github.com/AlphaFoxz/buntui.git",
         "directory": "packages/extensions"
     },
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
@@ -42,17 +40,19 @@
             "default": "./dist/hmr-error-overlay.js"
         }
     },
-    "files": [
-        "dist/"
-    ],
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "sideEffects": false,
     "scripts": {
         "build": "tsc --project ./tsconfig.json"
     },
+    "files": [
+        "dist/"
+    ],
     "dependencies": {
         "@buntui/core": "workspace:*"
     },
     "devDependencies": {
-        "@types/bun": "1.4.2"
+        "@types/bun": "=1.4.2"
     }
 }

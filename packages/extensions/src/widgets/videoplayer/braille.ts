@@ -31,11 +31,7 @@ const VIDEO_EXTENSIONS = new Set([
 
 export function isVideoFile(path: string): boolean {
   const dot = path.lastIndexOf('.');
-  if (dot === -1) {
-    return false;
-  }
-
-  return VIDEO_EXTENSIONS.has(path.slice(dot).toLowerCase());
+  return dot === -1 ? false : VIDEO_EXTENSIONS.has(path.slice(dot).toLowerCase());
 }
 
 /**
@@ -45,14 +41,14 @@ export function isVideoFile(path: string): boolean {
  @param cols - Number of braille columns (width / 2)
  @param rows - Number of braille rows (height / 4)
  @param threshold - Brightness threshold (0-255). Pixels darker -> dots
- @param invert - If true, bright pixels become dots instead
+ @param isInverted - If true, bright pixels become dots instead
  */
 export function encodeBrailleFrame(
   pixels: Uint8Array,
   cols: number,
   rows: number,
   threshold: number,
-  invert: boolean,
+  isInverted: boolean,
 ): Uint8Array {
   const pixelW = cols * 2;
   const pixelH = rows * 4;
@@ -64,12 +60,14 @@ export function encodeBrailleFrame(
       for (const [dx, dy, bit] of BRAILLE_DOTS) {
         const px = (col * 2) + dx;
         const py = (row * 4) + dy;
-        if (px < pixelW && py < pixelH) {
-          const brightness = pixels[(py * pixelW) + px]!;
-          const isOn = invert ? brightness >= threshold : brightness < threshold;
-          if (isOn) { // eslint-disable-line max-depth
-            byte |= (1 << bit);
-          }
+        if (px >= pixelW || py >= pixelH) {
+          continue;
+        }
+
+        const brightness = pixels[(py * pixelW) + px]!;
+        const isOn = isInverted ? brightness >= threshold : brightness < threshold;
+        if (isOn) {
+          byte |= (1 << bit);
         }
       }
 

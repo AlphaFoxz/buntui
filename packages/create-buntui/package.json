@@ -9,20 +9,20 @@
     "bin": {
         "create-buntui": "./dist/main.js"
     },
-    "files": [
-        "dist/",
-        "templates/"
-    ],
     "scripts": {
         "dev": "buntui dev",
         "build": "buntui build"
     },
+    "files": [
+        "dist/",
+        "templates/"
+    ],
     "dependencies": {
         "@buntui/cli": "workspace:*",
         "@buntui/core": "workspace:*",
         "@vue/reactivity": "^3.5.43"
     },
     "devDependencies": {
-        "@types/bun": "1.4.2"
+        "@types/bun": "=1.4.2"
     }
 }

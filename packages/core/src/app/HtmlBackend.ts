@@ -80,9 +80,9 @@ const MOD_ALT = 0x04;
 const MOD_META = 0x08;
 const MOD_REPEAT = 0x10;
 
-const HAS_BUTTON = 0x01;
-const HAS_BUTTONS = 0x02;
-const IS_RELEASE = 0x10;
+const FLAG_HAS_BUTTON = 0x01;
+const FLAG_HAS_BUTTONS = 0x02;
+const FLAG_IS_RELEASE = 0x10;
 
 export class HtmlBackend implements TuiBackend {
   readonly #terminal: TerminalLike;
@@ -99,7 +99,7 @@ export class HtmlBackend implements TuiBackend {
     this.#isTextInputFocused = options.isTextInputFocused;
   }
 
-  setupLogger(_logFileDir: string, _logName: string, _logLevel: LogLevel, _clearLog: boolean): void {
+  setupLogger(_logFileDir: string, _logName: string, _logLevel: LogLevel, _shouldClearLog: boolean): void {
     // No-op: browser uses console directly
   }
 
@@ -151,7 +151,7 @@ export class HtmlBackend implements TuiBackend {
 
     const keyDisposable = this.#terminal.onKey((keyEvent: TerminalKeyEvent) => {
       const key = keyEvent.domEvent?.key ?? keyEvent.key;
-      if (this.#terminal.onData && ((keyEvent.domEvent?.ctrlKey) ?? false) && key === 'v') {
+      if (key === 'v' && this.#terminal.onData && ((keyEvent.domEvent?.ctrlKey) ?? false)) {
         void ((navigator as unknown as {clipboard: {readText(): Promise<string>}}).clipboard.readText().then((text: string) => {
           if (text.length === 0) {
             return;
@@ -223,11 +223,7 @@ export class HtmlBackend implements TuiBackend {
     const ESC = '\u{1B}';
 
     return this.#terminal.onData((data: string) => {
-      if (data.length === 0) {
-        return;
-      }
-
-      if (data.includes(ESC)) {
+      if ((data.length === 0) || data.includes(ESC)) {
         return;
       }
 
@@ -351,8 +347,8 @@ export class HtmlBackend implements TuiBackend {
     let startCol = 0;
     let startRow = 0;
     let isScrolling = false;
-    let touchActive = false;
-    let dragEmitted = false;
+    let isTouchActive = false;
+    let isDragEmitted = false;
 
     const SCROLL_THRESHOLD = 10;
 
@@ -383,12 +379,12 @@ export class HtmlBackend implements TuiBackend {
       startCol = cell.col;
       startRow = cell.row;
       isScrolling = false;
-      touchActive = true;
-      dragEmitted = false;
+      isTouchActive = true;
+      isDragEmitted = false;
     };
 
     const onTouchMove = (event: DomTouchEvent) => {
-      if (!touchActive || event.touches.length !== 1) {
+      if (!isTouchActive || event.touches.length !== 1) {
         return;
       }
 
@@ -405,8 +401,8 @@ export class HtmlBackend implements TuiBackend {
         isScrolling = true;
       }
 
-      if (!dragEmitted) {
-        dragEmitted = true;
+      if (!isDragEmitted) {
+        isDragEmitted = true;
         handler(TuiEventType.MouseEvent, new TuiMouseEvent(serializeMouseEvent({
           col: startCol,
           row: startRow,
@@ -427,12 +423,12 @@ export class HtmlBackend implements TuiBackend {
     };
 
     const onTouchEnd = (event: DomTouchEvent) => {
-      if (!touchActive) {
+      if (!isTouchActive) {
         return;
       }
 
       event.preventDefault();
-      touchActive = false;
+      isTouchActive = false;
 
       if (!isScrolling) {
         const touch = event.changedTouches[0]!;
@@ -456,7 +452,7 @@ export class HtmlBackend implements TuiBackend {
         } else {
           this.#terminal.blur?.();
         }
-      } else if (dragEmitted) {
+      } else if (isDragEmitted) {
         const touch = event.changedTouches[0]!;
         const {col, row} = touchToCell(touch.clientX, touch.clientY);
         handler(TuiEventType.MouseEvent, new TuiMouseEvent(serializeMouseEvent({
@@ -527,15 +523,15 @@ export function serializeMouseEvent(event: TerminalMouseEvent): ArrayBuffer {
 
   let flags = 0;
   if (event.action === 'mouseup') {
-    flags |= IS_RELEASE;
+    flags |= FLAG_IS_RELEASE;
   }
 
   if (event.button !== undefined) {
-    flags |= HAS_BUTTON;
+    flags |= FLAG_HAS_BUTTON;
   }
 
   if (event.buttons !== undefined) {
-    flags |= HAS_BUTTONS;
+    flags |= FLAG_HAS_BUTTONS;
   }
 
   view.setUint8(0, 0);
@@ -559,7 +555,7 @@ export function serializeWheelEvent(row: number, col: number, deltaY: number): A
   const buf = new ArrayBuffer(9);
   const view = new TuiDataViewWrapper(buf);
   view.setUint8(0, 0);
-  view.setUint8(1, HAS_BUTTON);
+  view.setUint8(1, FLAG_HAS_BUTTON);
   view.setUint8(2, 0);
   view.setUint8(3, 0);
   view.setUint16(4, col + 1, true);

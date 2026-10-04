@@ -54,9 +54,5 @@ export function validateProjectName(name: string, targetDir: string): string | u
   }
 
   const outputDir = path.resolve(targetDir, trimmed);
-  if (fs.existsSync(outputDir)) {
-    return `Directory already exists: ${trimmed}`;
-  }
-
-  return undefined;
+  return fs.existsSync(outputDir) ? `Directory already exists: ${trimmed}` : undefined;
 }

@@ -67,8 +67,8 @@ export abstract class InteractiveWidget extends TuiWidgetEntity implements Focus
     this.dispatch('blur', undefined);
   }
 
-  setDisabled(value: boolean): void {
-    this.#disabled = value;
+  setDisabled(isDisabled: boolean): void {
+    this.#disabled = isDisabled;
     if (this.#disabled && this.#focused) {
       this.blur();
     }

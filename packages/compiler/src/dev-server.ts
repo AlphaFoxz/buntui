@@ -11,19 +11,33 @@ import {compile, type CompileOptions} from './compile';
 import {type RawSourceMap, buildLineLookup} from './source-map';
 
 export type DevServerOptions = {
-  /** Path to the .vue SFC file to watch */
+  /**
+  Path to the .vue SFC file to watch
+  */
   file: string;
-  /** Directory for HMR temporary files (default: same directory as `file`) */
+  /**
+  Directory for HMR temporary files (default: same directory as `file`)
+  */
   tempDir?: string;
-  /** Compile options forwarded to compile(). `filename` defaults to `file`. */
+  /**
+  Compile options forwarded to compile(). `filename` defaults to `file`.
+  */
   compileOptions?: CompileOptions;
-  /** Called to clear existing state before reload */
+  /**
+  Called to clear existing state before reload
+  */
   onClear: () => void;
-  /** Called with the compiled module's setup export */
+  /**
+  Called with the compiled module's setup export
+  */
   onReload: (setup: (scene: unknown) => void) => void;
-  /** Called on compile or import errors */
+  /**
+  Called on compile or import errors
+  */
   onError?: (error: Error) => void;
-  /** Debounce ms (default 100) */
+  /**
+  Debounce ms (default 100)
+  */
   debounceMs?: number;
 };
 
@@ -131,14 +145,14 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
 
   let timer: ReturnType<typeof setTimeout> | undefined;
   let extraWatchers: Array<ReturnType<typeof watch>> = [];
-  let closed = false;
+  let isClosed = false;
 
   // Persistent state across reloads for incremental compilation
   const compiledCache = new Map<string, {code: string; sourceMap?: RawSourceMap}>(); // ResolvedPath -> compiled code
   const childTemporaryMap = new Map<string, string>(); // ResolvedPath -> temp file path
   const allTemporaryFiles = new Set<string>();
-  let firstLoad = true;
-  let needsFullReload = false;
+  let isFirstLoad = true;
+  let isNeedsFullReload = false;
 
   /**
    Full reload: compile all files, write all temp files.
@@ -273,38 +287,38 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
   }
 
   async function reload(changedFile?: string) {
-    if (closed) {
+    if (isClosed) {
       return;
     }
 
     try {
       onClear();
 
-      if (firstLoad || needsFullReload || !changedFile || changedFile === file) {
-        firstLoad = false;
-        needsFullReload = false;
+      if (isFirstLoad || isNeedsFullReload || !changedFile || changedFile === file) {
+        isFirstLoad = false;
+        isNeedsFullReload = false;
         await fullReload();
       } else {
         await incrementalReload(changedFile);
       }
 
-      if (!closed) {
+      if (!isClosed) {
         updateChildWatchers();
       }
     } catch (error) {
-      needsFullReload = true;
+      isNeedsFullReload = true;
       onError?.(error instanceof Error ? error : new Error(String(error)));
     }
   }
 
   function scheduleReload(changedFile?: string) {
-    if (closed) {
+    if (isClosed) {
       return;
     }
 
     clearTimeout(timer);
     timer = setTimeout(() => {
-      if (!closed) {
+      if (!isClosed) {
         void reload(changedFile);
       }
     }, debounceMs);
@@ -359,7 +373,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
 
   return {
     close() {
-      closed = true;
+      isClosed = true;
       clearTimeout(timer);
       mainWatcher.close();
       for (const w of extraWatchers) {
@@ -410,11 +424,13 @@ function extractFromStack(error: unknown): PositionData | undefined {
 
   for (const line of error.stack.split('\n')) {
     const match = stackLineRe.exec(line);
-    if (match?.groups) {
-      const lineNumber = Number(match.groups.line);
-      if (Number.isFinite(lineNumber)) {
-        return {line: lineNumber};
-      }
+    if (!match?.groups) {
+      continue;
+    }
+
+    const lineNumber = Number(match.groups.line);
+    if (Number.isFinite(lineNumber)) {
+      return {line: lineNumber};
     }
   }
 

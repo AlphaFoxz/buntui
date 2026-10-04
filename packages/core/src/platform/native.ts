@@ -24,9 +24,9 @@ export function getDefaultLogDir(): string {
   return path.dirname(Bun.main);
 }
 
-export function createFileLogSink(logFileDir: string, logName: string, clearLog: boolean): LogSink {
-  const {FileLogSink} = require('../common/file-log-sink') as {FileLogSink: new () => LogSink & {init(dir: string, name: string, clear: boolean): void}};
+export function createFileLogSink(logFileDir: string, logName: string, shouldClearLog: boolean): LogSink {
+  const {FileLogSink} = require('../common/file-log-sink') as {FileLogSink: new () => LogSink & {init(dir: string, name: string, shouldClearLog: boolean): void}};
   const sink = new FileLogSink();
-  sink.init(logFileDir, logName, clearLog);
+  sink.init(logFileDir, logName, shouldClearLog);
   return sink;
 }

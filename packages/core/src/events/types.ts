@@ -8,9 +8,9 @@ const MOD_META = 0x08;
 const MOD_REPEAT = 0x10;
 
 // Mouse presence flags — must match Zig core/event_payloads.zig
-const HAS_BUTTON = 0x01;
-const HAS_BUTTONS = 0x02;
-const IS_RELEASE = 0x10;
+const FLAG_HAS_BUTTON = 0x01;
+const FLAG_HAS_BUTTONS = 0x02;
+const FLAG_IS_RELEASE = 0x10;
 
 export const TuiEventType = {
   KeyboardEvent: 1,
@@ -78,9 +78,9 @@ export class MouseEvent {
     this.metaKey = (modifiers & MOD_META) === MOD_META;
     this.x = view.getUint16(4, true) - 1;
     this.y = view.getUint16(6, true) - 1;
-    this.button = (flags & HAS_BUTTON) === HAS_BUTTON ? view.getUint8(2) : undefined;
-    this.buttons = (flags & HAS_BUTTONS) === HAS_BUTTONS ? view.getUint8(3) : undefined;
-    this.isRelease = (flags & IS_RELEASE) === IS_RELEASE;
+    this.button = (flags & FLAG_HAS_BUTTON) === FLAG_HAS_BUTTON ? view.getUint8(2) : undefined;
+    this.buttons = (flags & FLAG_HAS_BUTTONS) === FLAG_HAS_BUTTONS ? view.getUint8(3) : undefined;
+    this.isRelease = (flags & FLAG_IS_RELEASE) === FLAG_IS_RELEASE;
   }
 }
 

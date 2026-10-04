@@ -6,7 +6,7 @@
     "xo.enable": true,
     "xo.format.enable": true,
     "[zig]": {
-        "editor.defaultFormatter": "ziglang.vscode-zig",
+        "editor.defaultFormatter": "ziglang.vscode-zig"
     },
     "[typescript]": {
         "editor.tabSize": 2,
@@ -25,7 +25,7 @@
         "prettier.singleQuote": true
     },
     "[json]": {
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.defaultFormatter": "samverschueren.linter-xo",
         "prettier.printWidth": 80
     },
     "zig.debugTestArgs": [
@@ -37,12 +37,6 @@
         "--test-no-exec",
         "-femit-bin=${binaryPath}"
     ],
-    "zig.testArgs": [
-        "test",
-        "--test-filter",
-        "${filter}",
-        "${path}",
-        "-lc",
-    ],
+    "zig.testArgs": ["test", "--test-filter", "${filter}", "${path}", "-lc"],
     "js/ts.tsdk.path": "node_modules/typescript/lib"
 }

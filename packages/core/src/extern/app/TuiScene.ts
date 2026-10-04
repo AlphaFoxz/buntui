@@ -77,8 +77,8 @@ export class TuiScene implements Entity {
     this.#bgRgba = typeof color === 'number' && g !== undefined && b !== undefined ? parseColor(`rgb(${color},${g},${b})`) : this.#resolveBgColor(color);
   }
 
-  setVisible(visible: boolean) {
-    this.#visible = visible;
+  setVisible(isVisible: boolean) {
+    this.#visible = isVisible;
   }
 
   update(dt: number): void {
@@ -175,13 +175,13 @@ export class TuiScene implements Entity {
 
   onTick(handler: (dt: number) => void): () => void {
     this.#tickHandlers.push(handler);
-    let removed = false;
+    let isRemoved = false;
     return () => {
-      if (removed) {
+      if (isRemoved) {
         return;
       }
 
-      removed = true;
+      isRemoved = true;
       const index = this.#tickHandlers.indexOf(handler);
       if (index !== -1) {
         this.#tickHandlers.splice(index, 1);
@@ -254,11 +254,7 @@ export class TuiScene implements Entity {
         return -1;
       }
 
-      if (bIndex !== undefined) {
-        return 1;
-      }
-
-      return 0;
+      return bIndex === undefined ? 0 : 1;
     });
   }
 
@@ -277,11 +273,7 @@ export class TuiScene implements Entity {
   }
 
   #resolveBgColor(color: TuiColor | {r: number; g: number; b: number}): number {
-    if (typeof color === 'object' && 'r' in color && 'g' in color && 'b' in color) {
-      return parseColor(`rgb(${color.r},${color.g},${color.b})`);
-    }
-
-    return parseColor(color);
+    return parseColor(typeof color === 'object' && 'r' in color && 'g' in color && 'b' in color ? `rgb(${color.r},${color.g},${color.b})` : color);
   }
 
   #collectPortalWidgets(): TuiWidgetEntity[] {

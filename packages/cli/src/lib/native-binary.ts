@@ -8,11 +8,7 @@ function getBinaryExt(): string {
     return 'dll';
   }
 
-  if (process.platform === 'darwin') {
-    return 'dylib';
-  }
-
-  return 'so';
+  return process.platform === 'darwin' ? 'dylib' : 'so';
 }
 
 function getBinaryPrefix(): string {
@@ -34,7 +30,7 @@ export function copyNativeBinary(distDir: string, cwd: string): void {
     if (fs.existsSync(candidate)) {
       const dest = path.join(distDir, `buntui.${ext}`);
       fs.copyFileSync(candidate, dest);
-      console.log(`  ${`buntui.${ext}`} (copied)`);
+      console.log(`  buntui.${ext} (copied)`);
       return;
     }
   }

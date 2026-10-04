@@ -80,10 +80,12 @@ export class RadioGroupWidget extends InteractiveWidget {
     this.on('mousedown', mouseData => {
       const {dy} = this.computeAccumulatedOffset();
       const innerY = mouseData.y - dy - this.#rect.y;
-      if (innerY >= 0 && innerY < this.#options.length) {
-        this.#hoveredIndex = innerY;
-        this.#select(this.#hoveredIndex);
+      if (!(innerY >= 0 && innerY < this.#options.length)) {
+        return;
       }
+
+      this.#hoveredIndex = innerY;
+      this.#select(this.#hoveredIndex);
     });
 
     this.on('mouseover', mouseData => {
@@ -147,11 +149,7 @@ export class RadioGroupWidget extends InteractiveWidget {
   }
 
   get selectedLabel(): string {
-    if (this.#value < 0 || this.#value >= this.#options.length) {
-      return '';
-    }
-
-    return this.#options[this.#value] ?? '';
+    return this.#value < 0 || this.#value >= this.#options.length ? '' : this.#options[this.#value] ?? '';
   }
 
   updateValue(index: number): void {

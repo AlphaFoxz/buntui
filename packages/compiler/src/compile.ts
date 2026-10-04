@@ -122,25 +122,25 @@ function analyzeScript(
 
   const {scriptImports, scriptBody, bodyLineIndices} = splitScript(content);
 
-  const usesDefineProps = scriptBody.some(line => /\bdefineProps\s*\(/v.test(line))
+  const isUsesDefineProps = scriptBody.some(line => /\bdefineProps\s*\(/v.test(line))
     && scriptImports.every(i => !i.includes('defineProps'));
 
-  const usesDefineEmits = scriptBody.some(line => /\bdefineEmits\s*\(/v.test(line))
+  const isUsesDefineEmits = scriptBody.some(line => /\bdefineEmits\s*\(/v.test(line))
     && scriptImports.every(i => !i.includes('defineEmits'));
 
   if (!descriptor.scriptSetup) {
     return {
       scriptImports, scriptBody, bodyLineIndices, componentMap: {}, widgetImportMap: {},
-      usesDefineProps,
-      usesDefineEmits,
+      usesDefineProps: isUsesDefineProps,
+      usesDefineEmits: isUsesDefineEmits,
     };
   }
 
   const {componentMap, widgetImportMap} = analyzeImportsFromAst(descriptor, filename, registry);
   return {
     scriptImports, scriptBody, bodyLineIndices, componentMap, widgetImportMap,
-    usesDefineProps,
-    usesDefineEmits,
+    usesDefineProps: isUsesDefineProps,
+    usesDefineEmits: isUsesDefineEmits,
   };
 }
 
@@ -148,15 +148,15 @@ function splitScript(content: string): {scriptImports: string[]; scriptBody: str
   const scriptImports: string[] = [];
   const scriptBody: string[] = [];
   const bodyLineIndices: number[] = [];
-  let inMultilineImport = false;
+  let isInMultilineImport = false;
 
   const lines = content.split('\n');
   for (const [i, line_] of lines.entries()) {
     const line = line_;
-    if (inMultilineImport) {
+    if (isInMultilineImport) {
       scriptImports.push(line);
       if (line.includes('}')) {
-        inMultilineImport = false;
+        isInMultilineImport = false;
       }
 
       continue;
@@ -166,7 +166,7 @@ function splitScript(content: string): {scriptImports: string[]; scriptBody: str
     if (trimmed.startsWith('import ') || trimmed.startsWith('import{')) {
       scriptImports.push(line);
       if (line.includes('{') && !line.includes('}')) {
-        inMultilineImport = true;
+        isInMultilineImport = true;
       }
     } else {
       scriptBody.push(line);
@@ -259,7 +259,7 @@ function assembleOutput(
   });
 
   let adjustedSourceMap = transformed.sourceMap;
-  if (transformed.sourceMap && scriptSetupStartLine !== undefined && bodyLineIndices.length > 0) {
+  if (scriptSetupStartLine !== undefined && bodyLineIndices.length > 0 && transformed.sourceMap) {
     const tsBodyStart = allImports.length + 3;
     const tsToVue = new Map<number, number>();
     for (const [i, bodyLineIndex] of bodyLineIndices.entries()) {
@@ -305,9 +305,9 @@ function rewriteImport(
   const nameList = names.split(',').map(n => n.trim()).filter(Boolean);
   const parsedNames = nameList.map(n => parseImportName(n));
 
-  const needsModuleRewrite = Object.hasOwn(ctx.moduleRewrites, sourceModule);
-  const needsSymbolSplit = parsedNames.some(n => Object.hasOwn(ctx.symbolRedirects, n.original));
-  if (!needsModuleRewrite && !needsSymbolSplit) {
+  const isNeedsModuleRewrite = Object.hasOwn(ctx.moduleRewrites, sourceModule);
+  const isNeedsSymbolSplit = parsedNames.some(n => Object.hasOwn(ctx.symbolRedirects, n.original));
+  if (!isNeedsModuleRewrite && !isNeedsSymbolSplit) {
     return [line];
   }
 

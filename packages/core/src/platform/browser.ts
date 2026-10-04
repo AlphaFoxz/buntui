@@ -13,6 +13,6 @@ export function getDefaultLogDir(): string {
   return '.';
 }
 
-export function createFileLogSink(_logFileDir: string, _logName: string, _clearLog: boolean): LogSink {
+export function createFileLogSink(_logFileDir: string, _logName: string, _shouldClearLog: boolean): LogSink {
   return new ConsoleLogSink();
 }

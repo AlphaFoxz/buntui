@@ -73,11 +73,7 @@ const CURSOR_MODE_MAP: Record<CursorModeName, CursorMode> = {
 };
 
 export function resolveCursorMode(value: CursorModeName | CursorMode): CursorMode {
-  if (typeof value === 'string') {
-    return CURSOR_MODE_MAP[value] ?? 1;
-  }
-
-  return value;
+  return typeof value === 'string' ? CURSOR_MODE_MAP[value] ?? 1 : value;
 }
 
 export const LineDirection = {
