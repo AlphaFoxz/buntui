@@ -3,7 +3,7 @@ import {EVENT_BUS} from '../index';
 import {type TuiBackend, type TuiBackendEventHandler} from '../../app/TuiBackend';
 import {TuiEventType} from '../types';
 import type {LogLevel} from '../../extern/app/types';
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import type {TuiContextLike} from '../../extern/app/TuiContext';
 
 class MockBackend implements TuiBackend {
@@ -34,9 +34,9 @@ class MockBackend implements TuiBackend {
 
 describe('EventBus', () => {
   const mockBackend = new MockBackend();
-  const handlers: Array<{type: number; fn: (data: any) => void}> = [];
+  const handlers: Array<{type: TuiEventType; fn: (data: any) => void}> = [];
 
-  function registerHandler(type: number, fn: (data: any) => void) {
+  function registerHandler(type: TuiEventType, fn: (data: any) => void) {
     handlers.push({type, fn});
     EVENT_BUS.on(type, fn);
   }

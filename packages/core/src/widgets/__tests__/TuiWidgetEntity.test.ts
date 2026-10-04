@@ -1,6 +1,6 @@
 import {it, expect, describe} from 'bun:test';
 import {TuiWidgetEntity} from '../TuiWidgetEntity';
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 
 class TestWidget extends TuiWidgetEntity {
   emitCommandsCalled = false;

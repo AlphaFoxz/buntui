@@ -5,7 +5,7 @@ import {TuiEventType, type KeyboardEvent, type TuiEvent} from '../../events/type
 import type {TuiBackend, TuiBackendEventHandler} from '../TuiBackend';
 import type {Focusable} from '../../widgets/Focusable';
 import {TuiWidgetEntity} from '../../widgets/TuiWidgetEntity';
-import type {DrawListBuffer as DLB} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer as DLB} from '../../draw-list/DrawListBuffer';
 import {ScrollBoxWidget} from '../../widgets/scroll-box/ScrollBoxWidget';
 
 class MockBackend implements TuiBackend {

@@ -5,7 +5,7 @@ import {TuiScene} from '../../extern/app/TuiScene';
 import {createApp, type TuiSFCModule} from '../index';
 import type {TuiBackend, TuiBackendEventHandler} from '../TuiBackend';
 import type {LogLevel} from '../../extern/app/types';
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import type {TuiContextLike} from '../../extern/app/TuiContext';
 
 class MockBackend implements TuiBackend {

@@ -2,7 +2,7 @@ import {it, expect, describe} from 'bun:test';
 import {createApp, type TuiSFCModule} from '../index';
 import {type TuiBackend, type TuiBackendEventHandler} from '../TuiBackend';
 import type {LogLevel} from '../../extern/app/types';
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import type {TuiContextLike} from '../../extern/app/TuiContext';
 
 const noopModule: TuiSFCModule = {setup() {}};

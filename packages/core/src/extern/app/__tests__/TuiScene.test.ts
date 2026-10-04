@@ -1,6 +1,6 @@
 import {it, expect, describe} from 'bun:test';
 import {TuiScene} from '../TuiScene';
-import type {DrawListBuffer} from '../../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../../draw-list/DrawListBuffer';
 import type {MouseEvent} from '../../../events/types';
 import {TuiWidgetEntity} from '../../../widgets/TuiWidgetEntity';
 

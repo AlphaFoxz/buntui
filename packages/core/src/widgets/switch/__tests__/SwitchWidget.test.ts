@@ -1,7 +1,7 @@
 import {it, expect, describe} from 'bun:test';
 import {SwitchWidget} from '../SwitchWidget';
 import type {KeyboardEvent} from '../../../events/types';
-import type {DrawListBuffer} from '../../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../../draw-list/DrawListBuffer';
 import {parseColor} from '../../../utils/color';
 
 function key(options: Partial<KeyboardEvent> & {key: string}): KeyboardEvent {

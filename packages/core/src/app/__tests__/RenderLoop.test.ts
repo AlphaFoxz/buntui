@@ -2,7 +2,7 @@ import {it, expect, describe, afterEach} from 'bun:test';
 import {RenderLoop} from '../RenderLoop';
 import type {TuiBackend} from '../TuiBackend';
 import type {TuiScene} from '../../extern/app/TuiScene';
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import type {TuiContextLike} from '../../extern/app/TuiContext';
 import TUI_CONTEXT_INSTANCE from '../../extern/app/TuiContext';
 

@@ -1,7 +1,7 @@
 import {it, expect, describe} from 'bun:test';
 import {InteractiveWidget} from '../InteractiveWidget';
 import type {KeyboardEvent} from '../../events/types';
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 
 class TestInteractive extends InteractiveWidget {
   handleActiveKeyCalls: KeyboardEvent[] = [];

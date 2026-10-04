@@ -1,6 +1,6 @@
 import {it, expect, describe} from 'bun:test';
 import {resolvePosition, type PositionStrategy} from '../PositionStrategy';
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {TuiWidgetEntity} from '../../widgets/TuiWidgetEntity';
 
 const TERM_COLS = 80;

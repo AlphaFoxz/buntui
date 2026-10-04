@@ -6,7 +6,7 @@ import {TuiEventType, MouseEvent, type WheelEvent, type TuiEvent} from '../../ev
 import type {TuiBackend, TuiBackendEventHandler} from '../TuiBackend';
 import type {Focusable} from '../../widgets/Focusable';
 import {TuiWidgetEntity} from '../../widgets/TuiWidgetEntity';
-import type {DrawListBuffer as DLB} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer as DLB} from '../../draw-list/DrawListBuffer';
 
 class MockBackend implements TuiBackend {
   #handler: TuiBackendEventHandler | undefined;

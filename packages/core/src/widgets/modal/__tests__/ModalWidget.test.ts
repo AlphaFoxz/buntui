@@ -1,7 +1,7 @@
 import {it, expect, describe} from 'bun:test';
 import {OverlayManager} from '../../../overlay/OverlayManager';
 import {createModalWidget, ModalWidget} from '../ModalWidget';
-import type {DrawListBuffer} from '../../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../../draw-list/DrawListBuffer';
 import {TuiWidgetEntity} from '../../TuiWidgetEntity';
 
 class StubChild extends TuiWidgetEntity {

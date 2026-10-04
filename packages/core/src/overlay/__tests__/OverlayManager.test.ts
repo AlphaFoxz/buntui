@@ -1,7 +1,7 @@
 import {it, expect, describe, beforeEach} from 'bun:test';
 import {OverlayManager} from '../OverlayManager';
 import type {OverlayHandle} from '../types';
-import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
+import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {TuiWidgetEntity} from '../../widgets/TuiWidgetEntity';
 
 class StubWidget extends TuiWidgetEntity {
