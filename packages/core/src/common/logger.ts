@@ -5,7 +5,7 @@ import {createFileLogSink} from '../platform';
 export type LoggerOptions = {
   logFileDir: string;
   logLevel: LogLevel;
-  clearLog: boolean;
+  shouldClearLog: boolean;
   frontendLogName: string;
   backendLogName: string;
 };
@@ -98,7 +98,7 @@ class LoggerImpl {
 
   init(options: LoggerOptions) {
     this.#logLevel = logLevelToNumber(options.logLevel);
-    this.#sink = createFileLogSink(options.logFileDir, options.frontendLogName, options.clearLog);
+    this.#sink = createFileLogSink(options.logFileDir, options.frontendLogName, options.shouldClearLog);
 
     this.#running = true;
     const consume = () => {

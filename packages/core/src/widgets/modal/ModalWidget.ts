@@ -26,8 +26,8 @@ export class ModalWidget extends TuiWidgetEntity {
   readonly #contentWidth: number;
   readonly #contentHeight: number;
   readonly #backdropRgba: number;
-  readonly #closeOnBackdrop: boolean;
-  readonly #closeOnEscape: boolean;
+  readonly #shouldCloseOnBackdrop: boolean;
+  readonly #shouldCloseOnEscape: boolean;
   #handle: OverlayHandle | undefined;
   #host: ModalHost | undefined;
   #open = false;
@@ -38,8 +38,8 @@ export class ModalWidget extends TuiWidgetEntity {
     this.#contentHeight = options.height ?? 10;
     this.#backdropRgba = options.backdropRgba
       ?? (options.backdropColor === undefined ? DEFAULT_BACKDROP_RGBA : parseColor(options.backdropColor));
-    this.#closeOnBackdrop = options.closeOnBackdrop ?? true;
-    this.#closeOnEscape = options.closeOnEscape ?? true;
+    this.#shouldCloseOnBackdrop = options.shouldCloseOnBackdrop ?? true;
+    this.#shouldCloseOnEscape = options.shouldCloseOnEscape ?? true;
   }
 
   override mounted(): void {
@@ -77,7 +77,7 @@ export class ModalWidget extends TuiWidgetEntity {
     this.#host = host;
     host.mount(this);
     this.#handle = host.getOverlayManager().open(this, {
-      trapFocus: true,
+      shouldTrapFocus: true,
     });
     this.#open = true;
   }
@@ -142,7 +142,7 @@ export class ModalWidget extends TuiWidgetEntity {
 
   #registerEventHandlers(): void {
     this.on('click', data => {
-      if (!this.#closeOnBackdrop) {
+      if (!this.#shouldCloseOnBackdrop) {
         return;
       }
 
@@ -152,7 +152,7 @@ export class ModalWidget extends TuiWidgetEntity {
     });
 
     this.on('key', event => {
-      if (!this.#closeOnEscape) {
+      if (!this.#shouldCloseOnEscape) {
         return;
       }
 

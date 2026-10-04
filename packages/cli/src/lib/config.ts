@@ -7,9 +7,9 @@ export type {LogLevel} from '@buntui/core';
 export type BuntuiConfig = {
   app?: {
     logLevel?: LogLevel;
-    clearLog?: boolean;
-    debugMode?: boolean;
-    quitOnQ?: boolean;
+    shouldClearLog?: boolean;
+    isDebugMode?: boolean;
+    shouldQuitOnQ?: boolean;
     tickRate?: number;
     renderRate?: number;
   };

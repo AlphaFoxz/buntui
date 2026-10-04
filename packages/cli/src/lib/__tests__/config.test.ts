@@ -15,8 +15,8 @@ describe('defineConfig', () => {
   });
 
   it('returns config with partial app options', () => {
-    const config = defineConfig({app: {debugMode: true}});
-    expect(config.app?.debugMode).toBe(true);
+    const config = defineConfig({app: {isDebugMode: true}});
+    expect(config.app?.isDebugMode).toBe(true);
     expect(config.app?.tickRate).toBeUndefined();
   });
 });

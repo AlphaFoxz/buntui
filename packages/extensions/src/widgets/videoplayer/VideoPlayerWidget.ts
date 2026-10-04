@@ -16,9 +16,9 @@ export class VideoPlayerWidget extends InteractiveWidget {
 
   readonly #src?: string;
   readonly #colorScheme: VideoPlayerColorScheme;
-  readonly #loop: boolean;
+  readonly #shouldLoop: boolean;
   readonly #threshold: number;
-  readonly #invert: boolean;
+  readonly #isInverted: boolean;
   readonly #targetFps: number;
   #audioSrc: string | undefined;
   #audioTempFile: string | undefined;
@@ -56,9 +56,9 @@ export class VideoPlayerWidget extends InteractiveWidget {
     };
 
     this.#src = resolved.src;
-    this.#loop = resolved.loop ?? false;
+    this.#shouldLoop = resolved.shouldLoop ?? false;
     this.#threshold = resolved.threshold ?? 128;
-    this.#invert = resolved.invert ?? false;
+    this.#isInverted = resolved.isInverted ?? false;
     this.#targetFps = resolved.fps ?? 30;
 
     if (resolved.audioSrc) {
@@ -178,7 +178,7 @@ export class VideoPlayerWidget extends InteractiveWidget {
     this.#accumulator -= this.#frameInterval;
     this.#currentFrame++;
     if (this.#currentFrame >= this.#frameCount) {
-      if (this.#loop) {
+      if (this.#shouldLoop) {
         this.#currentFrame = 0;
         this.#startAudio(0);
       } else {
@@ -410,7 +410,7 @@ export class VideoPlayerWidget extends InteractiveWidget {
         let offset = 0;
         while (offset + rawFrameSize <= merged.length) {
           const rawFrame = merged.slice(offset, offset + rawFrameSize);
-          chunks.push(encodeBrailleFrame(rawFrame, cols, rows, this.#threshold, this.#invert));
+          chunks.push(encodeBrailleFrame(rawFrame, cols, rows, this.#threshold, this.#isInverted));
           frameCount++;
           offset += rawFrameSize;
 

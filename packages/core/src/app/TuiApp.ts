@@ -20,8 +20,8 @@ export type TuiSFCModule = {
 };
 
 export class TuiApp implements Disposable {
-  readonly #debugMode: boolean;
-  readonly #quitOnQ: boolean;
+  readonly #isDebugMode: boolean;
+  readonly #shouldQuitOnQ: boolean;
   readonly #backend: TuiBackend;
   #scenes: TuiScene[] = [];
   #currentScene: TuiScene | undefined = undefined;
@@ -36,14 +36,14 @@ export class TuiApp implements Disposable {
     const logFileDir = options?.logFilePath ?? getDefaultLogDir();
     const backendLogName = options?.backendLogName ?? 'buntui-backend.log';
     const frontendLogName = options?.frontendLogName ?? 'buntui-frontend.log';
-    const isClearLog = options?.clearLog ?? false;
-    this.#backend.setupLogger(logFileDir, backendLogName, logLevel, isClearLog);
-    this.#debugMode = options?.debugMode ?? (logLevel === 'debug');
-    this.#quitOnQ = options?.quitOnQ ?? false;
+    const shouldClearLog = options?.shouldClearLog ?? false;
+    this.#backend.setupLogger(logFileDir, backendLogName, logLevel, shouldClearLog);
+    this.#isDebugMode = options?.isDebugMode ?? (logLevel === 'debug');
+    this.#shouldQuitOnQ = options?.shouldQuitOnQ ?? false;
     LOGGER.init({
       logFileDir,
       logLevel,
-      clearLog: isClearLog,
+      shouldClearLog,
       frontendLogName,
       backendLogName,
     });
@@ -62,7 +62,7 @@ export class TuiApp implements Disposable {
   start() {
     interceptConsole();
 
-    if (this.#debugMode) {
+    if (this.#isDebugMode) {
       EVENT_BUS.on(TuiEventType.KeyboardEvent, data => {
         LOGGER.logDebug(`keyboard event: ${JSON.stringify(data)}`);
       });
@@ -77,7 +77,7 @@ export class TuiApp implements Disposable {
     this.#focusManager.start();
 
     EVENT_BUS.on(TuiEventType.KeyboardEvent, data => {
-      if (this.#quitOnQ && (data.key === 'q' || data.key === 'Q')) {
+      if (this.#shouldQuitOnQ && (data.key === 'q' || data.key === 'Q')) {
         setTimeout(() => {
           this.stop();
         }, 0);

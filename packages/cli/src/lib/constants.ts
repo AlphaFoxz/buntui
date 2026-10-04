@@ -4,8 +4,8 @@ export const APPS_DIR = 'src/apps';
 
 export const DEFAULT_APP_OPTIONS = {
   logLevel: 'debug' as const,
-  clearLog: true,
-  debugMode: true,
+  shouldClearLog: true,
+  isDebugMode: true,
   tickRate: 30,
   renderRate: 24,
 };

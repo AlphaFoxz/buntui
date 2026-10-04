@@ -190,7 +190,7 @@ describe('ModalWidget', () => {
     });
   });
 
-  describe('closeOnBackdrop', () => {
+  describe('shouldCloseOnBackdrop', () => {
     it('closes on backdrop click by default', () => {
       const modal = createModalWidget({width: 20, height: 5});
       const host = createStubHost();
@@ -213,8 +213,8 @@ describe('ModalWidget', () => {
       modal.close();
     });
 
-    it('does not close on backdrop click when closeOnBackdrop is false', () => {
-      const modal = createModalWidget({width: 20, height: 5, closeOnBackdrop: false});
+    it('does not close on backdrop click when shouldCloseOnBackdrop is false', () => {
+      const modal = createModalWidget({width: 20, height: 5, shouldCloseOnBackdrop: false});
       const host = createStubHost();
       modal.open(host);
       let closed = false;
@@ -225,7 +225,7 @@ describe('ModalWidget', () => {
     });
   });
 
-  describe('closeOnEscape', () => {
+  describe('shouldCloseOnEscape', () => {
     it('closes on Escape by default', () => {
       const modal = createModalWidget();
       const host = createStubHost();
@@ -247,8 +247,8 @@ describe('ModalWidget', () => {
       modal.close();
     });
 
-    it('does not close on Escape when closeOnEscape is false', () => {
-      const modal = createModalWidget({closeOnEscape: false});
+    it('does not close on Escape when shouldCloseOnEscape is false', () => {
+      const modal = createModalWidget({shouldCloseOnEscape: false});
       const host = createStubHost();
       modal.open(host);
       let closed = false;

@@ -16,7 +16,7 @@ export type TuiContextLike = {
   rows: number;
   cols: number;
   resizeBehavior: TuiResizeBehavior;
-  debugMode: boolean;
+  isDebugMode: boolean;
 };
 
 const OFFSET_COUNTER = createOffsetCalculator();
@@ -27,7 +27,7 @@ const OFFSETS = Object.freeze({
   rows: OFFSET_COUNTER.mark('u16'),
   cols: OFFSET_COUNTER.mark('u16'),
   resizeBehavior: OFFSET_COUNTER.mark('u8'),
-  debugMode: OFFSET_COUNTER.mark('u8'),
+  isDebugMode: OFFSET_COUNTER.mark('u8'),
 });
 export class TuiContext implements TuiContextLike, CStruct {
   readonly #buffer: ArrayBuffer;
@@ -43,7 +43,7 @@ export class TuiContext implements TuiContextLike, CStruct {
     dataView.setUint16(OFFSETS.rows, 0, true);
     dataView.setUint16(OFFSETS.cols, 0, true);
     dataView.setUint8(OFFSETS.resizeBehavior, TuiResizeBehavior.Auto);
-    dataView.setBool(OFFSETS.debugMode, false);
+    dataView.setBool(OFFSETS.isDebugMode, false);
   }
 
   get ptr(): Pointer {
@@ -94,12 +94,12 @@ export class TuiContext implements TuiContextLike, CStruct {
     this.#dataView.setUint8(OFFSETS.resizeBehavior, value);
   }
 
-  get debugMode() {
-    return this.#dataView.getBool(OFFSETS.debugMode);
+  get isDebugMode() {
+    return this.#dataView.getBool(OFFSETS.isDebugMode);
   }
 
-  set debugMode(value: BOOL) {
-    this.#dataView.setBool(OFFSETS.debugMode, value);
+  set isDebugMode(value: BOOL) {
+    this.#dataView.setBool(OFFSETS.isDebugMode, value);
   }
 }
 

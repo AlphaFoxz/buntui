@@ -17,8 +17,8 @@ export type VideoPlayerWidgetOptions = {
   audioSrc?: string;
   data?: Uint8Array;
   colorScheme?: Partial<VideoPlayerColorScheme>;
-  loop?: boolean;
+  shouldLoop?: boolean;
   threshold?: number;
-  invert?: boolean;
+  isInverted?: boolean;
   fps?: number;
 };

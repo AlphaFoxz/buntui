@@ -3,9 +3,9 @@ import {defineConfig} from '@buntui/cli';
 const config = defineConfig({
   app: {
     logLevel: 'debug',
-    clearLog: true,
-    debugMode: true,
-    quitOnQ: true,
+    shouldClearLog: true,
+    isDebugMode: true,
+    shouldQuitOnQ: true,
     tickRate: 30,
     renderRate: 24,
   },

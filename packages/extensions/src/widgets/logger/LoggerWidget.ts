@@ -14,7 +14,7 @@ export type LoggerWidgetOptions = {
   panelWidth?: number;
   panelHeight?: number;
   maxLines?: number;
-  timestamp?: boolean;
+  shouldShowTimestamp?: boolean;
   colorFg?: TuiColor;
   colorBg?: TuiColor;
   label?: string;
@@ -26,7 +26,7 @@ export class LoggerWidget extends TuiWidgetEntity {
   readonly #panel: ScrollBoxWidget;
   readonly #messages: string[] = [];
   readonly #maxLines: number;
-  readonly #showTimestamp: boolean;
+  readonly #shouldShowTimestamp: boolean;
   readonly #colorFg: number;
   readonly #panelWidth: number;
   readonly #panelHeight: number;
@@ -37,7 +37,7 @@ export class LoggerWidget extends TuiWidgetEntity {
     super();
     const theme = getTheme();
     this.#maxLines = options.maxLines ?? 200;
-    this.#showTimestamp = options.timestamp ?? true;
+    this.#shouldShowTimestamp = options.shouldShowTimestamp ?? true;
     this.#colorFg = parseColor(options.colorFg ?? theme.colors.text);
     this.#panelWidth = options.panelWidth ?? 40;
     this.#panelHeight = options.panelHeight ?? 15;
@@ -94,7 +94,7 @@ export class LoggerWidget extends TuiWidgetEntity {
   // -- Public API --
 
   log(message: string): void {
-    const line = this.#showTimestamp ? `[${this.#timestamp()}] ${message}` : message;
+    const line = this.#shouldShowTimestamp ? `[${this.#timestamp()}] ${message}` : message;
     this.#messages.push(line);
     if (this.#messages.length > this.#maxLines) {
       this.#messages.shift();

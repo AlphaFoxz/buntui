@@ -9,7 +9,7 @@ import type {DrawListBuffer} from '../../draw_list/DrawListBuffer';
 import type {TuiContextLike} from '../../extern/app/TuiContext';
 
 class MockBackend implements TuiBackend {
-  setupLogger(_logFileDir: string, _logName: string, _logLevel: LogLevel, _clearLog: boolean): void {}
+  setupLogger(_logFileDir: string, _logName: string, _logLevel: LogLevel, _shouldClearLog: boolean): void {}
   startApp(): void {}
   stopApp(): void {}
   detectTermSize(_context: TuiContextLike): void {}

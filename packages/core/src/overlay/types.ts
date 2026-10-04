@@ -3,8 +3,8 @@ import type {PositionStrategy} from './PositionStrategy';
 
 export type OverlayOptions = {
   positionStrategy?: PositionStrategy;
-  trapFocus?: boolean;
-  backdrop?: boolean;
+  shouldTrapFocus?: boolean;
+  shouldShowBackdrop?: boolean;
   backdropRgba?: number;
 };
 

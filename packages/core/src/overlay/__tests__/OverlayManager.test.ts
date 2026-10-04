@@ -212,7 +212,7 @@ describe('OverlayManager', () => {
 
     it('returns entries for backdrop overlays', () => {
       const widget = new StubWidget();
-      manager.open(widget, {backdrop: true});
+      manager.open(widget, {shouldShowBackdrop: true});
       const result = drawBackdrops(manager);
       expect(result).toHaveLength(1);
       expect(result[0]!.bgRgba).toBe(0x00_00_00_AA);
@@ -220,7 +220,7 @@ describe('OverlayManager', () => {
 
     it('uses custom backdropRgba per overlay', () => {
       const widget = new StubWidget();
-      manager.open(widget, {backdrop: true, backdropRgba: 0xFF_00_00_88});
+      manager.open(widget, {shouldShowBackdrop: true, backdropRgba: 0xFF_00_00_88});
       const result = drawBackdrops(manager);
       expect(result[0]!.bgRgba).toBe(0xFF_00_00_88);
     });
@@ -228,14 +228,14 @@ describe('OverlayManager', () => {
     it('uses default backdropRgba from constructor', () => {
       const customManager = new OverlayManager({backdropRgba: 0xFF_FF_FF_44});
       const widget = new StubWidget();
-      customManager.open(widget, {backdrop: true});
+      customManager.open(widget, {shouldShowBackdrop: true});
       const result = drawBackdrops(customManager);
       expect(result[0]!.bgRgba).toBe(0xFF_FF_FF_44);
     });
 
     it('does not return backdrop after close', () => {
       const widget = new StubWidget();
-      const handle = manager.open(widget, {backdrop: true});
+      const handle = manager.open(widget, {shouldShowBackdrop: true});
       handle.close();
       expect(drawBackdrops(manager)).toHaveLength(0);
     });
@@ -243,8 +243,8 @@ describe('OverlayManager', () => {
     it('backdrop zIndex matches overlay zIndex', () => {
       const w1 = new StubWidget();
       const w2 = new StubWidget();
-      manager.open(w1, {backdrop: true});
-      manager.open(w2, {backdrop: true});
+      manager.open(w1, {shouldShowBackdrop: true});
+      manager.open(w2, {shouldShowBackdrop: true});
       const result = drawBackdrops(manager);
       expect(result[0]!.zIndex).toBe(100);
       expect(result[1]!.zIndex).toBe(101);

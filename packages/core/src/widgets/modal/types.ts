@@ -5,6 +5,6 @@ export type ModalWidgetOptions = {
   height?: number;
   backdropRgba?: number;
   backdropColor?: TuiColor;
-  closeOnBackdrop?: boolean;
-  closeOnEscape?: boolean;
+  shouldCloseOnBackdrop?: boolean;
+  shouldCloseOnEscape?: boolean;
 };

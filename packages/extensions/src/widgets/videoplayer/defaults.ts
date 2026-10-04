@@ -13,8 +13,8 @@ export const DEFAULT_VIDEOPLAYER_OPTIONS: VideoPlayerWidgetOptions = {
   width: '100%',
   height: '100%',
   colorScheme: DEFAULT_VIDEOPLAYER_COLOR_SCHEME,
-  loop: false,
+  shouldLoop: false,
   threshold: 128,
-  invert: false,
+  isInverted: false,
   fps: 30,
 };

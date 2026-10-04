@@ -56,7 +56,7 @@ export class OverlayManager {
       this.#applyPosition(widget, entry.options.positionStrategy);
     }
 
-    if ((entry.options.trapFocus ?? false) && this.#focusManager) {
+    if ((entry.options.shouldTrapFocus ?? false) && this.#focusManager) {
       entry.savedFocus = this.#focusManager.focusedWidget;
       this.#focusManager.pushFocusScope(widget);
     }
@@ -85,7 +85,8 @@ export class OverlayManager {
   getBackdropEntries(): Array<{zIndex: number; draw: (buf: DrawListBuffer) => void}> {
     const result: Array<{zIndex: number; draw: (buf: DrawListBuffer) => void}> = [];
     for (const entry of this.#stack) {
-      if (!((entry.options.backdrop ?? false) && entry.widget.visible)) {
+      const isShowingBackdrop = entry.options.shouldShowBackdrop === true;
+      if (!(isShowingBackdrop && entry.widget.visible)) {
         continue;
       }
 
@@ -116,7 +117,7 @@ export class OverlayManager {
     entry.widget.setPortal(entry.previousPortal);
     entry.widget.setZIndex(entry.previousZIndex);
 
-    if ((entry.options.trapFocus ?? false) && this.#focusManager) {
+    if ((entry.options.shouldTrapFocus ?? false) && this.#focusManager) {
       this.#focusManager.popFocusScope();
       if ((entry.savedFocus?.acceptsFocus ?? false) && entry.savedFocus) {
         this.#focusManager.focusWidget(entry.savedFocus);

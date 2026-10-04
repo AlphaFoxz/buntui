@@ -8,8 +8,8 @@ it('APPS_DIR is src/apps', () => {
 it('DEFAULT_APP_OPTIONS has expected defaults', () => {
   expect(DEFAULT_APP_OPTIONS).toEqual({
     logLevel: 'debug',
-    clearLog: true,
-    debugMode: true,
+    shouldClearLog: true,
+    isDebugMode: true,
     tickRate: 30,
     renderRate: 24,
   });

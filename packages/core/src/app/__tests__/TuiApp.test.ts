@@ -11,7 +11,7 @@ class MockBackend implements TuiBackend {
   readonly calls: string[] = [];
   #handler: TuiBackendEventHandler | undefined;
 
-  setupLogger(_logFileDir: string, _logName: string, _logLevel: LogLevel, _clearLog: boolean): void {
+  setupLogger(_logFileDir: string, _logName: string, _logLevel: LogLevel, _shouldClearLog: boolean): void {
     this.calls.push('setupLogger');
   }
 

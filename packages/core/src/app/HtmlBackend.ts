@@ -211,7 +211,7 @@ export class HtmlBackend implements TuiBackend {
       context.rows,
       context.cols,
       context.resizeBehavior,
-      context.debugMode ? 1 : 0,
+      context.isDebugMode ? 1 : 0,
     );
   }
 

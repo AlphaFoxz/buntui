@@ -10,7 +10,7 @@ describe('TuiContext', () => {
     expect(ctx.rows).toBe(0);
     expect(ctx.cols).toBe(0);
     expect(ctx.resizeBehavior).toBe(TuiResizeBehavior.Auto);
-    expect(ctx.debugMode).toBe(false);
+    expect(ctx.isDebugMode).toBe(false);
   });
 
   it('has a valid pointer', () => {
@@ -49,12 +49,12 @@ describe('TuiContext', () => {
     expect(ctx.resizeBehavior).toBe(TuiResizeBehavior.Fixed);
   });
 
-  it('sets and gets debugMode', () => {
+  it('sets and gets isDebugMode', () => {
     const ctx = new TuiContext();
-    ctx.debugMode = true;
-    expect(ctx.debugMode).toBe(true);
-    ctx.debugMode = false;
-    expect(ctx.debugMode).toBe(false);
+    ctx.isDebugMode = true;
+    expect(ctx.isDebugMode).toBe(true);
+    ctx.isDebugMode = false;
+    expect(ctx.isDebugMode).toBe(false);
   });
 
   it('each instance has independent state', () => {

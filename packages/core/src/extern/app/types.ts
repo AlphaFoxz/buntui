@@ -13,9 +13,9 @@ export type TuiAppOptions = {
   logFilePath: string;
   frontendLogName: string;
   backendLogName: string;
-  clearLog: boolean;
-  debugMode: boolean;
-  quitOnQ?: boolean;
+  shouldClearLog: boolean;
+  isDebugMode: boolean;
+  shouldQuitOnQ?: boolean;
   tickRate?: number;
   renderRate?: number;
   scheduler?: Scheduler;

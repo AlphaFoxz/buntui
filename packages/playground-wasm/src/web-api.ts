@@ -12,7 +12,7 @@ type TuiApp = ReturnType<typeof createApp>;
 export type WebAppOptions = {
   wasmUrl: string;
   logLevel?: 'debug' | 'info' | 'warn' | 'error';
-  debugMode?: boolean;
+  isDebugMode?: boolean;
   tickRate?: number;
   renderRate?: number;
 };
@@ -39,7 +39,7 @@ export async function createWebApp(
   ref.app = createApp({
     backend,
     logLevel: options.logLevel ?? 'info',
-    debugMode: options.debugMode,
+    isDebugMode: options.isDebugMode,
     tickRate: options.tickRate ?? 30,
     renderRate: options.renderRate ?? 24,
     scheduler: animationFrameScheduler,
