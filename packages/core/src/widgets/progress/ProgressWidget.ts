@@ -125,7 +125,7 @@ export class ProgressWidget extends InteractiveWidget {
   }
 
   override handleActiveKey(_event: KeyboardEvent): void {
-    void _event;
+    // No-op
   }
 
   updateThemeColors(resolved: Record<string, unknown>): void {

@@ -20,9 +20,9 @@
     "dependencies": {
         "@buntui/cli": "workspace:*",
         "@buntui/core": "workspace:*",
-        "@vue/reactivity": "^3.5.38"
+        "@vue/reactivity": "^3.5.43"
     },
     "devDependencies": {
-        "@types/bun": "1.3.14"
+        "@types/bun": "1.4.2"
     }
 }

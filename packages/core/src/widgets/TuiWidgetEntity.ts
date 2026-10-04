@@ -263,7 +263,6 @@ export abstract class TuiWidgetEntity implements Mountable {
 
   updateRect(_rect: Partial<TuiWidgetRect>): void {
     // Default no-op — subclasses override with actual implementation
-    void _rect;
   }
 
   containsPoint(x: number, y: number): boolean {
@@ -279,7 +278,6 @@ export abstract class TuiWidgetEntity implements Mountable {
   already stored in screen coordinates.
   */
   contentOffsetForChild(_child: TuiWidgetEntity): {dx: number; dy: number} {
-    void _child;
     return {dx: 0, dy: 0};
   }
 
@@ -395,7 +393,7 @@ export abstract class TuiWidgetEntity implements Mountable {
   }
 
   update(_dt: number): void {
-    void _dt;
+    // No-op
   }
 
   initTokenMap(map: Record<string, string>): void {

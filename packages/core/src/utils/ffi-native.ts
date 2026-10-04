@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import process from 'node:process';
-import {CString, suffix, type Pointer as BunPointer} from 'bun:ffi';
+import {CString, suffix} from 'bun:ffi';
 import {getBinaryPath as getNativeBinaryPath} from '@buntui/native';
 import type {Pointer} from '../platform/pointer';
 
@@ -83,5 +83,5 @@ export function assertPtr(p: Pointer | null): Pointer {
 }
 
 export function cToString(p: Pointer, length: number): string {
-  return new CString(p as BunPointer, 0, length).toString();
+  return new CString(p, 0, length);
 }

@@ -1,11 +1,11 @@
 import path from 'node:path';
 import process from 'node:process';
 import {
-  watch,
   readFileSync,
   readdirSync,
   unlinkSync,
   mkdirSync,
+  watch,
 } from 'node:fs';
 import {compile, type CompileOptions} from './compile';
 import {type RawSourceMap, buildLineLookup} from './source-map';
@@ -325,6 +325,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
       }
 
       // Watch all event types — Windows/VS Code may emit 'rename' instead of 'change'
+      // eslint-disable-next-line n/prefer-promises/fs -- sync FSWatcher: close() must run inside process.on('exit') where await is impossible
       const w = watch(f, () => {
         scheduleReload(f);
       });
@@ -333,6 +334,7 @@ export function createDevServer(options: DevServerOptions): {close: () => void} 
   }
 
   // Watch the entry file (all event types for cross-platform compat)
+  // eslint-disable-next-line n/prefer-promises/fs -- sync FSWatcher: close() must run inside process.on('exit') where await is impossible
   const mainWatcher = watch(file, () => {
     scheduleReload(file);
   });

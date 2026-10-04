@@ -17,7 +17,7 @@
     "dependencies": {
         "@buntui/core": "workspace:*",
         "@buntui/extensions": "workspace:*",
-        "@vue/reactivity": "^3.5.38",
+        "@vue/reactivity": "^3.5.43",
         "@xterm/addon-fit": "^0.11.0",
         "@xterm/xterm": "^6.0.0"
     },
@@ -27,7 +27,7 @@
         "@buntui/native-wasm32-wasi": "workspace:*",
         "@types/node": "^24.12.4",
         "typescript": "npm:typescript-native-bridge@latest",
-        "vite": "~8.1.4",
-        "vue": "~3.5.38"
+        "vite": "~8.1.5",
+        "vue": "~3.5.43"
     }
 }
