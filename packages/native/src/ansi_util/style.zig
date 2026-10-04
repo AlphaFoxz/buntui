@@ -172,8 +172,8 @@ pub const FixedColor = packed struct {
         // 2. 灰度阶梯 (232-255)
         // 范围从 0x08 到 0xEE，步长为 10
         if (fixed >= 232) {
-        const v: u32 = @intCast((fixed - 232) * 10 + 8);
-        return v << 24 | v << 16 | v << 8 | 0xFF;
+            const v: u32 = @intCast((fixed - 232) * 10 + 8);
+            return v << 24 | v << 16 | v << 8 | 0xFF;
         }
 
         // 3. 6x6x6 颜色立方体 (16-231)

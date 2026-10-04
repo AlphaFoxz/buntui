@@ -68,8 +68,8 @@ pub export fn updateTuiContext(
     ctx.y = y;
     ctx.rows = rows;
     ctx.cols = cols;
-    ctx.resize_behavior = @enumFromInt(resize_behavior);
-    ctx.debug_mode = @enumFromInt(debug_mode);
+    ctx.resize_behavior = @fromBackingInt(@intCast(resize_behavior));
+    ctx.debug_mode = @fromBackingInt(@intCast(debug_mode));
 }
 
 pub export fn destroyTuiContext(ctx: *tui_context.TuiContext) void {

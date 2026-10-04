@@ -67,7 +67,7 @@ fn emitPostCommands(writer: *Io.Writer, post: PostState) void {
         ansi.cursor.showCursor(writer) catch {};
     }
     if (post.cursor_mode) |mode_raw| {
-        const mode: ansi.cursor.CursorMode = @enumFromInt(mode_raw);
+        const mode: ansi.cursor.CursorMode = @fromBackingInt(@intCast(mode_raw));
         ansi.cursor.setCursorMode(writer, mode) catch {};
     }
     if (post.title) |title| {

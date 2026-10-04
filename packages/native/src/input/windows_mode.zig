@@ -52,13 +52,13 @@ pub const STD_HANDLE = enum(u32) {
 };
 
 fn writeRawStdout(seq: []const u8) void {
-    const stdout_handle = GetStdHandle(@intFromEnum(STD_HANDLE.OUTPUT_HANDLE)) orelse return;
+    const stdout_handle = GetStdHandle(@backingInt(STD_HANDLE.OUTPUT_HANDLE)) orelse return;
     var written: u32 = 0;
     _ = WriteFile(stdout_handle, seq.ptr, @intCast(seq.len), &written, null);
 }
 
 fn enableOutputVtProcessing() void {
-    const stdout_handle = GetStdHandle(@intFromEnum(STD_HANDLE.OUTPUT_HANDLE)) orelse return;
+    const stdout_handle = GetStdHandle(@backingInt(STD_HANDLE.OUTPUT_HANDLE)) orelse return;
     var out_mode: windows.DWORD = 0;
     if (GetConsoleMode(stdout_handle, &out_mode) == .FALSE) return;
     if (out_mode & WindowsOutputModeValues.ENABLE_VIRTUAL_TERMINAL_PROCESSING != 0) return;
@@ -68,7 +68,7 @@ fn enableOutputVtProcessing() void {
 
 pub fn switchMouseInputMode() void {
     var new_mode: windows.DWORD = 0;
-    const stdin_handle = GetStdHandle(@intFromEnum(STD_HANDLE.INPUT_HANDLE)).?;
+    const stdin_handle = GetStdHandle(@backingInt(STD_HANDLE.INPUT_HANDLE)).?;
 
     new_mode |= WindowsInputModeValues.ENABLE_MOUSE_INPUT;
     new_mode |= WindowsInputModeValues.ENABLE_WINDOW_INPUT;
@@ -86,7 +86,7 @@ pub fn switchMouseInputMode() void {
 }
 
 pub fn switchDefaultInputMode() void {
-    const stdin_handle = GetStdHandle(@intFromEnum(STD_HANDLE.INPUT_HANDLE)).?;
+    const stdin_handle = GetStdHandle(@backingInt(STD_HANDLE.INPUT_HANDLE)).?;
 
     // Disable VT mouse tracking before restoring console mode
     writeRawStdout("\x1b[?1003l\x1b[?1006l");

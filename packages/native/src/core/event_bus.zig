@@ -212,14 +212,14 @@ test "EventBus sequence increments per emit" {
 
 test "EventBus reject oversized payload" {
     var bus = EventBus.init();
-    const big_data = [_]u8{0} ** (SLOT_SIZE - @sizeOf(EventHeader) + 1);
+    const big_data: [(SLOT_SIZE - @sizeOf(EventHeader) + 1)]u8 = @splat(0);
     const result = bus.emit(1, &big_data);
     try std.testing.expectError(error.EventTooLarge, result);
 }
 
 test "EventBus emit at max payload size succeeds" {
     var bus = EventBus.init();
-    const max_data = [_]u8{0xAB} ** (SLOT_SIZE - @sizeOf(EventHeader));
+    const max_data: [(SLOT_SIZE - @sizeOf(EventHeader))]u8 = @splat(0xAB);
     try bus.emit(1, &max_data);
 
     const slot = bus.poll();
@@ -229,10 +229,10 @@ test "EventBus emit at max payload size succeeds" {
 }
 
 test "EventBus EventType enum values match TS TuiEventType" {
-    try std.testing.expectEqual(@as(u16, 1), @intFromEnum(EventType.KeyboardEvent));
-    try std.testing.expectEqual(@as(u16, 2), @intFromEnum(EventType.MouseEvent));
-    try std.testing.expectEqual(@as(u16, 3), @intFromEnum(EventType.WheelEvent));
-    try std.testing.expectEqual(@as(u16, 4), @intFromEnum(EventType.TermResizeEvent));
+    try std.testing.expectEqual(@as(u16, 1), @backingInt(EventType.KeyboardEvent));
+    try std.testing.expectEqual(@as(u16, 2), @backingInt(EventType.MouseEvent));
+    try std.testing.expectEqual(@as(u16, 3), @backingInt(EventType.WheelEvent));
+    try std.testing.expectEqual(@as(u16, 4), @backingInt(EventType.TermResizeEvent));
 }
 
 test "EventSlot header size is 16 bytes" {

@@ -137,7 +137,7 @@ inline fn emitKeyboardEvent(modifiers: u8, char_code: u16, key: []const u8) void
         @memcpy(binary_buf[4 .. 4 + key_len], key[0..key_len]);
     }
     _ = event_bus.event_bus_emit_bytes(
-        @intFromEnum(event_bus.EventType.KeyboardEvent),
+        @backingInt(event_bus.EventType.KeyboardEvent),
         binary_buf[0 .. 4 + key_len],
     );
 }
@@ -154,7 +154,7 @@ inline fn emitMouseEvent(modifiers: u8, has_button: bool, button: u8, has_button
         .y = y,
     };
     _ = event_bus.event_bus_emit_bytes(
-        @intFromEnum(event_bus.EventType.MouseEvent),
+        @backingInt(event_bus.EventType.MouseEvent),
         std.mem.asBytes(&payload),
     );
 }
@@ -171,7 +171,7 @@ inline fn emitWheelEvent(modifiers: u8, has_button: bool, button: u8, has_button
         .wheel_delta_y = wheel_delta_y,
     };
     _ = event_bus.event_bus_emit_bytes(
-        @intFromEnum(event_bus.EventType.WheelEvent),
+        @backingInt(event_bus.EventType.WheelEvent),
         std.mem.asBytes(&payload),
     );
 }
@@ -182,7 +182,7 @@ inline fn emitResizeEvent(rows: u16, cols: u16) void {
         .cols = cols,
     };
     _ = event_bus.event_bus_emit_bytes(
-        @intFromEnum(event_bus.EventType.TermResizeEvent),
+        @backingInt(event_bus.EventType.TermResizeEvent),
         std.mem.asBytes(&payload),
     );
 }
@@ -604,7 +604,7 @@ const Parser = struct {
 
 fn listen() void {
     logger.logInfo("input listener starting...");
-    const stdin_handle = GetStdHandle(@intFromEnum(mode.STD_HANDLE.INPUT_HANDLE)).?;
+    const stdin_handle = GetStdHandle(@backingInt(mode.STD_HANDLE.INPUT_HANDLE)).?;
 
     const KEY_EVENT = 0x0001;
     const TERM_RESIZE_EVENT = 0x0004;

@@ -47,9 +47,9 @@ pub fn updateStyle(writer: anytype, n_style: CellStyle, o_style: ?CellStyle) !vo
 
     // Font styles
     const write_styles = if (reset_required) n_style.font_style else n_style.font_style.without(o_style.?.font_style);
-    inline for (std.meta.fields(FontStyle)) |field| {
-        if (@field(write_styles, field.name)) {
-            const code = font_style_codes.get(field.name).?;
+    inline for (@typeInfo(FontStyle).@"struct".field_names) |field_name| {
+        if (@field(write_styles, field_name)) {
+            const code = font_style_codes.get(field_name).?;
             if (written_something) {
                 try writer.writeAll(";");
             } else {

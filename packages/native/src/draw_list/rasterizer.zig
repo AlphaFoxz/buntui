@@ -237,7 +237,7 @@ fn rasterizeDrawBorder(state: *RasterizerState, cells: []TuiCell, payload: []con
     const w = readI16(payload, 4);
     const h = readI16(payload, 6);
     const color_rgba = Rgba.fromU32(readU32(payload, 8));
-    const border_style: cmd.BorderStyle = @enumFromInt(payload[12]);
+    const border_style: cmd.BorderStyle = @fromBackingInt(@intCast(payload[12]));
     const sides = payload[13];
 
     if (w < 2 or h < 2) return;
@@ -391,7 +391,7 @@ fn rasterizeDrawLine(state: *RasterizerState, cells: []TuiCell, payload: []const
     const length: TuiScale = @intCast(readU16(payload, 4));
     const direction = readU16(payload, 6);
     const color_rgba = Rgba.fromU32(readU32(payload, 8));
-    const line_style: cmd.LineStyle = @enumFromInt(payload[12]);
+    const line_style: cmd.LineStyle = @fromBackingInt(@intCast(payload[12]));
 
     const clip = state.clip_stack.current();
     const line_chars = lineChars(line_style);

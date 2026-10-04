@@ -72,8 +72,8 @@ pub fn switchMouseInputMode() void {
     termios.cflag.CSIZE = .CS8;
 
     // Set minimum read characters and timeout
-    termios.cc[@intFromEnum(std.posix.V.MIN)] = 0; // Non-blocking read
-    termios.cc[@intFromEnum(std.posix.V.TIME)] = 0; // No timeout
+    termios.cc[@backingInt(std.posix.V.MIN)] = 0; // Non-blocking read
+    termios.cc[@backingInt(std.posix.V.TIME)] = 0; // No timeout
 
     // Apply settings (take effect immediately)
     std.posix.tcsetattr(stdin_handle, .NOW, termios) catch |e| {

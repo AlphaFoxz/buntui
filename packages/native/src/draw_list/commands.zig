@@ -48,9 +48,9 @@ pub const DrawCmd = enum(u16) {
 };
 
 pub fn drawCmdFromInt(value: u16) ?DrawCmd {
-    inline for (std.meta.fields(DrawCmd)) |field| {
-        if (field.value == value) {
-            return @enumFromInt(value);
+    inline for (@typeInfo(DrawCmd).@"enum".field_values) |field_value| {
+        if (field_value == value) {
+            return @fromBackingInt(@intCast(value));
         }
     }
     return null;
@@ -213,24 +213,24 @@ test "CmdHeader size is 8 bytes" {
 }
 
 test "DrawCmd enum values match TS types.ts" {
-    try std.testing.expectEqual(@as(u16, 0x0001), @intFromEnum(DrawCmd.SetBackground));
-    try std.testing.expectEqual(@as(u16, 0x0002), @intFromEnum(DrawCmd.SetCursor));
-    try std.testing.expectEqual(@as(u16, 0x0003), @intFromEnum(DrawCmd.PushClip));
-    try std.testing.expectEqual(@as(u16, 0x0004), @intFromEnum(DrawCmd.PopClip));
-    try std.testing.expectEqual(@as(u16, 0x0005), @intFromEnum(DrawCmd.SetEntityId));
-    try std.testing.expectEqual(@as(u16, 0x0010), @intFromEnum(DrawCmd.DrawRect));
-    try std.testing.expectEqual(@as(u16, 0x0011), @intFromEnum(DrawCmd.DrawText));
-    try std.testing.expectEqual(@as(u16, 0x0012), @intFromEnum(DrawCmd.DrawBorder));
-    try std.testing.expectEqual(@as(u16, 0x0013), @intFromEnum(DrawCmd.DrawShadow));
-    try std.testing.expectEqual(@as(u16, 0x0014), @intFromEnum(DrawCmd.DrawFill));
-    try std.testing.expectEqual(@as(u16, 0x0015), @intFromEnum(DrawCmd.DrawChar));
-    try std.testing.expectEqual(@as(u16, 0x0016), @intFromEnum(DrawCmd.DrawLine));
-    try std.testing.expectEqual(@as(u16, 0x0020), @intFromEnum(DrawCmd.SetTitle));
-    try std.testing.expectEqual(@as(u16, 0x0021), @intFromEnum(DrawCmd.ShowCursor));
-    try std.testing.expectEqual(@as(u16, 0x0022), @intFromEnum(DrawCmd.HideCursor));
-    try std.testing.expectEqual(@as(u16, 0x0023), @intFromEnum(DrawCmd.SetCursorMode));
-    try std.testing.expectEqual(@as(u16, 0x0030), @intFromEnum(DrawCmd.BeginSync));
-    try std.testing.expectEqual(@as(u16, 0x0031), @intFromEnum(DrawCmd.EndSync));
+    try std.testing.expectEqual(@as(u16, 0x0001), @backingInt(DrawCmd.SetBackground));
+    try std.testing.expectEqual(@as(u16, 0x0002), @backingInt(DrawCmd.SetCursor));
+    try std.testing.expectEqual(@as(u16, 0x0003), @backingInt(DrawCmd.PushClip));
+    try std.testing.expectEqual(@as(u16, 0x0004), @backingInt(DrawCmd.PopClip));
+    try std.testing.expectEqual(@as(u16, 0x0005), @backingInt(DrawCmd.SetEntityId));
+    try std.testing.expectEqual(@as(u16, 0x0010), @backingInt(DrawCmd.DrawRect));
+    try std.testing.expectEqual(@as(u16, 0x0011), @backingInt(DrawCmd.DrawText));
+    try std.testing.expectEqual(@as(u16, 0x0012), @backingInt(DrawCmd.DrawBorder));
+    try std.testing.expectEqual(@as(u16, 0x0013), @backingInt(DrawCmd.DrawShadow));
+    try std.testing.expectEqual(@as(u16, 0x0014), @backingInt(DrawCmd.DrawFill));
+    try std.testing.expectEqual(@as(u16, 0x0015), @backingInt(DrawCmd.DrawChar));
+    try std.testing.expectEqual(@as(u16, 0x0016), @backingInt(DrawCmd.DrawLine));
+    try std.testing.expectEqual(@as(u16, 0x0020), @backingInt(DrawCmd.SetTitle));
+    try std.testing.expectEqual(@as(u16, 0x0021), @backingInt(DrawCmd.ShowCursor));
+    try std.testing.expectEqual(@as(u16, 0x0022), @backingInt(DrawCmd.HideCursor));
+    try std.testing.expectEqual(@as(u16, 0x0023), @backingInt(DrawCmd.SetCursorMode));
+    try std.testing.expectEqual(@as(u16, 0x0030), @backingInt(DrawCmd.BeginSync));
+    try std.testing.expectEqual(@as(u16, 0x0031), @backingInt(DrawCmd.EndSync));
 }
 
 test "SetBackgroundPayload size" {
