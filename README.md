@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Zig-0.16-f7a41d?logo=zig" alt="Zig 0.16" />
+  <img src="https://img.shields.io/badge/Zig-0.17-f7a41d?logo=zig" alt="Zig 0.17" />
   <img src="https://img.shields.io/badge/Bun-runtime-000?logo=bun" alt="Bun" />
   <img src="https://img.shields.io/badge/Vue-SFC-42b883?logo=vue.js" alt="Vue SFC" />
   <img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License" />

@@ -69,9 +69,32 @@ pub fn event_bus_setup() void {
 
 Guard all functions that access the global state with `if (!initialized)` checks.
 
-## Zig 0.16 Windows API
+## Zig 0.17 API Notes
 
-Zig 0.16 removed many Win32 wrappers from `std.os.windows.kernel32`. Follow these rules:
+Target is Zig 0.17.0 (`minimum_zig_version` in `build.zig.zon`). Each Zig minor release has breaking changes — do not assume 0.16 knowledge carries over. Verified against the 0.17.0 std source.
+
+### Banned / deprecated APIs — do not use in new code
+- `std.fmt.allocPrint` (deprecated) — use `alloc.print(fmt, args)` (`mem.Allocator.print`). Existing usage in `core/logger.zig` is legacy; don't copy it.
+- `std.heap.DebugAllocator` (deprecated) — use `std.heap.SafeAllocator` (not generic; configure via `.init(...)`, needs a backing allocator). Existing usage in `core/glo_alloc.zig` is legacy.
+- `builtin.os.tag` / `builtin.cpu` / `builtin.abi` (deprecated, removed in 0.18) — use `builtin.target.os.tag`, `builtin.target.cpu`, etc.
+- `@intFromEnum` / `@enumFromInt` (deprecated) — use `@backingInt` / `@fromBackingInt`.
+- `@cImport` — removed entirely; C translation now requires an external translate-c package.
+
+### 0.17 syntax removals (compile errors)
+- Array multiplication `a ** b` — removed; use `@splat`.
+- `errdefer |err| capture` — removed; restructure so the outer scope observes errors via `catch |err|`.
+- `void{}` and the `i0` type — removed.
+
+### Silent-breaking change
+- `@bitCast` now operates on the logical bit representation (endian-agnostic) and **disallows casts involving extern structs/unions**. For arrays/vectors this can change behavior **without a compile error** — audit any `@bitCast` on arrays or vectors.
+
+### Misc
+- `@hasDecl` returns `true` only for `pub` declarations.
+- Build system is split into configurer + maker processes; configuration is cached. Don't run commands as side effects in `build.zig`.
+
+## Zig 0.17 Windows API
+
+Zig 0.17 keeps the Win32 bindings minimal: many wrappers were removed from `std.os.windows.kernel32` (this started in 0.16 and has not been restored). Follow these rules:
 
 ### BOOL is an enum
 ```zig
@@ -101,10 +124,10 @@ pub extern "kernel32" fn ReadConsoleInputW(
 Do not rely on `std.os.windows.kernel32` for anything beyond basic types.
 
 ### Platform guards
-Use comptime guards for platform-specific files:
+Use comptime guards for platform-specific files (note: `builtin.target.os.tag`, not the deprecated `builtin.os.tag`):
 ```zig
 comptime {
-    if (builtin.os.tag != .windows) {
+    if (builtin.target.os.tag != .windows) {
         @compileError("Unsupported OS: Not Windows");
     }
 }

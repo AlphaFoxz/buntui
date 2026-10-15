@@ -4,6 +4,8 @@
 
 **Bun only.** Never use `npm`, `npx`, `yarn`, or `pnpm`. Use `bunx` instead of `npx`.
 
+Deeper rules live in `.opencode/rules/*.md` (drawlist-rendering, event-system, ffi-boundary, sfc-extensions, typescript-coding, zig-coding) — loaded automatically by `opencode.json`; consult them for details beyond this summary.
+
 ## Commands
 
 | Task | Command |
@@ -11,7 +13,9 @@
 | Full build (sync versions + topological build) | `bun run build` |
 | Dev server (playground + HMR) | `bun run dev <app-name>` (e.g., `bun run dev demo`) |
 | Dev server (WASM playground) | `bun run wasm [app-name]` (e.g., `bun run wasm main`, default: `main`) |
-| Run all TS tests | `bun run test:ts` |
+| Dev server (create-buntui) | `bun run cli` |
+| Run all tests (zig, then ts) | `bun run test` |
+| Run all TS tests | `bun run test:ts` (with `--coverage --parallel`) |
 | Run all Zig tests | `bun run test:zig` |
 | Run a single TS test | `bun test packages/core/src/widgets/box/__tests__/BoxWidget.test.ts` |
 | Lint (xo, **auto-fix**) | `bun run check` |
@@ -89,7 +93,7 @@ Lock-free SPSC ring buffer. Zig emits binary events, TS polls/commits. Three-ste
 - **`undefined` vs `null`**: `undefined` = technical absence (not yet loaded), `null` = domain-level absence.
 - **Type imports**: `import {type Foo} from 'bar'` or `import type {Foo} from 'bar'`.
 - **Zig naming**: functions `camelCase`, locals `snake_case`, globals `SCREAMING_SNAKE_CASE`, types `PascalCase`. Paired lifecycles: `create/destroy`, `init/deinit`, `start/stop`.
-- **Zig 0.16 Windows**: `std.os.windows.BOOL` is an enum — compare with `.FALSE`/`.TRUE`, not integers. Custom `typedef.Bool` (in `core/typedef.zig`) uses `.False`/`.True` (PascalCase). Declare Win32 functions as `extern "kernel32"` directly.
+- **Zig 0.17 Windows**: `std.os.windows.BOOL` is an enum — compare with `.FALSE`/`.TRUE`, not integers. Custom `typedef.Bool` (in `core/typedef.zig`) uses `.False`/`.True` (PascalCase). Declare Win32 functions as `extern "kernel32"` directly.
 - **Zig error handling**: Never propagate error unions across FFI. Use status codes in exports, `core/error.zig` helpers for fatal errors.
 - **No comments in code** unless explicitly requested.
 - **Widget method naming** (`set*` vs `update*`):
@@ -98,4 +102,5 @@ Lock-free SPSC ring buffer. Zig emits binary events, TS polls/commits. Three-ste
 
 ## CI
 
-`.github/workflows/publish.yml` cross-compiles the Zig native library for 5 targets (win32-x64, linux-x64, darwin-x64, darwin-arm64, wasm32-wasi) using Zig 0.16.0 with `-Drelease=true`, then publishes all packages to npm. Triggered on `v*` tag pushes and manual dispatch. Pre-release tags (alpha/beta/rc) are automatically mapped to matching npm dist-tags.
+- `.github/workflows/publish.yml` cross-compiles the Zig native library for 5 targets (win32-x64, linux-x64, darwin-x64, darwin-arm64, wasm32-wasi) using Zig 0.17.0 with `-Drelease=true`, then publishes all packages to npm. Triggered on `v*` tag pushes and manual dispatch. Pre-release tags (alpha/beta/rc) are automatically mapped to matching npm dist-tags.
+- `.github/workflows/pages.yml` deploys the WASM demo to GitHub Pages.
