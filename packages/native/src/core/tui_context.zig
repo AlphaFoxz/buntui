@@ -36,7 +36,7 @@ pub fn detectTermSize(context: *TuiContext) void {
         return;
     }
 
-    switch (builtin.os.tag) {
+    switch (builtin.target.os.tag) {
         .windows => {
             detectWindowsTermRect(context);
         },

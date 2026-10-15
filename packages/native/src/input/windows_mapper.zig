@@ -2,7 +2,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 
 comptime {
-    if (builtin.os.tag != .windows) {
+    if (builtin.target.os.tag != .windows) {
         @compileError("Unsupported OS: Not Windows");
     }
 }

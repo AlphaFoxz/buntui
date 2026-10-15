@@ -240,7 +240,7 @@ test "TuiCell equality different font_style" {
 }
 
 test "CellType enum values" {
-    try testing.expectEqual(@as(u8, 0), @intFromEnum(CellType.Ascii));
-    try testing.expectEqual(@as(u8, 1), @intFromEnum(CellType.Wide));
-    try testing.expectEqual(@as(u8, 2), @intFromEnum(CellType.Hidden));
+    try testing.expectEqual(@as(u8, 0), @backingInt(CellType.Ascii));
+    try testing.expectEqual(@as(u8, 1), @backingInt(CellType.Wide));
+    try testing.expectEqual(@as(u8, 2), @backingInt(CellType.Hidden));
 }

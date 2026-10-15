@@ -132,7 +132,7 @@ inline fn currentTimestampStr() []const u8 {
     const h = ds.getHoursIntoDay();
     const m = ds.getMinutesIntoHour();
     const s = ds.getSecondsIntoMinute();
-    const out = std.fmt.bufPrint(
+    const out = std.mem.print(
         &buf,
         "[{d:0>4}-{d:0>2}-{d:0>2} {d:0>2}:{d:0>2}:{d:0>2}]",
         .{ year, mon, day, h, m, s },
@@ -167,7 +167,7 @@ pub fn logDebug(msg: []const u8) void {
     }
     const alloc = std.heap.c_allocator;
     const timestamp = currentTimestampStr();
-    const str = std.fmt.allocPrint(alloc, "{s} debug: {s}\n", .{ timestamp, msg }) catch outOfMemory();
+    const str = alloc.print("{s} debug: {s}\n", .{ timestamp, msg }) catch outOfMemory();
     defer alloc.free(str);
     write(str, false);
 }
@@ -181,8 +181,7 @@ pub fn logDebugFmt(comptime fmt: []const u8, args: anytype) void {
     }
     const alloc = std.heap.c_allocator;
     const timestamp = currentTimestampStr();
-    const str = std.fmt.allocPrint(
-        alloc,
+    const str = alloc.print(
         "{s} debug: " ++ fmt ++ "\n",
         .{timestamp} ++ args,
     ) catch outOfMemory();
@@ -199,7 +198,7 @@ pub fn logInfo(msg: []const u8) void {
     }
     const alloc = std.heap.c_allocator;
     const timestamp = currentTimestampStr();
-    const str = std.fmt.allocPrint(alloc, "{s} info: {s}\n", .{ timestamp, msg }) catch outOfMemory();
+    const str = alloc.print("{s} info: {s}\n", .{ timestamp, msg }) catch outOfMemory();
     defer alloc.free(str);
     write(str, false);
 }
@@ -213,8 +212,7 @@ pub fn logInfoFmt(comptime fmt: []const u8, args: anytype) void {
     }
     const alloc = std.heap.c_allocator;
     const timestamp = currentTimestampStr();
-    const str = std.fmt.allocPrint(
-        alloc,
+    const str = alloc.print(
         "{s} info: " ++ fmt ++ "\n",
         .{timestamp} ++ args,
     ) catch outOfMemory();
@@ -231,7 +229,7 @@ pub fn logWarning(msg: []const u8) void {
     }
     const alloc = std.heap.c_allocator;
     const timestamp = currentTimestampStr();
-    const str = std.fmt.allocPrint(alloc, "{s} warning: {s}\n", .{ timestamp, msg }) catch outOfMemory();
+    const str = alloc.print("{s} warning: {s}\n", .{ timestamp, msg }) catch outOfMemory();
     defer alloc.free(str);
     write(str, flush_on_warning);
 }
@@ -245,8 +243,7 @@ pub fn logWarningFmt(comptime fmt: []const u8, args: anytype) void {
     }
     const alloc = std.heap.c_allocator;
     const timestamp = currentTimestampStr();
-    const str = std.fmt.allocPrint(
-        alloc,
+    const str = alloc.print(
         "{s} warning: " ++ fmt ++ "\n",
         .{timestamp} ++ args,
     ) catch outOfMemory();
@@ -263,7 +260,7 @@ pub fn logError(msg: []const u8) void {
     }
     const alloc = std.heap.c_allocator;
     const timestamp = currentTimestampStr();
-    const str = std.fmt.allocPrint(alloc, "{s} error: {s}\n", .{ timestamp, msg }) catch outOfMemory();
+    const str = alloc.print("{s} error: {s}\n", .{ timestamp, msg }) catch outOfMemory();
     defer alloc.free(str);
     write(str, flush_on_error);
 }
@@ -277,8 +274,7 @@ pub fn logErrorFmt(comptime fmt: []const u8, args: anytype) void {
     }
     const alloc = std.heap.c_allocator;
     const timestamp = currentTimestampStr();
-    const str = std.fmt.allocPrint(
-        alloc,
+    const str = alloc.print(
         "{s} error: " ++ fmt ++ "\n",
         .{timestamp} ++ args,
     ) catch outOfMemory();

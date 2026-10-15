@@ -16,9 +16,9 @@ test "TuiScale is i16" {
 }
 
 test "Bool False is 0" {
-    try testing.expectEqual(@as(u8, 0), @intFromEnum(Bool.False));
+    try testing.expectEqual(@as(u8, 0), @backingInt(Bool.False));
 }
 
 test "Bool True is 1" {
-    try testing.expectEqual(@as(u8, 1), @intFromEnum(Bool.True));
+    try testing.expectEqual(@as(u8, 1), @backingInt(Bool.True));
 }

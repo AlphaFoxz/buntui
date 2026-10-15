@@ -8,7 +8,7 @@ var original_outcp: windows.UINT = 0;
 
 var current_windows_input_mode: windows.DWORD = 0;
 comptime {
-    if (builtin.os.tag != .windows) {
+    if (builtin.target.os.tag != .windows) {
         @compileError("Unsupported OS: Not Windows");
     }
 }

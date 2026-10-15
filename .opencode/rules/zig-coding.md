@@ -74,8 +74,8 @@ Guard all functions that access the global state with `if (!initialized)` checks
 Target is Zig 0.17.0 (`minimum_zig_version` in `build.zig.zon`). Each Zig minor release has breaking changes — do not assume 0.16 knowledge carries over. Verified against the 0.17.0 std source.
 
 ### Banned / deprecated APIs — do not use in new code
-- `std.fmt.allocPrint` (deprecated) — use `alloc.print(fmt, args)` (`mem.Allocator.print`). Existing usage in `core/logger.zig` is legacy; don't copy it.
-- `std.heap.DebugAllocator` (deprecated) — use `std.heap.SafeAllocator` (not generic; configure via `.init(...)`, needs a backing allocator). Existing usage in `core/glo_alloc.zig` is legacy.
+- `std.fmt.allocPrint` (deprecated) — use `alloc.print(fmt, args)` (`mem.Allocator.print`).
+- `std.heap.DebugAllocator` (deprecated) — use `std.heap.SafeAllocator` (not generic; `SafeAllocator.init(backing_allocator, .{})`, `.deinit()` reports leaks). See `core/glo_alloc.zig` for the project's global instance pattern.
 - `builtin.os.tag` / `builtin.cpu` / `builtin.abi` (deprecated, removed in 0.18) — use `builtin.target.os.tag`, `builtin.target.cpu`, etc.
 - `@intFromEnum` / `@enumFromInt` (deprecated) — use `@backingInt` / `@fromBackingInt`.
 - `@cImport` — removed entirely; C translation now requires an external translate-c package.

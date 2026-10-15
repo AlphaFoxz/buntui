@@ -1,10 +1,10 @@
 const builtin = @import("builtin");
 
-pub const is_wasm = builtin.cpu.arch == .wasm32;
+pub const is_wasm = builtin.target.cpu.arch == .wasm32;
 
-pub const is_posix = builtin.os.tag == .linux or builtin.os.tag == .macos or builtin.os.tag == .freebsd or builtin.os.tag == .netbsd or builtin.os.tag == .openbsd;
+pub const is_posix = builtin.target.os.tag == .linux or builtin.target.os.tag == .macos or builtin.target.os.tag == .freebsd or builtin.target.os.tag == .netbsd or builtin.target.os.tag == .openbsd;
 
-pub const is_windows = builtin.os.tag == .windows;
+pub const is_windows = builtin.target.os.tag == .windows;
 
 const std = @import("std");
 

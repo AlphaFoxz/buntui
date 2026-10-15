@@ -6,7 +6,7 @@ const event_bus = @import("../core/event_bus.zig");
 const payloads = @import("../core/event_payloads.zig");
 
 comptime {
-    switch (builtin.os.tag) {
+    switch (builtin.target.os.tag) {
         .linux, .macos, .freebsd, .netbsd, .openbsd => {},
         else => @compileError("Unsupported OS: Not a POSIX system"),
     }
@@ -754,7 +754,10 @@ test "keyCodeToKeyName returns Unidentified for unknown" {
 
 test "Parser: Tab byte 0x09 produces key Tab" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     parser.processByte(0x09);
@@ -773,7 +776,10 @@ test "Parser: Tab byte 0x09 produces key Tab" {
 
 test "Parser: Enter byte 0x0D produces key Enter" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     parser.processByte(0x0D);
@@ -792,7 +798,10 @@ test "Parser: Enter byte 0x0D produces key Enter" {
 
 test "Parser: Backspace byte 0x08 produces key Backspace" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     parser.processByte(0x08);
@@ -809,7 +818,10 @@ test "Parser: Backspace byte 0x08 produces key Backspace" {
 
 test "Parser: Ctrl+letter (0x01-0x07) produces Ctrl modifier" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     // Ctrl+A = 0x01
@@ -829,7 +841,10 @@ test "Parser: Ctrl+letter (0x01-0x07) produces Ctrl modifier" {
 
 test "Parser: raw 0x0A (LF) is recognized as Ctrl+Enter, not Ctrl+J" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     // 0x0A = LF. Intercepted before Ctrl+letter handler so Ctrl+Enter
@@ -850,7 +865,10 @@ test "Parser: raw 0x0A (LF) is recognized as Ctrl+Enter, not Ctrl+J" {
 
 test "Parser: modifyOtherKeys format 2 (u terminator) Ctrl+I" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     // \e[105;5u = Ctrl+I via modifyOtherKeys format 2
@@ -875,7 +893,10 @@ test "Parser: modifyOtherKeys format 2 (u terminator) Ctrl+I" {
 
 test "Parser: modifyOtherKeys format 1 (~ terminator) Ctrl+I" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     // \e[27;5;105~ = Ctrl+I via modifyOtherKeys format 1
@@ -900,7 +921,10 @@ test "Parser: modifyOtherKeys format 1 (~ terminator) Ctrl+I" {
 
 test "Parser: modifyOtherKeys Ctrl+Shift+I" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     // \e[105;6u = Ctrl+Shift+I
@@ -924,7 +948,10 @@ test "Parser: modifyOtherKeys Ctrl+Shift+I" {
 
 test "Parser: modifyOtherKeys Alt+Enter" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     // \e[13;3u = Alt+Enter
@@ -947,7 +974,10 @@ test "Parser: modifyOtherKeys Alt+Enter" {
 
 test "Parser: Tab (0x09) and Ctrl+I (modifyOtherKeys) are distinct" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
 
@@ -983,7 +1013,10 @@ test "Parser: Tab (0x09) and Ctrl+I (modifyOtherKeys) are distinct" {
 
 test "Parser: standard CSI arrow keys still work" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     // \e[A = ArrowUp

@@ -8,7 +8,7 @@ const payloads = @import("../core/event_payloads.zig");
 const mapper = @import("./windows_mapper.zig");
 
 comptime {
-    if (builtin.os.tag != .windows) {
+    if (builtin.target.os.tag != .windows) {
         @compileError("Unsupported OS: Not Windows");
     }
 }

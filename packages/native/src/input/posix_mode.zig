@@ -4,7 +4,7 @@ const logger = @import("../core/logger.zig");
 const err = @import("../core/error.zig");
 
 comptime {
-    switch (builtin.os.tag) {
+    switch (builtin.target.os.tag) {
         .linux, .macos, .freebsd, .netbsd, .openbsd => {},
         else => @compileError("Unsupported OS: Not Linux, MacOS, FreeBSD, NetBSD, OpenBSD"),
     }
