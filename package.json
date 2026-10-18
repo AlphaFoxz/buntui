@@ -19,8 +19,8 @@
         "packages/create-buntui/my*"
     ],
     "devDependencies": {
-        "@types/bun": "=1.4.2",
-        "vue-tsc": "~3.3.12",
+        "@types/bun": "=1.4.3",
+        "vue-tsc": "~3.3.13",
         "xo": "^5.0.1"
     },
     "peerDependencies": {
