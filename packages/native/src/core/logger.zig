@@ -21,6 +21,8 @@ const buf_size = 256;
 var log_buf: [buf_size]u8 = undefined;
 var writer: std.Io.File.Writer = undefined;
 
+var mutex: std.Io.Mutex = .init;
+
 const flush_on_error = true;
 const flush_on_warning = true;
 
@@ -48,7 +50,6 @@ pub fn load(dir_path: []const u8, log_name: []const u8, lvl: LOG_LEVEL, clear_lo
         std.heap.c_allocator,
         .{
             .stack_size = 1024 * 1024,
-            .argv0 = undefined,
         },
     );
     const io = log_threaded.io();
@@ -110,7 +111,7 @@ const TIMESTAMP_CACHE_MS = 100; // 时间戳缓存100ms
 var cached_timestamp_len: usize = 0;
 var cached_timestamp: [32]u8 = undefined;
 
-inline fn currentTimestampStr() []const u8 {
+fn currentTimestampLocked() []const u8 {
     const io = log_threaded.io();
     const now_ts = std.Io.Timestamp.now(io, .real);
     const now_ms = @as(i64, @intCast(@divTrunc(now_ts.nanoseconds, 1_000_000)));
@@ -142,10 +143,10 @@ inline fn currentTimestampStr() []const u8 {
     last_timestamp_ms = now_ms;
     cached_timestamp_len = out.len;
     std.mem.copyForwards(u8, &cached_timestamp, out);
-    return out;
+    return cached_timestamp[0..out.len];
 }
 
-fn write(msg: []const u8, need_flush: bool) void {
+fn writeLocked(msg: []const u8, need_flush: bool) void {
     if (comptime is_wasm) {
         return;
     }
@@ -165,11 +166,17 @@ pub fn logDebug(msg: []const u8) void {
     if (current_log_level > LOG_LEVEL_DEBUG) {
         return;
     }
+    if (!log_path_initialized) {
+        return;
+    }
+    const io = log_threaded.io();
+    mutex.lockUncancelable(io);
+    defer mutex.unlock(io);
     const alloc = std.heap.c_allocator;
-    const timestamp = currentTimestampStr();
+    const timestamp = currentTimestampLocked();
     const str = std.fmt.allocPrint(alloc, "{s} debug: {s}\n", .{ timestamp, msg }) catch outOfMemory();
     defer alloc.free(str);
-    write(str, false);
+    writeLocked(str, false);
 }
 
 pub fn logDebugFmt(comptime fmt: []const u8, args: anytype) void {
@@ -179,15 +186,21 @@ pub fn logDebugFmt(comptime fmt: []const u8, args: anytype) void {
     if (current_log_level > LOG_LEVEL_DEBUG) {
         return;
     }
+    if (!log_path_initialized) {
+        return;
+    }
+    const io = log_threaded.io();
+    mutex.lockUncancelable(io);
+    defer mutex.unlock(io);
     const alloc = std.heap.c_allocator;
-    const timestamp = currentTimestampStr();
+    const timestamp = currentTimestampLocked();
     const str = std.fmt.allocPrint(
         alloc,
         "{s} debug: " ++ fmt ++ "\n",
         .{timestamp} ++ args,
     ) catch outOfMemory();
     defer alloc.free(str);
-    write(str, false);
+    writeLocked(str, false);
 }
 
 pub fn logInfo(msg: []const u8) void {
@@ -197,11 +210,17 @@ pub fn logInfo(msg: []const u8) void {
     if (current_log_level > LOG_LEVEL_INFO) {
         return;
     }
+    if (!log_path_initialized) {
+        return;
+    }
+    const io = log_threaded.io();
+    mutex.lockUncancelable(io);
+    defer mutex.unlock(io);
     const alloc = std.heap.c_allocator;
-    const timestamp = currentTimestampStr();
+    const timestamp = currentTimestampLocked();
     const str = std.fmt.allocPrint(alloc, "{s} info: {s}\n", .{ timestamp, msg }) catch outOfMemory();
     defer alloc.free(str);
-    write(str, false);
+    writeLocked(str, false);
 }
 
 pub fn logInfoFmt(comptime fmt: []const u8, args: anytype) void {
@@ -211,15 +230,21 @@ pub fn logInfoFmt(comptime fmt: []const u8, args: anytype) void {
     if (current_log_level > LOG_LEVEL_INFO) {
         return;
     }
+    if (!log_path_initialized) {
+        return;
+    }
+    const io = log_threaded.io();
+    mutex.lockUncancelable(io);
+    defer mutex.unlock(io);
     const alloc = std.heap.c_allocator;
-    const timestamp = currentTimestampStr();
+    const timestamp = currentTimestampLocked();
     const str = std.fmt.allocPrint(
         alloc,
         "{s} info: " ++ fmt ++ "\n",
         .{timestamp} ++ args,
     ) catch outOfMemory();
     defer alloc.free(str);
-    write(str, false);
+    writeLocked(str, false);
 }
 
 pub fn logWarning(msg: []const u8) void {
@@ -229,11 +254,17 @@ pub fn logWarning(msg: []const u8) void {
     if (current_log_level > LOG_LEVEL_WARNING) {
         return;
     }
+    if (!log_path_initialized) {
+        return;
+    }
+    const io = log_threaded.io();
+    mutex.lockUncancelable(io);
+    defer mutex.unlock(io);
     const alloc = std.heap.c_allocator;
-    const timestamp = currentTimestampStr();
+    const timestamp = currentTimestampLocked();
     const str = std.fmt.allocPrint(alloc, "{s} warning: {s}\n", .{ timestamp, msg }) catch outOfMemory();
     defer alloc.free(str);
-    write(str, flush_on_warning);
+    writeLocked(str, flush_on_warning);
 }
 
 pub fn logWarningFmt(comptime fmt: []const u8, args: anytype) void {
@@ -243,15 +274,21 @@ pub fn logWarningFmt(comptime fmt: []const u8, args: anytype) void {
     if (current_log_level > LOG_LEVEL_WARNING) {
         return;
     }
+    if (!log_path_initialized) {
+        return;
+    }
+    const io = log_threaded.io();
+    mutex.lockUncancelable(io);
+    defer mutex.unlock(io);
     const alloc = std.heap.c_allocator;
-    const timestamp = currentTimestampStr();
+    const timestamp = currentTimestampLocked();
     const str = std.fmt.allocPrint(
         alloc,
         "{s} warning: " ++ fmt ++ "\n",
         .{timestamp} ++ args,
     ) catch outOfMemory();
     defer alloc.free(str);
-    write(str, flush_on_warning);
+    writeLocked(str, flush_on_warning);
 }
 
 pub fn logError(msg: []const u8) void {
@@ -261,11 +298,17 @@ pub fn logError(msg: []const u8) void {
     if (current_log_level > LOG_LEVEL_ERROR) {
         return;
     }
+    if (!log_path_initialized) {
+        return;
+    }
+    const io = log_threaded.io();
+    mutex.lockUncancelable(io);
+    defer mutex.unlock(io);
     const alloc = std.heap.c_allocator;
-    const timestamp = currentTimestampStr();
+    const timestamp = currentTimestampLocked();
     const str = std.fmt.allocPrint(alloc, "{s} error: {s}\n", .{ timestamp, msg }) catch outOfMemory();
     defer alloc.free(str);
-    write(str, flush_on_error);
+    writeLocked(str, flush_on_error);
 }
 
 pub fn logErrorFmt(comptime fmt: []const u8, args: anytype) void {
@@ -275,15 +318,21 @@ pub fn logErrorFmt(comptime fmt: []const u8, args: anytype) void {
     if (current_log_level > LOG_LEVEL_ERROR) {
         return;
     }
+    if (!log_path_initialized) {
+        return;
+    }
+    const io = log_threaded.io();
+    mutex.lockUncancelable(io);
+    defer mutex.unlock(io);
     const alloc = std.heap.c_allocator;
-    const timestamp = currentTimestampStr();
+    const timestamp = currentTimestampLocked();
     const str = std.fmt.allocPrint(
         alloc,
         "{s} error: " ++ fmt ++ "\n",
         .{timestamp} ++ args,
     ) catch outOfMemory();
     defer alloc.free(str);
-    write(str, flush_on_error);
+    writeLocked(str, flush_on_error);
 }
 
 pub fn flush() void {
@@ -293,6 +342,9 @@ pub fn flush() void {
     if (!log_path_initialized) {
         return;
     }
+    const io = log_threaded.io();
+    mutex.lockUncancelable(io);
+    defer mutex.unlock(io);
     writer.interface.flush() catch ioError();
 }
 

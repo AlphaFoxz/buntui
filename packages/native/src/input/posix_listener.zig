@@ -245,6 +245,12 @@ const Parser = struct {
                 }
             },
             .EscReceived => {
+                if (self.buf_idx >= self.buffer.len) {
+                    // Sequence too long — emit the buffered ESC and restart
+                    self.reset();
+                    self.processByte(byte);
+                    return;
+                }
                 self.buffer[self.buf_idx] = byte;
                 self.buf_idx += 1;
 
@@ -286,6 +292,12 @@ const Parser = struct {
                 }
             },
             .CsiReceived => {
+                if (self.buf_idx >= self.buffer.len) {
+                    // CSI sequence exceeds buffer — drop it and restart parsing
+                    self.reset();
+                    self.processByte(byte);
+                    return;
+                }
                 self.buffer[self.buf_idx] = byte;
                 self.buf_idx += 1;
 
@@ -295,6 +307,12 @@ const Parser = struct {
                 }
             },
             .Ss3Received => {
+                if (self.buf_idx >= self.buffer.len) {
+                    // SS3 sequence exceeds buffer — drop it and restart parsing
+                    self.reset();
+                    self.processByte(byte);
+                    return;
+                }
                 self.buffer[self.buf_idx] = byte;
                 self.buf_idx += 1;
                 if (self.buf_idx == 3) {
@@ -754,7 +772,10 @@ test "keyCodeToKeyName returns Unidentified for unknown" {
 
 test "Parser: Tab byte 0x09 produces key Tab" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     parser.processByte(0x09);
@@ -762,9 +783,9 @@ test "Parser: Tab byte 0x09 produces key Tab" {
     const slot = event_bus.event_bus_poll();
     try std.testing.expect(slot != null);
     if (slot) |s| {
-        const modifiers = s[0];
-        const key_len: u8 = @intCast(@min(s[3], 236));
-        const key = s[4 .. 4 + key_len];
+        const modifiers = s.data[0];
+        const key_len: u8 = @intCast(@min(s.data[3], 236));
+        const key = s.data[4 .. 4 + key_len];
         try std.testing.expect(modifiers == 0);
         try std.testing.expectEqualStrings("Tab", key);
         event_bus.event_bus_commit();
@@ -773,7 +794,10 @@ test "Parser: Tab byte 0x09 produces key Tab" {
 
 test "Parser: Enter byte 0x0D produces key Enter" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     parser.processByte(0x0D);
@@ -781,9 +805,9 @@ test "Parser: Enter byte 0x0D produces key Enter" {
     const slot = event_bus.event_bus_poll();
     try std.testing.expect(slot != null);
     if (slot) |s| {
-        const modifiers = s[0];
-        const key_len: u8 = @intCast(@min(s[3], 236));
-        const key = s[4 .. 4 + key_len];
+        const modifiers = s.data[0];
+        const key_len: u8 = @intCast(@min(s.data[3], 236));
+        const key = s.data[4 .. 4 + key_len];
         try std.testing.expect(modifiers == 0);
         try std.testing.expectEqualStrings("Enter", key);
         event_bus.event_bus_commit();
@@ -792,7 +816,10 @@ test "Parser: Enter byte 0x0D produces key Enter" {
 
 test "Parser: Backspace byte 0x08 produces key Backspace" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     parser.processByte(0x08);
@@ -800,8 +827,8 @@ test "Parser: Backspace byte 0x08 produces key Backspace" {
     const slot = event_bus.event_bus_poll();
     try std.testing.expect(slot != null);
     if (slot) |s| {
-        const key_len: u8 = @intCast(@min(s[3], 236));
-        const key = s[4 .. 4 + key_len];
+        const key_len: u8 = @intCast(@min(s.data[3], 236));
+        const key = s.data[4 .. 4 + key_len];
         try std.testing.expectEqualStrings("Backspace", key);
         event_bus.event_bus_commit();
     }
@@ -809,7 +836,10 @@ test "Parser: Backspace byte 0x08 produces key Backspace" {
 
 test "Parser: Ctrl+letter (0x01-0x07) produces Ctrl modifier" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     // Ctrl+A = 0x01
@@ -818,9 +848,9 @@ test "Parser: Ctrl+letter (0x01-0x07) produces Ctrl modifier" {
     const slot = event_bus.event_bus_poll();
     try std.testing.expect(slot != null);
     if (slot) |s| {
-        const modifiers = s[0];
-        const key_len: u8 = @intCast(@min(s[3], 236));
-        const key = s[4 .. 4 + key_len];
+        const modifiers = s.data[0];
+        const key_len: u8 = @intCast(@min(s.data[3], 236));
+        const key = s.data[4 .. 4 + key_len];
         try std.testing.expect(modifiers & payloads.MOD_CTRL != 0);
         try std.testing.expectEqualStrings("a", key);
         event_bus.event_bus_commit();
@@ -829,7 +859,10 @@ test "Parser: Ctrl+letter (0x01-0x07) produces Ctrl modifier" {
 
 test "Parser: raw 0x0A (LF) is recognized as Ctrl+Enter, not Ctrl+J" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     // 0x0A = LF. Intercepted before Ctrl+letter handler so Ctrl+Enter
@@ -839,9 +872,9 @@ test "Parser: raw 0x0A (LF) is recognized as Ctrl+Enter, not Ctrl+J" {
     const slot = event_bus.event_bus_poll();
     try std.testing.expect(slot != null);
     if (slot) |s| {
-        const modifiers = s[0];
-        const key_len: u8 = @intCast(@min(s[3], 236));
-        const key = s[4 .. 4 + key_len];
+        const modifiers = s.data[0];
+        const key_len: u8 = @intCast(@min(s.data[3], 236));
+        const key = s.data[4 .. 4 + key_len];
         try std.testing.expect(modifiers & payloads.MOD_CTRL != 0);
         try std.testing.expectEqualStrings("Enter", key);
         event_bus.event_bus_commit();
@@ -850,7 +883,10 @@ test "Parser: raw 0x0A (LF) is recognized as Ctrl+Enter, not Ctrl+J" {
 
 test "Parser: modifyOtherKeys format 2 (u terminator) Ctrl+I" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     // \e[105;5u = Ctrl+I via modifyOtherKeys format 2
@@ -862,10 +898,10 @@ test "Parser: modifyOtherKeys format 2 (u terminator) Ctrl+I" {
     const slot = event_bus.event_bus_poll();
     try std.testing.expect(slot != null);
     if (slot) |s| {
-        const modifiers = s[0];
-        const char_code = std.mem.readInt(u16, s[1..3], .little);
-        const key_len: u8 = @intCast(@min(s[3], 236));
-        const key = s[4 .. 4 + key_len];
+        const modifiers = s.data[0];
+        const char_code = std.mem.readInt(u16, s.data[1..3], .little);
+        const key_len: u8 = @intCast(@min(s.data[3], 236));
+        const key = s.data[4 .. 4 + key_len];
         try std.testing.expect(modifiers & payloads.MOD_CTRL != 0);
         try std.testing.expect(char_code == 105); // 'i' ASCII code
         try std.testing.expectEqualStrings("i", key);
@@ -875,7 +911,10 @@ test "Parser: modifyOtherKeys format 2 (u terminator) Ctrl+I" {
 
 test "Parser: modifyOtherKeys format 1 (~ terminator) Ctrl+I" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     // \e[27;5;105~ = Ctrl+I via modifyOtherKeys format 1
@@ -887,10 +926,10 @@ test "Parser: modifyOtherKeys format 1 (~ terminator) Ctrl+I" {
     const slot = event_bus.event_bus_poll();
     try std.testing.expect(slot != null);
     if (slot) |s| {
-        const modifiers = s[0];
-        const char_code = std.mem.readInt(u16, s[1..3], .little);
-        const key_len: u8 = @intCast(@min(s[3], 236));
-        const key = s[4 .. 4 + key_len];
+        const modifiers = s.data[0];
+        const char_code = std.mem.readInt(u16, s.data[1..3], .little);
+        const key_len: u8 = @intCast(@min(s.data[3], 236));
+        const key = s.data[4 .. 4 + key_len];
         try std.testing.expect(modifiers & payloads.MOD_CTRL != 0);
         try std.testing.expect(char_code == 105);
         try std.testing.expectEqualStrings("i", key);
@@ -900,7 +939,10 @@ test "Parser: modifyOtherKeys format 1 (~ terminator) Ctrl+I" {
 
 test "Parser: modifyOtherKeys Ctrl+Shift+I" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     // \e[105;6u = Ctrl+Shift+I
@@ -912,9 +954,9 @@ test "Parser: modifyOtherKeys Ctrl+Shift+I" {
     const slot = event_bus.event_bus_poll();
     try std.testing.expect(slot != null);
     if (slot) |s| {
-        const modifiers = s[0];
-        const key_len: u8 = @intCast(@min(s[3], 236));
-        const key = s[4 .. 4 + key_len];
+        const modifiers = s.data[0];
+        const key_len: u8 = @intCast(@min(s.data[3], 236));
+        const key = s.data[4 .. 4 + key_len];
         try std.testing.expect(modifiers & payloads.MOD_CTRL != 0);
         try std.testing.expect(modifiers & payloads.MOD_SHIFT != 0);
         try std.testing.expectEqualStrings("i", key);
@@ -924,7 +966,10 @@ test "Parser: modifyOtherKeys Ctrl+Shift+I" {
 
 test "Parser: modifyOtherKeys Alt+Enter" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     // \e[13;3u = Alt+Enter
@@ -936,9 +981,9 @@ test "Parser: modifyOtherKeys Alt+Enter" {
     const slot = event_bus.event_bus_poll();
     try std.testing.expect(slot != null);
     if (slot) |s| {
-        const modifiers = s[0];
-        const key_len: u8 = @intCast(@min(s[3], 236));
-        const key = s[4 .. 4 + key_len];
+        const modifiers = s.data[0];
+        const key_len: u8 = @intCast(@min(s.data[3], 236));
+        const key = s.data[4 .. 4 + key_len];
         try std.testing.expect(modifiers & payloads.MOD_ALT != 0);
         try std.testing.expectEqualStrings("Enter", key);
         event_bus.event_bus_commit();
@@ -947,7 +992,10 @@ test "Parser: modifyOtherKeys Alt+Enter" {
 
 test "Parser: Tab (0x09) and Ctrl+I (modifyOtherKeys) are distinct" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
 
@@ -956,9 +1004,9 @@ test "Parser: Tab (0x09) and Ctrl+I (modifyOtherKeys) are distinct" {
     const tab_slot = event_bus.event_bus_poll();
     try std.testing.expect(tab_slot != null);
     if (tab_slot) |s| {
-        const modifiers = s[0];
-        const key_len: u8 = @intCast(@min(s[3], 236));
-        const key = s[4 .. 4 + key_len];
+        const modifiers = s.data[0];
+        const key_len: u8 = @intCast(@min(s.data[3], 236));
+        const key = s.data[4 .. 4 + key_len];
         try std.testing.expect(modifiers == 0); // No modifiers for Tab
         try std.testing.expectEqualStrings("Tab", key);
         event_bus.event_bus_commit();
@@ -972,9 +1020,9 @@ test "Parser: Tab (0x09) and Ctrl+I (modifyOtherKeys) are distinct" {
     const ctrl_i_slot = event_bus.event_bus_poll();
     try std.testing.expect(ctrl_i_slot != null);
     if (ctrl_i_slot) |s| {
-        const modifiers = s[0];
-        const key_len: u8 = @intCast(@min(s[3], 236));
-        const key = s[4 .. 4 + key_len];
+        const modifiers = s.data[0];
+        const key_len: u8 = @intCast(@min(s.data[3], 236));
+        const key = s.data[4 .. 4 + key_len];
         try std.testing.expect(modifiers & payloads.MOD_CTRL != 0); // Ctrl modifier
         try std.testing.expectEqualStrings("i", key); // 'i' not 'Tab'
         event_bus.event_bus_commit();
@@ -983,7 +1031,10 @@ test "Parser: Tab (0x09) and Ctrl+I (modifyOtherKeys) are distinct" {
 
 test "Parser: standard CSI arrow keys still work" {
     event_bus.event_bus_setup();
-    defer { var _d: u64 = 0; event_bus.event_bus_stats(&_d); }
+    defer {
+        var _d: u64 = 0;
+        event_bus.event_bus_stats(&_d);
+    }
 
     var parser: Parser = .{};
     // \e[A = ArrowUp
@@ -995,9 +1046,9 @@ test "Parser: standard CSI arrow keys still work" {
     const slot = event_bus.event_bus_poll();
     try std.testing.expect(slot != null);
     if (slot) |s| {
-        const modifiers = s[0];
-        const key_len: u8 = @intCast(@min(s[3], 236));
-        const key = s[4 .. 4 + key_len];
+        const modifiers = s.data[0];
+        const key_len: u8 = @intCast(@min(s.data[3], 236));
+        const key = s.data[4 .. 4 + key_len];
         try std.testing.expect(modifiers == 0);
         try std.testing.expectEqualStrings("ArrowUp", key);
         event_bus.event_bus_commit();
