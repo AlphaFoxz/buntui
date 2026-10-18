@@ -1,33 +1,34 @@
 {
-    "name": "buntui",
-    "version": "0.1.0-alpha.7",
-    "private": true,
-    "scripts": {
-        "build": "bun run sync && bun run ./scripts/build.ts",
-        "check": "bunx xo --fix --config ./xo.config.ts",
-        "dev": "bun run --cwd ./packages/playground dev",
-        "wasm": "bun run --cwd ./packages/playground-wasm dev",
-        "cli": "bun run --cwd ./packages/create-buntui dev",
-        "sync": "bun run ./scripts/sync-version.ts",
-        "test": "bun test:zig && bun test:ts",
-        "test:ts": "bun test --coverage --parallel",
-        "test:zig": "bun run --cwd ./packages/native zig-test"
-    },
-    "workspaces": [
-        "packages/*",
-        "packages/native-platforms/*",
-        "packages/create-buntui/my*"
-    ],
-    "devDependencies": {
-        "@types/bun": "=1.4.3",
-        "vue-tsc": "~3.3.13",
-        "xo": "^5.0.1"
-    },
-    "peerDependencies": {
-        "typescript": "=7.0.2"
-    },
-    "engines": {
-        "bun": "^1.4.2",
-        "node": "^24.21.0"
-    }
+  "name": "buntui",
+  "version": "0.1.0-alpha.7",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "scripts": {
+    "build": "bun run sync && bun run ./scripts/build.ts",
+    "check": "bunx xo --fix --config ./xo.config.ts",
+    "dev": "bun run --cwd ./packages/playground dev",
+    "wasm": "bun run --cwd ./packages/playground-wasm dev",
+    "cli": "bun run --cwd ./packages/create-buntui dev",
+    "sync": "bun run ./scripts/sync-version.ts",
+    "test": "bun test:zig && bun test:ts",
+    "test:ts": "bun test --coverage --parallel",
+    "test:zig": "bun run --cwd ./packages/native zig-test"
+  },
+  "workspaces": [
+    "packages/*",
+    "packages/native-platforms/*",
+    "packages/create-buntui/my*"
+  ],
+  "devDependencies": {
+    "@types/bun": "=1.4.3",
+    "typescript": "=7.0.2",
+    "vue-tsc": "^3.3.13",
+    "xo": "^5.0.1"
+  },
+  "peerDependencies": {
+    "typescript": "=7.0.2"
+  }
 }

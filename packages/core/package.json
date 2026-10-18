@@ -42,10 +42,10 @@
     ],
     "dependencies": {
         "@buntui/native": "workspace:*",
-        "@vue/reactivity": "^3.5.43"
+        "@vue/reactivity": "^3.5.44"
     },
     "devDependencies": {
-        "@types/bun": "=1.4.2",
+        "@types/bun": "=1.4.3",
         "string-width": "^8.2.2"
     }
 }

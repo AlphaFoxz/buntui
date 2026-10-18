@@ -28,13 +28,13 @@
     ],
     "dependencies": {
         "@vue/compiler-core": "^3.5.43",
-        "@vue/compiler-sfc": "^3.5.43",
-        "@vue/reactivity": "^3.5.43",
-        "@vue/shared": "^3.5.43",
+        "@vue/compiler-sfc": "^3.5.44",
+        "@vue/reactivity": "^3.5.44",
+        "@vue/shared": "^3.5.44",
         "sucrase": "^3.35.1"
     },
     "devDependencies": {
         "@buntui/core": "workspace:*",
-        "@types/bun": "=1.4.2"
+        "@types/bun": "=1.4.3"
     }
 }
