@@ -25,7 +25,6 @@ fn ensureThreaded() void {
             std.heap.c_allocator,
             .{
                 .stack_size = 1024 * 1024,
-                .argv0 = undefined,
             },
         );
     }
