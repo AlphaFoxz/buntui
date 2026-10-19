@@ -1,6 +1,6 @@
 import type {Scheduler} from '../../platform/next-tick';
 
-const LogLevel = {
+export const LogLevel = {
   Debug: 'debug',
   Info: 'info',
   Warning: 'warning',
