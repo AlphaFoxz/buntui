@@ -7,19 +7,13 @@ import {
   type TuiWidgetRect,
   type TuiWidgetSize,
 } from '../types';
-import {InteractiveWidget} from '../InteractiveWidget';
-import {parseColor} from '../../utils/color';
-import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
-import {resolveThemedOverrides} from '../../theme/color-ref';
+import {resolveColorState} from '../color-scheme';
+import {ThemedWidget} from '../ThemedWidget';
 import type {CheckboxWidgetOptions} from './types';
 
 type CheckboxColors = {
   fg: number;
   bg: number;
-};
-
-type CheckboxBorderColors = {
   colorBorder: number;
   borderStyle: number;
 };
@@ -37,7 +31,7 @@ const CHECKBOX_TOKEN_MAP = {
   colorBgDisabled: 'surfaceDisabled',
 } as const;
 
-function getDefaultCheckboxOptions(): Required<CheckboxWidgetOptions> {
+function getDefaultCheckboxOptions() {
   return {
     x: 0,
     y: 0,
@@ -47,52 +41,25 @@ function getDefaultCheckboxOptions(): Required<CheckboxWidgetOptions> {
     checked: false,
     indeterminate: false,
     disabled: false,
-
-    ...resolveWidgetColors(CHECKBOX_TOKEN_MAP),
   };
 }
 
-export class CheckboxWidget extends InteractiveWidget {
+export class CheckboxWidget extends ThemedWidget<CheckboxColors> {
+  static override readonly TOKEN_MAP = CHECKBOX_TOKEN_MAP;
+
   readonly #rect: TuiWidgetRect;
   #label: string;
   #checked: boolean;
   #indeterminate: boolean;
 
-  readonly #colors: ColorScheme<CheckboxColors>;
-  readonly #focusBorder: CheckboxBorderColors;
-
   constructor(options: CheckboxWidgetOptions = {}) {
-    super();
+    super(options);
     const resolved = {...getDefaultCheckboxOptions(), ...options};
     this.#rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
     this.#label = resolved.label;
     this.#checked = resolved.checked;
     this.#indeterminate = resolved.indeterminate ?? false;
     this.setDisabled(resolved.disabled);
-
-    this.#colors = {
-      normal: {
-        fg: parseColor(resolved.colorFgNormal),
-        bg: parseColor(resolved.colorBgNormal),
-      },
-      hovered: {
-        fg: parseColor(resolved.colorFgHovered),
-        bg: parseColor(resolved.colorBgHovered),
-      },
-      focused: {
-        fg: parseColor(resolved.colorFgFocused),
-        bg: parseColor(resolved.colorBgFocused),
-      },
-      disabled: {
-        fg: parseColor(resolved.colorFgDisabled),
-        bg: parseColor(resolved.colorBgDisabled),
-      },
-    };
-
-    this.#focusBorder = {
-      colorBorder: parseColor(resolved.colorBorderFocused),
-      borderStyle: resolveBorderStyle(resolved.borderStyleFocused),
-    };
 
     this.on('click', () => {
       this.#toggle();
@@ -142,23 +109,11 @@ export class CheckboxWidget extends InteractiveWidget {
       return;
     }
 
-    this.#focusBorder.borderStyle = resolveBorderStyle(options.borderStyle);
+    this.colors.focused!.borderStyle = resolveBorderStyle(options.borderStyle);
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {
     Object.assign(this.#rect, rect);
-  }
-
-  updateThemeColors(resolved: Record<string, unknown>): void {
-    applyColorSchemeUpdates(this.#colors, resolved);
-
-    if (resolved.colorBorderFocused !== undefined) {
-      this.#focusBorder.colorBorder = parseColor(resolved.colorBorderFocused);
-    }
-
-    if (resolved.borderStyleFocused !== undefined) {
-      this.#focusBorder.borderStyle = resolveBorderStyle(resolved.borderStyleFocused);
-    }
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
@@ -169,7 +124,7 @@ export class CheckboxWidget extends InteractiveWidget {
 
     buffer.pushClip(x, y, width, height);
 
-    const {fg, bg} = resolveColorState(this.#colors, {
+    const {fg, bg} = resolveColorState(this.colors, {
       disabled: this.disabled,
       focused: this.focused,
       hovered: this.hovered,
@@ -208,14 +163,14 @@ export class CheckboxWidget extends InteractiveWidget {
       }
     }
 
-    if (this.focused && !this.disabled && this.#focusBorder.borderStyle !== 0) {
+    if (this.focused && !this.disabled && this.colors.focused!.borderStyle !== 0) {
       buffer.drawBorder({
         x,
         y,
         width,
         height,
-        colorRgba: this.#focusBorder.colorBorder,
-        style: this.#focusBorder.borderStyle,
+        colorRgba: this.colors.focused!.colorBorder,
+        style: this.colors.focused!.borderStyle,
         sides: BorderSides.All,
       });
     }
@@ -236,13 +191,7 @@ export class CheckboxWidget extends InteractiveWidget {
 }
 
 export function createCheckboxWidget(options?: Partial<CheckboxWidgetOptions>): CheckboxWidget {
-  const ctorOptions = resolveThemedOverrides(options ?? {}, CHECKBOX_TOKEN_MAP);
-  const widget = new CheckboxWidget({...getDefaultCheckboxOptions(), ...ctorOptions});
-  widget.initTokenMap(CHECKBOX_TOKEN_MAP);
-  bindThemeToWidget(widget, CHECKBOX_TOKEN_MAP, options ?? {}, resolved => {
-    widget.updateThemeColors(resolved);
-  });
-  return widget;
+  return new CheckboxWidget(options ?? {});
 }
 
 export default CheckboxWidget;

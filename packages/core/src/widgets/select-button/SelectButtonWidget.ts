@@ -1,11 +1,9 @@
 import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
-import type {TuiWidgetRect} from '../types';
-import {InteractiveWidget} from '../InteractiveWidget';
+import {type TuiWidgetRect} from '../types';
+import {resolveColorState} from '../color-scheme';
 import {parseColor} from '../../utils/color';
-import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
-import {resolveThemedOverrides} from '../../theme/color-ref';
+import {ThemedWidget} from '../ThemedWidget';
 import type {SelectButtonWidgetOptions} from './types';
 
 type SelectButtonColors = {fg: number; bg: number};
@@ -32,22 +30,21 @@ function getDefaultSelectButtonOptions() {
     options: [] as unknown[],
     value: undefined as unknown,
     disabled: false,
-
-    ...resolveWidgetColors(SELECT_BUTTON_TOKEN_MAP),
   };
 }
 
-export class SelectButtonWidget extends InteractiveWidget {
+export class SelectButtonWidget extends ThemedWidget<SelectButtonColors> {
+  static override readonly TOKEN_MAP = SELECT_BUTTON_TOKEN_MAP;
+
   readonly #rect: TuiWidgetRect;
   #options: unknown[];
   #selectedIndex: number;
   #hoveredIndex = -1;
 
-  readonly #colors: ColorScheme<SelectButtonColors>;
   readonly #extraColors: SelectButtonExtraColors;
 
   constructor(options: SelectButtonWidgetOptions = {}) {
-    super();
+    super(options);
     const resolved = {...getDefaultSelectButtonOptions(), ...options};
     this.#rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
     this.#options = resolved.options;
@@ -59,26 +56,8 @@ export class SelectButtonWidget extends InteractiveWidget {
       this.#selectedIndex = this.#options.indexOf(resolved.value);
     }
 
-    this.#colors = {
-      normal: {
-        fg: parseColor(resolved.colorFgNormal),
-        bg: parseColor(resolved.colorBgNormal),
-      },
-      active: {
-        fg: parseColor(resolved.colorFgActive),
-        bg: parseColor(resolved.colorBgActive),
-      },
-      focused: {
-        fg: parseColor(resolved.colorFgFocused),
-        bg: parseColor(resolved.colorBgFocused),
-      },
-      disabled: {
-        fg: parseColor(resolved.colorFgDisabled),
-        bg: parseColor(resolved.colorBgDisabled),
-      },
-    };
     this.#extraColors = {
-      separator: parseColor(resolved.colorFgSeparator),
+      separator: parseColor(this.resolvedToken('colorFgSeparator')),
     };
 
     this.on('mousedown', mouseData => {
@@ -198,8 +177,8 @@ export class SelectButtonWidget extends InteractiveWidget {
       && y < this.#rect.y + this.#rect.height;
   }
 
-  updateThemeColors(resolved: Record<string, unknown>): void {
-    applyColorSchemeUpdates(this.#colors, resolved);
+  protected override onThemeColorsUpdated(resolved: Record<string, unknown>): void {
+    super.onThemeColorsUpdated(resolved);
     if (resolved.colorFgSeparator !== undefined) {
       this.#extraColors.separator = parseColor(resolved.colorFgSeparator);
     }
@@ -214,7 +193,7 @@ export class SelectButtonWidget extends InteractiveWidget {
 
     buffer.pushClip(x, y, w, height);
 
-    const baseColors = resolveColorState(this.#colors, {
+    const baseColors = resolveColorState(this.colors, {
       disabled: this.disabled,
     });
     buffer.drawRect({
@@ -232,7 +211,7 @@ export class SelectButtonWidget extends InteractiveWidget {
       const isActive = i === this.#selectedIndex;
       const isHovered = i === this.#hoveredIndex;
 
-      const itemColors = resolveColorState(this.#colors, {
+      const itemColors = resolveColorState(this.colors, {
         disabled: this.disabled,
         focused: isActive ? this.focused : isHovered,
         active: isActive && !this.focused,
@@ -321,13 +300,7 @@ export class SelectButtonWidget extends InteractiveWidget {
 }
 
 export function createSelectButtonWidget(options?: Partial<SelectButtonWidgetOptions>): SelectButtonWidget {
-  const ctorOptions = resolveThemedOverrides(options ?? {}, SELECT_BUTTON_TOKEN_MAP);
-  const widget = new SelectButtonWidget({...getDefaultSelectButtonOptions(), ...ctorOptions});
-  widget.initTokenMap(SELECT_BUTTON_TOKEN_MAP);
-  bindThemeToWidget(widget, SELECT_BUTTON_TOKEN_MAP, options ?? {}, resolved => {
-    widget.updateThemeColors(resolved);
-  });
-  return widget;
+  return new SelectButtonWidget(options ?? {});
 }
 
 export default SelectButtonWidget;

@@ -11,7 +11,7 @@ export type ColorScheme<T> = {
   disabled?: T;
 };
 
-const STATE_SUFFIXES: ReadonlyArray<[string, string]> = [
+export const STATE_SUFFIXES: ReadonlyArray<[string, string]> = [
   ['Normal', 'normal'],
   ['Hovered', 'hovered'],
   ['Focused', 'focused'],
@@ -22,7 +22,7 @@ const STATE_SUFFIXES: ReadonlyArray<[string, string]> = [
   ['Unfocused', 'normal'],
 ];
 
-const FIELD_MAP: Readonly<Record<string, string>> = {
+export const FIELD_MAP: Readonly<Record<string, string>> = {
   colorFg: 'fg',
   colorBg: 'bg',
   colorCross: 'cross',

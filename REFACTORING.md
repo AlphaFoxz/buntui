@@ -87,19 +87,21 @@
 
 Input / Textarea 只保留各自差异:Input 的密码掩码、数字步进;Textarea 的软换行、visual lines、双轴滚动。**预期净减 ~400-600 行。**
 
-- [ ] 提取 `text-measure.ts`(逐字复制部分,零风险)
-- [ ] 提取 `UndoRedoStack<T>`,参数化 Input/Textarea 两种状态结构
-- [ ] 提取 SelectionState 与 clipboard-edit-ops
-- [ ] 提取词移动逻辑
-- [ ] `bun test` 全绿后完成本步
+- [x] 提取 `text-measure.ts`(逐字复制部分,零风险)
+- [x] 提取 `UndoRedoStack<T>`,参数化 Input/Textarea 两种状态结构
+- [x] 提取 SelectionState 与 clipboard-edit-ops
+- [x] 提取词移动逻辑
+- [x] `bun test` 全绿后完成本步
 
 ### 步骤 2:控件基类吸收主题样板
 
 在 `InteractiveWidget`(或新 `ThemedWidget` 基类)中内置 token map 声明 + `bindThemeToWidget` / `applyColorSchemeUpdates` 生命周期,14 个控件各删 ~5 处样板。
 
-- [ ] 设计基类 API(子类仅声明 token map 与 color 状态)
-- [ ] 迁移 2 个控件试点(建议先 Button + Progress)
-- [ ] 迁移其余 12 个控件,每迁一个跑 `bun test`
+- [x] 设计基类 API(子类仅声明 token map 与 color 状态)
+- [x] 迁移 2 个控件试点(建议先 Button + Progress)
+- [x] 迁移其余 12 个控件,每迁一个跑 `bun test`
+
+  > 实施说明:新增 `widgets/ThemedWidget.ts`(继承 InteractiveWidget),以 `static TOKEN_MAP` 声明 + 构造函数内自动 `initTokenMap`/`bindThemeToWidget`/构建 ColorScheme,子类通过 `colors`/`resolvedToken()` 读取、`onThemeColorsUpdated` 钩子处理额外颜色。11 个 InteractiveWidget 系控件全部迁移(Button/Progress/Switch/Checkbox/RadioGroup/SelectButton/Input/Textarea/ScrollBox/Select/Table);Box 与 Text 继承 `TuiWidgetEntity` 层级不同,且主题管道为定制实现(内联 theme 回退、非主题 colorShadow),不纳入本步,保留现状。
 
 ### 步骤 3:合并四胞胎公共部分
 

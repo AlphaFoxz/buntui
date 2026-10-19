@@ -2,9 +2,6 @@ import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {BorderSides} from '../../draw-list/types';
 import {type KeyboardEvent} from '../../events/types';
 import {parseColor} from '../../utils/color';
-import {getTheme} from '../../theme/store';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
-import {resolveThemedOverrides} from '../../theme/color-ref';
 import {
   type TuiWidgetRect,
   type TuiWidgetSize,
@@ -25,7 +22,7 @@ import {
   resolveAlignContent,
   resolveBorderStyle,
 } from '../types';
-import {InteractiveWidget} from '../InteractiveWidget';
+import {ThemedWidget} from '../ThemedWidget';
 import type {TuiWidgetEntity} from '../TuiWidgetEntity';
 import {computeFlexLayout, resolveFlexBasis} from '../layout-flex';
 import {type BoxWidget, createBox} from '../box/BoxWidget';
@@ -43,7 +40,18 @@ import type {ScrollBoxWidgetOptions} from './types';
 
 type ScrollBoxExtraColors = {scrollbar: number; scrollbarTrack: number};
 
-export class ScrollBoxWidget extends InteractiveWidget {
+const SCROLLBOX_TOKEN_MAP = {
+  colorBg: 'background',
+  colorBorder: 'border',
+  colorBorderFocused: 'borderFocused',
+  borderStyleFocused: 'border.focused',
+  colorScrollbar: 'scrollbar',
+  colorScrollbarTrack: 'scrollbarTrack',
+} as const;
+
+export class ScrollBoxWidget extends ThemedWidget {
+  static override readonly TOKEN_MAP = SCROLLBOX_TOKEN_MAP;
+
   readonly #rect: TuiWidgetRect;
   #scrollOffsetY = 0;
   #scrollOffsetX = 0;
@@ -78,8 +86,9 @@ export class ScrollBoxWidget extends InteractiveWidget {
   #thumbDragStartX = 0;
   #thumbDragStartOffsetX = 0;
 
-  constructor(options: ScrollBoxWidgetOptions) {
-    super();
+  constructor(rawOptions: ScrollBoxWidgetOptions = {}) {
+    super(rawOptions);
+    const options = {...getDefaultScrollBoxOptions(), ...rawOptions};
     this.#rect = this.initRect(options.x, options.y, options.width, options.height, {width: 20, height: 10});
 
     this.#innerBox = createBox({
@@ -112,13 +121,12 @@ export class ScrollBoxWidget extends InteractiveWidget {
     this.#alignContent = resolveAlignContent(options.alignContent ?? 'start');
     this.#scrollSpeed = options.scrollSpeed ?? 3;
     this.#alwaysShowScrollbar = options.alwaysShowScrollbar ?? false;
-    const theme = getTheme();
     this.#extraColors = {
-      scrollbar: parseColor(options.colorScrollbar ?? theme.colors.scrollbar),
-      scrollbarTrack: parseColor(options.colorScrollbarTrack ?? theme.colors.scrollbarTrack),
+      scrollbar: parseColor(this.resolvedToken('colorScrollbar')),
+      scrollbarTrack: parseColor(this.resolvedToken('colorScrollbarTrack')),
     };
-    this.#focusBorderColor = parseColor(options.colorBorderFocused ?? theme.colors.borderFocused);
-    this.#focusBorderStyle = resolveBorderStyle(options.borderStyleFocused ?? theme.borderStyle.focused ?? 'solid');
+    this.#focusBorderColor = parseColor(this.resolvedToken('colorBorderFocused'));
+    this.#focusBorderStyle = resolveBorderStyle(this.resolvedToken('borderStyleFocused') ?? 'solid');
 
     this.on('wheel', data => {
       const isHorizontal = data.shiftKey;
@@ -454,7 +462,7 @@ export class ScrollBoxWidget extends InteractiveWidget {
     this.propagatePositionDelta(this.#rect.x - oldX, this.#rect.y - oldY);
   }
 
-  updateThemeColors(resolved: Record<string, unknown>): void {
+  protected override onThemeColorsUpdated(resolved: Record<string, unknown>): void {
     if (resolved.colorBg !== undefined) {
       this.updateColor({colorBg: parseColor(resolved.colorBg)});
     }
@@ -957,15 +965,6 @@ export class ScrollBoxWidget extends InteractiveWidget {
   }
 }
 
-const SCROLLBOX_TOKEN_MAP = {
-  colorBg: 'background',
-  colorBorder: 'border',
-  colorBorderFocused: 'borderFocused',
-  borderStyleFocused: 'border.focused',
-  colorScrollbar: 'scrollbar',
-  colorScrollbarTrack: 'scrollbarTrack',
-} as const;
-
 function getDefaultScrollBoxOptions(): ScrollBoxWidgetOptions {
   return {
     x: 0,
@@ -980,18 +979,11 @@ function getDefaultScrollBoxOptions(): ScrollBoxWidgetOptions {
     gap: 0,
     scrollSpeed: 3,
     alwaysShowScrollbar: false,
-    ...resolveWidgetColors(SCROLLBOX_TOKEN_MAP),
   };
 }
 
 export function createScrollBoxWidget(options: Partial<ScrollBoxWidgetOptions> = {}): ScrollBoxWidget {
-  const ctorOptions = resolveThemedOverrides(options, SCROLLBOX_TOKEN_MAP);
-  const widget = new ScrollBoxWidget({...getDefaultScrollBoxOptions(), ...ctorOptions});
-  widget.initTokenMap(SCROLLBOX_TOKEN_MAP);
-  bindThemeToWidget(widget, SCROLLBOX_TOKEN_MAP, options ?? {}, resolved => {
-    widget.updateThemeColors(resolved);
-  });
-  return widget;
+  return new ScrollBoxWidget(options);
 }
 
 export default ScrollBoxWidget;

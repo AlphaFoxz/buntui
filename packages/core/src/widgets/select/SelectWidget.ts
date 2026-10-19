@@ -7,13 +7,10 @@ import {
   type TuiWidgetRect,
   type TuiWidgetSize,
 } from '../types';
-import {InteractiveWidget} from '../InteractiveWidget';
 import {parseColor} from '../../utils/color';
 import {truncateToWidth} from '../../utils/string-width';
-import {getTheme} from '../../theme/store';
-import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
-import {resolveThemedOverrides} from '../../theme/color-ref';
+import {resolveColorState} from '../color-scheme';
+import {ThemedWidget} from '../ThemedWidget';
 import {
   computeScrollbarGeometry,
   renderScrollbar,
@@ -58,23 +55,23 @@ const SELECT_TOKEN_MAP = {
 
 const DROPDOWN_MAX_VISIBLE = 8;
 
-function getDefaultSelectOptions(): Required<SelectWidgetOptions> & {height: number} {
+function getDefaultSelectOptions() {
   return {
     x: 0,
     y: 0,
     width: 20,
     height: 1,
-    options: [],
+    options: [] as SelectOption[],
     value: '',
     placeholder: '',
     label: '',
     disabled: false,
-
-    ...resolveWidgetColors(SELECT_TOKEN_MAP),
   };
 }
 
-export class SelectWidget extends InteractiveWidget {
+export class SelectWidget extends ThemedWidget<SelectColors> {
+  static override readonly TOKEN_MAP = SELECT_TOKEN_MAP;
+
   readonly #rect: TuiWidgetRect;
   #options: SelectOption[];
   #value: string;
@@ -98,54 +95,35 @@ export class SelectWidget extends InteractiveWidget {
   #didDrag = false;
   #justOpened = false;
 
-  readonly #triggerColors: ColorScheme<SelectColors>;
   readonly #dropdownColors: DropdownColors;
 
   constructor(options: SelectWidgetOptions = {}) {
-    super();
+    super(options);
     const resolved = {...getDefaultSelectOptions(), ...options};
+    if (resolved.label.length > 0) {
+      resolved.height = 3;
+    }
+
     this.#rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
     this.#options = resolved.options;
     this.#value = resolved.value;
     this.#placeholder = resolved.placeholder;
     this.#label = resolved.label;
-    this.#borderStyle = resolveBorderStyle(resolved.borderStyle);
+    this.#borderStyle = resolveBorderStyle(this.resolvedToken('borderStyle'));
     this.setDisabled(resolved.disabled);
 
-    const theme = getTheme();
     this.#extraColors = {
-      scrollbar: parseColor(resolved.colorScrollbar ?? theme.colors.scrollbar),
-      scrollbarTrack: parseColor(resolved.colorScrollbarTrack ?? theme.colors.scrollbarTrack),
-    };
-
-    this.#triggerColors = {
-      normal: {
-        fg: parseColor(resolved.colorFgNormal),
-        bg: parseColor(resolved.colorBgNormal),
-        colorBorder: parseColor(resolved.colorBorderUnfocused),
-      },
-      focused: {
-        fg: parseColor(resolved.colorFgFocused),
-        bg: parseColor(resolved.colorBgFocused),
-        colorBorder: parseColor(resolved.colorBorderFocused),
-      },
-      hovered: {
-        fg: parseColor(resolved.colorFgHovered),
-        bg: parseColor(resolved.colorBgHovered),
-        colorBorder: parseColor(resolved.colorBorderUnfocused),
-      },
-      disabled: {
-        fg: parseColor(resolved.colorFgDisabled),
-        bg: parseColor(resolved.colorBgDisabled),
-        colorBorder: parseColor(resolved.colorBorderDisabled),
-      },
+      scrollbar: parseColor(this.resolvedToken('colorScrollbar')),
+      scrollbarTrack: parseColor(this.resolvedToken('colorScrollbarTrack')),
     };
 
     this.#dropdownColors = {
-      item: {fg: parseColor(resolved.colorFgItem), bg: parseColor(resolved.colorBgItem)},
-      itemSelected: {fg: parseColor(resolved.colorFgItemSelected), bg: parseColor(resolved.colorBgItemSelected)},
-      itemHovered: {fg: parseColor(resolved.colorFgItemHovered), bg: parseColor(resolved.colorBgItemHovered)},
+      item: {fg: parseColor(this.resolvedToken('colorFgItem')), bg: parseColor(this.resolvedToken('colorBgItem'))},
+      itemSelected: {fg: parseColor(this.resolvedToken('colorFgItemSelected')), bg: parseColor(this.resolvedToken('colorBgItemSelected'))},
+      itemHovered: {fg: parseColor(this.resolvedToken('colorFgItemHovered')), bg: parseColor(this.resolvedToken('colorBgItemHovered'))},
     };
+
+    this.colors.hovered!.colorBorder = this.colors.normal.colorBorder;
 
     this.on('mousedown', mouseData => {
       this.#didDrag = false;
@@ -424,8 +402,8 @@ export class SelectWidget extends InteractiveWidget {
     return false;
   }
 
-  updateThemeColors(resolved: Record<string, unknown>): void {
-    applyColorSchemeUpdates(this.#triggerColors, resolved);
+  protected override onThemeColorsUpdated(resolved: Record<string, unknown>): void {
+    super.onThemeColorsUpdated(resolved);
 
     if (resolved.borderStyle !== undefined) {
       this.#borderStyle = resolveBorderStyle(resolved.borderStyle);
@@ -480,7 +458,7 @@ export class SelectWidget extends InteractiveWidget {
   #drawTrigger(buffer: DrawListBuffer, x: number, y: number, width: number, height: number): void {
     buffer.pushClip(x, y, width, height);
 
-    const colors = resolveColorState(this.#triggerColors, {
+    const colors = resolveColorState(this.colors, {
       disabled: this.disabled,
       focused: this.focused && !this.#opened,
       hovered: this.hovered && !this.#opened,
@@ -713,18 +691,7 @@ export class SelectWidget extends InteractiveWidget {
 }
 
 export function createSelectWidget(options?: Partial<SelectWidgetOptions>): SelectWidget {
-  const defaults = getDefaultSelectOptions();
-  if ((options?.label ?? '').length > 0) {
-    defaults.height = 3;
-  }
-
-  const ctorOptions = resolveThemedOverrides(options ?? {}, SELECT_TOKEN_MAP);
-  const widget = new SelectWidget({...defaults, ...ctorOptions});
-  widget.initTokenMap(SELECT_TOKEN_MAP);
-  bindThemeToWidget(widget, SELECT_TOKEN_MAP, options ?? {}, resolved => {
-    widget.updateThemeColors(resolved);
-  });
-  return widget;
+  return new SelectWidget(options ?? {});
 }
 
 export default SelectWidget;

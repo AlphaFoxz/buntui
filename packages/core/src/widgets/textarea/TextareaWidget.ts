@@ -7,13 +7,17 @@ import {
   type TuiWidgetRect,
   type TuiWidgetSize,
 } from '../types';
-import {InteractiveWidget} from '../InteractiveWidget';
+import {ThemedWidget} from '../ThemedWidget';
 import {parseColor} from '../../utils/color';
-import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
-import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
-import {resolveThemedOverrides} from '../../theme/color-ref';
+import {stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
+import {resolveColorState} from '../color-scheme';
 import {getClipboard} from '../../clipboard';
+import {charIndexAtColumn} from '../text-editing/text-measure';
+import {wordEndAfter, wordRangeAt, wordStartBefore} from '../text-editing/word-boundary';
+import {type SelectionRange, deleteRange, normalizeSelectionRange} from '../text-editing/selection';
+import {UndoRedoStack} from '../text-editing/undo-redo-stack';
+import {clampInsertText, insertTextAt} from '../text-editing/clipboard-edit-ops';
+import {cycleCursorMode} from '../text-editing/cursor-mode';
 import {
   computeScrollbarGeometry,
   scrollbarHitTest,
@@ -25,39 +29,6 @@ import type {TextareaWidgetOptions} from './types';
 
 type TextareaColors = {fg: number; bg: number; colorBorder: number};
 type TextareaExtraColors = {placeholder: number; selectionBg: number; selectionFg: number; scrollbar: number; scrollbarTrack: number};
-
-function charIndexAtColumn(text: string, column: number): number {
-  let width = 0;
-  let index = 0;
-  for (const char of text) {
-    const cw = charDisplayWidth(char);
-    if (width + cw > column) {
-      break;
-    }
-
-    width += cw;
-    index++;
-  }
-
-  return index;
-}
-
-const CHAR_CATEGORY_WORD = 0;
-const CHAR_CATEGORY_SPACE = 1;
-const CHAR_CATEGORY_PUNCT = 2;
-const CHAR_CATEGORY_CJK = 3;
-
-function charCategory(code: number): number {
-  if (code <= 0x20) {
-    return CHAR_CATEGORY_SPACE;
-  }
-
-  if ((code >= 0x4E_00 && code <= 0x9F_FF) || (code >= 0x34_00 && code <= 0x4D_BF) || (code >= 0x30_00 && code <= 0x30_3F) || (code >= 0xFF_00 && code <= 0xFF_EF)) {
-    return CHAR_CATEGORY_CJK;
-  }
-
-  return (code >= 0x21 && code <= 0x2F) || (code >= 0x3A && code <= 0x40) || (code >= 0x5B && code <= 0x60) || (code >= 0x7B && code <= 0x7E) ? CHAR_CATEGORY_PUNCT : CHAR_CATEGORY_WORD;
-}
 
 const TEXTAREA_TOKEN_MAP = {
   colorFgNormal: 'text',
@@ -89,8 +60,6 @@ function getDefaultTextareaOptions(): TextareaWidgetOptions {
     label: '',
     readonly: false,
     disabled: false,
-
-    ...resolveWidgetColors(TEXTAREA_TOKEN_MAP),
   };
 }
 
@@ -106,13 +75,16 @@ type VisualLine = {
   charCount: number;
 };
 
-export class TextareaWidget extends InteractiveWidget {
+type TextareaEditState = {value: string; cursorLine: number; cursorCol: number; selectionAnchor: TextPosition | undefined};
+
+export class TextareaWidget extends ThemedWidget<TextareaColors> {
+  static override readonly TOKEN_MAP = TEXTAREA_TOKEN_MAP;
+
   #x: number;
   #y: number;
   #width: number;
   #height: number;
 
-  readonly #colors: ColorScheme<TextareaColors>;
   #borderStyle: number;
   #maxLength: number;
   #placeholder: string;
@@ -135,43 +107,25 @@ export class TextareaWidget extends InteractiveWidget {
   #thumbDragStartY = 0;
   #thumbDragStartOffset = 0;
   #cursorMode: CursorModeName = 'blinking-ibeam';
-  readonly #undoStack: Array<{value: string; cursorLine: number; cursorCol: number; selectionAnchor: TextPosition | undefined}> = [];
-  readonly #redoStack: Array<{value: string; cursorLine: number; cursorCol: number; selectionAnchor: TextPosition | undefined}> = [];
+  readonly #history = new UndoRedoStack<TextareaEditState>();
 
   constructor(options: TextareaWidgetOptions = {}) {
-    super();
+    super(options);
     const resolved = {...getDefaultTextareaOptions(), ...options};
     const rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
     this.#x = rect.x;
     this.#y = rect.y;
     this.#width = rect.width;
     this.#height = rect.height;
-    this.#colors = {
-      normal: {
-        fg: parseColor(resolved.colorFgNormal),
-        bg: parseColor(resolved.colorBgNormal),
-        colorBorder: parseColor(resolved.colorBorderUnfocused),
-      },
-      focused: {
-        fg: parseColor(resolved.colorFgFocused),
-        bg: parseColor(resolved.colorBgFocused),
-        colorBorder: parseColor(resolved.colorBorderFocused),
-      },
-      disabled: {
-        fg: parseColor(resolved.colorFgDisabled),
-        bg: parseColor(resolved.colorBgDisabled),
-        colorBorder: parseColor(resolved.colorBorderDisabled),
-      },
-    };
-    this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
+    this.#borderStyle = resolveBorderStyle(this.resolvedToken('borderStyle') ?? 'solid');
     this.#maxLength = resolved.maxLength ?? 0;
     this.#placeholder = resolved.placeholder ?? '';
     this.#extraColors = {
-      placeholder: parseColor(resolved.colorPlaceholder),
-      selectionBg: parseColor(resolved.colorSelectionBg),
-      selectionFg: parseColor(resolved.colorSelectionFg),
-      scrollbar: parseColor(resolved.colorScrollbar),
-      scrollbarTrack: parseColor(resolved.colorScrollbarTrack),
+      placeholder: parseColor(this.resolvedToken('colorPlaceholder')),
+      selectionBg: parseColor(this.resolvedToken('colorSelectionBg')),
+      selectionFg: parseColor(this.resolvedToken('colorSelectionFg')),
+      scrollbar: parseColor(this.resolvedToken('colorScrollbar')),
+      scrollbarTrack: parseColor(this.resolvedToken('colorScrollbarTrack')),
     };
     this.#label = resolved.label ?? '';
     this.#isReadonly = resolved.readonly ?? false;
@@ -377,8 +331,8 @@ export class TextareaWidget extends InteractiveWidget {
   updateColor(color: {colorFg?: number; colorBg?: number}): void {
     if (color.colorFg !== undefined) {
       const parsed = this._resolveColorValue(color.colorFg, 'colorFgNormal');
-      this.#colors.normal.fg = parsed;
-      this.#colors.focused!.fg = parsed;
+      this.colors.normal.fg = parsed;
+      this.colors.focused!.fg = parsed;
     }
 
     if (color.colorBg === undefined) {
@@ -386,8 +340,8 @@ export class TextareaWidget extends InteractiveWidget {
     }
 
     const parsed = this._resolveColorValue(color.colorBg, 'colorBgNormal');
-    this.#colors.normal.bg = parsed;
-    this.#colors.focused!.bg = parsed;
+    this.colors.normal.bg = parsed;
+    this.colors.focused!.bg = parsed;
   }
 
   updateBorder(border: {borderStyle?: TuiBorderStyleName}): void {
@@ -555,8 +509,8 @@ export class TextareaWidget extends InteractiveWidget {
     }
   }
 
-  updateThemeColors(resolved: Record<string, unknown>): void {
-    applyColorSchemeUpdates(this.#colors, resolved);
+  protected override onThemeColorsUpdated(resolved: Record<string, unknown>): void {
+    super.onThemeColorsUpdated(resolved);
     if (resolved.borderStyle !== undefined) {
       this.#borderStyle = resolveBorderStyle(resolved.borderStyle);
       this.#rebuildVisualLines();
@@ -590,7 +544,7 @@ export class TextareaWidget extends InteractiveWidget {
 
     buffer.pushClip(this.#x, this.#y, this.#width, this.#height);
 
-    const colors = resolveColorState(this.#colors, {
+    const colors = resolveColorState(this.colors, {
       disabled: this.disabled,
       focused: this.focused,
     });
@@ -723,9 +677,7 @@ export class TextareaWidget extends InteractiveWidget {
   }
 
   #cycleCursorMode(): void {
-    const modes: CursorModeName[] = ['blinking-ibeam', 'blinking-block', 'blinking-underscore', 'ibeam', 'block', 'underscore'];
-    const idx = modes.indexOf(this.#cursorMode);
-    this.#cursorMode = modes[(idx + 1) % modes.length]!;
+    this.#cursorMode = cycleCursorMode(this.#cursorMode);
   }
 
   #rebuildLines(): void {
@@ -868,40 +820,17 @@ export class TextareaWidget extends InteractiveWidget {
   }
 
   #wordRangeAt(line: number, col: number): [number, number] {
-    const text = this.#logicalLines[line];
-    if (text === undefined || text.length === 0) {
-      return [0, 0];
-    }
-
-    const clamped = Math.min(col, text.length - 1);
-    let start = clamped;
-    let end = clamped;
-    const cat = charCategory(text.codePointAt(clamped)!);
-    while (start > 0 && charCategory(text.codePointAt(start - 1)!) === cat) {
-      start--;
-    }
-
-    while (end < text.length && charCategory(text.codePointAt(end)!) === cat) {
-      end++;
-    }
-
-    return [start, end];
+    return wordRangeAt(this.#logicalLines[line] ?? '', col);
   }
 
-  #getSelectionRange(): {start: number; end: number} | undefined {
+  #getSelectionRange(): SelectionRange | undefined {
     if (this.#selectionAnchor === undefined) {
       return undefined;
     }
 
     const anchorOffset = this.#positionToOffset(this.#selectionAnchor);
     const cursorOffset = this.#positionToOffset({line: this.#cursorLine, col: this.#cursorCol});
-    if (anchorOffset === cursorOffset) {
-      return undefined;
-    }
-
-    return anchorOffset < cursorOffset
-      ? {start: anchorOffset, end: cursorOffset}
-      : {start: cursorOffset, end: anchorOffset};
+    return normalizeSelectionRange(anchorOffset, cursorOffset);
   }
 
   #deleteSelection(): boolean {
@@ -910,9 +839,10 @@ export class TextareaWidget extends InteractiveWidget {
       return false;
     }
 
-    this.#value = this.#value.slice(0, range.start) + this.#value.slice(range.end);
+    const result = deleteRange(this.#value, range);
+    this.#value = result.value;
     this.#rebuildLines();
-    const pos = this.#offsetToPosition(range.start);
+    const pos = this.#offsetToPosition(result.cursor);
     this.#cursorLine = pos.line;
     this.#cursorCol = pos.col;
     this.#selectionAnchor = undefined;
@@ -940,7 +870,7 @@ export class TextareaWidget extends InteractiveWidget {
     this.#deleteSelection();
     if (this.#maxLength === 0 || this.#value.length < this.#maxLength) {
       const offset = this.#positionToOffset({line: this.#cursorLine, col: this.#cursorCol});
-      this.#value = this.#value.slice(0, offset) + char + this.#value.slice(offset);
+      this.#value = insertTextAt(this.#value, offset, char);
       this.#rebuildLines();
       this.#cursorCol++;
     }
@@ -953,7 +883,7 @@ export class TextareaWidget extends InteractiveWidget {
     this.#pushUndo();
     this.#deleteSelection();
     const offset = this.#positionToOffset({line: this.#cursorLine, col: this.#cursorCol});
-    this.#value = this.#value.slice(0, offset) + '\n' + this.#value.slice(offset);
+    this.#value = insertTextAt(this.#value, offset, '\n');
     this.#rebuildLines();
     const charsAfterCursor = this.#logicalLines[this.#cursorLine]!.length - this.#cursorCol;
     this.#cursorLine++;
@@ -967,7 +897,7 @@ export class TextareaWidget extends InteractiveWidget {
     this.#deleteSelection();
     const offset = this.#positionToOffset({line: this.#cursorLine, col: this.#cursorCol});
     const tab = ' '.repeat(4);
-    this.#value = this.#value.slice(0, offset) + tab + this.#value.slice(offset);
+    this.#value = insertTextAt(this.#value, offset, tab);
     this.#rebuildLines();
     this.#cursorCol += tab.length;
     this.#clampScrollOffset();
@@ -1044,14 +974,8 @@ export class TextareaWidget extends InteractiveWidget {
 
     this.#pushUndo();
     if (this.#cursorCol > 0) {
-      let pos = this.#cursorCol;
       const text = this.#logicalLines[this.#cursorLine]!;
-      const cat = charCategory(text.codePointAt(pos - 1)!);
-      pos--;
-      while (pos > 0 && charCategory(text.codePointAt(pos - 1)!) === cat) {
-        pos--;
-      }
-
+      const pos = wordStartBefore(text, this.#cursorCol);
       this.#logicalLines[this.#cursorLine] = text.slice(0, pos) + text.slice(this.#cursorCol);
       this.#cursorCol = pos;
     } else {
@@ -1083,13 +1007,7 @@ export class TextareaWidget extends InteractiveWidget {
 
     this.#pushUndo();
     if (this.#cursorCol < text.length) {
-      let pos = this.#cursorCol;
-      const cat = charCategory(text.codePointAt(pos)!);
-      pos++;
-      while (pos < text.length && charCategory(text.codePointAt(pos)!) === cat) {
-        pos++;
-      }
-
+      const pos = wordEndAfter(text, this.#cursorCol);
       this.#logicalLines[this.#cursorLine] = text.slice(0, this.#cursorCol) + text.slice(pos);
     } else {
       this.#logicalLines[this.#cursorLine] += this.#logicalLines[this.#cursorLine + 1]!;
@@ -1225,15 +1143,7 @@ export class TextareaWidget extends InteractiveWidget {
       return;
     }
 
-    let pos = this.#cursorCol;
-    const text = this.#logicalLines[this.#cursorLine]!;
-    const cat = charCategory(text.codePointAt(pos - 1)!);
-    pos--;
-    while (pos > 0 && charCategory(text.codePointAt(pos - 1)!) === cat) {
-      pos--;
-    }
-
-    this.#cursorCol = pos;
+    this.#cursorCol = wordStartBefore(this.#logicalLines[this.#cursorLine]!, this.#cursorCol);
     this.#clampScrollOffset();
   }
 
@@ -1250,14 +1160,7 @@ export class TextareaWidget extends InteractiveWidget {
       return;
     }
 
-    let pos = this.#cursorCol;
-    const cat = charCategory(text.codePointAt(pos)!);
-    pos++;
-    while (pos < text.length && charCategory(text.codePointAt(pos)!) === cat) {
-      pos++;
-    }
-
-    this.#cursorCol = pos;
+    this.#cursorCol = wordEndAfter(text, this.#cursorCol);
     this.#clampScrollOffset();
   }
 
@@ -1349,19 +1252,16 @@ export class TextareaWidget extends InteractiveWidget {
     this.#pushUndo();
     this.#deleteSelection();
 
-    if (this.#maxLength > 0 && this.#value.length >= this.#maxLength) {
+    const toInsert = clampInsertText(text, this.#value.length, this.#maxLength);
+    if (toInsert.length === 0) {
       return;
     }
 
-    const available = this.#maxLength === 0 ? text.length : this.#maxLength - this.#value.length;
-    const toInsert = text.slice(0, available);
-
     const offset = this.#positionToOffset({line: this.#cursorLine, col: this.#cursorCol});
-    this.#value = this.#value.slice(0, offset) + toInsert + this.#value.slice(offset);
+    this.#value = insertTextAt(this.#value, offset, toInsert);
     this.#rebuildLines();
 
-    const newOffset = offset + toInsert.length;
-    const newPos = this.#offsetToPosition(newOffset);
+    const newPos = this.#offsetToPosition(offset + toInsert.length);
     this.#cursorLine = newPos.line;
     this.#cursorCol = newPos.col;
     this.#clampScrollOffset();
@@ -1369,59 +1269,43 @@ export class TextareaWidget extends InteractiveWidget {
     this.dispatch('input', {value: this.#value});
   }
 
-  #pushUndo(): void {
-    if (this.#undoStack.length >= 100) {
-      this.#undoStack.shift();
-    }
+  #captureState(): TextareaEditState {
+    return {
+      value: this.#value, cursorLine: this.#cursorLine, cursorCol: this.#cursorCol, selectionAnchor: this.#selectionAnchor,
+    };
+  }
 
-    this.#undoStack.push({
-      value: this.#value,
-      cursorLine: this.#cursorLine,
-      cursorCol: this.#cursorCol,
-      selectionAnchor: this.#selectionAnchor,
-    });
-    this.#redoStack.length = 0;
+  #restoreState(state: TextareaEditState): void {
+    this.#value = state.value;
+    this.#rebuildLines();
+    this.#cursorLine = state.cursorLine;
+    this.#cursorCol = state.cursorCol;
+    this.#selectionAnchor = state.selectionAnchor;
+  }
+
+  #pushUndo(): void {
+    this.#history.pushUndo(this.#captureState());
   }
 
   #handleUndo(): void {
-    if (this.#undoStack.length === 0) {
+    const snapshot = this.#history.undo(this.#captureState());
+    if (snapshot === undefined) {
       return;
     }
 
-    this.#redoStack.push({
-      value: this.#value,
-      cursorLine: this.#cursorLine,
-      cursorCol: this.#cursorCol,
-      selectionAnchor: this.#selectionAnchor,
-    });
-    const snapshot = this.#undoStack.pop()!;
-    this.#value = snapshot.value;
-    this.#rebuildLines();
-    this.#cursorLine = snapshot.cursorLine;
-    this.#cursorCol = snapshot.cursorCol;
-    this.#selectionAnchor = snapshot.selectionAnchor;
+    this.#restoreState(snapshot);
     this.#clampScrollOffset();
     this.dispatch('undo', {value: this.#value});
     this.dispatch('input', {value: this.#value});
   }
 
   #handleRedo(): void {
-    if (this.#redoStack.length === 0) {
+    const snapshot = this.#history.redo(this.#captureState());
+    if (snapshot === undefined) {
       return;
     }
 
-    this.#undoStack.push({
-      value: this.#value,
-      cursorLine: this.#cursorLine,
-      cursorCol: this.#cursorCol,
-      selectionAnchor: this.#selectionAnchor,
-    });
-    const snapshot = this.#redoStack.pop()!;
-    this.#value = snapshot.value;
-    this.#rebuildLines();
-    this.#cursorLine = snapshot.cursorLine;
-    this.#cursorCol = snapshot.cursorCol;
-    this.#selectionAnchor = snapshot.selectionAnchor;
+    this.#restoreState(snapshot);
     this.#clampScrollOffset();
     this.dispatch('redo', {value: this.#value});
     this.dispatch('input', {value: this.#value});
@@ -1558,13 +1442,7 @@ export class TextareaWidget extends InteractiveWidget {
 }
 
 export function createTextareaWidget(options?: Partial<TextareaWidgetOptions>): TextareaWidget {
-  const ctorOptions = resolveThemedOverrides(options ?? {}, TEXTAREA_TOKEN_MAP);
-  const widget = new TextareaWidget({...getDefaultTextareaOptions(), ...ctorOptions});
-  widget.initTokenMap(TEXTAREA_TOKEN_MAP);
-  bindThemeToWidget(widget, TEXTAREA_TOKEN_MAP, options ?? {}, resolved => {
-    widget.updateThemeColors(resolved);
-  });
-  return widget;
+  return new TextareaWidget(options ?? {});
 }
 
 export default TextareaWidget;

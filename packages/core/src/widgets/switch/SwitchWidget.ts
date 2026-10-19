@@ -7,11 +7,8 @@ import {
   type TuiWidgetRect,
   type TuiWidgetSize,
 } from '../types';
-import {InteractiveWidget} from '../InteractiveWidget';
-import {parseColor} from '../../utils/color';
-import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
-import {resolveThemedOverrides} from '../../theme/color-ref';
+import {resolveColorState} from '../color-scheme';
+import {ThemedWidget} from '../ThemedWidget';
 import type {SwitchWidgetOptions} from './types';
 
 type SwitchColors = {
@@ -20,6 +17,8 @@ type SwitchColors = {
   cross: number;
   check: number;
   dim: number;
+  colorBorder: number;
+  borderStyle: number;
 };
 
 const SWITCH_TOKEN_MAP = {
@@ -47,7 +46,7 @@ const SWITCH_TOKEN_MAP = {
   borderStyleFocused: 'border.focused',
 } as const;
 
-function getDefaultSwitchOptions(): Required<SwitchWidgetOptions> {
+function getDefaultSwitchOptions() {
   return {
     x: 0,
     y: 0,
@@ -56,62 +55,23 @@ function getDefaultSwitchOptions(): Required<SwitchWidgetOptions> {
     label: '',
     checked: false,
     disabled: false,
-
-    ...resolveWidgetColors(SWITCH_TOKEN_MAP),
   };
 }
 
-export class SwitchWidget extends InteractiveWidget {
+export class SwitchWidget extends ThemedWidget<SwitchColors> {
+  static override readonly TOKEN_MAP = SWITCH_TOKEN_MAP;
+
   readonly #rect: TuiWidgetRect;
   #label: string;
   #checked: boolean;
 
-  readonly #colors: ColorScheme<SwitchColors>;
-  readonly #focusBorder: {colorBorder: number; borderStyle: number};
-
   constructor(options: SwitchWidgetOptions = {}) {
-    super();
+    super(options);
     const resolved = {...getDefaultSwitchOptions(), ...options};
     this.#rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
     this.#label = resolved.label;
     this.#checked = resolved.checked;
     this.setDisabled(resolved.disabled);
-
-    this.#colors = {
-      normal: {
-        fg: parseColor(resolved.colorFgNormal),
-        bg: parseColor(resolved.colorBgNormal),
-        cross: parseColor(resolved.colorCrossNormal),
-        check: parseColor(resolved.colorCheckNormal),
-        dim: parseColor(resolved.colorDimNormal),
-      },
-      hovered: {
-        fg: parseColor(resolved.colorFgHovered),
-        bg: parseColor(resolved.colorBgHovered),
-        cross: parseColor(resolved.colorCrossHovered),
-        check: parseColor(resolved.colorCheckHovered),
-        dim: parseColor(resolved.colorDimHovered),
-      },
-      focused: {
-        fg: parseColor(resolved.colorFgFocused),
-        bg: parseColor(resolved.colorBgFocused),
-        cross: parseColor(resolved.colorCrossFocused),
-        check: parseColor(resolved.colorCheckFocused),
-        dim: parseColor(resolved.colorDimFocused),
-      },
-      disabled: {
-        fg: parseColor(resolved.colorFgDisabled),
-        bg: parseColor(resolved.colorBgDisabled),
-        cross: parseColor(resolved.colorCrossDisabled),
-        check: parseColor(resolved.colorCheckDisabled),
-        dim: parseColor(resolved.colorDimDisabled),
-      },
-    };
-
-    this.#focusBorder = {
-      colorBorder: parseColor(resolved.colorBorderFocused),
-      borderStyle: resolveBorderStyle(resolved.borderStyleFocused),
-    };
 
     this.on('click', () => {
       this.#toggle();
@@ -153,23 +113,11 @@ export class SwitchWidget extends InteractiveWidget {
       return;
     }
 
-    this.#focusBorder.borderStyle = resolveBorderStyle(options.borderStyle);
+    this.colors.focused!.borderStyle = resolveBorderStyle(options.borderStyle);
   }
 
   override updateRect(rect: Partial<TuiWidgetRect>): void {
     Object.assign(this.#rect, rect);
-  }
-
-  updateThemeColors(resolved: Record<string, unknown>): void {
-    applyColorSchemeUpdates(this.#colors, resolved);
-
-    if (resolved.colorBorderFocused !== undefined) {
-      this.#focusBorder.colorBorder = parseColor(resolved.colorBorderFocused);
-    }
-
-    if (resolved.borderStyleFocused !== undefined) {
-      this.#focusBorder.borderStyle = resolveBorderStyle(resolved.borderStyleFocused);
-    }
   }
 
   override emitDrawCommands(buffer: DrawListBuffer): void {
@@ -180,7 +128,7 @@ export class SwitchWidget extends InteractiveWidget {
 
     buffer.pushClip(x, y, width, height);
 
-    const colors = resolveColorState(this.#colors, {
+    const colors = resolveColorState(this.colors, {
       disabled: this.disabled,
       focused: this.focused,
       hovered: this.hovered,
@@ -234,14 +182,14 @@ export class SwitchWidget extends InteractiveWidget {
       }
     }
 
-    if (this.focused && !this.disabled && this.#focusBorder.borderStyle !== 0) {
+    if (this.focused && !this.disabled && this.colors.focused!.borderStyle !== 0) {
       buffer.drawBorder({
         x,
         y,
         width,
         height,
-        colorRgba: this.#focusBorder.colorBorder,
-        style: this.#focusBorder.borderStyle,
+        colorRgba: this.colors.focused!.colorBorder,
+        style: this.colors.focused!.borderStyle,
         sides: BorderSides.All,
       });
     }
@@ -256,13 +204,7 @@ export class SwitchWidget extends InteractiveWidget {
 }
 
 export function createSwitchWidget(options?: Partial<SwitchWidgetOptions>): SwitchWidget {
-  const ctorOptions = resolveThemedOverrides(options ?? {}, SWITCH_TOKEN_MAP);
-  const widget = new SwitchWidget({...getDefaultSwitchOptions(), ...ctorOptions});
-  widget.initTokenMap(SWITCH_TOKEN_MAP);
-  bindThemeToWidget(widget, SWITCH_TOKEN_MAP, options ?? {}, resolved => {
-    widget.updateThemeColors(resolved);
-  });
-  return widget;
+  return new SwitchWidget(options ?? {});
 }
 
 export default SwitchWidget;

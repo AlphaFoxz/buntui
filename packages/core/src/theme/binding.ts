@@ -40,6 +40,10 @@ function resolveToken(theme: TuiTheme, token: string): unknown {
   return theme.colors[token as keyof TuiThemeColors];
 }
 
+export function resolveThemeTokenValue(token: ThemeToken): unknown {
+  return resolveToken(getTheme(), token);
+}
+
 export function bindThemeToWidget<M extends Record<string, ThemeToken>>(
   widget: TuiWidgetEntity,
   tokenMap: M,

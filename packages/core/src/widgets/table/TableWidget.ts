@@ -7,20 +7,16 @@ import {
   type TuiWidgetRect,
   type TuiWidgetSize,
 } from '../types';
-import {InteractiveWidget} from '../InteractiveWidget';
+import {ThemedWidget} from '../ThemedWidget';
 import {parseColor} from '../../utils/color';
 import {stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
-import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
-import {resolveThemedOverrides} from '../../theme/color-ref';
+import {resolveColorState} from '../color-scheme';
 import type {TableColumn, TableRow, TableWidgetOptions} from './types';
 
 type TableColors = {
   fg: number;
   bg: number;
   colorBorder: number;
-  colorHeaderFg: number;
-  colorHeaderBg: number;
 };
 
 type TableExtraColors = {headerFg: number; headerBg: number; selectionBg: number; selectionFg: number; scrollbar: number; scrollbarTrack: number};
@@ -53,8 +49,6 @@ function getDefaultTableOptions(): TableWidgetOptions {
     columns: [],
     rows: [],
     disabled: false,
-
-    ...resolveWidgetColors(TABLE_TOKEN_MAP),
   };
 }
 
@@ -67,13 +61,14 @@ type ResolvedColumn = {
   align: 'left' | 'center' | 'right';
 };
 
-export class TableWidget extends InteractiveWidget {
+export class TableWidget extends ThemedWidget<TableColors> {
+  static override readonly TOKEN_MAP = TABLE_TOKEN_MAP;
+
   #x: number;
   #y: number;
   #width: number;
   #height: number;
 
-  readonly #colors: ColorScheme<TableColors>;
   #borderStyle: number;
   #focusBorderStyle: number;
   readonly #extraColors: TableExtraColors;
@@ -84,45 +79,22 @@ export class TableWidget extends InteractiveWidget {
   #scrollOffsetY = 0;
 
   constructor(options: TableWidgetOptions = {}) {
-    super();
+    super(options);
     const resolved = {...getDefaultTableOptions(), ...options};
     const rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
     this.#x = rect.x;
     this.#y = rect.y;
     this.#width = rect.width;
     this.#height = rect.height;
-    this.#colors = {
-      normal: {
-        fg: parseColor(resolved.colorFgNormal),
-        bg: parseColor(resolved.colorBgNormal),
-        colorBorder: parseColor(resolved.colorBorder),
-        colorHeaderFg: parseColor(resolved.colorHeaderFg),
-        colorHeaderBg: parseColor(resolved.colorHeaderBg),
-      },
-      focused: {
-        fg: parseColor(resolved.colorFgFocused),
-        bg: parseColor(resolved.colorBgFocused),
-        colorBorder: parseColor(resolved.colorBorderFocused ?? resolved.colorBorder),
-        colorHeaderFg: parseColor(resolved.colorHeaderFg),
-        colorHeaderBg: parseColor(resolved.colorHeaderBg),
-      },
-      disabled: {
-        fg: parseColor(resolved.colorFgDisabled),
-        bg: parseColor(resolved.colorBgDisabled),
-        colorBorder: parseColor(resolved.colorBorder),
-        colorHeaderFg: parseColor(resolved.colorHeaderFg),
-        colorHeaderBg: parseColor(resolved.colorHeaderBg),
-      },
-    };
-    this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
-    this.#focusBorderStyle = resolveBorderStyle(resolved.borderStyleFocused ?? resolved.borderStyle ?? 'solid');
+    this.#borderStyle = resolveBorderStyle(this.resolvedToken('borderStyle') ?? 'solid');
+    this.#focusBorderStyle = resolveBorderStyle(this.resolvedToken('borderStyleFocused') ?? this.resolvedToken('borderStyle') ?? 'solid');
     this.#extraColors = {
-      headerFg: parseColor(resolved.colorHeaderFg),
-      headerBg: parseColor(resolved.colorHeaderBg),
-      selectionBg: parseColor(resolved.colorSelectionBg),
-      selectionFg: parseColor(resolved.colorSelectionFg),
-      scrollbar: parseColor(resolved.colorScrollbar),
-      scrollbarTrack: parseColor(resolved.colorScrollbarTrack),
+      headerFg: parseColor(this.resolvedToken('colorHeaderFg')),
+      headerBg: parseColor(this.resolvedToken('colorHeaderBg')),
+      selectionBg: parseColor(this.resolvedToken('colorSelectionBg')),
+      selectionFg: parseColor(this.resolvedToken('colorSelectionFg')),
+      scrollbar: parseColor(this.resolvedToken('colorScrollbar')),
+      scrollbarTrack: parseColor(this.resolvedToken('colorScrollbarTrack')),
     };
     this.setDisabled(resolved.disabled ?? false);
 
@@ -208,8 +180,8 @@ export class TableWidget extends InteractiveWidget {
   updateColor(color: {colorFg?: number; colorBg?: number}): void {
     if (color.colorFg !== undefined) {
       const parsed = this._resolveColorValue(color.colorFg, 'colorFgNormal');
-      this.#colors.normal.fg = parsed;
-      this.#colors.focused!.fg = parsed;
+      this.colors.normal.fg = parsed;
+      this.colors.focused!.fg = parsed;
     }
 
     if (color.colorBg === undefined) {
@@ -217,8 +189,8 @@ export class TableWidget extends InteractiveWidget {
     }
 
     const parsed = this._resolveColorValue(color.colorBg, 'colorBgNormal');
-    this.#colors.normal.bg = parsed;
-    this.#colors.focused!.bg = parsed;
+    this.colors.normal.bg = parsed;
+    this.colors.focused!.bg = parsed;
   }
 
   updateBorder(border: {borderStyle?: TuiBorderStyleName; borderStyleFocused?: TuiBorderStyleName}): void {
@@ -231,8 +203,8 @@ export class TableWidget extends InteractiveWidget {
     }
   }
 
-  updateThemeColors(resolved: Record<string, unknown>): void {
-    applyColorSchemeUpdates(this.#colors, resolved);
+  protected override onThemeColorsUpdated(resolved: Record<string, unknown>): void {
+    super.onThemeColorsUpdated(resolved);
     if (resolved.borderStyle !== undefined) {
       this.#borderStyle = resolveBorderStyle(resolved.borderStyle);
     }
@@ -358,7 +330,7 @@ export class TableWidget extends InteractiveWidget {
 
     buffer.pushClip(this.#x, this.#y, this.#width, this.#height);
 
-    const colors = resolveColorState(this.#colors, {
+    const colors = resolveColorState(this.colors, {
       disabled: this.disabled,
       focused: this.focused,
     });
@@ -499,7 +471,7 @@ export class TableWidget extends InteractiveWidget {
 
     buffer.pushClip(x, y, width, height);
 
-    const colors = resolveColorState(this.#colors, {
+    const colors = resolveColorState(this.colors, {
       disabled: this.disabled,
       focused: this.focused,
     });
@@ -592,13 +564,7 @@ export class TableWidget extends InteractiveWidget {
 }
 
 export function createTableWidget(options?: Partial<TableWidgetOptions>): TableWidget {
-  const ctorOptions = resolveThemedOverrides(options ?? {}, TABLE_TOKEN_MAP);
-  const widget = new TableWidget({...getDefaultTableOptions(), ...ctorOptions});
-  widget.initTokenMap(TABLE_TOKEN_MAP);
-  bindThemeToWidget(widget, TABLE_TOKEN_MAP, options ?? {}, resolved => {
-    widget.updateThemeColors(resolved);
-  });
-  return widget;
+  return new TableWidget(options ?? {});
 }
 
 export default TableWidget;

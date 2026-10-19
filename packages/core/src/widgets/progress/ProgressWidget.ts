@@ -1,11 +1,8 @@
 import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import type {KeyboardEvent} from '../../events/types';
-import type {TuiWidgetRect, TuiWidgetSize} from '../types';
-import {InteractiveWidget} from '../InteractiveWidget';
-import {parseColor} from '../../utils/color';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
-import {resolveThemedOverrides} from '../../theme/color-ref';
-import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
+import {type TuiSizeValue, type TuiWidgetRect, type TuiWidgetSize} from '../types';
+import {resolveColorState} from '../color-scheme';
+import {ThemedWidget} from '../ThemedWidget';
 import type {ProgressWidgetOptions} from './types';
 
 type ProgressColors = {
@@ -22,18 +19,19 @@ const PROGRESS_TOKEN_MAP = {
 
 function getDefaultProgressOptions() {
   return {
-    x: 0 as number | `${number}%`,
-    y: 0 as number | `${number}%`,
-    width: 30 as number | `${number}%`,
-    height: 1 as number | `${number}%`,
+    x: 0 as TuiSizeValue,
+    y: 0 as TuiSizeValue,
+    width: 30 as TuiSizeValue,
+    height: 1 as TuiSizeValue,
     value: undefined as number | undefined,
     max: 1,
     disabled: false,
-    ...resolveWidgetColors(PROGRESS_TOKEN_MAP),
   };
 }
 
-export class ProgressWidget extends InteractiveWidget {
+export class ProgressWidget extends ThemedWidget<ProgressColors> {
+  static override readonly TOKEN_MAP = PROGRESS_TOKEN_MAP;
+
   static readonly #ANIM_SPEED = 0.4;
 
   readonly #rect: TuiWidgetRect;
@@ -42,26 +40,13 @@ export class ProgressWidget extends InteractiveWidget {
   #animOffset = 0;
   #animDirection = 1;
 
-  readonly #colors: ColorScheme<ProgressColors>;
-
   constructor(options: ProgressWidgetOptions = {}) {
-    super();
+    super(options);
     const resolved = {...getDefaultProgressOptions(), ...options};
     this.#rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
     this.#max = resolved.max;
     this.#value = resolved.value === undefined ? undefined : this.#clamp(resolved.value);
     this.setDisabled(resolved.disabled);
-
-    this.#colors = {
-      normal: {
-        track: parseColor(resolved.colorTrackNormal),
-        fill: parseColor(resolved.colorFillNormal),
-      },
-      disabled: {
-        track: parseColor(resolved.colorTrackDisabled),
-        fill: parseColor(resolved.colorFillDisabled),
-      },
-    };
   }
 
   override get acceptsFocus(): boolean {
@@ -128,10 +113,6 @@ export class ProgressWidget extends InteractiveWidget {
     // No-op
   }
 
-  updateThemeColors(resolved: Record<string, unknown>): void {
-    applyColorSchemeUpdates(this.#colors, resolved);
-  }
-
   override emitDrawCommands(buffer: DrawListBuffer): void {
     const {x, y, width, height} = this.#rect;
     if (width <= 0 || height <= 0) {
@@ -140,7 +121,7 @@ export class ProgressWidget extends InteractiveWidget {
 
     buffer.pushClip(x, y, width, height);
 
-    const colors = resolveColorState(this.#colors, {disabled: this.disabled});
+    const colors = resolveColorState(this.colors, {disabled: this.disabled});
     const trackColor = colors.track;
     const fillColor = colors.fill;
 
@@ -178,13 +159,7 @@ export class ProgressWidget extends InteractiveWidget {
 }
 
 export function createProgressWidget(options?: Partial<ProgressWidgetOptions>): ProgressWidget {
-  const ctorOptions = resolveThemedOverrides(options ?? {}, PROGRESS_TOKEN_MAP);
-  const widget = new ProgressWidget({...getDefaultProgressOptions(), ...ctorOptions});
-  widget.initTokenMap(PROGRESS_TOKEN_MAP);
-  bindThemeToWidget(widget, PROGRESS_TOKEN_MAP, options ?? {}, resolved => {
-    widget.updateThemeColors(resolved);
-  });
-  return widget;
+  return new ProgressWidget(options ?? {});
 }
 
 export default ProgressWidget;

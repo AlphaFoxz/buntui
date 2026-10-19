@@ -1,11 +1,8 @@
 import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
-import type {TuiWidgetRect, TuiWidgetSize} from '../types';
-import {InteractiveWidget} from '../InteractiveWidget';
-import {parseColor} from '../../utils/color';
-import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
-import {resolveThemedOverrides} from '../../theme/color-ref';
+import {type TuiWidgetRect, type TuiWidgetSize} from '../types';
+import {resolveColorState} from '../color-scheme';
+import {ThemedWidget} from '../ThemedWidget';
 import type {RadioGroupWidgetOptions} from './types';
 
 type RadioColors = {fg: number; bg: number};
@@ -23,59 +20,34 @@ const RADIO_TOKEN_MAP = {
   colorBgSelected: 'surfaceFocused',
 } as const;
 
-function getDefaultRadioOptions(): Required<RadioGroupWidgetOptions> {
+function getDefaultRadioOptions() {
   return {
     x: 0,
     y: 0,
     width: 20,
     height: 3,
-    options: [],
+    options: [] as string[],
     value: -1,
     disabled: false,
-
-    ...resolveWidgetColors(RADIO_TOKEN_MAP),
   };
 }
 
-export class RadioGroupWidget extends InteractiveWidget {
+export class RadioGroupWidget extends ThemedWidget<RadioColors> {
+  static override readonly TOKEN_MAP = RADIO_TOKEN_MAP;
+
   readonly #rect: TuiWidgetRect;
   #options: string[];
   #value: number;
   #hoveredIndex = -1;
   #focusedIndex = -1;
 
-  readonly #colors: ColorScheme<RadioColors>;
-
   constructor(options: RadioGroupWidgetOptions = {}) {
-    super();
+    super(options);
     const resolved = {...getDefaultRadioOptions(), ...options};
     this.#rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
     this.#options = resolved.options;
     this.#value = resolved.value;
     this.setDisabled(resolved.disabled);
-
-    this.#colors = {
-      normal: {
-        fg: parseColor(resolved.colorFgNormal),
-        bg: parseColor(resolved.colorBgNormal),
-      },
-      focused: {
-        fg: parseColor(resolved.colorFgFocused),
-        bg: parseColor(resolved.colorBgFocused),
-      },
-      hovered: {
-        fg: parseColor(resolved.colorFgHovered),
-        bg: parseColor(resolved.colorBgHovered),
-      },
-      disabled: {
-        fg: parseColor(resolved.colorFgDisabled),
-        bg: parseColor(resolved.colorBgDisabled),
-      },
-      selected: {
-        fg: parseColor(resolved.colorFgSelected),
-        bg: parseColor(resolved.colorBgSelected),
-      },
-    };
 
     this.on('mousedown', mouseData => {
       const {dy} = this.computeAccumulatedOffset();
@@ -187,10 +159,6 @@ export class RadioGroupWidget extends InteractiveWidget {
     Object.assign(this.#rect, rect);
   }
 
-  updateThemeColors(resolved: Record<string, unknown>): void {
-    applyColorSchemeUpdates(this.#colors, resolved);
-  }
-
   override emitDrawCommands(buffer: DrawListBuffer): void {
     const {x, y, width, height} = this.#rect;
     if (width <= 0 || height <= 0) {
@@ -199,7 +167,7 @@ export class RadioGroupWidget extends InteractiveWidget {
 
     buffer.pushClip(x, y, width, height);
 
-    const baseColors = resolveColorState(this.#colors, {
+    const baseColors = resolveColorState(this.colors, {
       disabled: this.disabled,
     });
 
@@ -220,7 +188,7 @@ export class RadioGroupWidget extends InteractiveWidget {
       const rowY = y + i;
 
       const indicator = isSelected ? '(●)' : '( )';
-      const colors = resolveColorState(this.#colors, {
+      const colors = resolveColorState(this.colors, {
         disabled: this.disabled,
         selected: isSelected,
         hovered: isHovered,
@@ -260,13 +228,7 @@ export class RadioGroupWidget extends InteractiveWidget {
 }
 
 export function createRadioGroupWidget(options?: Partial<RadioGroupWidgetOptions>): RadioGroupWidget {
-  const ctorOptions = resolveThemedOverrides(options ?? {}, RADIO_TOKEN_MAP);
-  const widget = new RadioGroupWidget({...getDefaultRadioOptions(), ...ctorOptions});
-  widget.initTokenMap(RADIO_TOKEN_MAP);
-  bindThemeToWidget(widget, RADIO_TOKEN_MAP, options ?? {}, resolved => {
-    widget.updateThemeColors(resolved);
-  });
-  return widget;
+  return new RadioGroupWidget(options ?? {});
 }
 
 export default RadioGroupWidget;

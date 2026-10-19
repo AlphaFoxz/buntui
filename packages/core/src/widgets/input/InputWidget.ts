@@ -7,50 +7,22 @@ import {
   type TuiWidgetRect,
   type TuiWidgetSize,
 } from '../types';
-import {InteractiveWidget} from '../InteractiveWidget';
+import {ThemedWidget} from '../ThemedWidget';
 import {parseColor} from '../../utils/color';
-import {charDisplayWidth, stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
-import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
-import {resolveThemedOverrides} from '../../theme/color-ref';
+import {stringDisplayWidth, truncateToWidth} from '../../utils/string-width';
+import {resolveColorState} from '../color-scheme';
 import {getClipboard} from '../../clipboard';
+import {charIndexAtColumn} from '../text-editing/text-measure';
+import {wordEndAfter, wordRangeAt, wordStartBefore} from '../text-editing/word-boundary';
+import {type SelectionRange, deleteRange, normalizeSelectionRange} from '../text-editing/selection';
+import {UndoRedoStack} from '../text-editing/undo-redo-stack';
+import {clampInsertText, insertTextAt} from '../text-editing/clipboard-edit-ops';
+import {cycleCursorMode} from '../text-editing/cursor-mode';
 import type {InputWidgetOptions} from './types';
 
 type InputColors = {fg: number; bg: number; colorBorder: number};
 type InputExtraColors = {placeholder: number; selectionBg: number; selectionFg: number};
-
-function charIndexAtColumn(text: string, column: number): number {
-  let width = 0;
-  let index = 0;
-  for (const char of text) {
-    const cw = charDisplayWidth(char);
-    if (width + cw > column) {
-      break;
-    }
-
-    width += cw;
-    index++;
-  }
-
-  return index;
-}
-
-const CHAR_CATEGORY_WORD = 0;
-const CHAR_CATEGORY_SPACE = 1;
-const CHAR_CATEGORY_PUNCT = 2;
-const CHAR_CATEGORY_CJK = 3;
-
-function charCategory(code: number): number {
-  if (code <= 0x20) {
-    return CHAR_CATEGORY_SPACE;
-  }
-
-  if ((code >= 0x4E_00 && code <= 0x9F_FF) || (code >= 0x34_00 && code <= 0x4D_BF) || (code >= 0x30_00 && code <= 0x30_3F) || (code >= 0xFF_00 && code <= 0xFF_EF)) {
-    return CHAR_CATEGORY_CJK;
-  }
-
-  return (code >= 0x21 && code <= 0x2F) || (code >= 0x3A && code <= 0x40) || (code >= 0x5B && code <= 0x60) || (code >= 0x7B && code <= 0x7E) ? CHAR_CATEGORY_PUNCT : CHAR_CATEGORY_WORD;
-}
+type InputEditState = {value: string; cursorPos: number; selectionAnchor: number | undefined};
 
 const INPUT_TOKEN_MAP = {
   colorFgNormal: 'text',
@@ -80,18 +52,17 @@ function getDefaultInputOptions(): InputWidgetOptions {
     label: '',
     readonly: false,
     disabled: false,
-
-    ...resolveWidgetColors(INPUT_TOKEN_MAP),
   };
 }
 
-export class InputWidget extends InteractiveWidget {
+export class InputWidget extends ThemedWidget<InputColors> {
+  static override readonly TOKEN_MAP = INPUT_TOKEN_MAP;
+
   #x: number;
   #y: number;
   #width: number;
   #height: number;
 
-  readonly #colors: ColorScheme<InputColors>;
   #borderStyle: number;
   #maxLength: number;
   #placeholder: string;
@@ -113,41 +84,23 @@ export class InputWidget extends InteractiveWidget {
   #lastClickTime = 0;
   #lastClickPos = -1;
   #cursorMode: CursorModeName = 'blinking-ibeam';
-  readonly #undoStack: Array<{value: string; cursorPos: number; selectionAnchor: number | undefined}> = [];
-  readonly #redoStack: Array<{value: string; cursorPos: number; selectionAnchor: number | undefined}> = [];
+  readonly #history = new UndoRedoStack<InputEditState>();
 
   constructor(options: InputWidgetOptions = {}) {
-    super();
+    super(options);
     const resolved = {...getDefaultInputOptions(), ...options};
     const rect = this.initRect(resolved.x, resolved.y, resolved.width, resolved.height);
     this.#x = rect.x;
     this.#y = rect.y;
     this.#width = rect.width;
     this.#height = rect.height;
-    this.#colors = {
-      normal: {
-        fg: parseColor(resolved.colorFgNormal),
-        bg: parseColor(resolved.colorBgNormal),
-        colorBorder: parseColor(resolved.colorBorderUnfocused),
-      },
-      focused: {
-        fg: parseColor(resolved.colorFgFocused),
-        bg: parseColor(resolved.colorBgFocused),
-        colorBorder: parseColor(resolved.colorBorderFocused),
-      },
-      disabled: {
-        fg: parseColor(resolved.colorFgDisabled),
-        bg: parseColor(resolved.colorBgDisabled),
-        colorBorder: parseColor(resolved.colorBorderDisabled),
-      },
-    };
-    this.#borderStyle = resolveBorderStyle(resolved.borderStyle ?? 'solid');
+    this.#borderStyle = resolveBorderStyle(this.resolvedToken('borderStyle') ?? 'solid');
     this.#maxLength = resolved.maxLength ?? 0;
     this.#placeholder = resolved.placeholder ?? '';
     this.#extraColors = {
-      placeholder: parseColor(resolved.colorPlaceholder),
-      selectionBg: parseColor(resolved.colorSelectionBg),
-      selectionFg: parseColor(resolved.colorSelectionFg),
+      placeholder: parseColor(this.resolvedToken('colorPlaceholder')),
+      selectionBg: parseColor(this.resolvedToken('colorSelectionBg')),
+      selectionFg: parseColor(this.resolvedToken('colorSelectionFg')),
     };
     this.#label = resolved.label ?? '';
     this.#isReadonly = resolved.readonly ?? false;
@@ -325,8 +278,8 @@ export class InputWidget extends InteractiveWidget {
   updateColor(color: {colorFg?: number; colorBg?: number}): void {
     if (color.colorFg !== undefined) {
       const parsed = this._resolveColorValue(color.colorFg, 'colorFgNormal');
-      this.#colors.normal.fg = parsed;
-      this.#colors.focused!.fg = parsed;
+      this.colors.normal.fg = parsed;
+      this.colors.focused!.fg = parsed;
     }
 
     if (color.colorBg === undefined) {
@@ -334,8 +287,8 @@ export class InputWidget extends InteractiveWidget {
     }
 
     const parsed = this._resolveColorValue(color.colorBg, 'colorBgNormal');
-    this.#colors.normal.bg = parsed;
-    this.#colors.focused!.bg = parsed;
+    this.colors.normal.bg = parsed;
+    this.colors.focused!.bg = parsed;
   }
 
   updateBorder(border: {borderStyle?: TuiBorderStyleName}): void {
@@ -492,8 +445,8 @@ export class InputWidget extends InteractiveWidget {
     }
   }
 
-  updateThemeColors(resolved: Record<string, unknown>): void {
-    applyColorSchemeUpdates(this.#colors, resolved);
+  protected override onThemeColorsUpdated(resolved: Record<string, unknown>): void {
+    super.onThemeColorsUpdated(resolved);
     if (resolved.borderStyle !== undefined) {
       this.#borderStyle = resolveBorderStyle(resolved.borderStyle);
     }
@@ -518,7 +471,7 @@ export class InputWidget extends InteractiveWidget {
 
     buffer.pushClip(this.#x, this.#y, this.#width, this.#height);
 
-    const colors = resolveColorState(this.#colors, {
+    const colors = resolveColorState(this.colors, {
       disabled: this.disabled,
       focused: this.focused,
     });
@@ -705,9 +658,7 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #cycleCursorMode(): void {
-    const modes: CursorModeName[] = ['blinking-ibeam', 'blinking-block', 'blinking-underscore', 'ibeam', 'block', 'underscore'];
-    const idx = modes.indexOf(this.#cursorMode);
-    this.#cursorMode = modes[(idx + 1) % modes.length]!;
+    this.#cursorMode = cycleCursorMode(this.#cursorMode);
   }
 
   #maskText(text: string): string {
@@ -718,14 +669,12 @@ export class InputWidget extends InteractiveWidget {
     return this.#maskText(this.#value.slice(start, end));
   }
 
-  #getSelectionRange(): {start: number; end: number} | undefined {
-    if (this.#selectionAnchor === undefined || this.#selectionAnchor === this.#cursorPos) {
+  #getSelectionRange(): SelectionRange | undefined {
+    if (this.#selectionAnchor === undefined) {
       return undefined;
     }
 
-    return this.#selectionAnchor < this.#cursorPos
-      ? {start: this.#selectionAnchor, end: this.#cursorPos}
-      : {start: this.#cursorPos, end: this.#selectionAnchor};
+    return normalizeSelectionRange(this.#selectionAnchor, this.#cursorPos);
   }
 
   #deleteSelection(): boolean {
@@ -734,8 +683,9 @@ export class InputWidget extends InteractiveWidget {
       return false;
     }
 
-    this.#value = this.#value.slice(0, range.start) + this.#value.slice(range.end);
-    this.#cursorPos = range.start;
+    const result = deleteRange(this.#value, range);
+    this.#value = result.value;
+    this.#cursorPos = result.cursor;
     this.#selectionAnchor = undefined;
     this.#clampScrollOffset();
     this.dispatch('input', {value: this.#value});
@@ -788,24 +738,7 @@ export class InputWidget extends InteractiveWidget {
   }
 
   #wordRangeAt(pos: number): [number, number] {
-    const {length} = this.#value;
-    if (length === 0) {
-      return [0, 0];
-    }
-
-    const clamped = Math.min(pos, length - 1);
-    let start = clamped;
-    let end = clamped;
-    const cat = charCategory(this.#value.codePointAt(clamped)!);
-    while (start > 0 && charCategory(this.#value.codePointAt(start - 1)!) === cat) {
-      start--;
-    }
-
-    while (end < length && charCategory(this.#value.codePointAt(end)!) === cat) {
-      end++;
-    }
-
-    return [start, end];
+    return wordRangeAt(this.#value, pos);
   }
 
   #handleCharInput(key: string): void {
@@ -816,7 +749,7 @@ export class InputWidget extends InteractiveWidget {
     this.#pushUndo();
     this.#deleteSelection();
     if (this.#maxLength === 0 || this.#value.length < this.#maxLength) {
-      this.#value = this.#value.slice(0, this.#cursorPos) + key + this.#value.slice(this.#cursorPos);
+      this.#value = insertTextAt(this.#value, this.#cursorPos, key);
       this.#cursorPos++;
     }
 
@@ -836,13 +769,7 @@ export class InputWidget extends InteractiveWidget {
     }
 
     this.#pushUndo();
-    let pos = this.#cursorPos;
-    const cat = charCategory(this.#value.codePointAt(pos - 1)!);
-    pos--;
-    while (pos > 0 && charCategory(this.#value.codePointAt(pos - 1)!) === cat) {
-      pos--;
-    }
-
+    const pos = wordStartBefore(this.#value, this.#cursorPos);
     this.#value = this.#value.slice(0, pos) + this.#value.slice(this.#cursorPos);
     this.#cursorPos = pos;
     this.#clampScrollOffset();
@@ -856,19 +783,12 @@ export class InputWidget extends InteractiveWidget {
       return;
     }
 
-    const {length} = this.#value;
-    if (this.#cursorPos >= length) {
+    if (this.#cursorPos >= this.#value.length) {
       return;
     }
 
     this.#pushUndo();
-    let pos = this.#cursorPos;
-    const cat = charCategory(this.#value.codePointAt(pos)!);
-    pos++;
-    while (pos < length && charCategory(this.#value.codePointAt(pos)!) === cat) {
-      pos++;
-    }
-
+    const pos = wordEndAfter(this.#value, this.#cursorPos);
     this.#value = this.#value.slice(0, this.#cursorPos) + this.#value.slice(pos);
     this.#clampScrollOffset();
     this.dispatch('input', {value: this.#value});
@@ -945,32 +865,17 @@ export class InputWidget extends InteractiveWidget {
       return;
     }
 
-    let pos = this.#cursorPos;
-    const cat = charCategory(this.#value.codePointAt(pos - 1)!);
-    pos--;
-    while (pos > 0 && charCategory(this.#value.codePointAt(pos - 1)!) === cat) {
-      pos--;
-    }
-
-    this.#cursorPos = pos;
+    this.#cursorPos = wordStartBefore(this.#value, this.#cursorPos);
     this.#clampScrollOffset();
   }
 
   #handleWordRight(event: KeyboardEvent): void {
     this.#updateSelectionForMovement(event);
-    const {length} = this.#value;
-    if (this.#cursorPos >= length) {
+    if (this.#cursorPos >= this.#value.length) {
       return;
     }
 
-    let pos = this.#cursorPos;
-    const cat = charCategory(this.#value.codePointAt(pos)!);
-    pos++;
-    while (pos < length && charCategory(this.#value.codePointAt(pos)!) === cat) {
-      pos++;
-    }
-
-    this.#cursorPos = pos;
+    this.#cursorPos = wordEndAfter(this.#value, this.#cursorPos);
     this.#clampScrollOffset();
   }
 
@@ -1091,66 +996,51 @@ export class InputWidget extends InteractiveWidget {
     this.#pushUndo();
     this.#deleteSelection();
 
-    if (this.#maxLength > 0 && this.#value.length >= this.#maxLength) {
+    const toInsert = clampInsertText(text, this.#value.length, this.#maxLength);
+    if (toInsert.length === 0) {
       return;
     }
 
-    const available = this.#maxLength === 0 ? text.length : this.#maxLength - this.#value.length;
-    const toInsert = text.slice(0, available);
-
-    this.#value = this.#value.slice(0, this.#cursorPos) + toInsert + this.#value.slice(this.#cursorPos);
+    this.#value = insertTextAt(this.#value, this.#cursorPos, toInsert);
     this.#cursorPos += [...toInsert].length;
     this.#clampScrollOffset();
     this.dispatch('paste', {text: toInsert});
     this.dispatch('input', {value: this.#value});
   }
 
-  #pushUndo(): void {
-    if (this.#undoStack.length >= 100) {
-      this.#undoStack.shift();
-    }
+  #captureState(): InputEditState {
+    return {value: this.#value, cursorPos: this.#cursorPos, selectionAnchor: this.#selectionAnchor};
+  }
 
-    this.#undoStack.push({
-      value: this.#value,
-      cursorPos: this.#cursorPos,
-      selectionAnchor: this.#selectionAnchor,
-    });
-    this.#redoStack.length = 0;
+  #restoreState(state: InputEditState): void {
+    this.#value = state.value;
+    this.#cursorPos = state.cursorPos;
+    this.#selectionAnchor = state.selectionAnchor;
+  }
+
+  #pushUndo(): void {
+    this.#history.pushUndo(this.#captureState());
   }
 
   #handleUndo(): void {
-    if (this.#undoStack.length === 0) {
+    const snapshot = this.#history.undo(this.#captureState());
+    if (snapshot === undefined) {
       return;
     }
 
-    this.#redoStack.push({
-      value: this.#value,
-      cursorPos: this.#cursorPos,
-      selectionAnchor: this.#selectionAnchor,
-    });
-    const snapshot = this.#undoStack.pop()!;
-    this.#value = snapshot.value;
-    this.#cursorPos = snapshot.cursorPos;
-    this.#selectionAnchor = snapshot.selectionAnchor;
+    this.#restoreState(snapshot);
     this.#clampScrollOffset();
     this.dispatch('undo', {value: this.#value});
     this.dispatch('input', {value: this.#value});
   }
 
   #handleRedo(): void {
-    if (this.#redoStack.length === 0) {
+    const snapshot = this.#history.redo(this.#captureState());
+    if (snapshot === undefined) {
       return;
     }
 
-    this.#undoStack.push({
-      value: this.#value,
-      cursorPos: this.#cursorPos,
-      selectionAnchor: this.#selectionAnchor,
-    });
-    const snapshot = this.#redoStack.pop()!;
-    this.#value = snapshot.value;
-    this.#cursorPos = snapshot.cursorPos;
-    this.#selectionAnchor = snapshot.selectionAnchor;
+    this.#restoreState(snapshot);
     this.#clampScrollOffset();
     this.dispatch('redo', {value: this.#value});
     this.dispatch('input', {value: this.#value});
@@ -1214,13 +1104,7 @@ export class InputWidget extends InteractiveWidget {
 }
 
 export function createInputWidget(options?: Partial<InputWidgetOptions>): InputWidget {
-  const ctorOptions = resolveThemedOverrides(options ?? {}, INPUT_TOKEN_MAP);
-  const widget = new InputWidget({...getDefaultInputOptions(), ...ctorOptions});
-  widget.initTokenMap(INPUT_TOKEN_MAP);
-  bindThemeToWidget(widget, INPUT_TOKEN_MAP, options ?? {}, resolved => {
-    widget.updateThemeColors(resolved);
-  });
-  return widget;
+  return new InputWidget(options ?? {});
 }
 
 export default InputWidget;

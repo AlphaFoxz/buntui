@@ -1,18 +1,18 @@
 import type {DrawListBuffer} from '../../draw-list/DrawListBuffer';
 import {type KeyboardEvent} from '../../events/types';
 import {BorderSides} from '../../draw-list/types';
+import {ThemedWidget} from '../ThemedWidget';
+import {type TuiColor} from '../../utils/color';
+import {stringDisplayWidth} from '../../utils/string-width';
+import {resolveColorState} from '../color-scheme';
 import {
   resolveBorderStyle,
+  type TuiAutoSize,
   type TuiBorderStyleName,
+  type TuiSizeValue,
   type TuiWidgetRect,
   type TuiWidgetSize,
 } from '../types';
-import {InteractiveWidget} from '../InteractiveWidget';
-import {parseColor, type TuiColor} from '../../utils/color';
-import {stringDisplayWidth} from '../../utils/string-width';
-import {type ColorScheme, resolveColorState, applyColorSchemeUpdates} from '../color-scheme';
-import {resolveWidgetColors, bindThemeToWidget} from '../../theme/binding';
-import {resolveThemedOverrides} from '../../theme/color-ref';
 import type {ButtonWidgetOptions} from './types';
 
 const DEFAULT_HEIGHT_WITH_BORDER = 3;
@@ -48,68 +48,32 @@ const BUTTON_TOKEN_MAP = {
   borderStyleDisabled: 'border.disabled',
 } as const;
 
-function getDefaultButtonOptions(): Required<ButtonWidgetOptions> {
+function getDefaultButtonOptions() {
   return {
     x: 0,
     y: 0,
-    width: 10,
+    width: 10 as TuiSizeValue | TuiAutoSize,
     height: 3,
     value: '',
-
-    ...resolveWidgetColors(BUTTON_TOKEN_MAP),
-
     disabled: false,
   };
 }
 
-export class ButtonWidget extends InteractiveWidget {
+export class ButtonWidget extends ThemedWidget<ButtonColors> {
+  static override readonly TOKEN_MAP = BUTTON_TOKEN_MAP;
+
   readonly #rect: TuiWidgetRect;
   #value: string;
 
   #pressed = false;
   readonly #autoWidth: boolean = false;
 
-  readonly #colors: ColorScheme<ButtonColors>;
-
   constructor(options: ButtonWidgetOptions = {}) {
-    super();
+    super(options);
     const defaults = getDefaultButtonOptions();
     const resolved = {...defaults, ...options};
     this.#autoWidth = resolved.width === 'auto';
     this.#value = resolved.value;
-
-    this.#colors = {
-      normal: {
-        fg: parseColor(resolved.colorFgNormal),
-        bg: parseColor(resolved.colorBgNormal),
-        colorBorder: parseColor(resolved.colorBorderNormal),
-        borderStyle: resolveBorderStyle(resolved.borderStyleNormal),
-      },
-      focused: {
-        fg: parseColor(resolved.colorFgFocused),
-        bg: parseColor(resolved.colorBgFocused),
-        colorBorder: parseColor(resolved.colorBorderFocused),
-        borderStyle: resolveBorderStyle(resolved.borderStyleFocused),
-      },
-      hovered: {
-        fg: parseColor(resolved.colorFgHovered),
-        bg: parseColor(resolved.colorBgHovered),
-        colorBorder: parseColor(resolved.colorBorderHovered),
-        borderStyle: resolveBorderStyle(resolved.borderStyleHovered),
-      },
-      pressed: {
-        fg: parseColor(resolved.colorFgPressed),
-        bg: parseColor(resolved.colorBgPressed),
-        colorBorder: parseColor(resolved.colorBorderPressed),
-        borderStyle: resolveBorderStyle(resolved.borderStylePressed),
-      },
-      disabled: {
-        fg: parseColor(resolved.colorFgDisabled),
-        bg: parseColor(resolved.colorBgDisabled),
-        colorBorder: parseColor(resolved.colorBorderDisabled),
-        borderStyle: resolveBorderStyle(resolved.borderStyleDisabled),
-      },
-    };
 
     if (this.#autoWidth) {
       resolved.width = this.#computeAutoWidth();
@@ -151,22 +115,22 @@ export class ButtonWidget extends InteractiveWidget {
 
   updateNormalStyle(options: {colorFgNormal?: TuiColor; colorBgNormal?: TuiColor; colorBorderNormal?: TuiColor; borderStyleNormal?: TuiBorderStyleName}): void {
     if (options.colorFgNormal !== undefined) {
-      this.#colors.normal.fg = this._resolveColorValue(options.colorFgNormal, 'colorFgNormal');
+      this.colors.normal.fg = this._resolveColorValue(options.colorFgNormal, 'colorFgNormal');
     }
 
     if (options.colorBgNormal !== undefined) {
-      this.#colors.normal.bg = this._resolveColorValue(options.colorBgNormal, 'colorBgNormal');
+      this.colors.normal.bg = this._resolveColorValue(options.colorBgNormal, 'colorBgNormal');
     }
 
     if (options.colorBorderNormal !== undefined) {
-      this.#colors.normal.colorBorder = this._resolveColorValue(options.colorBorderNormal, 'colorBorderNormal');
+      this.colors.normal.colorBorder = this._resolveColorValue(options.colorBorderNormal, 'colorBorderNormal');
     }
 
     if (options.borderStyleNormal === undefined) {
       return;
     }
 
-    this.#colors.normal.borderStyle = resolveBorderStyle(options.borderStyleNormal);
+    this.colors.normal.borderStyle = resolveBorderStyle(options.borderStyleNormal);
     if (this.#autoWidth) {
       this.#rect.width = this.#computeAutoWidth();
     }
@@ -174,37 +138,37 @@ export class ButtonWidget extends InteractiveWidget {
 
   updateHoveredStyle(options: {colorFgHovered?: TuiColor; colorBgHovered?: TuiColor; colorBorderHovered?: TuiColor; borderStyleHovered?: TuiBorderStyleName}): void {
     if (options.colorFgHovered !== undefined) {
-      this.#colors.hovered!.fg = this._resolveColorValue(options.colorFgHovered, 'colorFgHovered');
+      this.colors.hovered!.fg = this._resolveColorValue(options.colorFgHovered, 'colorFgHovered');
     }
 
     if (options.colorBgHovered !== undefined) {
-      this.#colors.hovered!.bg = this._resolveColorValue(options.colorBgHovered, 'colorBgHovered');
+      this.colors.hovered!.bg = this._resolveColorValue(options.colorBgHovered, 'colorBgHovered');
     }
 
     if (options.colorBorderHovered !== undefined) {
-      this.#colors.hovered!.colorBorder = this._resolveColorValue(options.colorBorderHovered, 'colorBorderHovered');
+      this.colors.hovered!.colorBorder = this._resolveColorValue(options.colorBorderHovered, 'colorBorderHovered');
     }
 
     if (options.borderStyleHovered !== undefined) {
-      this.#colors.hovered!.borderStyle = resolveBorderStyle(options.borderStyleHovered);
+      this.colors.hovered!.borderStyle = resolveBorderStyle(options.borderStyleHovered);
     }
   }
 
   updatePressedStyle(options: {colorFgPressed?: TuiColor; colorBgPressed?: TuiColor; colorBorderPressed?: TuiColor; borderStylePressed?: TuiBorderStyleName}): void {
     if (options.colorFgPressed !== undefined) {
-      this.#colors.pressed!.fg = this._resolveColorValue(options.colorFgPressed, 'colorFgPressed');
+      this.colors.pressed!.fg = this._resolveColorValue(options.colorFgPressed, 'colorFgPressed');
     }
 
     if (options.colorBgPressed !== undefined) {
-      this.#colors.pressed!.bg = this._resolveColorValue(options.colorBgPressed, 'colorBgPressed');
+      this.colors.pressed!.bg = this._resolveColorValue(options.colorBgPressed, 'colorBgPressed');
     }
 
     if (options.colorBorderPressed !== undefined) {
-      this.#colors.pressed!.colorBorder = this._resolveColorValue(options.colorBorderPressed, 'colorBorderPressed');
+      this.colors.pressed!.colorBorder = this._resolveColorValue(options.colorBorderPressed, 'colorBorderPressed');
     }
 
     if (options.borderStylePressed !== undefined) {
-      this.#colors.pressed!.borderStyle = resolveBorderStyle(options.borderStylePressed);
+      this.colors.pressed!.borderStyle = resolveBorderStyle(options.borderStylePressed);
     }
   }
 
@@ -214,11 +178,11 @@ export class ButtonWidget extends InteractiveWidget {
     }
 
     const resolved = resolveBorderStyle(options.borderStyle);
-    this.#colors.normal.borderStyle = resolved;
-    this.#colors.hovered!.borderStyle = resolved;
-    this.#colors.focused!.borderStyle = resolved;
-    this.#colors.pressed!.borderStyle = resolved;
-    this.#colors.disabled!.borderStyle = resolved;
+    this.colors.normal.borderStyle = resolved;
+    this.colors.hovered!.borderStyle = resolved;
+    this.colors.focused!.borderStyle = resolved;
+    this.colors.pressed!.borderStyle = resolved;
+    this.colors.disabled!.borderStyle = resolved;
     if (resolved === 0 && this.#rect.height === DEFAULT_HEIGHT_WITH_BORDER) {
       this.#rect.height = DEFAULT_HEIGHT_NO_BORDER;
     } else if (resolved !== 0 && this.#rect.height === DEFAULT_HEIGHT_NO_BORDER) {
@@ -250,7 +214,7 @@ export class ButtonWidget extends InteractiveWidget {
 
     buffer.pushClip(x, y, width, height);
 
-    const colors = resolveColorState(this.#colors, {
+    const colors = resolveColorState(this.colors, {
       disabled: this.disabled,
       pressed: this.#pressed,
       hovered: this.hovered,
@@ -296,25 +260,14 @@ export class ButtonWidget extends InteractiveWidget {
     buffer.popClip();
   }
 
-  updateThemeColors(resolved: Record<string, unknown>): void {
-    applyColorSchemeUpdates(this.#colors, resolved);
-  }
-
   #computeAutoWidth(): number {
-    const pad = this.#colors.normal.borderStyle === 0 ? 0 : 2;
+    const pad = this.colors.normal.borderStyle === 0 ? 0 : 2;
     return stringDisplayWidth(this.#value) + pad;
   }
 }
 
 export function createButtonWidget(options?: Partial<ButtonWidgetOptions>): ButtonWidget {
-  const ctorOptions = resolveThemedOverrides(options ?? {}, BUTTON_TOKEN_MAP);
-  const defaults = getDefaultButtonOptions();
-  const widget = new ButtonWidget({...defaults, ...ctorOptions});
-  widget.initTokenMap(BUTTON_TOKEN_MAP);
-  bindThemeToWidget(widget, BUTTON_TOKEN_MAP, options ?? {}, resolved => {
-    widget.updateThemeColors(resolved);
-  });
-  return widget;
+  return new ButtonWidget(options ?? {});
 }
 
 export default ButtonWidget;
