@@ -1,5 +1,5 @@
 import {it, expect, describe} from 'bun:test';
-import {KeyboardEvent, MouseEvent, WheelEvent, TermResizeEvent} from '../types';
+import {EVENT_SCHEMA_REGISTRY, KeyboardEvent, MouseEvent, TuiEventType, WheelEvent, TermResizeEvent} from '../types';
 
 // Modifier bitmask — matches events/types.ts
 const MOD_SHIFT = 0x01;
@@ -255,5 +255,27 @@ describe('TermResizeEvent', () => {
     const event = new TermResizeEvent(buf);
     expect(event.rows).toBe(1);
     expect(event.cols).toBe(1);
+  });
+});
+
+describe('EVENT_SCHEMA_REGISTRY', () => {
+  it('maps each event type to its schema class', () => {
+    expect(EVENT_SCHEMA_REGISTRY.size).toBe(4);
+    expect(EVENT_SCHEMA_REGISTRY.get(TuiEventType.KeyboardEvent)).toBe(KeyboardEvent);
+    expect(EVENT_SCHEMA_REGISTRY.get(TuiEventType.MouseEvent)).toBe(MouseEvent);
+    expect(EVENT_SCHEMA_REGISTRY.get(TuiEventType.WheelEvent)).toBe(WheelEvent);
+    expect(EVENT_SCHEMA_REGISTRY.get(TuiEventType.TermResizeEvent)).toBe(TermResizeEvent);
+  });
+
+  it('constructs events from payload buffers', () => {
+    const KeyboardEventClass = EVENT_SCHEMA_REGISTRY.get(TuiEventType.KeyboardEvent)!;
+    const event = new KeyboardEventClass(buildKeyboardPayload(MOD_SHIFT, 65, 'A'));
+    expect(event).toBeInstanceOf(KeyboardEvent);
+    expect((event as KeyboardEvent).key).toBe('A');
+    expect((event as KeyboardEvent).shiftKey).toBe(true);
+  });
+
+  it('returns undefined for unknown event type', () => {
+    expect(EVENT_SCHEMA_REGISTRY.get(999)).toBeUndefined();
   });
 });

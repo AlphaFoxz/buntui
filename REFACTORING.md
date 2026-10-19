@@ -125,8 +125,10 @@ Input / Textarea 只保留各自差异:Input 的密码掩码、数字步进;Text
 
 审计 HtmlBackend 与 NativeBackend 的事件归一化,把共性(指针坐标、事件字段解码)提到 `TuiBackend` 基类或独立模块。两者技术栈本质不同(FFI vs DOM),只提取确凿共性,不强求合并。
 
-- [ ] 列出两后端的事件解码/指针逻辑对照表
-- [ ] 提取共性到共享模块(仅限确凿重复部分)
+- [x] 列出两后端的事件解码/指针逻辑对照表
+- [x] 提取共性到共享模块(仅限确凿重复部分)
+
+  > 实施说明:审计结论是不建 `TuiBackend` 基类——两后端仅接口签名相同,方法实现(WASM exports vs FFI symbols vs DOM)零共性,基类只会是空壳。确凿重复只有两块:①payload 协议知识(`MOD_*`/`FLAG_*` 常量与 `HtmlBackend` 各定义一份,序列化函数与 `events/types.ts` 解码器是同一协议的两端)→ 移入新建 `events/serialize.ts`(`serializeKeyboardEvent`/`serializeMouseEvent`/`serializeResizeEvent`/`serializeWheelEvent`/`serializeCtrlV`),常量从 `types.ts` 改为导出,单一来源;②NativeBackend 私有的 `schemaRegistry` 与 `types.ts` 的 `TuiEventMap` 是同一知识 → 下沉为 `types.ts` 导出的 `EVENT_SCHEMA_REGISTRY`。`TerminalMouseEvent`/`DomKeyboardEvent` 类型随序列化函数迁至 `serialize.ts`,`HtmlBackend` re-export 保持 API 兼容。HTML 独有逻辑(SGR 解析、50ms 去重、touch 手势、剪贴板)与 FFI 独有逻辑(poll/commit 轮询)原样保留,不提取。已有字节级 parity 测试改挂新路径,并新增 `EVENT_SCHEMA_REGISTRY` 覆盖测试;`bun run test:ts` 全绿(2491 pass),`tsc` 编译通过。
 
 ### 步骤 6:Zig 事件归一化下沉
 

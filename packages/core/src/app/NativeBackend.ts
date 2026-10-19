@@ -12,25 +12,11 @@ import type {TuiContextLike} from '../extern/app/TuiContext';
 import type {LogLevel} from '../extern/app/types';
 import TuiDataViewWrapper from '../extern/TuiDataViewWrapper';
 import {LOGGER, logLevelToNumber} from '../common/logger';
-import {
-  TuiEventType,
-  KeyboardEvent,
-  MouseEvent,
-  WheelEvent,
-  TermResizeEvent,
-  type TuiEvent,
-} from '../events/types';
+import {EVENT_SCHEMA_REGISTRY} from '../events/types';
 import {nextTick} from '../platform/next-tick';
 // eslint-disable-next-line import-x/no-unassigned-import
 import '../platform/native.js';
 import {type TuiBackend, type TuiBackendEventHandler} from './TuiBackend';
-
-const schemaRegistry = new Map<number, new (buffer: ArrayBuffer) => TuiEvent>([
-  [TuiEventType.KeyboardEvent, KeyboardEvent],
-  [TuiEventType.MouseEvent, MouseEvent],
-  [TuiEventType.WheelEvent, WheelEvent],
-  [TuiEventType.TermResizeEvent, TermResizeEvent],
-]);
 
 function createFfiSymbols() {
   return dlopen(resolveNativeLibPath(), {
@@ -110,7 +96,7 @@ export class NativeBackend implements TuiBackend {
 
           const payloadBuf = toArrayBuffer(slotPtr, 16, payloadLength);
 
-          const schemaClass = schemaRegistry.get(eventType);
+          const schemaClass = EVENT_SCHEMA_REGISTRY.get(eventType);
           if (!schemaClass) {
             LOGGER.logWarning(`Unknown event type: ${eventType}`);
             throw new Error(`Unknown event type: ${eventType}`);

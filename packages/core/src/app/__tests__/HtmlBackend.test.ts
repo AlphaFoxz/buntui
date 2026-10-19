@@ -1,13 +1,12 @@
 import {it, expect, describe} from 'bun:test';
 import {TuiEventType, KeyboardEvent, MouseEvent, WheelEvent, TermResizeEvent} from '../../events/types';
 import {
-  HtmlBackend,
   serializeKeyboardEvent,
   serializeMouseEvent,
   serializeResizeEvent,
-  type TerminalLike,
   type TerminalMouseEvent,
-} from '../HtmlBackend';
+} from '../../events/serialize';
+import {HtmlBackend, type TerminalLike} from '../HtmlBackend';
 
 const MOD_SHIFT = 0x01;
 const MOD_CTRL = 0x02;

@@ -1,16 +1,16 @@
 import TuiDataViewWrapper from '../extern/TuiDataViewWrapper';
 
 // Modifier bitmask — must match Zig core/event_payloads.zig
-const MOD_SHIFT = 0x01;
-const MOD_CTRL = 0x02;
-const MOD_ALT = 0x04;
-const MOD_META = 0x08;
-const MOD_REPEAT = 0x10;
+export const MOD_SHIFT = 0x01;
+export const MOD_CTRL = 0x02;
+export const MOD_ALT = 0x04;
+export const MOD_META = 0x08;
+export const MOD_REPEAT = 0x10;
 
 // Mouse presence flags — must match Zig core/event_payloads.zig
-const FLAG_HAS_BUTTON = 0x01;
-const FLAG_HAS_BUTTONS = 0x02;
-const FLAG_IS_RELEASE = 0x10;
+export const FLAG_HAS_BUTTON = 0x01;
+export const FLAG_HAS_BUTTONS = 0x02;
+export const FLAG_IS_RELEASE = 0x10;
 
 export const TuiEventType = {
   KeyboardEvent: 1,
@@ -110,6 +110,13 @@ export class TermResizeEvent {
 export type EventSchema = {
   parse(buffer: ArrayBuffer): TuiEvent;
 };
+
+export const EVENT_SCHEMA_REGISTRY = new Map<number, new (buffer: ArrayBuffer) => TuiEvent>([
+  [TuiEventType.KeyboardEvent, KeyboardEvent],
+  [TuiEventType.MouseEvent, MouseEvent],
+  [TuiEventType.WheelEvent, WheelEvent],
+  [TuiEventType.TermResizeEvent, TermResizeEvent],
+]);
 
 export type TuiEventMap = {
   [TuiEventType.KeyboardEvent]: KeyboardEvent;

@@ -3,29 +3,25 @@ import type {TuiContextLike} from '../extern/app/TuiContext';
 import type {LogLevel} from '../extern/app/types';
 import {setPasteBuffer} from '../clipboard';
 import {
+  serializeCtrlV,
+  serializeKeyboardEvent,
+  serializeMouseEvent,
+  serializeResizeEvent,
+  serializeWheelEvent,
+  type DomKeyboardEvent,
+  type TerminalMouseEvent,
+} from '../events/serialize';
+import {
   TuiEventType,
   KeyboardEvent as TuiKeyboardEvent,
   MouseEvent as TuiMouseEvent,
   TermResizeEvent as TuiTermResizeEvent,
   WheelEvent as TuiWheelEvent,
 } from '../events/types';
-import TuiDataViewWrapper from '../extern/TuiDataViewWrapper';
 import type {WasmModule} from './wasm-module';
 import type {TuiBackend, TuiBackendEventHandler} from './TuiBackend';
 
-type DomKeyboardEvent = {
-  readonly key?: string;
-  readonly shiftKey: boolean;
-  readonly ctrlKey: boolean;
-  readonly altKey: boolean;
-  readonly metaKey: boolean;
-  readonly repeat: boolean;
-  readonly keyCode: number;
-};
-
 type TerminalKeyEvent = {key: string; domEvent?: DomKeyboardEvent};
-
-export type TerminalMouseEvent = {col: number; row: number; button?: number; buttons?: number; action: string};
 
 type TerminalResizeEvent = {cols: number; rows: number};
 
@@ -73,16 +69,6 @@ export type HtmlBackendOptions = {
   wasmModule: WasmModule;
   isTextInputFocused?: () => boolean;
 };
-
-const MOD_SHIFT = 0x01;
-const MOD_CTRL = 0x02;
-const MOD_ALT = 0x04;
-const MOD_META = 0x08;
-const MOD_REPEAT = 0x10;
-
-const FLAG_HAS_BUTTON = 0x01;
-const FLAG_HAS_BUTTONS = 0x02;
-const FLAG_IS_RELEASE = 0x10;
 
 export class HtmlBackend implements TuiBackend {
   readonly #terminal: TerminalLike;
@@ -483,98 +469,6 @@ export class HtmlBackend implements TuiBackend {
   }
 }
 
-export function serializeKeyboardEvent(key: string, domEvent?: DomKeyboardEvent): ArrayBuffer {
-  const encoded = new TextEncoder().encode(key);
-  const buf = new ArrayBuffer(4 + encoded.byteLength);
-  const view = new TuiDataViewWrapper(buf);
-  let modifiers = 0;
-  if (domEvent) {
-    if (domEvent.shiftKey) {
-      modifiers |= MOD_SHIFT;
-    }
-
-    if (domEvent.ctrlKey) {
-      modifiers |= MOD_CTRL;
-    }
-
-    if (domEvent.altKey) {
-      modifiers |= MOD_ALT;
-    }
-
-    if (domEvent.metaKey) {
-      modifiers |= MOD_META;
-    }
-
-    if (domEvent.repeat) {
-      modifiers |= MOD_REPEAT;
-    }
-  }
-
-  view.setUint8(0, modifiers);
-  view.setUint16(1, domEvent?.keyCode ?? (key.codePointAt(0) ?? 0), true);
-  view.setUint8(3, encoded.byteLength);
-  new Uint8Array(buf).set(encoded, 4);
-  return buf;
-}
-
-export function serializeMouseEvent(event: TerminalMouseEvent): ArrayBuffer {
-  const buf = new ArrayBuffer(8);
-  const view = new TuiDataViewWrapper(buf);
-
-  let flags = 0;
-  if (event.action === 'mouseup') {
-    flags |= FLAG_IS_RELEASE;
-  }
-
-  if (event.button !== undefined) {
-    flags |= FLAG_HAS_BUTTON;
-  }
-
-  if (event.buttons !== undefined) {
-    flags |= FLAG_HAS_BUTTONS;
-  }
-
-  view.setUint8(0, 0);
-  view.setUint8(1, flags);
-  view.setUint8(2, event.button ?? 0);
-  view.setUint8(3, event.buttons ?? 0);
-  view.setUint16(4, event.col + 1, true);
-  view.setUint16(6, event.row + 1, true);
-  return buf;
-}
-
-export function serializeResizeEvent(rows: number, cols: number): ArrayBuffer {
-  const buf = new ArrayBuffer(4);
-  const view = new TuiDataViewWrapper(buf);
-  view.setUint16(0, rows, true);
-  view.setUint16(2, cols, true);
-  return buf;
-}
-
-export function serializeWheelEvent(row: number, col: number, deltaY: number): ArrayBuffer {
-  const buf = new ArrayBuffer(9);
-  const view = new TuiDataViewWrapper(buf);
-  view.setUint8(0, 0);
-  view.setUint8(1, FLAG_HAS_BUTTON);
-  view.setUint8(2, 0);
-  view.setUint8(3, 0);
-  view.setUint16(4, col + 1, true);
-  view.setUint16(6, row + 1, true);
-  view.setInt8(8, deltaY);
-  return buf;
-}
-
-function serializeCtrlV(): ArrayBuffer {
-  const buf = new ArrayBuffer(4 + 1);
-  const view = new TuiDataViewWrapper(buf);
-  view.setUint8(0, MOD_CTRL);
-  view.setUint16(1, 86, true);
-  view.setUint8(3, 1);
-  const encoded = new TextEncoder().encode('v');
-  new Uint8Array(buf).set(encoded, 4);
-  return buf;
-}
-
 function dispatchKeyboardFromData(data: string, dedupTime: number, handler: TuiBackendEventHandler): void {
   if (Date.now() - dedupTime < 50) {
     return;
@@ -590,3 +484,5 @@ function dispatchKeyboardFromData(data: string, dedupTime: number, handler: TuiB
     }
   }
 }
+
+export {type TerminalMouseEvent} from '../events/serialize';
