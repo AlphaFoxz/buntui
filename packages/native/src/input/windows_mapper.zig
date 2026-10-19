@@ -1,5 +1,6 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const normalize = @import("normalize.zig");
 
 comptime {
     if (builtin.target.os.tag != .windows) {
@@ -263,15 +264,38 @@ pub fn mapVirtualKeyName(virtual_key: u16) ?[]const u8 {
     return VirtualKeyMap.get(virtual_key);
 }
 
+pub fn csiKeyToVirtualKey(key: normalize.CsiKey) u16 {
+    return switch (key) {
+        .ArrowUp => VK_UP,
+        .ArrowDown => VK_DOWN,
+        .ArrowRight => VK_RIGHT,
+        .ArrowLeft => VK_LEFT,
+        .Home => VK_HOME,
+        .End => VK_END,
+        .Tab => VK_TAB,
+        .Insert => VK_INSERT,
+        .Delete => VK_DELETE,
+        .PageUp => VK_PRIOR,
+        .PageDown => VK_NEXT,
+        .F5 => VK_F5,
+        .F6 => VK_F6,
+        .F7 => VK_F7,
+        .F8 => VK_F8,
+        .F9 => VK_F9,
+        .F10 => VK_F10,
+        .F11 => VK_F11,
+        .F12 => VK_F12,
+        .F13 => VK_F13,
+        .F14 => VK_F14,
+        .F15 => VK_F15,
+        .F16 => VK_F16,
+        .F17 => VK_F17,
+        .F18 => VK_F18,
+        .F19 => VK_F19,
+        .F20 => VK_F20,
+    };
+}
+
 pub fn unicodeToKeyName(unicode: u16) []const u8 {
-    switch (unicode) {
-        0x08 => return "Backspace",
-        0x09 => return "Tab",
-        0x0A => return "Enter",
-        0x0D => return "Enter",
-        0x1B => return "Escape",
-        0x20 => return " ",
-        0x7F => return "Backspace",
-        else => return "Unidentified",
-    }
+    return normalize.keyCodeToKeyName(unicode);
 }

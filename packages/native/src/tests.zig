@@ -18,6 +18,7 @@ const frame = @import("render/frame.zig");
 const typedef = @import("core/typedef.zig");
 const platform = @import("core/platform.zig");
 const error_ = @import("core/error.zig");
+const normalize = @import("input/normalize.zig");
 const builtin = @import("builtin");
 const input_listener = switch (builtin.target.os.tag) {
     .linux, .macos, .freebsd, .netbsd, .openbsd => @import("input/posix_listener.zig"),
@@ -43,5 +44,6 @@ comptime {
     _ = typedef;
     _ = platform;
     _ = error_;
+    _ = normalize;
     _ = input_listener;
 }

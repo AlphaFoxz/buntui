@@ -134,9 +134,11 @@ Input / Textarea 只保留各自差异:Input 的密码掩码、数字步进;Text
 
 新建 `packages/native/src/input/normalize.zig`,posix/windows listener 共用键名/修饰键/鼠标编码。纯结构性,不改行为。
 
-- [ ] 梳理两 listener 中归一化逻辑的重叠清单
-- [ ] 提取 `normalize.zig` 并改造两侧调用
-- [ ] `bun run test:zig` 全绿后完成本步
+- [x] 梳理两 listener 中归一化逻辑的重叠清单
+- [x] 提取 `normalize.zig` 并改造两侧调用
+- [x] `bun run test:zig` 全绿后完成本步
+
+  > 实施说明:下沉清单——`buildModifiers`、4 个 `emit*Event`(含 `binary_buf`)、`parseSgrMouseSequence`(~90 行逐字相同)、`parseSs3Sequence`、`parseBufferedSequence` 分派、CSI 修饰参数解码(posix 闭包与 windows 内联 switch 语义一致,统一为 `decodeCsiModifiers`)、CSI final/`~`param1 键表(posix 硬编码键名与 windows VK→mapper 名字逐一核对一致,统一为 `CsiKey` 枚举 + `csiKeyFromFinalChar`/`csiKeyFromP1`/`csiKeyName`,windows 侧 VK 映射 `csiKeyToVirtualKey` 留在 `windows_mapper` 以保持 normalize 平台无关)、`keyCodeToKeyName`(posix 全量版;`windows_mapper.unicodeToKeyName` 在其调用域 `unicode_char < 32 or 0x7F` 内行为等价,改为转调)、`InputState` 共享枚举(posix 扩展 `Utf8Sequence`)。平台 reader 本体保留:posix 的 UTF-8 状态机/SIGWINCH resize、windows 的 VK 码/物理键查询/Console resize。两个 listener 各删 ~200-330 行重复,`normalize.zig` 538 行(含 12 个新测试,覆盖键名/修饰键/CSI 表/SS3/SGR press-release-drag-wheel)。验证:`zig test` 167 pass;windows-gnu 与 aarch64-macos 交叉编译通过(共享枚举使 windows `processEvent` 补 `Utf8Sequence` 空分支,Console API 路径不会进入该状态,已注释);`bun run --cwd ./packages/native build`(本机 release + wasm32-wasi)成功,`bun run test` 全量 2491 TS 测试全绿。
 
 ## 四、暂缓 / 不建议动
 

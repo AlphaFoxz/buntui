@@ -4,6 +4,7 @@ const logger = @import("../core/logger.zig");
 const mode = @import("./posix_mode.zig");
 const event_bus = @import("../core/event_bus.zig");
 const payloads = @import("../core/event_payloads.zig");
+const normalize = @import("./normalize.zig");
 
 comptime {
     switch (builtin.target.os.tag) {
@@ -21,121 +22,8 @@ var resize_signaled = std.atomic.Value(bool).init(false);
 var term_rows: u16 = 24;
 var term_cols: u16 = 80;
 
-const InputState = enum {
-    Normal,
-    EscReceived,
-    CsiReceived,
-    Ss3Received,
-    Utf8Sequence,
-};
-
-// Binary payload buffer (240 bytes = slot data area minus header)
-var binary_buf: [240]u8 = undefined;
-
-inline fn buildModifiers(is_shift: bool, is_alt: bool, is_ctrl: bool, is_meta: bool, is_repeat: bool) u8 {
-    var mods: u8 = 0;
-    if (is_shift) mods |= payloads.MOD_SHIFT;
-    if (is_ctrl) mods |= payloads.MOD_CTRL;
-    if (is_alt) mods |= payloads.MOD_ALT;
-    if (is_meta) mods |= payloads.MOD_META;
-    if (is_repeat) mods |= payloads.MOD_REPEAT;
-    return mods;
-}
-
-inline fn emitKeyboardEvent(modifiers: u8, char_code: u16, key: []const u8) void {
-    binary_buf[0] = modifiers;
-    std.mem.writeInt(u16, binary_buf[1..3], char_code, .little);
-    const key_len: u8 = @intCast(@min(key.len, 236));
-    binary_buf[3] = key_len;
-    if (key_len > 0) {
-        @memcpy(binary_buf[4 .. 4 + key_len], key[0..key_len]);
-    }
-    _ = event_bus.event_bus_emit_bytes(
-        @backingInt(event_bus.EventType.KeyboardEvent),
-        binary_buf[0 .. 4 + key_len],
-    );
-}
-
-inline fn emitMouseEvent(modifiers: u8, has_button: bool, button: u8, has_buttons: bool, buttons: u8, x: u16, y: u16, is_release: bool) void {
-    const payload = payloads.MousePayload{
-        .modifiers = modifiers,
-        .flags = (if (has_button) payloads.HAS_BUTTON else @as(u8, 0)) |
-            (if (has_buttons) payloads.HAS_BUTTONS else @as(u8, 0)) |
-            (if (is_release) payloads.IS_RELEASE else @as(u8, 0)),
-        .button = button,
-        .buttons = buttons,
-        .x = x,
-        .y = y,
-    };
-    _ = event_bus.event_bus_emit_bytes(
-        @backingInt(event_bus.EventType.MouseEvent),
-        std.mem.asBytes(&payload),
-    );
-}
-
-inline fn emitWheelEvent(modifiers: u8, has_button: bool, button: u8, has_buttons: bool, buttons: u8, x: u16, y: u16, wheel_delta_y: i8) void {
-    const payload = payloads.WheelPayload{
-        .modifiers = modifiers,
-        .flags = (if (has_button) payloads.HAS_BUTTON else @as(u8, 0)) |
-            (if (has_buttons) payloads.HAS_BUTTONS else @as(u8, 0)),
-        .button = button,
-        .buttons = buttons,
-        .x = x,
-        .y = y,
-        .wheel_delta_y = wheel_delta_y,
-    };
-    _ = event_bus.event_bus_emit_bytes(
-        @backingInt(event_bus.EventType.WheelEvent),
-        std.mem.asBytes(&payload),
-    );
-}
-
-inline fn emitResizeEvent(rows: u16, cols: u16) void {
-    const payload = payloads.TermResizePayload{
-        .rows = rows,
-        .cols = cols,
-    };
-    _ = event_bus.event_bus_emit_bytes(
-        @backingInt(event_bus.EventType.TermResizeEvent),
-        std.mem.asBytes(&payload),
-    );
-}
-
-fn keyCodeToKeyName(code: u16) []const u8 {
-    switch (code) {
-        0x08 => return "Backspace",
-        0x09 => return "Tab",
-        0x0A => return "Enter",
-        0x0D => return "Enter",
-        0x1B => return "Escape",
-        0x20 => return " ",
-        0x7F => return "Backspace",
-        else => {},
-    }
-    if (code >= 0x41 and code <= 0x5A) {
-        const names = [_][]const u8{
-            "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-            "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-        };
-        return names[code - 0x41];
-    }
-    if (code >= 0x61 and code <= 0x7A) {
-        const names = [_][]const u8{
-            "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
-            "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
-        };
-        return names[code - 0x61];
-    }
-    if (code >= 0x30 and code <= 0x39) {
-        const names = [_][]const u8{ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
-        return names[code - 0x30];
-    }
-    logger.logDebugFmt("未知 key code: {}", .{code});
-    return "Unidentified";
-}
-
 const Parser = struct {
-    state: InputState = .Normal,
+    state: normalize.InputState = .Normal,
     buffer: [64]u8 = undefined,
     buf_idx: usize = 0,
     pending_esc_modifiers: u8 = 0,
@@ -159,8 +47,8 @@ const Parser = struct {
                     // ASCII printable character (1 byte)
                     var char_buf: [4]u8 = undefined;
                     const char_len = std.unicode.utf8Encode(@as(u21, byte), &char_buf) catch 0;
-                    emitKeyboardEvent(
-                        buildModifiers(false, false, false, false, false),
+                    normalize.emitKeyboardEvent(
+                        normalize.buildModifiers(false, false, false, false, false),
                         byte,
                         char_buf[0..char_len],
                     );
@@ -176,26 +64,26 @@ const Parser = struct {
                     self.utf8_received = 1;
                     self.state = .Utf8Sequence;
                 } else if (byte == 0x09) {
-                    emitKeyboardEvent(
-                        buildModifiers(false, false, false, false, false),
+                    normalize.emitKeyboardEvent(
+                        normalize.buildModifiers(false, false, false, false, false),
                         byte,
                         "Tab",
                     );
                 } else if (byte == 0x0D) {
-                    emitKeyboardEvent(
-                        buildModifiers(false, false, false, false, false),
+                    normalize.emitKeyboardEvent(
+                        normalize.buildModifiers(false, false, false, false, false),
                         byte,
                         "Enter",
                     );
                 } else if (byte == 0x0A) {
-                    emitKeyboardEvent(
-                        buildModifiers(false, false, true, false, false),
+                    normalize.emitKeyboardEvent(
+                        normalize.buildModifiers(false, false, true, false, false),
                         byte,
                         "Enter",
                     );
                 } else if (byte == 0x08 or byte == 0x7F) {
-                    emitKeyboardEvent(
-                        buildModifiers(false, false, false, false, false),
+                    normalize.emitKeyboardEvent(
+                        normalize.buildModifiers(false, false, false, false, false),
                         byte,
                         "Backspace",
                     );
@@ -203,15 +91,15 @@ const Parser = struct {
                     // Control character (Ctrl+A through Ctrl+Z, etc.)
                     var letter_buf = [_]u8{0};
                     letter_buf[0] = @as(u8, @intCast(byte + 0x60)); // Convert to lowercase letter (ctrlKey=true, shiftKey=false)
-                    emitKeyboardEvent(
-                        buildModifiers(false, false, true, false, false),
+                    normalize.emitKeyboardEvent(
+                        normalize.buildModifiers(false, false, true, false, false),
                         byte,
                         letter_buf[0..],
                     );
                 } else if (byte == 127) {
                     // DEL key
-                    emitKeyboardEvent(
-                        buildModifiers(false, false, false, false, false),
+                    normalize.emitKeyboardEvent(
+                        normalize.buildModifiers(false, false, false, false, false),
                         byte,
                         "Delete",
                     );
@@ -229,8 +117,8 @@ const Parser = struct {
                         const codepoint = std.unicode.utf8Decode(self.utf8_buffer[0..self.utf8_expected]) catch 0xFFFD;
 
                         // Emit keyboard event with the full UTF-8 sequence
-                        emitKeyboardEvent(
-                            buildModifiers(false, self.pending_alt, false, false, false),
+                        normalize.emitKeyboardEvent(
+                            normalize.buildModifiers(false, self.pending_alt, false, false, false),
                             @intCast(codepoint),
                             self.utf8_buffer[0..self.utf8_expected],
                         );
@@ -262,8 +150,8 @@ const Parser = struct {
                     // Alt + printable ASCII
                     var char_buf: [4]u8 = undefined;
                     const char_len = std.unicode.utf8Encode(@as(u21, byte), &char_buf) catch 0;
-                    emitKeyboardEvent(
-                        buildModifiers(false, true, false, false, false),
+                    normalize.emitKeyboardEvent(
+                        normalize.buildModifiers(false, true, false, false, false),
                         byte,
                         char_buf[0..char_len],
                     );
@@ -272,8 +160,8 @@ const Parser = struct {
                     // Alt + Ctrl + letter
                     var letter_buf = [_]u8{0};
                     letter_buf[0] = @as(u8, @intCast(byte + 0x40));
-                    emitKeyboardEvent(
-                        buildModifiers(false, true, true, false, false),
+                    normalize.emitKeyboardEvent(
+                        normalize.buildModifiers(false, true, true, false, false),
                         byte,
                         letter_buf[0..],
                     );
@@ -287,7 +175,7 @@ const Parser = struct {
                     self.pending_alt = true;
                     self.state = .Utf8Sequence;
                 } else {
-                    emitKeyboardEvent(self.pending_esc_modifiers, 0x1B, "Escape");
+                    normalize.emitKeyboardEvent(self.pending_esc_modifiers, 0x1B, "Escape");
                     self.reset();
                 }
             },
@@ -324,139 +212,10 @@ const Parser = struct {
     }
 
     fn parseBufferedSequence(self: *Parser) void {
-        const seq = self.buffer[0..self.buf_idx];
-        if (std.mem.startsWith(u8, seq, "\x1bO")) {
-            self.parseSs3Sequence(seq);
-            return;
-        } else if (std.mem.startsWith(u8, seq, "\x1b[<")) {
-            self.parseSgrMouseSequence(seq);
-            return;
-        } else if (std.mem.startsWith(u8, seq, "\x1b[")) {
-            self.parseCsiSequence(seq);
-            return;
-        } else {
-            logger.logDebugFmt("未知序列: {x}", .{seq});
-            return;
-        }
+        normalize.parseBufferedSequence(self, self.buffer[0..self.buf_idx]);
     }
 
-    fn parseSs3Sequence(_: *Parser, seq: []const u8) void {
-        if (!std.mem.startsWith(u8, seq, "\x1bO")) {
-            logger.logDebugFmt("未知SS3序列: {x}", .{seq});
-            return;
-        }
-        const last_char = seq[seq.len - 1];
-        if (last_char >= 'P' and last_char <= 'S') {
-            logger.logDebugFmt("功能键: F{d}", .{last_char - 'P' + 1});
-            const key = if (last_char == 'P')
-                "F1"
-            else if (last_char == 'Q')
-                "F2"
-            else if (last_char == 'R')
-                "F3"
-            else if (last_char == 'S')
-                "F4"
-            else
-                "";
-            emitKeyboardEvent(
-                buildModifiers(false, false, false, false, false),
-                0,
-                key,
-            );
-        }
-    }
-
-    fn parseSgrMouseSequence(_: *Parser, seq: []const u8) void {
-        if (seq.len < 6) return;
-        const content = seq[3 .. seq.len - 1];
-        const is_release = seq[seq.len - 1] == 'm';
-
-        var iter = std.mem.splitScalar(u8, content, ';');
-        const pb_str = iter.next() orelse return;
-        const px_str = iter.next() orelse return;
-        const py_str = iter.next() orelse return;
-
-        var pb = std.fmt.parseInt(u8, pb_str, 10) catch return;
-        const px = std.fmt.parseInt(u16, px_str, 10) catch return;
-        const py = std.fmt.parseInt(u16, py_str, 10) catch return;
-        const is_shift = (pb & 0x04) != 0;
-        if (is_shift) {
-            pb ^= 0x04;
-        }
-        const is_alt = (pb & 0x08) != 0;
-        if (is_alt) {
-            pb ^= 0x08;
-        }
-        const is_ctrl = (pb & 0x10) != 0;
-        if (is_ctrl) {
-            pb ^= 0x10;
-        }
-        const is_drag = (pb & 0x20) != 0;
-        if (is_drag) {
-            pb ^= 0x20;
-        }
-
-        const mods = buildModifiers(is_shift, is_alt, is_ctrl, false, false);
-
-        switch (pb) {
-            0 => {
-                if (is_drag) {
-                    logger.logDebugFmt("鼠标左键拖动，x: {}, y: {}", .{ px, py });
-                    emitMouseEvent(mods, false, 0, true, 1, px, py, false);
-                } else {
-                    logger.logDebugFmt("鼠标左键{s}，x: {}, y: {}", .{
-                        if (is_release) "释放" else "按下",
-                        px,
-                        py,
-                    });
-                    emitMouseEvent(mods, true, 0, false, 0, px, py, is_release);
-                }
-            },
-            1 => {
-                if (is_drag) {
-                    logger.logDebugFmt("鼠标中键拖动，x: {}, y: {}", .{ px, py });
-                    emitMouseEvent(mods, false, 1, true, 1, px, py, false);
-                } else {
-                    logger.logDebugFmt("鼠标中键{s}，x: {}, y: {}", .{
-                        if (is_release) "释放" else "按下",
-                        px,
-                        py,
-                    });
-                    emitMouseEvent(mods, true, 1, false, 0, px, py, is_release);
-                }
-            },
-            2 => {
-                if (is_drag) {
-                    logger.logDebugFmt("鼠标右键拖动，x: {}, y: {}", .{ px, py });
-                    emitMouseEvent(mods, false, 2, true, 1, px, py, false);
-                } else {
-                    logger.logDebugFmt("鼠标右键{s}，x: {}, y: {}", .{
-                        if (is_release) "释放" else "按下",
-                        px,
-                        py,
-                    });
-                    emitMouseEvent(mods, true, 2, false, 0, px, py, is_release);
-                }
-            },
-            3 => {
-                logger.logDebugFmt("鼠标移动，x: {}, y: {}, 是否拖动: {}", .{ px, py, is_drag });
-                emitMouseEvent(mods, false, 0, true, if (is_drag) 1 else 0, px, py, false);
-            },
-            64 => {
-                logger.logDebugFmt("鼠标滚轮上，x: {}, y: {}", .{ px, py });
-                emitWheelEvent(mods, true, 1, false, 0, px, py, -1);
-            },
-            65 => {
-                logger.logDebugFmt("鼠标滚轮下，x: {}, y: {}", .{ px, py });
-                emitWheelEvent(mods, true, 1, false, 0, px, py, 1);
-            },
-            else => {
-                logger.logWarningFmt("不支持的鼠标事件序列，pb: {}, x: {}, y: {}", .{ pb, px, py });
-            },
-        }
-    }
-
-    fn parseCsiSequence(_: *Parser, seq: []const u8) void {
+    pub fn parseCsiSequence(_: *Parser, seq: []const u8) void {
         // seq starts with \x1b[, e.g. "\x1b[A" or "\x1b[1;2D"
         const content = seq[2..];
         if (content.len == 0) return;
@@ -477,25 +236,17 @@ const Parser = struct {
         }
 
         // Decode modifier from a CSI param value (1=none, 2=shift, 3=alt, 4=shift+alt, 5=ctrl, etc.)
-        const decodeModifiers = struct {
-            fn call(mod_num: u16) struct { shift: bool, alt: bool, ctrl: bool } {
-                return .{
-                    .shift = mod_num == 2 or mod_num == 4 or mod_num == 6 or mod_num == 8,
-                    .alt = mod_num == 3 or mod_num == 4 or mod_num == 7 or mod_num == 8,
-                    .ctrl = mod_num == 5 or mod_num == 6 or mod_num == 7 or mod_num == 8,
-                };
-            }
-        }.call;
+        const decodeModifiers = normalize.decodeCsiModifiers;
 
         // Format 2: \e[KEY;MODu  (xterm modifyOtherKeys format with 'u' terminator)
         if (final_char == 'u' and param_count >= 2) {
             const key_code = param_buf[0];
             const mods = decodeModifiers(param_buf[1]);
-            const kn = keyCodeToKeyName(key_code);
+            const kn = normalize.keyCodeToKeyName(key_code);
             if (!std.mem.eql(u8, kn, "Unidentified")) {
                 logger.logDebugFmt("modifyOtherKeys(u): {s}", .{kn});
-                emitKeyboardEvent(
-                    buildModifiers(mods.shift, mods.alt, mods.ctrl, false, false),
+                normalize.emitKeyboardEvent(
+                    normalize.buildModifiers(mods.shift, mods.alt, mods.ctrl, false, false),
                     key_code,
                     kn,
                 );
@@ -507,11 +258,11 @@ const Parser = struct {
         if (final_char == '~' and param_count >= 3 and param_buf[0] == 27) {
             const mods = decodeModifiers(param_buf[1]);
             const key_code = param_buf[2];
-            const kn = keyCodeToKeyName(key_code);
+            const kn = normalize.keyCodeToKeyName(key_code);
             if (!std.mem.eql(u8, kn, "Unidentified")) {
                 logger.logDebugFmt("modifyOtherKeys(~): {s}", .{kn});
-                emitKeyboardEvent(
-                    buildModifiers(mods.shift, mods.alt, mods.ctrl, false, false),
+                normalize.emitKeyboardEvent(
+                    normalize.buildModifiers(mods.shift, mods.alt, mods.ctrl, false, false),
                     key_code,
                     kn,
                 );
@@ -531,57 +282,26 @@ const Parser = struct {
             mod_ctrl = mods.ctrl;
         }
 
-        const key_name: []const u8 = blk: {
-            switch (final_char) {
-                'A' => break :blk "ArrowUp",
-                'B' => break :blk "ArrowDown",
-                'C' => break :blk "ArrowRight",
-                'D' => break :blk "ArrowLeft",
-                'H' => break :blk "Home",
-                'F' => break :blk "End",
-                'Z' => {
-                    mod_shift = true;
-                    break :blk "Tab";
-                },
-                '~' => {
-                    switch (param1) {
-                        2 => break :blk "Insert",
-                        3 => break :blk "Delete",
-                        5 => break :blk "PageUp",
-                        6 => break :blk "PageDown",
-                        15 => break :blk "F5",
-                        17 => break :blk "F6",
-                        18 => break :blk "F7",
-                        19 => break :blk "F8",
-                        20 => break :blk "F9",
-                        21 => break :blk "F10",
-                        23 => break :blk "F11",
-                        24 => break :blk "F12",
-                        25 => break :blk "F13",
-                        26 => break :blk "F14",
-                        27 => break :blk "F15",
-                        28 => break :blk "F16",
-                        29 => break :blk "F17",
-                        30 => break :blk "F18",
-                        31 => break :blk "F19",
-                        32 => break :blk "F20",
-                        else => {
-                            logger.logDebugFmt("其他 CSI~ 序列: {s}", .{seq});
-                            break :blk "Unidentified";
-                        },
-                    }
-                },
-                else => {
-                    logger.logDebugFmt("其他 CSI 序列: {s}", .{seq});
-                    break :blk "Unidentified";
-                },
+        var key_name: []const u8 = "Unidentified";
+        if (final_char == '~') {
+            if (normalize.csiKeyFromP1(param1)) |key| {
+                key_name = normalize.csiKeyName(key);
+            } else {
+                logger.logDebugFmt("其他 CSI~ 序列: {s}", .{seq});
             }
-        };
+        } else if (normalize.csiKeyFromFinalChar(final_char)) |key| {
+            if (key == .Tab and final_char == 'Z') {
+                mod_shift = true;
+            }
+            key_name = normalize.csiKeyName(key);
+        } else {
+            logger.logDebugFmt("其他 CSI 序列: {s}", .{seq});
+        }
 
         if (!std.mem.eql(u8, key_name, "Unidentified")) {
             logger.logDebugFmt("功能键: {s}", .{key_name});
-            emitKeyboardEvent(
-                buildModifiers(mod_shift, mod_alt, mod_ctrl, false, false),
+            normalize.emitKeyboardEvent(
+                normalize.buildModifiers(mod_shift, mod_alt, mod_ctrl, false, false),
                 0,
                 key_name,
             );
@@ -590,7 +310,7 @@ const Parser = struct {
 
     pub fn flushPendingEsc(self: *Parser) void {
         if (self.state == .EscReceived) {
-            emitKeyboardEvent(self.pending_esc_modifiers, 0x1B, "Escape");
+            normalize.emitKeyboardEvent(self.pending_esc_modifiers, 0x1B, "Escape");
             self.reset();
         }
     }
@@ -634,7 +354,7 @@ fn checkAndEmitResize() void {
             if (size.rows != term_rows or size.cols != term_cols) {
                 term_rows = size.rows;
                 term_cols = size.cols;
-                emitResizeEvent(term_rows, term_cols);
+                normalize.emitResizeEvent(term_rows, term_cols);
                 logger.logInfoFmt("终端调整大小: {}x{}", .{ term_cols, term_rows });
             }
         } else |e| {
@@ -741,33 +461,6 @@ pub fn stop() void {
         thread.join();
         thread_started = false;
     }
-}
-
-test "keyCodeToKeyName maps control characters" {
-    try std.testing.expectEqualStrings("Backspace", keyCodeToKeyName(0x08));
-    try std.testing.expectEqualStrings("Tab", keyCodeToKeyName(0x09));
-    try std.testing.expectEqualStrings("Enter", keyCodeToKeyName(0x0D));
-    try std.testing.expectEqualStrings("Escape", keyCodeToKeyName(0x1B));
-    try std.testing.expectEqualStrings("Backspace", keyCodeToKeyName(0x7F));
-}
-
-test "keyCodeToKeyName maps letters" {
-    try std.testing.expectEqualStrings("A", keyCodeToKeyName(0x41));
-    try std.testing.expectEqualStrings("Z", keyCodeToKeyName(0x5A));
-    try std.testing.expectEqualStrings("a", keyCodeToKeyName(0x61));
-    try std.testing.expectEqualStrings("z", keyCodeToKeyName(0x7A));
-    try std.testing.expectEqualStrings("I", keyCodeToKeyName(0x49));
-    try std.testing.expectEqualStrings("i", keyCodeToKeyName(0x69));
-}
-
-test "keyCodeToKeyName maps digits" {
-    try std.testing.expectEqualStrings("0", keyCodeToKeyName(0x30));
-    try std.testing.expectEqualStrings("9", keyCodeToKeyName(0x39));
-}
-
-test "keyCodeToKeyName returns Unidentified for unknown" {
-    try std.testing.expectEqualStrings("Unidentified", keyCodeToKeyName(0x01));
-    try std.testing.expectEqualStrings("Unidentified", keyCodeToKeyName(0x80));
 }
 
 test "Parser: Tab byte 0x09 produces key Tab" {
