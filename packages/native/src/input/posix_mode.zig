@@ -13,6 +13,36 @@ comptime {
 var original_termios: std.posix.termios = undefined;
 var original_termios_saved: bool = false;
 
+const EINTR_ERRNO: c_int = 4;
+const TCGETS: c_ulong = 0x5401;
+const TCSETS: c_ulong = 0x5402;
+
+extern "c" fn ioctl(fd: c_int, request: c_ulong, arg: *anyopaque) c_int;
+
+fn libcTcgetattr(fd: std.posix.fd_t, term: *std.posix.termios) bool {
+    while (true) {
+        if (ioctl(fd, TCGETS, @ptrCast(term)) == 0) {
+            return true;
+        }
+
+        if (std.c._errno().* != EINTR_ERRNO) {
+            return false;
+        }
+    }
+}
+
+fn libcTcsetattr(fd: std.posix.fd_t, term: *const std.posix.termios) bool {
+    while (true) {
+        if (ioctl(fd, TCSETS, @constCast(@ptrCast(term))) == 0) {
+            return true;
+        }
+
+        if (std.c._errno().* != EINTR_ERRNO) {
+            return false;
+        }
+    }
+}
+
 pub const STD_HANDLE = enum(u32) {
     INPUT_HANDLE = std.posix.STDIN_FILENO,
     OUTPUT_HANDLE = std.posix.STDOUT_FILENO,
@@ -33,10 +63,10 @@ fn enableOutputVtProcessing() void {
 fn saveOriginalTermios() void {
     if (!original_termios_saved) {
         const stdin_handle = std.posix.STDIN_FILENO;
-        original_termios = std.posix.tcgetattr(stdin_handle) catch |e| {
-            err.osApiErrorFmt("Failed to get original terminal attributes: {}", .{e});
+        if (!libcTcgetattr(stdin_handle, &original_termios)) {
+            err.osApiErrorFmt("Failed to get original terminal attributes", .{});
             return;
-        };
+        }
         original_termios_saved = true;
         logger.logInfo("Original terminal attributes saved");
     }
@@ -49,10 +79,11 @@ pub fn switchMouseInputMode() void {
     saveOriginalTermios();
 
     // Get current terminal attributes
-    var termios = std.posix.tcgetattr(stdin_handle) catch |e| {
-        err.osApiErrorFmt("Failed to get terminal attributes: {}", .{e});
+    var termios: std.posix.termios = undefined;
+    if (!libcTcgetattr(stdin_handle, &termios)) {
+        err.osApiErrorFmt("Failed to get terminal attributes", .{});
         return;
-    };
+    }
 
     // Disable canonical mode - don't wait for Enter
     termios.lflag.ICANON = false;
@@ -76,10 +107,10 @@ pub fn switchMouseInputMode() void {
     termios.cc[@backingInt(std.posix.V.TIME)] = 0; // No timeout
 
     // Apply settings (take effect immediately)
-    std.posix.tcsetattr(stdin_handle, .NOW, termios) catch |e| {
-        err.osApiErrorFmt("Failed to set terminal attributes: {}", .{e});
+    if (!libcTcsetattr(stdin_handle, &termios)) {
+        err.osApiErrorFmt("Failed to set terminal attributes", .{});
         return;
-    };
+    }
 
     enableOutputVtProcessing();
     // Enable VT mouse tracking: any-event tracking + SGR extended format
@@ -101,17 +132,18 @@ pub fn switchDefaultInputMode() void {
 
     if (original_termios_saved) {
         // Restore original terminal attributes
-        std.posix.tcsetattr(stdin_handle, .NOW, original_termios) catch |e| {
-            err.osApiErrorFmt("Failed to restore terminal attributes: {}", .{e});
+        if (!libcTcsetattr(stdin_handle, &original_termios)) {
+            err.osApiErrorFmt("Failed to restore terminal attributes", .{});
             return;
-        };
+        }
         logger.logInfo("Terminal switched to default mode");
     } else {
         // If we don't have original attributes, set to a safe default
-        var termios = std.posix.tcgetattr(stdin_handle) catch |e| {
-            err.osApiErrorFmt("Failed to get terminal attributes: {}", .{e});
+        var termios: std.posix.termios = undefined;
+        if (!libcTcgetattr(stdin_handle, &termios)) {
+            err.osApiErrorFmt("Failed to get terminal attributes", .{});
             return;
-        };
+        }
 
         // Restore to normal mode
         termios.lflag.ICANON = true;
@@ -121,10 +153,10 @@ pub fn switchDefaultInputMode() void {
         termios.iflag.ICRNL = true;
         termios.oflag.OPOST = true;
 
-        std.posix.tcsetattr(stdin_handle, .NOW, termios) catch |e| {
-            err.osApiErrorFmt("Failed to restore terminal attributes: {}", .{e});
+        if (!libcTcsetattr(stdin_handle, &termios)) {
+            err.osApiErrorFmt("Failed to restore terminal attributes", .{});
             return;
-        };
+        }
         logger.logInfo("Terminal switched to default mode (safe defaults)");
     }
 }

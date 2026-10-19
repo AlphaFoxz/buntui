@@ -6,7 +6,8 @@
         ".opencode/rules/ffi-boundary.md",
         ".opencode/rules/sfc-extensions.md",
         ".opencode/rules/typescript-coding.md",
-        ".opencode/rules/zig-coding.md"
+        ".opencode/rules/zig-coding.md",
+        ".opencode/rules/posix-termios.md"
     ],
     "permission": {
         "bash": {

@@ -94,6 +94,7 @@ Lock-free SPSC ring buffer. Zig emits binary events, TS polls/commits. Three-ste
 - **Type imports**: `import {type Foo} from 'bar'` or `import type {Foo} from 'bar'`.
 - **Zig naming**: functions `camelCase`, locals `snake_case`, globals `SCREAMING_SNAKE_CASE`, types `PascalCase`. Paired lifecycles: `create/destroy`, `init/deinit`, `start/stop`.
 - **Zig 0.17 Windows**: `std.os.windows.BOOL` is an enum — compare with `.FALSE`/`.TRUE`, not integers. Custom `typedef.Bool` (in `core/typedef.zig`) uses `.False`/`.True` (PascalCase). Declare Win32 functions as `extern "kernel32"` directly.
+- **Zig 0.17 termios size mismatch (POSIX crash)**: `std.posix.termios` on linux is 44 bytes (NCCS=19) but glibc's `struct termios` is 60 bytes (NCCS=32). Never pass a `std.posix.termios` to libc `tcgetattr`/`tcsetattr` (including `std.posix.tcgetattr`/`tcsetattr`) — glibc's 60-byte access overflows the stack. Use `ioctl(fd, TCGETS/TCSETS)` instead (kernel termios is 36 bytes; see `packages/native/src/input/posix_mode.zig`). Crashes only reproduce in `-Drelease=true` builds; Debug/`zig test` hide it. Full analysis, evidence, and repro PoC: `.opencode/rules/posix-termios.md`.
 - **Zig error handling**: Never propagate error unions across FFI. Use status codes in exports, `core/error.zig` helpers for fatal errors.
 - **No comments in code** unless explicitly requested.
 - **Widget method naming** (`set*` vs `update*`):
