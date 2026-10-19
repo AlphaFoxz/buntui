@@ -33,7 +33,7 @@
         "typescript": "npm:typescript-native-bridge@latest",
         "vite": "~8.3.4",
         "vitest": "^5.0.5",
-        "vue-tsc": "~3.3.12"
+        "vue-tsc": "~3.3.13"
     },
     "engines": {
         "node": "^20.19.0 || >=22.12.0"

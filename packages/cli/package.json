@@ -34,7 +34,7 @@
         "@types/bun": "=1.4.3",
         "vite": "~8.3.4",
         "vue": "~3.5.44",
-        "vue-tsc": "~3.3.12"
+        "vue-tsc": "~3.3.13"
     },
     "peerDependencies": {
         "vite": ">=8.3.4"

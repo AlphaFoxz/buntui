@@ -27,7 +27,7 @@
         "dist/"
     ],
     "dependencies": {
-        "@vue/compiler-core": "^3.5.43",
+        "@vue/compiler-core": "^3.5.44",
         "@vue/compiler-sfc": "^3.5.44",
         "@vue/reactivity": "^3.5.44",
         "@vue/shared": "^3.5.44",
