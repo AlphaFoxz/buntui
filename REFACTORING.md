@@ -113,11 +113,13 @@ Input / Textarea 只保留各自差异:Input 的密码掩码、数字步进;Text
 
 ### 步骤 4:codegen 拆分
 
-- [ ] **前置:为 codegen 补快照测试**(覆盖 static / keyed / diff 三路径、条件、props、动态组件),作为自动化安全网
-- [ ] 拆出 `codegen/list.ts`:以 keyed diff 为唯一实现,static 为退化情形
-- [ ] 拆出 `codegen/conditions.ts`、`codegen/props.ts`
-- [ ] 三个 `hasXxx` 树遍历合并为一次 `analyzeTree()` visitor
-- [ ] playground(`bun run dev demo`)+ WASM demo 手工验证
+- [x] **前置:为 codegen 补快照测试**(覆盖 static / keyed / diff 三路径、条件、props、动态组件),作为自动化安全网
+- [x] 拆出 `codegen/list.ts`:以 keyed diff 为唯一实现,static 为退化情形
+- [x] 拆出 `codegen/conditions.ts`、`codegen/props.ts`
+- [x] 三个 `hasXxx` 树遍历合并为一次 `analyzeTree()` visitor
+- [x] playground(`bun run dev demo`)+ WASM demo 手工验证
+
+  > 实施说明:`template/codegen.ts`(1037 行)拆为 `template/codegen/` 目录——`index.ts`(顶层 generate 与 imports 装配,149 行)、`nodes.ts`(节点分发 + widget/动态组件)、`conditions.ts`(v-if/v-show 树机制)、`list.ts`(static/keyed 双路径,共享 `buildLoopHeader` 消除三处近似循环头;`emitNode` 参数注入消除循环依赖)、`props.ts`(prop/效果/组件 props 助手)、`analyze.ts`(单次 `analyzeTree()` visitor,逐节点语义与原三个 hasXxx 等价)。17 个输出快照锁定行为,拆分前后字节级一致。消费方 `compile.ts`/`index.ts` 的 `./template/codegen` 导入路径不变(解析到目录 index)。
 
 ### 步骤 5:后端共性审计
 

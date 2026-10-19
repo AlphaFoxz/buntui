@@ -1,0 +1,492 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`codegen snapshots (refactor safety net) static tree: nested children, static props, boolean flags, events, ref 1`] = `
+"import { createBox, createTextWidget, createButtonWidget } from '@buntui/core';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  const __box0 = createBox({ direction: "column", readonly: true, title: "hello" });
+  __box0.setDirection("column");
+  __box0.on('click', ($event) => { $event.stopPropagation(); handleClick });
+  __box0.on('key', ($event) => {  if ($event.key === 'Enter') onKey });
+  boxRef.value = __box0;
+  const __text1 = createTextWidget({ value: "child text" });
+  __text1.updateValue("child text");
+  __box0.addChild(__text1);
+  const __button2 = createButtonWidget({ value: "OK", disabled: false });
+  __button2.updateValue("OK");
+  __button2.setDisabled(false);
+  __box0.addChild(__button2);
+  __target.mount(__box0);
+  return () => {
+    __target.unmount(__box0);
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) dynamic props: reactive effects per prop 1`] = `
+"import { createBox, createTextWidget, createButtonWidget } from '@buntui/core';
+import {effect, unref} from '@vue/reactivity';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  const __box0 = createBox({ x: unref(pos).x, y: unref(pos).y, visible: unref(isVisible) });
+  effect(() => { __box0.updateRect({x: unref(pos).x}); });
+  effect(() => { __box0.updateRect({y: unref(pos).y}); });
+  effect(() => { __box0.setVisible(unref(isVisible)); });
+  const __text1 = createTextWidget({ value: unref(message) });
+  effect(() => { __text1.updateValue(unref(message)); });
+  __target.mount(__box0);
+  __target.mount(__text1);
+  return () => {
+    __target.unmount(__box0);
+    __target.unmount(__text1);
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) conditional: if / else-if / else with children 1`] = `
+"import { createBox, createTextWidget, createButtonWidget } from '@buntui/core';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  let __text0 = null;
+  let __button1 = null;
+  let __text2 = null;
+  effect(() => {
+    if (unref(mode) === "a") {
+        if (!__text0) {
+          __text0 = createTextWidget({ value: "branch a" });
+          __target.mount(__text0);
+        }
+        if (__button1) {
+          __target.unmount(__button1);
+          __button1 = null;
+        }
+        if (__text2) {
+          __target.unmount(__text2);
+          __text2 = null;
+        }
+    }
+    else if (unref(mode) === "b") {
+        if (!__button1) {
+          __button1 = createButtonWidget({ value: "branch b" });
+          __target.mount(__button1);
+        }
+        if (__text0) {
+          __target.unmount(__text0);
+          __text0 = null;
+        }
+        if (__text2) {
+          __target.unmount(__text2);
+          __text2 = null;
+        }
+    }
+    else {
+        if (!__text2) {
+          __text2 = createTextWidget({ value: "fallback" });
+          __target.mount(__text2);
+        }
+        if (__text0) {
+          __target.unmount(__text0);
+          __text0 = null;
+        }
+        if (__button1) {
+          __target.unmount(__button1);
+          __button1 = null;
+        }
+    }
+  });
+  return () => {
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) conditional: without else emits final unmount branch 1`] = `
+"import { createBox, createTextWidget, createButtonWidget } from '@buntui/core';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  let __text0 = null;
+  effect(() => {
+    if (unref(show)) {
+        if (!__text0) {
+          __text0 = createTextWidget({ value: "shown" });
+          __target.mount(__text0);
+        }
+    }
+     else {
+        if (__text0) {
+          __target.unmount(__text0);
+          __text0 = null;
+        }
+    }
+  });
+  return () => {
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) conditional: nested children inside branches 1`] = `
+"import { createBox, createTextWidget, createButtonWidget } from '@buntui/core';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  let __box0 = null;
+  let __text1 = null;
+  effect(() => {
+    if (unref(open)) {
+        if (!__box0) {
+          __box0 = createBox();
+          __text1 = createTextWidget({ value: "inner" });
+          __box0.addChild(__text1);
+          __target.mount(__box0);
+        }
+    }
+     else {
+        if (__box0) {
+          __target.unmount(__box0);
+          __box0 = null;
+          __text1 = null;
+        }
+    }
+  });
+  return () => {
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) static list: array without index 1`] = `
+"import { createBox, createTextWidget, createButtonWidget } from '@buntui/core';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  for (const item of unref(items)) {
+    const __text0 = createTextWidget({ value: "row" });
+  }
+  return () => {
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) static list: array with index uses entries() 1`] = `
+"import { createBox, createTextWidget, createButtonWidget } from '@buntui/core';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  for (const [idx, item] of unref(items).entries()) {
+    const __text0 = createTextWidget({ value: "row" });
+  }
+  return () => {
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) static list: numeric range 1`] = `
+"import { createBox, createTextWidget, createButtonWidget } from '@buntui/core';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  for (let i = 1; i <= 20; i++) {
+    const __text0 = createTextWidget({ value: "cell" });
+  }
+  for (let idx = 0; idx < 10; idx++) {
+    const item = idx + 1;
+    const __text1 = createTextWidget({ value: "cell" });
+  }
+  return () => {
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) keyed list: diff path with create, update and reuse branches 1`] = `
+"import { createBox, createTextWidget, createButtonWidget } from '@buntui/core';
+import {effect, unref} from '@vue/reactivity';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  let __list0_map = new Map();
+  effect(() => {
+    for (const [, __w] of __list0_map) {
+      __target.unmount(__w);
+    }
+    const __new = new Map();
+    for (const item of unref(rows)) {
+      let __text0 = __list0_map.get(unref(item).id);
+      if (__text0) {
+        __text0.updateValue(unref(item).label);
+      } else {
+        __text0 = createTextWidget({ value: "static", value: unref(item).label });
+        __text0.on('click', rowClick);
+        const __text1 = createTextWidget({ value: "sub" });
+        __text0.addChild(__text1);
+      }
+      __target.mount(__text0);
+      __new.set(unref(item).id, __text0);
+    }
+    __list0_map = __new;
+  });
+  return () => {
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) keyed list: numeric range and nested conditional 1`] = `
+"import { createBox, createTextWidget, createButtonWidget } from '@buntui/core';
+import {effect, unref} from '@vue/reactivity';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  let __list0_map = new Map();
+  effect(() => {
+    for (const [, __w] of __list0_map) {
+      __target.unmount(__w);
+    }
+    const __new = new Map();
+    for (let i = 1; i <= 5; i++) {
+      let __text0 = null;
+      effect(() => {
+        if (unref(i) % 2 === 0) {
+            if (!__text0) {
+              __text0 = createTextWidget({ value: "even" });
+              __target.mount(__text0);
+            }
+        }
+         else {
+            if (__text0) {
+              __target.unmount(__text0);
+              __text0 = null;
+            }
+        }
+      });
+    }
+    __list0_map = __new;
+  });
+  return () => {
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) dynamic component: plain :is 1`] = `
+"import { createBox } from '@buntui/core';
+import {effect, unref} from '@vue/reactivity';
+import { runSetup as __runSetup } from '@buntui/core';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  let __component0_cleanup;
+  let __component0_prev;
+  effect(() => {
+    const __c = unref(current);
+    if (__c === __component0_prev) {
+      return;
+    }
+    __component0_cleanup?.();
+    __component0_prev = __c;
+    if (!__c) {
+      __component0_cleanup = undefined;
+      return;
+    }
+    __component0_cleanup = __runSetup(__scene, () => __c.setup(__scene));
+  });
+  return () => {
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) dynamic component: with static and dynamic props 1`] = `
+"import { createBox, createTextWidget, createButtonWidget } from '@buntui/core';
+import {effect, unref, reactive} from '@vue/reactivity';
+import { runSetup as __runSetup } from '@buntui/core';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  const __component0_props = reactive({ title: "win" });
+  effect(() => { __component0_props.value = unref(msg); });
+  let __component0_cleanup;
+  let __component0_prev;
+  effect(() => {
+    const __c = unref(current);
+    if (__c === __component0_prev) {
+      return;
+    }
+    __component0_cleanup?.();
+    __component0_prev = __c;
+    if (!__c) {
+      __component0_cleanup = undefined;
+      return;
+    }
+    __component0_cleanup = __runSetup(__scene, () => __c.setup(__scene), __component0_props);
+  });
+  return () => {
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) component: static props only 1`] = `
+"import { Window } from './Window.vue';
+import { runSetup as __runSetup } from '@buntui/core';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  __runSetup(__scene, () => Window.setup(__scene), { title: "demo" });
+  return () => {
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) component: dynamic props produce reactive props object 1`] = `
+"import { Window } from './Window.vue';
+import {effect, unref, reactive} from '@vue/reactivity';
+import { runSetup as __runSetup } from '@buntui/core';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  const __window0_props = reactive({ title: "demo" });
+  effect(() => { __window0_props.value = unref(msg); });
+  const __window0_w = [];
+  const __window0 = __runSetup(__scene, () => Window.setup(__scene, {
+    mount(w) { __target.mount(w); __window0_w.push(w); },
+    unmount(w) { __target.unmount(w); const i = __window0_w.indexOf(w); if (i >= 0) __window0_w.splice(i, 1); }
+  }), __window0_props);
+  effect(() => { const _v = unref(isVisible); for (const w of __window0_w) { w.setVisible(_v); } });
+  return () => {
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) component: v-show produces proxy mount target 1`] = `
+"import { Window } from './Window.vue';
+import {effect, unref} from '@vue/reactivity';
+import { runSetup as __runSetup } from '@buntui/core';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  const __window0_w = [];
+  const __window0 = __runSetup(__scene, () => Window.setup(__scene, {
+    mount(w) { __target.mount(w); __window0_w.push(w); },
+    unmount(w) { __target.unmount(w); const i = __window0_w.indexOf(w); if (i >= 0) __window0_w.splice(i, 1); }
+  }));
+  effect(() => { const _v = unref(isVisible); for (const w of __window0_w) { w.setVisible(_v); } });
+  return () => {
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) mixed tree: declarative widgets mount before deferred blocks 1`] = `
+"import { createBox, createTextWidget, createButtonWidget } from '@buntui/core';
+import { runSetup as __runSetup } from '@buntui/core';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  const __box0 = createBox();
+  const __button3 = createButtonWidget();
+  __target.mount(__box0);
+  __target.mount(__button3);
+  __runSetup(__scene, () => Window.setup(__scene));
+  let __text2 = null;
+  effect(() => {
+    if (unref(show)) {
+        if (!__text2) {
+          __text2 = createTextWidget();
+          __target.mount(__text2);
+        }
+    }
+     else {
+        if (__text2) {
+          __target.unmount(__text2);
+          __text2 = null;
+        }
+    }
+  });
+  return () => {
+    __target.unmount(__box0);
+    __target.unmount(__button3);
+  };
+}
+
+export default { setup };"
+`;
+
+exports[`codegen snapshots (refactor safety net) full composite: everything together 1`] = `
+"import { createBox, createTextWidget, createButtonWidget } from '@buntui/core';
+import {effect, unref} from '@vue/reactivity';
+import { runSetup as __runSetup } from '@buntui/core';
+
+export function setup(__scene, __mt) {
+  const __target = __mt ?? __scene;
+  const __box0 = createBox({ direction: "column", visible: unref(uiOpen) });
+  __box0.setDirection("column");
+  effect(() => { __box0.setVisible(unref(uiOpen)); });
+  let __list1_map = new Map();
+  effect(() => {
+    for (const [, __w] of __list1_map) {
+      __box0.removeChild(__w);
+    }
+    const __new = new Map();
+    for (const [idx, item] of unref(items).entries()) {
+      let __button1 = __list1_map.get(unref(item).id);
+      if (__button1) {
+        __button1.updateValue(unref(item).label);
+      } else {
+        __button1 = createButtonWidget({ value: unref(item).label });
+      }
+      __box0.addChild(__button1);
+      __new.set(unref(item).id, __button1);
+    }
+    __list1_map = __new;
+  });
+  let __text2 = null;
+  effect(() => {
+    if (unref(hasSelection)) {
+        if (!__text2) {
+          __text2 = createTextWidget({ value: "selected" });
+          __box0.addChild(__text2);
+        }
+    }
+     else {
+        if (__text2) {
+          __box0.removeChild(__text2);
+          __text2 = null;
+        }
+    }
+  });
+  __runSetup(__scene, () => Window.setup(__scene, { mount(w) { __box0.addChild(w); }, unmount(w) { __box0.removeChild(w); } }), { title: "child window" });
+  __target.mount(__box0);
+  return () => {
+    __target.unmount(__box0);
+  };
+}
+
+export default { setup };"
+`;
